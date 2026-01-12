@@ -7,6 +7,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"html"
 	"io"
 	"io/fs"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 )
 
 //go:embed all:dist
@@ -165,12 +167,79 @@ func (s *FrontendServer) serveIndexHTML(c *gin.Context) {
 }
 
 func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
+	rendered := s.baseHTML
+
+	// Server-side title injection to prevent flash of default title
+	siteName := strings.TrimSpace(gjson.GetBytes(settingsJSON, "site_name").String())
+	if siteName != "" && siteName != "Sub2API" {
+		// Limit length to prevent abuse (256 chars is generous for a site name)
+		if len(siteName) > 256 {
+			siteName = siteName[:256]
+		}
+		escapedTitle := html.EscapeString(siteName) + " - AI API Gateway"
+		rendered = replaceHTMLTitle(rendered, escapedTitle)
+	}
+
 	// Create the script tag to inject
 	script := []byte(`<script>window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
 
 	// Inject before </head>
 	headClose := []byte("</head>")
-	return bytes.Replace(s.baseHTML, headClose, append(script, headClose...), 1)
+	return bytes.Replace(rendered, headClose, append(script, headClose...), 1)
+}
+
+// replaceHTMLTitle replaces the content of the <title> tag.
+// It searches only the first 2KB for performance (title is always in <head>).
+// Handles case-insensitive matching without full ToLower allocation.
+func replaceHTMLTitle(page []byte, newTitle string) []byte {
+	// Limit search to first 2KB (title is always in <head>)
+	searchLimit := 2048
+	if len(page) < searchLimit {
+		searchLimit = len(page)
+	}
+	searchArea := page[:searchLimit]
+
+	// Find <title (case-insensitive)
+	openIdx := indexCaseInsensitive(searchArea, []byte("<title"))
+	if openIdx == -1 {
+		return page
+	}
+
+	// Find > after <title
+	gtIdx := bytes.IndexByte(searchArea[openIdx:], '>')
+	if gtIdx == -1 {
+		return page
+	}
+	gtIdx += openIdx // absolute position
+
+	// Find </title> (case-insensitive)
+	closeIdx := indexCaseInsensitive(searchArea[gtIdx:], []byte("</title>"))
+	if closeIdx == -1 {
+		return page
+	}
+	closeIdx += gtIdx // absolute position
+
+	// Build result: before title content + new title + after title content
+	titleStart := gtIdx + 1
+	titleEnd := closeIdx
+
+	result := make([]byte, 0, len(page)-titleEnd+titleStart+len(newTitle))
+	result = append(result, page[:titleStart]...)
+	result = append(result, newTitle...)
+	result = append(result, page[titleEnd:]...)
+	return result
+}
+
+// indexCaseInsensitive finds needle in haystack (case-insensitive).
+// Only used for short patterns like "<title" and "</title>".
+func indexCaseInsensitive(haystack, needle []byte) int {
+	needleLower := bytes.ToLower(needle)
+	for i := 0; i <= len(haystack)-len(needle); i++ {
+		if bytes.EqualFold(haystack[i:i+len(needle)], needleLower) {
+			return i
+		}
+	}
+	return -1
 }
 
 // ServeEmbeddedFrontend returns a middleware for serving embedded frontend
