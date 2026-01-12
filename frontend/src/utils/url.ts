@@ -1,11 +1,12 @@
 /**
  * 验证并规范化 URL
- * 默认只接受绝对 URL（以 http:// 或 https:// 开头），可按需允许相对路径
+ * 默认只接受绝对 URL（以 http:// 或 https:// 开头），可按需允许相对路径和 data URI
  * @param value 用户输入的 URL
  * @returns 规范化后的 URL，如果无效则返回空字符串
  */
 type SanitizeOptions = {
   allowRelative?: boolean
+  allowDataUri?: boolean
 }
 
 export function sanitizeUrl(value: string, options: SanitizeOptions = {}): string {
@@ -14,7 +15,14 @@ export function sanitizeUrl(value: string, options: SanitizeOptions = {}): strin
     return ''
   }
 
+  // Allow relative paths starting with / (but not protocol-relative //)
   if (options.allowRelative && trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    return trimmed
+  }
+
+  // Allow data:image/* URIs (for inline images like logos)
+  // Only image MIME types are allowed for security
+  if (options.allowDataUri && trimmed.startsWith('data:image/')) {
     return trimmed
   }
 

@@ -180,12 +180,46 @@ func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
 		rendered = replaceHTMLTitle(rendered, escapedTitle)
 	}
 
-	// Create the script tag to inject
-	script := []byte(`<script>window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
+	// Build injection content
+	var injection bytes.Buffer
+
+	// Inject preload link for custom logo to eliminate flash (browser starts downloading immediately)
+	siteLogo := strings.TrimSpace(gjson.GetBytes(settingsJSON, "site_logo").String())
+	if siteLogo != "" {
+		// Protocol validation (defense in depth) - only allow safe URL schemes
+		// Note: Reject protocol-relative URLs (//) to align with frontend sanitizeUrl
+		isValidProtocol := strings.HasPrefix(strings.ToLower(siteLogo), "http://") ||
+			strings.HasPrefix(strings.ToLower(siteLogo), "https://") ||
+			(strings.HasPrefix(siteLogo, "/") && !strings.HasPrefix(siteLogo, "//")) ||
+			strings.HasPrefix(strings.ToLower(siteLogo), "data:image/")
+
+		if isValidProtocol {
+			// Limit length to prevent abuse (2048 for URLs, 410KB for data URIs)
+			// Note: Frontend allows 300KB file uploads, but base64 encoding inflates by ~4/3
+			// 300KB * 4/3 ≈ 400KB, plus data URI header overhead → 410KB
+			maxLen := 2048
+			siteLogoLower := strings.ToLower(siteLogo)
+			if strings.HasPrefix(siteLogoLower, "data:") {
+				maxLen = 410 * 1024 // 410KB for base64 data URIs (accounts for base64 inflation)
+			}
+			if len(siteLogo) <= maxLen {
+				escapedLogo := html.EscapeString(siteLogo)
+				// Only preload URL-based logos (data URIs are already inline, no network request needed)
+				if !strings.HasPrefix(siteLogoLower, "data:") {
+					injection.WriteString(`<link rel="preload" href="` + escapedLogo + `" as="image">`)
+				}
+				// Set as favicon to eliminate favicon flash
+				injection.WriteString(`<link rel="icon" href="` + escapedLogo + `">`)
+			}
+		}
+	}
+
+	// Add the config script
+	injection.WriteString(`<script>window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
 
 	// Inject before </head>
 	headClose := []byte("</head>")
-	return bytes.Replace(rendered, headClose, append(script, headClose...), 1)
+	return bytes.Replace(rendered, headClose, append(injection.Bytes(), headClose...), 1)
 }
 
 // replaceHTMLTitle replaces the content of the <title> tag.

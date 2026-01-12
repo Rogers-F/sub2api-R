@@ -11,14 +11,11 @@ app.use(pinia)
 
 // Initialize settings from injected config BEFORE mounting (prevents flash)
 // This must happen after pinia is installed but before router and i18n
+// Note: Backend SSR already handles title and favicon in HTML, so we only need
+// to populate the store here for Vue components to use
 import { useAppStore } from '@/stores/app'
 const appStore = useAppStore()
 appStore.initFromInjectedConfig()
-
-// Set document title immediately after config is loaded
-if (appStore.siteName && appStore.siteName !== 'Sub2API') {
-  document.title = `${appStore.siteName} - AI API Gateway`
-}
 
 app.use(router)
 app.use(i18n)
