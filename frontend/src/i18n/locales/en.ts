@@ -390,7 +390,7 @@ export default {
       opencode: {
         title: 'OpenCode Example',
         subtitle: 'opencode.json',
-        hint: 'This is a group configuration example. Adjust model and options as needed.',
+        hint: 'Config path: ~/.config/opencode/opencode.json (create if not exists). This is an example, adjust model and options as needed.',
       },
     },
     customKeyLabel: 'Custom Key',
@@ -1022,6 +1022,7 @@ export default {
       schedulableEnabled: 'Scheduling enabled',
       schedulableDisabled: 'Scheduling disabled',
       failedToToggleSchedulable: 'Failed to toggle scheduling status',
+      allGroups: '{count} groups total',
       platforms: {
         anthropic: 'Anthropic',
         claude: 'Claude',
