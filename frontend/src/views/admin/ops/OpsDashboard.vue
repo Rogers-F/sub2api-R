@@ -1,6 +1,6 @@
 <template>
-  <AppLayout>
-    <div class="space-y-6 pb-12">
+  <component :is="isFullscreen ? 'div' : AppLayout" :class="isFullscreen ? 'flex min-h-screen flex-col justify-center bg-gray-50 dark:bg-dark-950' : ''">
+    <div :class="[isFullscreen ? 'p-4 md:p-6' : '', 'space-y-6 pb-12']">
       <div
         v-if="errorMessage"
         class="rounded-2xl bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
@@ -8,7 +8,7 @@
         {{ errorMessage }}
       </div>
 
-      <OpsDashboardSkeleton v-if="loading && !hasLoadedOnce" />
+      <OpsDashboardSkeleton v-if="loading && !hasLoadedOnce" :fullscreen="isFullscreen" />
 
       <OpsDashboardHeader
         v-else-if="opsEnabled"
@@ -22,21 +22,27 @@
         :thresholds="metricThresholds"
         :auto-refresh-enabled="autoRefreshEnabled"
         :auto-refresh-countdown="autoRefreshCountdown"
+        :fullscreen="isFullscreen"
+        :custom-start-time="customStartTime"
+        :custom-end-time="customEndTime"
         @update:time-range="onTimeRangeChange"
         @update:platform="onPlatformChange"
         @update:group="onGroupChange"
         @update:query-mode="onQueryModeChange"
+        @update:custom-time-range="onCustomTimeRangeChange"
         @refresh="fetchData"
         @open-request-details="handleOpenRequestDetails"
         @open-error-details="openErrorDetails"
         @open-settings="showSettingsDialog = true"
         @open-alert-rules="showAlertRulesCard = true"
+        @enter-fullscreen="enterFullscreen"
+        @exit-fullscreen="exitFullscreen"
       />
 
       <!-- Row: Concurrency + Throughput -->
       <div v-if="opsEnabled && !(loading && !hasLoadedOnce)" class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="lg:col-span-1 min-h-[360px]">
-          <OpsConcurrencyCard :platform-filter="platform" :group-id-filter="groupId" />
+          <OpsConcurrencyCard :platform-filter="platform" :group-id-filter="groupId" :refresh-token="dashboardRefreshToken" />
         </div>
         <div class="lg:col-span-2 min-h-[360px]">
           <OpsThroughputTrendChart
@@ -45,6 +51,7 @@
             :top-groups="throughputTrend?.top_groups ?? []"
             :loading="loadingTrend"
             :time-range="timeRange"
+            :fullscreen="isFullscreen"
             @select-platform="handleThroughputSelectPlatform"
             @select-group="handleThroughputSelectGroup"
             @open-details="handleOpenRequestDetails"
@@ -72,36 +79,37 @@
       <!-- Alert Events -->
       <OpsAlertEventsCard v-if="opsEnabled && !(loading && !hasLoadedOnce)" />
 
-      <!-- Settings Dialog -->
-      <OpsSettingsDialog :show="showSettingsDialog" @close="showSettingsDialog = false" @saved="onSettingsSaved" />
+      <!-- Settings Dialog (hidden in fullscreen mode) -->
+      <template v-if="!isFullscreen">
+        <OpsSettingsDialog :show="showSettingsDialog" @close="showSettingsDialog = false" @saved="onSettingsSaved" />
 
-      <!-- Alert Rules Dialog -->
-      <BaseDialog :show="showAlertRulesCard" :title="t('admin.ops.alertRules.title')" width="extra-wide" @close="showAlertRulesCard = false">
-        <OpsAlertRulesCard />
-      </BaseDialog>
+        <BaseDialog :show="showAlertRulesCard" :title="t('admin.ops.alertRules.title')" width="extra-wide" @close="showAlertRulesCard = false">
+          <OpsAlertRulesCard />
+        </BaseDialog>
 
-      <OpsErrorDetailsModal
-        :show="showErrorDetails"
-        :time-range="timeRange"
-        :platform="platform"
-        :group-id="groupId"
-        :error-type="errorDetailsType"
-        @update:show="showErrorDetails = $event"
-        @openErrorDetail="openError"
-      />
+        <OpsErrorDetailsModal
+          :show="showErrorDetails"
+          :time-range="timeRange"
+          :platform="platform"
+          :group-id="groupId"
+          :error-type="errorDetailsType"
+          @update:show="showErrorDetails = $event"
+          @openErrorDetail="openError"
+        />
 
-      <OpsErrorDetailModal v-model:show="showErrorModal" :error-id="selectedErrorId" />
+        <OpsErrorDetailModal v-model:show="showErrorModal" :error-id="selectedErrorId" :error-type="errorDetailsType" />
 
-      <OpsRequestDetailsModal
-        v-model="showRequestDetails"
-        :time-range="timeRange"
-        :preset="requestDetailsPreset"
-        :platform="platform"
-        :group-id="groupId"
-        @openErrorDetail="openError"
-      />
+        <OpsRequestDetailsModal
+          v-model="showRequestDetails"
+          :time-range="timeRange"
+          :preset="requestDetailsPreset"
+          :platform="platform"
+          :group-id="groupId"
+          @openErrorDetail="openError"
+        />
+      </template>
     </div>
-  </AppLayout>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -143,8 +151,8 @@ const { t } = useI18n()
 
 const opsEnabled = computed(() => adminSettingsStore.opsMonitoringEnabled)
 
-type TimeRange = '5m' | '30m' | '1h' | '6h' | '24h'
-const allowedTimeRanges = new Set<TimeRange>(['5m', '30m', '1h', '6h', '24h'])
+type TimeRange = '5m' | '30m' | '1h' | '6h' | '24h' | 'custom'
+const allowedTimeRanges = new Set<TimeRange>(['5m', '30m', '1h', '6h', '24h', 'custom'])
 
 type QueryMode = 'auto' | 'raw' | 'preagg'
 const allowedQueryModes = new Set<QueryMode>(['auto', 'raw', 'preagg'])
@@ -158,16 +166,48 @@ const timeRange = ref<TimeRange>('1h')
 const platform = ref<string>('')
 const groupId = ref<number | null>(null)
 const queryMode = ref<QueryMode>('auto')
+const customStartTime = ref<string | null>(null)
+const customEndTime = ref<string | null>(null)
 
 const QUERY_KEYS = {
   timeRange: 'tr',
   platform: 'platform',
   groupId: 'group_id',
-  queryMode: 'mode'
+  queryMode: 'mode',
+  fullscreen: 'fullscreen',
+
+  // Deep links
+  openErrorDetails: 'open_error_details',
+  errorType: 'error_type',
+  alertRuleId: 'alert_rule_id',
+  openAlertRules: 'open_alert_rules'
 } as const
 
 const isApplyingRouteQuery = ref(false)
 const isSyncingRouteQuery = ref(false)
+
+// Fullscreen mode
+const isFullscreen = computed(() => {
+  const val = route.query[QUERY_KEYS.fullscreen]
+  return val === '1' || val === 'true'
+})
+
+function exitFullscreen() {
+  const nextQuery = { ...route.query }
+  delete nextQuery[QUERY_KEYS.fullscreen]
+  router.replace({ query: nextQuery })
+}
+
+function enterFullscreen() {
+  const nextQuery = { ...route.query, [QUERY_KEYS.fullscreen]: '1' }
+  router.replace({ query: nextQuery })
+}
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && isFullscreen.value) {
+    exitFullscreen()
+  }
+}
 
 let dashboardFetchController: AbortController | null = null
 let dashboardFetchSeq = 0
@@ -219,6 +259,24 @@ const applyRouteQueryToState = () => {
   } else {
     const fallback = adminSettingsStore.opsQueryModeDefault || 'auto'
     queryMode.value = allowedQueryModes.has(fallback as QueryMode) ? (fallback as QueryMode) : 'auto'
+  }
+
+  // Deep links
+  const openRules = readQueryString(QUERY_KEYS.openAlertRules)
+  if (openRules === '1' || openRules === 'true') {
+    showAlertRulesCard.value = true
+  }
+
+  const ruleID = readQueryNumber(QUERY_KEYS.alertRuleId)
+  if (typeof ruleID === 'number' && ruleID > 0) {
+    showAlertRulesCard.value = true
+  }
+
+  const openErr = readQueryString(QUERY_KEYS.openErrorDetails)
+  if (openErr === '1' || openErr === 'true') {
+    const typ = readQueryString(QUERY_KEYS.errorType)
+    errorDetailsType.value = typ === 'upstream' ? 'upstream' : 'request'
+    showErrorDetails.value = true
   }
 }
 
@@ -294,23 +352,24 @@ const autoRefreshEnabled = ref(false)
 const autoRefreshIntervalMs = ref(30000) // default 30 seconds
 const autoRefreshCountdown = ref(0)
 
-// Auto refresh timer
-const { pause: pauseAutoRefresh, resume: resumeAutoRefresh } = useIntervalFn(
-  () => {
-    if (autoRefreshEnabled.value && opsEnabled.value && !loading.value) {
-      fetchData()
-    }
-  },
-  autoRefreshIntervalMs,
-  { immediate: false }
-)
+// Used to trigger child component refreshes in a single shared cadence.
+const dashboardRefreshToken = ref(0)
 
-// Countdown timer (updates every second)
+// Countdown timer (drives auto refresh; updates every second)
 const { pause: pauseCountdown, resume: resumeCountdown } = useIntervalFn(
   () => {
-    if (autoRefreshEnabled.value && autoRefreshCountdown.value > 0) {
-      autoRefreshCountdown.value--
+    if (!autoRefreshEnabled.value) return
+    if (!opsEnabled.value) return
+    if (loading.value) return
+
+    if (autoRefreshCountdown.value <= 0) {
+      // Fetch immediately when the countdown reaches 0.
+      // fetchData() will reset the countdown to the full interval.
+      fetchData()
+      return
     }
+
+    autoRefreshCountdown.value -= 1
   },
   1000,
   { immediate: false }
@@ -347,11 +406,17 @@ function handleOpenRequestDetails(preset?: OpsRequestDetailsPreset) {
 
   requestDetailsPreset.value = { ...basePreset, ...(preset ?? {}) }
   if (!requestDetailsPreset.value.title) requestDetailsPreset.value.title = basePreset.title
+  // Ensure only one modal visible at a time.
+  showErrorDetails.value = false
+  showErrorModal.value = false
   showRequestDetails.value = true
 }
 
 function openErrorDetails(kind: 'request' | 'upstream') {
   errorDetailsType.value = kind
+  // Ensure only one modal visible at a time.
+  showRequestDetails.value = false
+  showErrorModal.value = false
   showErrorDetails.value = true
 }
 
@@ -359,6 +424,11 @@ function onTimeRangeChange(v: string | number | boolean | null) {
   if (typeof v !== 'string') return
   if (!allowedTimeRanges.has(v as TimeRange)) return
   timeRange.value = v as TimeRange
+}
+
+function onCustomTimeRangeChange(startTime: string, endTime: string) {
+  customStartTime.value = startTime
+  customEndTime.value = endTime
 }
 
 function onSettingsSaved() {
@@ -393,21 +463,38 @@ function onQueryModeChange(v: string | number | boolean | null) {
 
 function openError(id: number) {
   selectedErrorId.value = id
+  // Ensure only one modal visible at a time.
+  showErrorDetails.value = false
+  showRequestDetails.value = false
   showErrorModal.value = true
+}
+
+function buildApiParams() {
+  const params: any = {
+    platform: platform.value || undefined,
+    group_id: groupId.value ?? undefined,
+    mode: queryMode.value
+  }
+
+  if (timeRange.value === 'custom') {
+    if (customStartTime.value && customEndTime.value) {
+      params.start_time = customStartTime.value
+      params.end_time = customEndTime.value
+    } else {
+      // Safety fallback: avoid sending time_range=custom (backend may not support it)
+      params.time_range = '1h'
+    }
+  } else {
+    params.time_range = timeRange.value
+  }
+
+  return params
 }
 
 async function refreshOverviewWithCancel(fetchSeq: number, signal: AbortSignal) {
   if (!opsEnabled.value) return
   try {
-    const data = await opsAPI.getDashboardOverview(
-      {
-        time_range: timeRange.value,
-        platform: platform.value || undefined,
-        group_id: groupId.value ?? undefined,
-        mode: queryMode.value
-      },
-      { signal }
-    )
+    const data = await opsAPI.getDashboardOverview(buildApiParams(), { signal })
     if (fetchSeq !== dashboardFetchSeq) return
     overview.value = data
   } catch (err: any) {
@@ -421,15 +508,7 @@ async function refreshThroughputTrendWithCancel(fetchSeq: number, signal: AbortS
   if (!opsEnabled.value) return
   loadingTrend.value = true
   try {
-    const data = await opsAPI.getThroughputTrend(
-      {
-        time_range: timeRange.value,
-        platform: platform.value || undefined,
-        group_id: groupId.value ?? undefined,
-        mode: queryMode.value
-      },
-      { signal }
-    )
+    const data = await opsAPI.getThroughputTrend(buildApiParams(), { signal })
     if (fetchSeq !== dashboardFetchSeq) return
     throughputTrend.value = data
   } catch (err: any) {
@@ -447,15 +526,7 @@ async function refreshLatencyHistogramWithCancel(fetchSeq: number, signal: Abort
   if (!opsEnabled.value) return
   loadingLatency.value = true
   try {
-    const data = await opsAPI.getLatencyHistogram(
-      {
-        time_range: timeRange.value,
-        platform: platform.value || undefined,
-        group_id: groupId.value ?? undefined,
-        mode: queryMode.value
-      },
-      { signal }
-    )
+    const data = await opsAPI.getLatencyHistogram(buildApiParams(), { signal })
     if (fetchSeq !== dashboardFetchSeq) return
     latencyHistogram.value = data
   } catch (err: any) {
@@ -473,15 +544,7 @@ async function refreshErrorTrendWithCancel(fetchSeq: number, signal: AbortSignal
   if (!opsEnabled.value) return
   loadingErrorTrend.value = true
   try {
-    const data = await opsAPI.getErrorTrend(
-      {
-        time_range: timeRange.value,
-        platform: platform.value || undefined,
-        group_id: groupId.value ?? undefined,
-        mode: queryMode.value
-      },
-      { signal }
-    )
+    const data = await opsAPI.getErrorTrend(buildApiParams(), { signal })
     if (fetchSeq !== dashboardFetchSeq) return
     errorTrend.value = data
   } catch (err: any) {
@@ -499,15 +562,7 @@ async function refreshErrorDistributionWithCancel(fetchSeq: number, signal: Abor
   if (!opsEnabled.value) return
   loadingErrorDistribution.value = true
   try {
-    const data = await opsAPI.getErrorDistribution(
-      {
-        time_range: timeRange.value,
-        platform: platform.value || undefined,
-        group_id: groupId.value ?? undefined,
-        mode: queryMode.value
-      },
-      { signal }
-    )
+    const data = await opsAPI.getErrorDistribution(buildApiParams(), { signal })
     if (fetchSeq !== dashboardFetchSeq) return
     errorDistribution.value = data
   } catch (err: any) {
@@ -550,7 +605,12 @@ async function fetchData() {
       refreshErrorDistributionWithCancel(fetchSeq, dashboardFetchController.signal)
     ])
     if (fetchSeq !== dashboardFetchSeq) return
+
     lastUpdated.value = new Date()
+
+    // Trigger child component refreshes using the same cadence as the header.
+    dashboardRefreshToken.value += 1
+
     // Reset auto refresh countdown after successful fetch
     if (autoRefreshEnabled.value) {
       autoRefreshCountdown.value = Math.floor(autoRefreshIntervalMs.value / 1000)
@@ -603,6 +663,9 @@ watch(
 )
 
 onMounted(async () => {
+  // Fullscreen mode: listen for ESC key
+  window.addEventListener('keydown', handleKeydown)
+
   await adminSettingsStore.fetch()
   if (!adminSettingsStore.opsMonitoringEnabled) {
     await router.replace('/admin/settings')
@@ -621,15 +684,14 @@ onMounted(async () => {
 
   // Start auto refresh if enabled
   if (autoRefreshEnabled.value) {
-    resumeAutoRefresh()
     resumeCountdown()
   }
 })
 
 async function loadThresholds() {
   try {
-    const settings = await opsAPI.getAlertRuntimeSettings()
-    metricThresholds.value = settings.thresholds || null
+    const thresholds = await opsAPI.getMetricThresholds()
+    metricThresholds.value = thresholds || null
   } catch (err) {
     console.warn('[OpsDashboard] Failed to load thresholds', err)
     metricThresholds.value = null
@@ -637,8 +699,8 @@ async function loadThresholds() {
 }
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
   abortDashboardFetch()
-  pauseAutoRefresh()
   pauseCountdown()
 })
 
@@ -646,10 +708,8 @@ onUnmounted(() => {
 watch(autoRefreshEnabled, (enabled) => {
   if (enabled) {
     autoRefreshCountdown.value = Math.floor(autoRefreshIntervalMs.value / 1000)
-    resumeAutoRefresh()
     resumeCountdown()
   } else {
-    pauseAutoRefresh()
     pauseCountdown()
     autoRefreshCountdown.value = 0
   }

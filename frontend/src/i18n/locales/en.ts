@@ -129,6 +129,8 @@ export default {
     all: 'All',
     none: 'None',
     noData: 'No data',
+    expand: 'Expand',
+    collapse: 'Collapse',
     success: 'Success',
     error: 'Error',
     critical: 'Critical',
@@ -150,16 +152,18 @@ export default {
     invalidEmail: 'Please enter a valid email address',
     optional: 'optional',
     selectOption: 'Select an option',
-    searchPlaceholder: 'Search...', 
-        noOptionsFound: 'No options found',
-        noGroupsAvailable: 'No groups available',
-        unknownError: 'Unknown error occurred',
-        saving: 'Saving...', 
-        selectedCount: '({count} selected)',    refresh: 'Refresh',
+    searchPlaceholder: 'Search...',
+    noOptionsFound: 'No options found',
+    noGroupsAvailable: 'No groups available',
+    unknownError: 'Unknown error occurred',
+    saving: 'Saving...',
+    selectedCount: '({count} selected)',
+    refresh: 'Refresh',
     settings: 'Settings',
     notAvailable: 'N/A',
     now: 'Now',
     unknown: 'Unknown',
+    minutes: 'min',
     time: {
       never: 'Never',
       justNow: 'Just now',
@@ -192,7 +196,8 @@ export default {
     expand: 'Expand',
     logout: 'Logout',
     github: 'GitHub',
-    mySubscriptions: 'My Subscriptions'
+    mySubscriptions: 'My Subscriptions',
+    docs: 'Docs'
   },
 
   // Auth
@@ -390,7 +395,7 @@ export default {
       opencode: {
         title: 'OpenCode Example',
         subtitle: 'opencode.json',
-        hint: 'Config path: ~/.config/opencode/opencode.json (create if not exists). This is an example, adjust model and options as needed.',
+        hint: 'Config path: ~/.config/opencode/opencode.json (or opencode.jsonc), create if not exists. Use default providers (openai/anthropic/google) or custom provider_id. API Key can be configured directly or via /connect command. This is an example, adjust models and options as needed.',
       },
     },
     customKeyLabel: 'Custom Key',
@@ -429,6 +434,9 @@ export default {
     totalCost: 'Total Cost',
     standardCost: 'Standard',
     actualCost: 'Actual',
+    userBilled: 'User billed',
+    accountBilled: 'Account billed',
+    accountMultiplier: 'Account rate',
     avgDuration: 'Avg Duration',
     inSelectedRange: 'in selected range',
     perRequest: 'per request',
@@ -565,7 +573,10 @@ export default {
     previous: 'Previous',
     next: 'Next',
     perPage: 'Per page',
-    goToPage: 'Go to page {page}'
+    goToPage: 'Go to page {page}',
+    jumpTo: 'Jump to',
+    jumpPlaceholder: 'Page',
+    jumpAction: 'Go'
   },
 
   // Errors
@@ -666,6 +677,7 @@ export default {
       updating: 'Updating...',
       columns: {
         user: 'User',
+        email: 'Email',
         username: 'Username',
         notes: 'Notes',
         role: 'Role',
@@ -724,6 +736,7 @@ export default {
       withdraw: 'Withdraw',
       depositAmount: 'Deposit Amount',
       withdrawAmount: 'Withdraw Amount',
+      withdrawAll: 'All',
       currentBalance: 'Current Balance',
       depositNotesPlaceholder:
         'e.g., New user registration bonus, promotional credit, compensation, etc.',
@@ -909,6 +922,26 @@ export default {
         fallbackGroup: 'Fallback Group',
         fallbackHint: 'Non-Claude Code requests will use this group. Leave empty to reject directly.',
         noFallback: 'No Fallback (Reject)'
+      },
+      modelRouting: {
+        title: 'Model Routing',
+        tooltip: 'Configure specific model requests to be routed to designated accounts. Supports wildcard matching, e.g., claude-opus-* matches all opus models.',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        disabledHint: 'Routing rules will only take effect when enabled',
+        addRule: 'Add Routing Rule',
+        modelPattern: 'Model Pattern',
+        modelPatternPlaceholder: 'claude-opus-*',
+        modelPatternHint: 'Supports * wildcard, e.g., claude-opus-* matches all opus models',
+        accounts: 'Priority Accounts',
+        selectAccounts: 'Select accounts',
+        noAccounts: 'No accounts in this group',
+        loadingAccounts: 'Loading accounts...',
+        removeRule: 'Remove Rule',
+        noRules: 'No routing rules',
+        noRulesHint: 'Add routing rules to route specific model requests to designated accounts',
+        searchAccountPlaceholder: 'Search accounts...',
+        accountsHint: 'Select accounts to prioritize for this model pattern'
       }
     },
 
@@ -917,7 +950,7 @@ export default {
       title: 'Subscription Management',
       description: 'Manage user subscriptions and quota limits',
       assignSubscription: 'Assign Subscription',
-      extendSubscription: 'Extend Subscription',
+      adjustSubscription: 'Adjust Subscription',
       revokeSubscription: 'Revoke Subscription',
       allStatus: 'All Status',
       allGroups: 'All Groups',
@@ -932,6 +965,7 @@ export default {
       resetInHoursMinutes: 'Resets in {hours}h {minutes}m',
       resetInDaysHours: 'Resets in {days}d {hours}h',
       daysRemaining: 'days remaining',
+      remainingDays: 'Remaining days',
       noExpiration: 'No expiration',
       status: {
         active: 'Active',
@@ -950,28 +984,32 @@ export default {
         user: 'User',
         group: 'Subscription Group',
         validityDays: 'Validity (Days)',
-        extendDays: 'Extend by (Days)'
+        adjustDays: 'Adjust by (Days)'
       },
       selectUser: 'Select a user',
       selectGroup: 'Select a subscription group',
       groupHint: 'Only groups with subscription billing type are shown',
       validityHint: 'Number of days the subscription will be valid',
-      extendingFor: 'Extending subscription for',
+      adjustingFor: 'Adjusting subscription for',
       currentExpiration: 'Current expiration',
+      adjustDaysPlaceholder: 'Positive to extend, negative to shorten',
+      adjustHint: 'Enter positive number to extend, negative to shorten (remaining days must be > 0)',
       assign: 'Assign',
       assigning: 'Assigning...',
-      extend: 'Extend',
-      extending: 'Extending...',
+      adjust: 'Adjust',
+      adjusting: 'Adjusting...',
       revoke: 'Revoke',
       noSubscriptionsYet: 'No subscriptions yet',
       assignFirstSubscription: 'Assign a subscription to get started.',
       subscriptionAssigned: 'Subscription assigned successfully',
-      subscriptionExtended: 'Subscription extended successfully',
+      subscriptionAdjusted: 'Subscription adjusted successfully',
       subscriptionRevoked: 'Subscription revoked successfully',
       failedToLoad: 'Failed to load subscriptions',
       failedToAssign: 'Failed to assign subscription',
-      failedToExtend: 'Failed to extend subscription',
+      failedToAdjust: 'Failed to adjust subscription',
       failedToRevoke: 'Failed to revoke subscription',
+      adjustWouldExpire: 'Remaining days after adjustment must be greater than 0',
+      adjustOutOfRange: 'Adjustment days must be between -36500 and 36500',
       pleaseSelectUser: 'Please select a user',
       pleaseSelectGroup: 'Please select a group',
       validityDaysRequired: 'Please enter a valid number of days (at least 1)',
@@ -984,6 +1022,13 @@ export default {
       title: 'Account Management',
       description: 'Manage AI platform accounts and credentials',
       createAccount: 'Create Account',
+      autoRefresh: 'Auto Refresh',
+      enableAutoRefresh: 'Enable auto refresh',
+      refreshInterval5s: '5 seconds',
+      refreshInterval10s: '10 seconds',
+      refreshInterval15s: '15 seconds',
+      refreshInterval30s: '30 seconds',
+      autoRefreshCountdown: 'Auto refresh: {seconds}s',
       syncFromCrs: 'Sync from CRS',
       syncFromCrsTitle: 'Sync Accounts from CRS',
       syncFromCrsDesc:
@@ -1055,18 +1100,32 @@ export default {
         platformType: 'Platform/Type',
         platform: 'Platform',
         type: 'Type',
-        concurrencyStatus: 'Concurrency',
+        capacity: 'Capacity',
         notes: 'Notes',
         priority: 'Priority',
+        billingRateMultiplier: 'Billing Rate',
         weight: 'Weight',
         status: 'Status',
         schedulable: 'Schedulable',
         todayStats: 'Today Stats',
         groups: 'Groups',
         usageWindows: 'Usage Windows',
+        proxy: 'Proxy',
         lastUsed: 'Last Used',
         expiresAt: 'Expires At',
         actions: 'Actions'
+      },
+      // Capacity status tooltips
+      capacity: {
+        windowCost: {
+          blocked: '5h window cost exceeded, account scheduling paused',
+          stickyOnly: '5h window cost at threshold, only sticky sessions allowed',
+          normal: '5h window cost normal'
+        },
+        sessions: {
+          full: 'Active sessions full, new sessions must wait (idle timeout: {idle} min)',
+          normal: 'Active sessions normal (idle timeout: {idle} min)'
+        }
       },
       tempUnschedulable: {
         title: 'Temp Unschedulable',
@@ -1219,12 +1278,47 @@ export default {
         'When enabled, warmup requests like title generation will return mock responses without consuming upstream tokens',
       autoPauseOnExpired: 'Auto Pause On Expired',
       autoPauseOnExpiredDesc: 'When enabled, the account will auto pause scheduling after it expires',
+      // Quota control (Anthropic OAuth/SetupToken only)
+      quotaControl: {
+        title: 'Quota Control',
+        hint: 'Only applies to Anthropic OAuth/Setup Token accounts',
+        windowCost: {
+          label: '5h Window Cost Limit',
+          hint: 'Limit account cost usage within the 5-hour window',
+          limit: 'Cost Threshold',
+          limitPlaceholder: '50',
+          limitHint: 'Account will not participate in new scheduling after reaching threshold',
+          stickyReserve: 'Sticky Reserve',
+          stickyReservePlaceholder: '10',
+          stickyReserveHint: 'Additional reserve for sticky sessions'
+        },
+        sessionLimit: {
+          label: 'Session Count Limit',
+          hint: 'Limit the number of active concurrent sessions',
+          maxSessions: 'Max Sessions',
+          maxSessionsPlaceholder: '3',
+          maxSessionsHint: 'Maximum number of active concurrent sessions',
+          idleTimeout: 'Idle Timeout',
+          idleTimeoutPlaceholder: '5',
+          idleTimeoutHint: 'Sessions will be released after idle timeout'
+        },
+        tlsFingerprint: {
+          label: 'TLS Fingerprint Simulation',
+          hint: 'Simulate Node.js/Claude Code client TLS fingerprint'
+        },
+        sessionIdMasking: {
+          label: 'Session ID Masking',
+          hint: 'When enabled, fixes the session ID in metadata.user_id for 15 minutes, making upstream think requests come from the same session'
+        }
+      },
       expired: 'Expired',
       proxy: 'Proxy',
       noProxy: 'No Proxy',
       concurrency: 'Concurrency',
       priority: 'Priority',
       priorityHint: 'Lower value accounts are used first',
+      billingRateMultiplier: 'Billing Rate Multiplier',
+      billingRateMultiplierHint: '>=0, 0 means free. Affects account billing only',
       expiresAt: 'Expires At',
       expiresAtHint: 'Leave empty for no expiration',
       higherPriorityFirst: 'Lower value means higher priority',
@@ -1624,13 +1718,32 @@ export default {
         name: 'Name',
         protocol: 'Protocol',
         address: 'Address',
+        location: 'Location',
         status: 'Status',
         accounts: 'Accounts',
+        latency: 'Latency',
         actions: 'Actions'
       },
       testConnection: 'Test Connection',
       batchTest: 'Test All Proxies',
       testFailed: 'Failed',
+      latencyFailed: 'Connection failed',
+      batchTestEmpty: 'No proxies available for testing',
+      batchTestDone: 'Batch test completed for {count} proxies',
+      batchTestFailed: 'Batch test failed',
+      batchDeleteAction: 'Delete',
+      batchDelete: 'Batch delete',
+      batchDeleteConfirm: 'Delete {count} selected proxies? In-use ones will be skipped.',
+      batchDeleteDone: 'Deleted {deleted} proxies, skipped {skipped}',
+      batchDeleteSkipped: 'Skipped {skipped} proxies',
+      batchDeleteFailed: 'Batch delete failed',
+      deleteBlockedInUse: 'This proxy is in use and cannot be deleted',
+      accountsTitle: 'Accounts using this IP',
+      accountsEmpty: 'No accounts are using this proxy',
+      accountsFailed: 'Failed to load accounts list',
+      accountName: 'Account',
+      accountPlatform: 'Platform',
+      accountNotes: 'Notes',
       name: 'Name',
       protocol: 'Protocol',
       host: 'Host',
@@ -1844,7 +1957,43 @@ export default {
       cacheCreationTokens: 'Cache Creation Tokens',
       cacheReadTokens: 'Cache Read Tokens',
       failedToLoad: 'Failed to load usage records',
-      ipAddress: 'IP'
+      billingType: 'Billing Type',
+      allBillingTypes: 'All Billing Types',
+      billingTypeBalance: 'Balance',
+      billingTypeSubscription: 'Subscription',
+      ipAddress: 'IP',
+      cleanup: {
+        button: 'Cleanup',
+        title: 'Cleanup Usage Records',
+        warning: 'Cleanup is irreversible and will affect historical stats.',
+        submit: 'Submit Cleanup',
+        submitting: 'Submitting...',
+        confirmTitle: 'Confirm Cleanup',
+        confirmMessage: 'Are you sure you want to submit this cleanup task? This action cannot be undone.',
+        confirmSubmit: 'Confirm Cleanup',
+        cancel: 'Cancel',
+        cancelConfirmTitle: 'Confirm Cancel',
+        cancelConfirmMessage: 'Are you sure you want to cancel this cleanup task?',
+        cancelConfirm: 'Confirm Cancel',
+        cancelSuccess: 'Cleanup task canceled',
+        cancelFailed: 'Failed to cancel cleanup task',
+        recentTasks: 'Recent Cleanup Tasks',
+        loadingTasks: 'Loading tasks...',
+        noTasks: 'No cleanup tasks yet',
+        range: 'Range',
+        deletedRows: 'Deleted',
+        missingRange: 'Please select a date range',
+        submitSuccess: 'Cleanup task created',
+        submitFailed: 'Failed to create cleanup task',
+        loadFailed: 'Failed to load cleanup tasks',
+        status: {
+          pending: 'Pending',
+          running: 'Running',
+          succeeded: 'Succeeded',
+          failed: 'Failed',
+          canceled: 'Canceled'
+        }
+      }
     },
 
     // Ops Monitoring
@@ -1857,10 +2006,8 @@ export default {
       noSystemMetrics: 'No system metrics collected yet.',
       collectedAt: 'Collected at:',
       window: 'window',
-      cpu: 'CPU',
       memory: 'Memory',
       db: 'DB',
-      redis: 'Redis',
       goroutines: 'Goroutines',
       jobs: 'Jobs',
       jobsHelp: 'Click “Details” to view job heartbeats and recent errors',
@@ -1886,7 +2033,7 @@ export default {
       totalRequests: 'Total Requests',
       avgQps: 'Avg QPS',
       avgTps: 'Avg TPS',
-      avgLatency: 'Avg Latency',
+      avgLatency: 'Avg Request Duration',
       avgTtft: 'Avg TTFT',
       exceptions: 'Exceptions',
       requestErrors: 'Request Errors',
@@ -1898,7 +2045,7 @@ export default {
       errors: 'Errors',
       errorRate: 'error_rate:',
       upstreamRate: 'upstream_rate:',
-      latencyDuration: 'Latency (duration_ms)',
+      latencyDuration: 'Request Duration',
       ttftLabel: 'TTFT (first_token_ms)',
       p50: 'p50:',
       p90: 'p90:',
@@ -1906,7 +2053,6 @@ export default {
       p99: 'p99:',
       avg: 'avg:',
       max: 'max:',
-      qps: 'QPS',
       requests: 'Requests',
       requestsTitle: 'Requests',
       upstream: 'Upstream',
@@ -1918,7 +2064,7 @@ export default {
       failedToLoadData: 'Failed to load ops data.',
       failedToLoadOverview: 'Failed to load overview',
       failedToLoadThroughputTrend: 'Failed to load throughput trend',
-      failedToLoadLatencyHistogram: 'Failed to load latency histogram',
+      failedToLoadLatencyHistogram: 'Failed to load request duration histogram',
       failedToLoadErrorTrend: 'Failed to load error trend',
       failedToLoadErrorDistribution: 'Failed to load error distribution',
       failedToLoadErrorDetail: 'Failed to load error detail',
@@ -1926,7 +2072,7 @@ export default {
       tpsK: 'TPS (K)',
       top: 'Top:',
       throughputTrend: 'Throughput Trend',
-      latencyHistogram: 'Latency Histogram',
+      latencyHistogram: 'Request Duration Histogram',
       errorTrend: 'Error Trend',
       errorDistribution: 'Error Distribution',
       // Health Score & Diagnosis
@@ -1941,7 +2087,12 @@ export default {
         '30m': 'Last 30 minutes',
         '1h': 'Last 1 hour',
         '6h': 'Last 6 hours',
-        '24h': 'Last 24 hours'
+        '24h': 'Last 24 hours',
+        '7d': 'Last 7 days',
+        '30d': 'Last 30 days'
+      },
+      fullscreen: {
+        enter: 'Enter Fullscreen'
       },
       diagnosis: {
         title: 'Smart Diagnosis',
@@ -1967,14 +2118,7 @@ export default {
         memoryHigh: 'Memory usage elevated ({usage}%)',
         memoryHighImpact: 'Memory pressure is high, needs attention',
         memoryHighAction: 'Monitor memory trends, check for memory leaks',
-        // Latency diagnostics
-        latencyCritical: 'Response latency critically high ({latency}ms)',
-        latencyCriticalImpact: 'User experience extremely poor, many requests timing out',
-        latencyCriticalAction: 'Check slow queries, database indexes, network latency, and upstream services',
-        latencyHigh: 'Response latency elevated ({latency}ms)',
-        latencyHighImpact: 'User experience degraded, needs optimization',
-        latencyHighAction: 'Analyze slow request logs, optimize database queries and business logic',
-        ttftHigh: 'Time to first byte elevated ({ttft}ms)',
+        ttftHigh: 'Time to first token elevated ({ttft}ms)',
         ttftHighImpact: 'User perceived latency increased',
         ttftHighAction: 'Optimize request processing flow, reduce pre-processing time',
         // Error rate diagnostics
@@ -2010,27 +2154,106 @@ export default {
       // Error Log
       errorLog: {
         timeId: 'Time / ID',
+        commonErrors: {
+          contextDeadlineExceeded: 'context deadline exceeded',
+          connectionRefused: 'connection refused',
+          rateLimit: 'rate limit'
+        },
+        time: 'Time',
+        type: 'Type',
         context: 'Context',
+        platform: 'Platform',
+        model: 'Model',
+        group: 'Group',
+        user: 'User',
+        userId: 'User ID',
+        account: 'Account',
+        accountId: 'Account ID',
         status: 'Status',
         message: 'Message',
-        latency: 'Latency',
+        latency: 'Request Duration',
         action: 'Action',
         noErrors: 'No errors in this window.',
         grp: 'GRP:',
         acc: 'ACC:',
         details: 'Details',
-        phase: 'Phase'
+        phase: 'Phase',
+        id: 'ID:',
+        typeUpstream: 'Upstream',
+        typeRequest: 'Request',
+        typeAuth: 'Auth',
+        typeRouting: 'Routing',
+        typeInternal: 'Internal'
       },
       // Error Details Modal
       errorDetails: {
         upstreamErrors: 'Upstream Errors',
         requestErrors: 'Request Errors',
+        unresolved: 'Unresolved',
+        resolved: 'Resolved',
+        viewErrors: 'Errors',
+        viewExcluded: 'Excluded',
+        statusCodeOther: 'Other',
+        owner: {
+          provider: 'Provider',
+          client: 'Client',
+          platform: 'Platform'
+        },
+        phase: {
+          request: 'Request',
+          auth: 'Auth',
+          routing: 'Routing',
+          upstream: 'Upstream',
+          network: 'Network',
+          internal: 'Internal'
+        },
         total: 'Total:',
         searchPlaceholder: 'Search request_id / client_request_id / message',
-        accountIdPlaceholder: 'account_id'
       },
       // Error Detail Modal
       errorDetail: {
+        title: 'Error Detail',
+        titleWithId: 'Error #{id}',
+        noErrorSelected: 'No error selected.',
+        resolution: 'Resolved:',
+        pinnedToOriginalAccountId: 'Pinned to original account_id',
+        missingUpstreamRequestBody: 'Missing upstream request body',
+        failedToLoadRetryHistory: 'Failed to load retry history',
+        failedToUpdateResolvedStatus: 'Failed to update resolved status',
+        unsupportedRetryMode: 'Unsupported retry mode',
+        classificationKeys: {
+          phase: 'Phase',
+          owner: 'Owner',
+          source: 'Source',
+          retryable: 'Retryable',
+          resolvedAt: 'Resolved At',
+          resolvedBy: 'Resolved By',
+          resolvedRetryId: 'Resolved Retry',
+          retryCount: 'Retry Count'
+        },
+        source: {
+          upstream_http: 'Upstream HTTP'
+        },
+        upstreamKeys: {
+          status: 'Status',
+          message: 'Message',
+          detail: 'Detail',
+          upstreamErrors: 'Upstream Errors'
+        },
+        upstreamEvent: {
+          account: 'Account',
+          status: 'Status',
+          requestId: 'Request ID'
+        },
+        responsePreview: {
+          expand: 'Response (click to expand)',
+          collapse: 'Response (click to collapse)'
+        },
+        retryMeta: {
+          used: 'Used',
+          success: 'Success',
+          pinned: 'Pinned'
+        },
         loading: 'Loading…',
         requestId: 'Request ID',
         time: 'Time',
@@ -2040,8 +2263,10 @@ export default {
         basicInfo: 'Basic Info',
         platform: 'Platform',
         model: 'Model',
-        latency: 'Latency',
-        ttft: 'TTFT',
+        group: 'Group',
+        user: 'User',
+        account: 'Account',
+        latency: 'Request Duration',
         businessLimited: 'Business Limited',
         requestPath: 'Request Path',
         timings: 'Timings',
@@ -2049,6 +2274,8 @@ export default {
         routing: 'Routing',
         upstream: 'Upstream',
         response: 'Response',
+        classification: 'Classification',
+        notRetryable: 'Not recommended to retry',
         retry: 'Retry',
         retryClient: 'Retry (Client)',
         retryUpstream: 'Retry (Upstream pinned)',
@@ -2060,7 +2287,6 @@ export default {
         confirmRetry: 'Confirm Retry',
         retrySuccess: 'Retry succeeded',
         retryFailed: 'Retry failed',
-        na: 'N/A',
         retryHint: 'Retry will resend the request with the same parameters',
         retryClientHint: 'Use client retry (no account pinning)',
         retryUpstreamHint: 'Use upstream pinned retry (pin to the error account)',
@@ -2068,8 +2294,33 @@ export default {
         retryNote1: 'Retry will use the same request body and parameters',
         retryNote2: 'If the original request failed due to account issues, pinned retry may still fail',
         retryNote3: 'Client retry will reselect an account',
+        retryNote4: 'You can force retry for non-retryable errors, but it is not recommended',
         confirmRetryMessage: 'Confirm retry this request?',
-        confirmRetryHint: 'Will resend with the same request parameters'
+        confirmRetryHint: 'Will resend with the same request parameters',
+        forceRetry: 'I understand and want to force retry',
+        forceRetryHint: 'This error usually cannot be fixed by retry; check to proceed',
+        forceRetryNeedAck: 'Please check to force retry',
+        markResolved: 'Mark resolved',
+        markUnresolved: 'Mark unresolved',
+        viewRetries: 'Retry history',
+        retryHistory: 'Retry History',
+        tabOverview: 'Overview',
+        tabRetries: 'Retries',
+        tabRequest: 'Request',
+        tabResponse: 'Response',
+        responseBody: 'Response',
+        compareA: 'Compare A',
+        compareB: 'Compare B',
+        retrySummary: 'Retry Summary',
+        responseHintSucceeded: 'Showing succeeded retry response_preview (#{id})',
+        responseHintFallback: 'No succeeded retry found; showing stored error_body',
+        suggestion: 'Suggestion',
+        suggestUpstreamResolved: '✓ Upstream error resolved by retry; no action needed',
+        suggestUpstream: 'Upstream instability: check account status, consider switching accounts, or retry',
+        suggestRequest: 'Client request error: ask customer to fix request parameters',
+        suggestAuth: 'Auth failed: verify API key/credentials',
+        suggestPlatform: 'Platform error: prioritize investigation and fix',
+        suggestGeneric: 'See details for more context'
       },
       requestDetails: {
         title: 'Request Details',
@@ -2105,13 +2356,46 @@ export default {
         loading: 'Loading...',
         empty: 'No alert events',
         loadFailed: 'Failed to load alert events',
+        status: {
+          firing: 'FIRING',
+          resolved: 'RESOLVED',
+          manualResolved: 'MANUAL RESOLVED'
+        },
+        detail: {
+          title: 'Alert Detail',
+          loading: 'Loading detail...',
+          empty: 'No detail',
+          loadFailed: 'Failed to load alert detail',
+          manualResolve: 'Mark as Resolved',
+          manualResolvedSuccess: 'Marked as manually resolved',
+          manualResolvedFailed: 'Failed to mark as manually resolved',
+          silence: 'Ignore Alert',
+          silenceSuccess: 'Alert silenced',
+          silenceFailed: 'Failed to silence alert',
+          viewRule: 'View Rule',
+          viewLogs: 'View Logs',
+          firedAt: 'Fired At',
+          resolvedAt: 'Resolved At',
+          ruleId: 'Rule ID',
+          dimensions: 'Dimensions',
+          historyTitle: 'History',
+          historyHint: 'Recent events with same rule + dimensions',
+          historyLoading: 'Loading history...',
+          historyEmpty: 'No history'
+        },
         table: {
           time: 'Time',
           status: 'Status',
           severity: 'Severity',
+          platform: 'Platform',
+          ruleId: 'Rule ID',
           title: 'Title',
+          duration: 'Duration',
           metric: 'Metric / Threshold',
-          email: 'Email Sent'
+          dimensions: 'Dimensions',
+          email: 'Email Sent',
+          emailSent: 'Sent',
+          emailIgnored: 'Ignored'
         }
       },
       alertRules: {
@@ -2225,7 +2509,6 @@ export default {
           title: 'Alert Silencing (Maintenance Mode)',
           enabled: 'Enable silencing',
           globalUntil: 'Silence until (RFC3339)',
-          untilPlaceholder: '2026-01-05T00:00:00Z',
           untilHint: 'Leave empty to only toggle silencing without an expiry (not recommended).',
           reason: 'Reason',
           reasonPlaceholder: 'e.g., planned maintenance',
@@ -2265,7 +2548,11 @@ export default {
           lockKeyRequired: 'Distributed lock key is required when lock is enabled',
           lockKeyPrefix: 'Distributed lock key must start with "{prefix}"',
           lockKeyHint: 'Recommended: start with "{prefix}" to avoid conflicts',
-          lockTtlRange: 'Distributed lock TTL must be between 1 and 86400 seconds'
+          lockTtlRange: 'Distributed lock TTL must be between 1 and 86400 seconds',
+          slaMinPercentRange: 'SLA minimum percentage must be between 0 and 100',
+          ttftP99MaxRange: 'TTFT P99 maximum must be a number ≥ 0',
+          requestErrorRateMaxRange: 'Request error rate maximum must be between 0 and 100',
+          upstreamErrorRateMaxRange: 'Upstream error rate maximum must be between 0 and 100'
         }
       },
       email: {
@@ -2330,8 +2617,6 @@ export default {
         metricThresholdsHint: 'Configure alert thresholds for metrics, values exceeding thresholds will be displayed in red',
         slaMinPercent: 'SLA Minimum Percentage',
         slaMinPercentHint: 'SLA below this value will be displayed in red (default: 99.5%)',
-        latencyP99MaxMs: 'Latency P99 Maximum (ms)',
-        latencyP99MaxMsHint: 'Latency P99 above this value will be displayed in red (default: 2000ms)',
         ttftP99MaxMs: 'TTFT P99 Maximum (ms)',
         ttftP99MaxMsHint: 'TTFT P99 above this value will be displayed in red (default: 500ms)',
         requestErrorRateMaxPercent: 'Request Error Rate Maximum (%)',
@@ -2350,9 +2635,28 @@ export default {
         aggregation: 'Pre-aggregation Tasks',
         enableAggregation: 'Enable Pre-aggregation',
         aggregationHint: 'Pre-aggregation improves query performance for long time windows',
+        errorFiltering: 'Error Filtering',
+        ignoreCountTokensErrors: 'Ignore count_tokens errors',
+        ignoreCountTokensErrorsHint: 'When enabled, errors from count_tokens requests will not be written to the error log.',
+        ignoreContextCanceled: 'Ignore client disconnect errors',
+        ignoreContextCanceledHint: 'When enabled, client disconnect (context canceled) errors will not be written to the error log.',
+        ignoreNoAvailableAccounts: 'Ignore no available accounts errors',
+        ignoreNoAvailableAccountsHint: 'When enabled, "No available accounts" errors will not be written to the error log (not recommended; usually a config issue).',
+        autoRefresh: 'Auto Refresh',
+        enableAutoRefresh: 'Enable auto refresh',
+        enableAutoRefreshHint: 'Automatically refresh dashboard data at a fixed interval.',
+        refreshInterval: 'Refresh Interval',
+        refreshInterval15s: '15 seconds',
+        refreshInterval30s: '30 seconds',
+        refreshInterval60s: '60 seconds',
+        autoRefreshCountdown: 'Auto refresh: {seconds}s',
         validation: {
           title: 'Please fix the following issues',
-          retentionDaysRange: 'Retention days must be between 1-365 days'
+          retentionDaysRange: 'Retention days must be between 1-365 days',
+          slaMinPercentRange: 'SLA minimum percentage must be between 0 and 100',
+          ttftP99MaxRange: 'TTFT P99 maximum must be a number ≥ 0',
+          requestErrorRateMaxRange: 'Request error rate maximum must be between 0 and 100',
+          upstreamErrorRateMaxRange: 'Upstream error rate maximum must be between 0 and 100'
         }
       },
       concurrency: {
@@ -2390,7 +2694,7 @@ export default {
       tooltips: {
         totalRequests: 'Total number of requests (including both successful and failed requests) in the selected time window.',
         throughputTrend: 'Requests/QPS + Tokens/TPS in the selected window.',
-        latencyHistogram: 'Latency distribution (duration_ms) for successful requests.',
+        latencyHistogram: 'Request duration distribution (ms) for successful requests.',
         errorTrend: 'Error counts over time (SLA scope excludes business limits; upstream excludes 429/529).',
         errorDistribution: 'Error distribution by status code.',
         goroutines:
@@ -2405,8 +2709,8 @@ export default {
         sla: 'Service Level Agreement success rate, excluding business limits (e.g., insufficient balance, quota exceeded).',
         errors: 'Error statistics, including total errors, error rate, and upstream error rate.',
         upstreamErrors: 'Upstream error statistics, excluding rate limit errors (429/529).',
-        latency: 'Request latency statistics, including p50, p90, p95, p99 percentiles.',
-        ttft: 'Time To First Token, measuring the speed of first byte return in streaming responses.',
+        latency: 'Request duration statistics, including p50, p90, p95, p99 percentiles.',
+        ttft: 'Time To First Token, measuring the speed of first token return in streaming responses.',
         health: 'System health score (0-100), considering SLA, error rate, and resource usage.'
       },
       charts: {
@@ -2429,7 +2733,9 @@ export default {
         enableRegistration: 'Enable Registration',
         enableRegistrationHint: 'Allow new users to register',
         emailVerification: 'Email Verification',
-        emailVerificationHint: 'Require email verification for new registrations'
+        emailVerificationHint: 'Require email verification for new registrations',
+        promoCode: 'Promo Code',
+        promoCodeHint: 'Allow users to use promo codes during registration'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',
@@ -2499,7 +2805,9 @@ export default {
         homeContent: 'Home Page Content',
         homeContentPlaceholder: 'Enter custom content for the home page. Supports Markdown & HTML. If a URL is entered, it will be displayed as an iframe.',
         homeContentHint: 'Customize the home page content. Supports Markdown/HTML. If you enter a URL (starting with http:// or https://), it will be used as an iframe src to embed an external page. When set, the default status information will no longer be displayed.',
-        homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.'
+        homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
+        hideCcsImportButton: 'Hide CCS Import Button',
+        hideCcsImportButtonHint: 'When enabled, the "Import to CCS" button will be hidden on the API Keys page'
       },
       smtp: {
         title: 'SMTP Settings',

@@ -376,6 +376,10 @@ const currentFiles = computed((): FileConfig[] => {
     const trimmed = `${baseRoot}/antigravity`.replace(/\/+$/, '')
     return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
   })()
+  const geminiBase = (() => {
+    const trimmed = baseRoot.replace(/\/+$/, '')
+    return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
+  })()
 
   if (activeClientTab.value === 'opencode') {
     switch (props.platform) {
@@ -384,7 +388,7 @@ const currentFiles = computed((): FileConfig[] => {
       case 'openai':
         return [generateOpenCodeConfig('openai', apiBase, apiKey)]
       case 'gemini':
-        return [generateOpenCodeConfig('gemini', apiBase, apiKey)]
+        return [generateOpenCodeConfig('gemini', geminiBase, apiKey)]
       case 'antigravity':
         return [
           generateOpenCodeConfig('antigravity-claude', antigravityBase, apiKey, 'opencode.json (Claude)'),
@@ -439,7 +443,7 @@ $env:ANTHROPIC_AUTH_TOKEN="${apiKey}"`
 }
 
 function generateGeminiCliContent(baseUrl: string, apiKey: string): FileConfig {
-  const model = 'gemini-2.5-pro'
+  const model = 'gemini-2.0-flash'
   const modelComment = t('keys.useKeyModal.gemini.modelComment')
   let path: string
   let content: string
@@ -525,14 +529,16 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
     [platform]: {
       options: {
         baseURL: baseUrl,
-        apiKey,
-        ...(platform === 'openai' ? { store: false } : {})
+        apiKey
       }
     }
   }
   const openaiModels = {
     'gpt-5.2-codex': {
       name: 'GPT-5.2 Codex',
+      options: {
+        store: false
+      },
       variants: {
         low: {},
         medium: {},
@@ -542,14 +548,22 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
     }
   }
   const geminiModels = {
-    'gemini-3-pro-high': { name: 'Gemini 3 Pro High' },
-    'gemini-3-pro-low': { name: 'Gemini 3 Pro Low' },
-    'gemini-3-pro-preview': { name: 'Gemini 3 Pro Preview' },
-    'gemini-3-pro-image': { name: 'Gemini 3 Pro Image' },
-    'gemini-3-flash': { name: 'Gemini 3 Flash' },
-    'gemini-2.5-flash-thinking': { name: 'Gemini 2.5 Flash Thinking' },
+    'gemini-2.0-flash': { name: 'Gemini 2.0 Flash' },
     'gemini-2.5-flash': { name: 'Gemini 2.5 Flash' },
-    'gemini-2.5-flash-lite': { name: 'Gemini 2.5 Flash Lite' }
+    'gemini-2.5-pro': { name: 'Gemini 2.5 Pro' },
+    'gemini-3-flash-preview': { name: 'Gemini 3 Flash Preview' },
+    'gemini-3-pro-preview': { name: 'Gemini 3 Pro Preview' }
+  }
+
+  const antigravityGeminiModels = {
+    'gemini-2.5-flash': { name: 'Gemini 2.5 Flash' },
+    'gemini-2.5-flash-lite': { name: 'Gemini 2.5 Flash Lite' },
+    'gemini-2.5-flash-thinking': { name: 'Gemini 2.5 Flash Thinking' },
+    'gemini-3-flash': { name: 'Gemini 3 Flash' },
+    'gemini-3-pro-low': { name: 'Gemini 3 Pro Low' },
+    'gemini-3-pro-high': { name: 'Gemini 3 Pro High' },
+    'gemini-3-pro-preview': { name: 'Gemini 3 Pro Preview' },
+    'gemini-3-pro-image': { name: 'Gemini 3 Pro Image' }
   }
   const claudeModels = {
     'claude-opus-4-5-thinking': { name: 'Claude Opus 4.5 Thinking' },
@@ -569,14 +583,31 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
   } else if (platform === 'antigravity-gemini') {
     provider[platform].npm = '@ai-sdk/google'
     provider[platform].name = 'Antigravity (Gemini)'
-    provider[platform].models = geminiModels
+    provider[platform].models = antigravityGeminiModels
   } else if (platform === 'openai') {
     provider[platform].models = openaiModels
   }
 
+  const agent =
+    platform === 'openai'
+      ? {
+          build: {
+            options: {
+              store: false
+            }
+          },
+          plan: {
+            options: {
+              store: false
+            }
+          }
+        }
+      : undefined
+
   const content = JSON.stringify(
     {
       provider,
+      ...(agent ? { agent } : {}),
       $schema: 'https://opencode.ai/config.json'
     },
     null,
