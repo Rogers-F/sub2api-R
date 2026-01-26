@@ -10,6 +10,101 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    nav: {
+      home: 'Home',
+      pricing: 'Pricing'
+    },
+    hero: {
+      tagline: 'AI Coding Relay Station',
+      description: 'Unleash your creative potential and boost development efficiency. Next-generation intelligent coding experience designed for developers.',
+      cta: 'Get Started Now',
+      tags: {
+        codeGen: 'Smart Code Generation',
+        codeUnderstand: 'Deep Code Understanding',
+        docGen: 'Dynamic Doc Generation'
+      }
+    },
+    principles: {
+      label: 'Our Principles',
+      title: 'Relay Experience Designed for Daily Coding',
+      description: 'One relay line that unifies Claude Code and CodeX, leveling API quotas and network environments across platforms. Give your time back to your code, not configuration panels.',
+      features: {
+        simpleConfig: {
+          title: 'Reduce Configuration Complexity',
+          desc: 'Unified domain and key format, covering common IDE plugins and CLI tools. One-click environment setup.'
+        },
+        accurateBilling: {
+          title: 'Accurate Billing Strategy',
+          desc: 'Consistent with official pricing, truly reflecting actual model usage.'
+        },
+        transparent: {
+          title: 'Transparent Costs',
+          desc: 'Every call is traceable, easily track the true usage of models.'
+        },
+        devFocused: {
+          title: 'Only Developer-Useful Features',
+          desc: 'Focus resources on coding models and link optimization. Spend budget where it matters.'
+        }
+      }
+    },
+    metrics: {
+      latency: {
+        label: 'Avg First Token Latency'
+      },
+      cacheSave: {
+        label: 'Cache Cost Savings'
+      },
+      rate: {
+        label: 'Real Usage Rate',
+        value: 'From ¥0.15/USD'
+      },
+      note: '* Data measured in typical network environments. Performance may vary by region, ISP, and model.'
+    },
+    whyChoose: {
+      title: 'Why Developers Choose Us',
+      description: 'Not just an "API proxy", but a complete relay experience tailored for daily coding workflows.',
+      features: {
+        ideSupport: {
+          title: 'One-Click IDE / CLI Support',
+          desc: 'Native support for Claude Code and CodeX, with custom configuration tools for easy setup.'
+        },
+        stable: {
+          title: 'Stable Overseas Model Access',
+          desc: 'Enterprise-grade backend clusters connecting to overseas providers, optimized routes + multi-node failover + auto-retry.'
+        },
+        traceable: {
+          title: 'Transparent Rate Rules',
+          desc: 'No opaque point systems. All usage and adjustments are fully traceable.'
+        }
+      }
+    },
+    pricing: {
+      title: 'Transparent Model Pricing',
+      description: 'Site-wide credits are USD-equivalent, model pricing matches official API pricing. All prices are per million tokens (MTok). Cache billing makes multi-turn conversations cheaper.',
+      input: 'Input',
+      output: 'Output',
+      cachePrice: 'Cache Price',
+      cacheWrite: 'Write',
+      cacheRead: 'Read',
+      cta: 'Get Started',
+      note: '* Above are official base prices. Actual costs may vary due to rate adjustments. See dashboard for details.',
+      tags: {
+        powerful: 'Powerful',
+        bestValue: 'Best Value',
+        efficient: 'Efficient'
+      },
+      models: {
+        opus: {
+          desc: 'Powerful intelligent model designed for building Agents and coding tasks'
+        },
+        sonnet: {
+          desc: 'The best balance of intelligence, cost, and speed'
+        },
+        gpt: {
+          desc: 'Advanced cross-industry coding and agent task model'
+        }
+      }
+    },
     tags: {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Sticky Session',

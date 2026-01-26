@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 主色调 - Teal/Cyan 青色系
+        // 主色调 - Teal/Cyan 青色系 (品牌色，用于星空模式和高亮)
         primary: {
           50: '#f0fdfa',
           100: '#ccfbf1',
@@ -46,6 +46,25 @@ export default {
           800: '#1e293b',
           900: '#0f172a',
           950: '#020617'
+        },
+        // Claude 风格浅色模式专属色板 (Warm Minimalist)
+        warm: {
+          50: '#FAF9F6',   // 背景主色 - 米色/Paper
+          100: '#F5F5F0',  // 背景次色 - 侧边栏/区块
+          200: '#E5E5E0',  // 边框色
+          300: '#D6D6D0',  // 深边框/禁用态
+          400: '#A8A8A0',  // 占位符文字
+          500: '#8B8B85',  // 次级图标
+          600: '#6B6B65',  // 次级文字 (备用)
+          700: '#5C5C5C',  // 文字次色 - 修正后的对比度
+          800: '#403028',  // 标题色 - 暖深褐
+          900: '#1A1A1A'   // 文字主色 - 深褐黑 (用于 CTA 按钮背景)
+        },
+        // 强调色 - 橙褐色 (用于图标、链接、装饰)
+        clay: {
+          400: '#E8886A',  // 浅色 (hover 背景)
+          500: '#D97757',  // 强调色
+          600: '#B85C3F'   // 强调色 Hover
         }
       },
       fontFamily: {
@@ -71,7 +90,12 @@ export default {
         'glow-lg': '0 0 40px rgba(20, 184, 166, 0.35)',
         card: '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
         'card-hover': '0 10px 40px rgba(0, 0, 0, 0.08)',
-        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        // 暖调阴影 - 用于浅色模式 (带棕色调，更自然)
+        'warm-sm': '0 2px 8px rgba(60, 50, 40, 0.04)',
+        warm: '0 4px 12px rgba(60, 50, 40, 0.08)',
+        'warm-lg': '0 8px 24px rgba(60, 50, 40, 0.12)',
+        'warm-xl': '0 12px 32px rgba(60, 50, 40, 0.16)'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

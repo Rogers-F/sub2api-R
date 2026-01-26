@@ -12,8 +12,9 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100;
+    @apply bg-warm-50 text-warm-900 dark:bg-dark-950 dark:text-gray-100;
     @apply min-h-screen;
+    @apply transition-colors duration-300 ease-in-out;
   }
 
   /* 自定义滚动条 - 默认隐藏，悬停或滚动时显示 */

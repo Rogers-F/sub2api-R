@@ -10,6 +10,101 @@ export default {
     login: '登录',
     getStarted: '开始使用',
     goToDashboard: '进入控制台',
+    nav: {
+      home: '首页',
+      pricing: '定价'
+    },
+    hero: {
+      tagline: '智能 AI 编码中转站',
+      description: '释放创意潜能，提升开发效率。为开发者打造的下一代智能编程体验，让代码编写从未如此简单。',
+      cta: '立即开始使用',
+      tags: {
+        codeGen: '智能代码生成',
+        codeUnderstand: '深度代码理解',
+        docGen: '动态文档生成'
+      }
+    },
+    principles: {
+      label: '我们的原则',
+      title: '专为日常编码而设计的中转体验',
+      description: '一条中转线路，统一承载 Claude Code 和 CodeX，拉平不同平台的 API 配额和网络环境，把时间还给你的代码，而不是配置面板。',
+      features: {
+        simpleConfig: {
+          title: '减少配置复杂度',
+          desc: '统一的域名与密钥格式，覆盖常见 IDE 插件与 CLI 工具，一键配置环境。'
+        },
+        accurateBilling: {
+          title: '计费策略准确',
+          desc: '与官方计价方式一致，真实反映模型实际使用情况。'
+        },
+        transparent: {
+          title: '费用透明',
+          desc: '每一次调用都可追溯，轻松掌握模型的真实使用情况。'
+        },
+        devFocused: {
+          title: '只做对开发者有用的功能',
+          desc: '集中资源在编码相关模型与链路优化上，把预算花在刀刃上。'
+        }
+      }
+    },
+    metrics: {
+      latency: {
+        label: '平均首 Token 延迟'
+      },
+      cacheSave: {
+        label: '缓存节省成本'
+      },
+      rate: {
+        label: '真实使用费率',
+        value: '低至 ￥0.15/USD'
+      },
+      note: '* 指在典型国内网络环境下测得的经验数据，具体表现会随地区、运营商与模型不同而略有差异。'
+    },
+    whyChoose: {
+      title: '为什么开发者选择星算code中转',
+      description: '不是简单的「API 代理」，而是围绕日常编码工作流打磨的一整套中转体验。',
+      features: {
+        ideSupport: {
+          title: '一键适配主流 IDE / CLI',
+          desc: '原生适配 Claude Code、CodeX，定制的一键配置工具助您轻松上手。'
+        },
+        stable: {
+          title: '稳定守护海外模型访问',
+          desc: '企业级后端集群统一对接海外供应商，优化线路 + 多节点容灾 + 自动重试。'
+        },
+        traceable: {
+          title: '倍率规则透明可查',
+          desc: '拒绝不透明积分制，使用和调整记录全部可追溯，让每一份账单都算得清。'
+        }
+      }
+    },
+    pricing: {
+      title: '透明公开的模型定价',
+      description: '全站额度与美元一致，模型定价与官方 API 定价一致。所有价格以每百万 Token (MTok) 计算，缓存计费让连续多轮对话更省钱。',
+      input: '输入',
+      output: '输出',
+      cachePrice: '缓存价格',
+      cacheWrite: '写入',
+      cacheRead: '读取',
+      cta: '立即开始',
+      note: '* 以上为官方基础定价，实际费用可能因倍率调整而有所不同，详见控制台倍率说明。',
+      tags: {
+        powerful: '高效智能',
+        bestValue: '性价比之选',
+        efficient: '深度分析'
+      },
+      models: {
+        opus: {
+          desc: '强大的智能模型，专为构建 Agent 和编码任务设计'
+        },
+        sonnet: {
+          desc: '智能、成本与速度的最佳平衡'
+        },
+        gpt: {
+          desc: '先进的跨行业编码与智能体任务模型'
+        }
+      }
+    },
     tags: {
       subscriptionToApi: '订阅转 API',
       stickySession: '粘性会话',
