@@ -110,7 +110,7 @@
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div class="rounded-2xl border border-warm-200 bg-warm-50 p-6 transition-all hover:border-warm-300 hover:shadow-warm">
             <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-600">
-              <Icon name="settings" size="lg" />
+              <Icon name="cog" size="lg" />
             </div>
             <h3 class="mb-2 text-lg font-semibold text-warm-900">{{ t('home.principles.features.simpleConfig.title') }}</h3>
             <p class="text-sm leading-relaxed text-warm-700">{{ t('home.principles.features.simpleConfig.desc') }}</p>
@@ -170,7 +170,7 @@
         <div class="grid gap-8 md:grid-cols-3">
           <div class="text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-100 text-primary-600">
-              <Icon name="code" size="xl" />
+              <Icon name="terminal" size="xl" />
             </div>
             <h3 class="mb-2 text-lg font-semibold text-warm-900">{{ t('home.whyChoose.features.ideSupport.title') }}</h3>
             <p class="text-sm text-warm-700">{{ t('home.whyChoose.features.ideSupport.desc') }}</p>
