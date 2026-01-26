@@ -7,7 +7,6 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
-	"html"
 	"io"
 	"io/fs"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/tidwall/gjson"
 )
 
 const (
@@ -184,11 +182,11 @@ func (s *FrontendServer) serveIndexHTML(c *gin.Context) {
 func (s *FrontendServer) injectSettings(settingsJSON []byte) []byte {
 	// Create the script tag to inject with nonce placeholder
 	// The placeholder will be replaced with actual nonce at request time
-	script := []byte(`<script nonce="` + NonceHTMLPlaceholder + `">window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
+	injection := []byte(`<script nonce="` + NonceHTMLPlaceholder + `">window.__APP_CONFIG__=` + string(settingsJSON) + `;</script>`)
 
 	// Inject before </head>
 	headClose := []byte("</head>")
-	return bytes.Replace(rendered, headClose, append(injection.Bytes(), headClose...), 1)
+	return bytes.Replace(s.baseHTML, headClose, append(injection, headClose...), 1)
 }
 
 // replaceHTMLTitle replaces the content of the <title> tag.
