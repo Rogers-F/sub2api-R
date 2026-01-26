@@ -56,7 +56,7 @@ export default {
       },
       rate: {
         label: 'Real Usage Rate',
-        value: 'From ¥0.15/USD'
+        value: 'From ¥0.3/USD'
       },
       note: '* Data measured in typical network environments. Performance may vary by region, ISP, and model.'
     },
