@@ -382,21 +382,264 @@
       </header>
 
       <!-- Dark Mode Hero -->
-      <main class="flex flex-1 items-center px-6 py-16">
-        <div class="mx-auto w-full max-w-4xl text-center">
-          <h1 class="hero-heading mb-6 text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
+      <section id="home-dark" class="px-6 py-20 md:py-28">
+        <div class="mx-auto max-w-4xl text-center">
+          <h1 class="hero-heading mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
             {{ siteName }} {{ t('home.hero.tagline') }}
           </h1>
-          <p class="mx-auto mb-12 max-w-2xl text-lg text-gray-300">{{ t('home.hero.description') }}</p>
-          <router-link
-            :to="isAuthenticated ? dashboardPath : '/login'"
-            class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 hover:shadow-cyan-500/50"
-          >
-            {{ t('home.hero.cta') }}
-            <Icon name="arrowRight" size="md" />
-          </router-link>
+          <p class="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-300">
+            {{ t('home.hero.description') }}
+          </p>
+          <div class="mb-12 flex flex-wrap justify-center gap-4">
+            <router-link
+              :to="isAuthenticated ? dashboardPath : '/login'"
+              class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 hover:shadow-cyan-500/50"
+            >
+              {{ t('home.hero.cta') }}
+              <Icon name="arrowRight" size="md" />
+            </router-link>
+          </div>
+          <!-- Feature Tags -->
+          <div class="flex flex-wrap justify-center gap-3">
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 backdrop-blur-sm">
+              <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+              {{ t('home.hero.tags.codeGen') }}
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 backdrop-blur-sm">
+              <span class="h-2 w-2 rounded-full bg-purple-400"></span>
+              {{ t('home.hero.tags.codeUnderstand') }}
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 backdrop-blur-sm">
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+              {{ t('home.hero.tags.docGen') }}
+            </span>
+          </div>
         </div>
-      </main>
+      </section>
+
+      <!-- Principles Section (Dark) -->
+      <section class="border-t border-white/5 px-6 py-20">
+        <div class="mx-auto max-w-6xl">
+          <div class="mb-4 text-center text-sm font-medium uppercase tracking-wider text-gray-500">{{ t('home.principles.label') }}</div>
+          <h2 class="mb-4 text-center text-3xl font-bold text-white sm:text-4xl">
+            {{ t('home.principles.title') }}
+          </h2>
+          <p class="mx-auto mb-16 max-w-3xl text-center text-gray-400">
+            {{ t('home.principles.description') }}
+          </p>
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/20 hover:bg-white/10">
+              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+                <Icon name="cog" size="lg" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.principles.features.simpleConfig.title') }}</h3>
+              <p class="text-sm leading-relaxed text-gray-400">{{ t('home.principles.features.simpleConfig.desc') }}</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-emerald-400/20 hover:bg-white/10">
+              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                <Icon name="chart" size="lg" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.principles.features.accurateBilling.title') }}</h3>
+              <p class="text-sm leading-relaxed text-gray-400">{{ t('home.principles.features.accurateBilling.desc') }}</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-blue-400/20 hover:bg-white/10">
+              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+                <Icon name="eye" size="lg" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.principles.features.transparent.title') }}</h3>
+              <p class="text-sm leading-relaxed text-gray-400">{{ t('home.principles.features.transparent.desc') }}</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-amber-400/20 hover:bg-white/10">
+              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+                <Icon name="bolt" size="lg" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.principles.features.devFocused.title') }}</h3>
+              <p class="text-sm leading-relaxed text-gray-400">{{ t('home.principles.features.devFocused.desc') }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Metrics Section (Dark) -->
+      <section class="border-t border-white/5 px-6 py-16">
+        <div class="mx-auto max-w-6xl">
+          <div class="mb-8 text-center text-xs font-semibold uppercase tracking-widest text-gray-500">CODING METRICS</div>
+          <div class="grid gap-6 md:grid-cols-3">
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-sm">
+              <div class="mb-2 text-sm text-gray-400">{{ t('home.metrics.latency.label') }}</div>
+              <div class="text-3xl font-bold text-white">&lt; 2000 <span class="text-lg font-normal text-gray-500">ms</span></div>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-sm">
+              <div class="mb-2 text-sm text-gray-400">{{ t('home.metrics.cacheSave.label') }}</div>
+              <div class="text-3xl font-bold text-emerald-400">&gt; 60<span class="text-lg font-normal text-gray-500">%</span></div>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-sm">
+              <div class="mb-2 text-sm text-gray-400">{{ t('home.metrics.rate.label') }}</div>
+              <div class="text-3xl font-bold text-white">{{ t('home.metrics.rate.value') }}</div>
+            </div>
+          </div>
+          <p class="mt-6 text-center text-xs text-gray-500">{{ t('home.metrics.note') }}</p>
+        </div>
+      </section>
+
+      <!-- Why Choose Section (Dark) -->
+      <section class="border-t border-white/5 px-6 py-20">
+        <div class="mx-auto max-w-6xl">
+          <h2 class="mb-4 text-center text-3xl font-bold text-white">{{ t('home.whyChoose.title') }}</h2>
+          <p class="mx-auto mb-12 max-w-2xl text-center text-gray-400">{{ t('home.whyChoose.description') }}</p>
+          <div class="grid gap-8 md:grid-cols-3">
+            <div class="text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
+                <Icon name="terminal" size="xl" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.whyChoose.features.ideSupport.title') }}</h3>
+              <p class="text-sm text-gray-400">{{ t('home.whyChoose.features.ideSupport.desc') }}</p>
+            </div>
+            <div class="text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+                <Icon name="shield" size="xl" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.whyChoose.features.stable.title') }}</h3>
+              <p class="text-sm text-gray-400">{{ t('home.whyChoose.features.stable.desc') }}</p>
+            </div>
+            <div class="text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+                <Icon name="document" size="xl" />
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">{{ t('home.whyChoose.features.traceable.title') }}</h3>
+              <p class="text-sm text-gray-400">{{ t('home.whyChoose.features.traceable.desc') }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Model Pricing Section (Dark) -->
+      <section id="pricing-dark" class="border-t border-white/5 px-6 py-20">
+        <div class="mx-auto max-w-6xl">
+          <h2 class="mb-4 text-center text-3xl font-bold text-white">{{ t('home.pricing.title') }}</h2>
+          <p class="mx-auto mb-12 max-w-3xl text-center text-gray-400">{{ t('home.pricing.description') }}</p>
+
+          <div class="grid gap-6 lg:grid-cols-3">
+            <!-- Claude Opus 4.5 -->
+            <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10">
+              <div class="border-b border-white/5 bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-6 py-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <span class="rounded bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-300">Anthropic</span>
+                  <span class="rounded bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">{{ t('home.pricing.tags.powerful') }}</span>
+                </div>
+                <h3 class="text-xl font-bold text-white">Claude Opus 4.5</h3>
+                <p class="mt-1 text-sm text-gray-400">{{ t('home.pricing.models.opus.desc') }}</p>
+              </div>
+              <div class="p-6">
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <div class="text-xs text-gray-500">{{ t('home.pricing.input') }}</div>
+                    <div class="text-2xl font-bold text-white">$15<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">{{ t('home.pricing.output') }}</div>
+                    <div class="text-2xl font-bold text-white">$75<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                  </div>
+                </div>
+                <div class="rounded-lg bg-white/5 p-3">
+                  <div class="mb-2 text-xs font-medium text-gray-400">{{ t('home.pricing.cachePrice') }}</div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">{{ t('home.pricing.cacheWrite') }}</span>
+                    <span class="font-semibold text-white">$18.75</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">{{ t('home.pricing.cacheRead') }}</span>
+                    <span class="font-semibold text-white">$1.50</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Claude Sonnet 4.5 -->
+            <div class="overflow-hidden rounded-2xl border-2 border-cyan-500/40 bg-white/5 backdrop-blur-sm transition-all hover:border-cyan-400/60 hover:bg-white/10">
+              <div class="border-b border-white/5 bg-gradient-to-r from-cyan-500/10 to-blue-600/5 px-6 py-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <span class="rounded bg-cyan-500/20 px-2 py-0.5 text-xs font-medium text-cyan-300">Anthropic</span>
+                  <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300">{{ t('home.pricing.tags.bestValue') }}</span>
+                </div>
+                <h3 class="text-xl font-bold text-white">Claude Sonnet 4.5</h3>
+                <p class="mt-1 text-sm text-gray-400">{{ t('home.pricing.models.sonnet.desc') }}</p>
+              </div>
+              <div class="p-6">
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <div class="text-xs text-gray-500">{{ t('home.pricing.input') }}</div>
+                    <div class="text-2xl font-bold text-white">$3<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">{{ t('home.pricing.output') }}</div>
+                    <div class="text-2xl font-bold text-white">$15<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                  </div>
+                </div>
+                <div class="rounded-lg bg-white/5 p-3">
+                  <div class="mb-2 text-xs font-medium text-gray-400">{{ t('home.pricing.cachePrice') }}</div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">{{ t('home.pricing.cacheWrite') }}</span>
+                    <span class="font-semibold text-white">$3.75</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">{{ t('home.pricing.cacheRead') }}</span>
+                    <span class="font-semibold text-white">$0.30</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GPT-4.1 -->
+            <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10">
+              <div class="border-b border-white/5 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 px-6 py-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300">OpenAI</span>
+                  <span class="rounded bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-300">{{ t('home.pricing.tags.efficient') }}</span>
+                </div>
+                <h3 class="text-xl font-bold text-white">GPT-4.1</h3>
+                <p class="mt-1 text-sm text-gray-400">{{ t('home.pricing.models.gpt.desc') }}</p>
+              </div>
+              <div class="p-6">
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <div class="text-xs text-gray-500">{{ t('home.pricing.input') }}</div>
+                    <div class="text-2xl font-bold text-white">$2<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">{{ t('home.pricing.output') }}</div>
+                    <div class="text-2xl font-bold text-white">$8<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                  </div>
+                </div>
+                <div class="rounded-lg bg-white/5 p-3">
+                  <div class="mb-2 text-xs font-medium text-gray-400">{{ t('home.pricing.cachePrice') }}</div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">{{ t('home.pricing.cacheWrite') }}</span>
+                    <span class="font-semibold text-gray-500">-</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">{{ t('home.pricing.cacheRead') }}</span>
+                    <span class="font-semibold text-white">$0.50</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="mt-8 text-center text-xs text-gray-500">{{ t('home.pricing.note') }}</p>
+
+          <!-- CTA -->
+          <div class="mt-10 text-center">
+            <router-link
+              :to="isAuthenticated ? dashboardPath : '/login'"
+              class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 hover:shadow-cyan-500/50"
+            >
+              {{ t('home.pricing.cta') }}
+              <Icon name="arrowRight" size="md" />
+            </router-link>
+          </div>
+        </div>
+      </section>
 
       <!-- Dark Mode Footer -->
       <footer class="border-t border-white/5 px-6 py-8 backdrop-blur-sm">
