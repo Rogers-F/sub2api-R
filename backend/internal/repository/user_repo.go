@@ -51,7 +51,7 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		txClient = r.client
 	}
 
-	created, err := txClient.User.Create().
+	createOp := txClient.User.Create().
 		SetEmail(userIn.Email).
 		SetUsername(userIn.Username).
 		SetNotes(userIn.Notes).
@@ -59,8 +59,17 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetRole(userIn.Role).
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
-		SetStatus(userIn.Status).
-		Save(ctx)
+		SetStatus(userIn.Status)
+
+	// 设置邀请系统字段
+	if userIn.ReferrerID != nil {
+		createOp = createOp.SetReferrerID(*userIn.ReferrerID)
+	}
+	if userIn.ReferralCode != nil {
+		createOp = createOp.SetReferralCode(*userIn.ReferralCode)
+	}
+
+	created, err := createOp.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, service.ErrEmailExists)
 	}

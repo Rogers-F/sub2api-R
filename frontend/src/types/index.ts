@@ -55,6 +55,7 @@ export interface RegisterRequest {
   verify_code?: string
   turnstile_token?: string
   promo_code?: string
+  referral_code?: string
 }
 
 export interface SendVerifyCodeRequest {
@@ -1158,4 +1159,70 @@ export interface TotpLoginResponse {
 export interface TotpLogin2FARequest {
   temp_token: string
   totp_code: string
+}
+
+// ==================== Referral System Types ====================
+
+export interface ReferralInfo {
+  enabled: boolean
+  referral_code: string
+  referral_link: string
+  total_invited: number
+  total_reward: number
+  register_reward: number
+  commission_reward: number
+  register_bonus: number
+  commission_rate: number
+}
+
+export interface ReferralReward {
+  id: number
+  referee_email: string
+  reward_type: 'register' | 'commission'
+  reward_amount: number
+  source_amount?: number
+  created_at: string
+}
+
+export interface ReferralSettings {
+  enabled: boolean
+  register_bonus: number
+  commission_rate: number
+}
+
+// ==================== Announcement Types ====================
+
+export interface Announcement {
+  id: number
+  title: string
+  content: string
+  content_type: 'markdown' | 'html' | 'url'
+  priority: number
+  status?: 'active' | 'inactive'
+  published_at?: string | null
+  expires_at?: string | null
+  created_at: string
+  updated_at?: string
+}
+
+export interface CreateAnnouncementRequest {
+  title: string
+  content: string
+  content_type?: string
+  priority?: number
+  status?: string
+  published_at?: string | null
+  expires_at?: string | null
+}
+
+export interface UpdateAnnouncementRequest {
+  title?: string
+  content?: string
+  content_type?: string
+  priority?: number
+  status?: string
+  published_at?: string | null
+  expires_at?: string | null
+  clear_published_at?: boolean
+  clear_expires_at?: boolean
 }

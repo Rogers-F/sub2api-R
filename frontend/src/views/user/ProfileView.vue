@@ -16,6 +16,7 @@
       <ProfileEditForm :initial-username="user?.username || ''" />
       <ProfilePasswordForm />
       <ProfileTotpCard />
+      <ProfileReferralCard />
     </div>
   </AppLayout>
 </template>
@@ -29,6 +30,7 @@ import ProfileInfoCard from '@/components/user/profile/ProfileInfoCard.vue'
 import ProfileEditForm from '@/components/user/profile/ProfileEditForm.vue'
 import ProfilePasswordForm from '@/components/user/profile/ProfilePasswordForm.vue'
 import ProfileTotpCard from '@/components/user/profile/ProfileTotpCard.vue'
+import ProfileReferralCard from '@/components/user/profile/ProfileReferralCard.vue'
 import { Icon } from '@/components/icons'
 
 const { t } = useI18n(); const authStore = useAuthStore(); const user = computed(() => authStore.user)

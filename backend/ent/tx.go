@@ -20,6 +20,10 @@ type Tx struct {
 	Account *AccountClient
 	// AccountGroup is the client for interacting with the AccountGroup builders.
 	AccountGroup *AccountGroupClient
+	// Announcement is the client for interacting with the Announcement builders.
+	Announcement *AnnouncementClient
+	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
+	AnnouncementRead *AnnouncementReadClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// PromoCode is the client for interacting with the PromoCode builders.
@@ -30,6 +34,8 @@ type Tx struct {
 	Proxy *ProxyClient
 	// RedeemCode is the client for interacting with the RedeemCode builders.
 	RedeemCode *RedeemCodeClient
+	// ReferralReward is the client for interacting with the ReferralReward builders.
+	ReferralReward *ReferralRewardClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -180,11 +186,14 @@ func (tx *Tx) init() {
 	tx.APIKey = NewAPIKeyClient(tx.config)
 	tx.Account = NewAccountClient(tx.config)
 	tx.AccountGroup = NewAccountGroupClient(tx.config)
+	tx.Announcement = NewAnnouncementClient(tx.config)
+	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.PromoCode = NewPromoCodeClient(tx.config)
 	tx.PromoCodeUsage = NewPromoCodeUsageClient(tx.config)
 	tx.Proxy = NewProxyClient(tx.config)
 	tx.RedeemCode = NewRedeemCodeClient(tx.config)
+	tx.ReferralReward = NewReferralRewardClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)

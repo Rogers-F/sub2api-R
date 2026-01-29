@@ -297,7 +297,8 @@ export default {
     logout: '退出登录',
     mySubscriptions: '我的订阅',
     buySubscription: '购买订阅',
-    docs: '文档'
+    docs: '文档',
+    announcements: '公告管理'
   },
 
   // Auth
@@ -352,6 +353,9 @@ export default {
     promoCodeAlreadyUsed: '您已使用过此优惠码',
     promoCodeValidating: '优惠码正在验证中，请稍候',
     promoCodeInvalidCannotRegister: '优惠码无效，请检查后重试或清空优惠码',
+    referralCodeLabel: '邀请码',
+    referralCodePlaceholder: '输入邀请码（可选）',
+    referralCodeHint: '使用邀请码注册，双方各获得奖励',
     linuxdo: {
       signIn: '使用 Linux.do 登录',
       orContinue: '或使用邮箱密码继续',
@@ -729,6 +733,45 @@ export default {
       sendCode: '发送验证码',
       codeSent: '验证码已发送到您的邮箱',
       sendCodeFailed: '发送验证码失败'
+    },
+    // Referral
+    referral: {
+      title: '邀请好友',
+      description: '邀请好友注册，双方各获得奖励',
+      myCode: '我的邀请码',
+      copyCode: '复制邀请码',
+      copyLink: '复制邀请链接',
+      codeCopied: '邀请码已复制',
+      linkCopied: '邀请链接已复制',
+      stats: '邀请统计',
+      invitedCount: '邀请人数',
+      totalRewards: '累计奖励',
+      viewRewards: '查看奖励记录',
+      rewardsTitle: '奖励记录',
+      noRewards: '暂无奖励记录',
+      rewardType: {
+        register: '注册奖励',
+        commission: '返利'
+      },
+      referee: '被邀请人',
+      amount: '奖励金额',
+      time: '时间',
+      systemDisabled: '邀请系统未启用',
+      close: '关闭'
+    }
+  },
+
+  // Announcements
+  announcement: {
+    title: '公告',
+    noAnnouncements: '暂无公告',
+    gotIt: '我知道了',
+    markAllRead: '全部标记已读',
+    newAnnouncements: '您有 {count} 条新公告',
+    contentTypes: {
+      markdown: 'Markdown',
+      html: 'HTML',
+      url: '外部链接'
     }
   },
 
@@ -3065,6 +3108,57 @@ export default {
       }
     },
 
+    // Announcements
+    announcements: {
+      title: '公告管理',
+      description: '管理系统公告',
+      create: '创建公告',
+      edit: '编辑公告',
+      delete: '删除公告',
+      deleteConfirm: '确定要删除此公告吗？此操作无法撤销。',
+      noAnnouncements: '暂无公告',
+      columns: {
+        title: '标题',
+        contentType: '内容类型',
+        priority: '优先级',
+        status: '状态',
+        publishedAt: '发布时间',
+        expiresAt: '过期时间',
+        createdAt: '创建时间',
+        actions: '操作'
+      },
+      form: {
+        title: '标题',
+        titlePlaceholder: '请输入公告标题',
+        content: '内容',
+        contentPlaceholder: '请输入公告内容',
+        contentType: '内容类型',
+        priority: '优先级',
+        priorityHint: '数值越大优先级越高',
+        status: '状态',
+        publishedAt: '发布时间',
+        publishedAtHint: '留空立即发布',
+        expiresAt: '过期时间',
+        expiresAtHint: '留空则永不过期'
+      },
+      status: {
+        active: '已发布',
+        inactive: '未发布'
+      },
+      contentType: {
+        markdown: 'Markdown',
+        html: 'HTML',
+        url: '外部链接'
+      },
+      createSuccess: '公告创建成功',
+      updateSuccess: '公告更新成功',
+      deleteSuccess: '公告删除成功',
+      createFailed: '创建公告失败',
+      updateFailed: '更新公告失败',
+      deleteFailed: '删除公告失败',
+      loadFailed: '加载公告列表失败'
+    },
+
     // Settings
     settings: {
       title: '系统设置',
@@ -3084,6 +3178,18 @@ export default {
         totpHint: '允许用户使用 Google Authenticator 等应用进行二次验证',
         totpKeyNotConfigured:
           '请先在环境变量中配置 TOTP_ENCRYPTION_KEY。使用命令 openssl rand -hex 32 生成密钥。'
+      },
+      referral: {
+        title: '邀请系统设置',
+        description: '配置用户邀请奖励',
+        enabled: '启用邀请系统',
+        enabledHint: '允许用户通过邀请码邀请新用户',
+        registerBonus: '注册奖励金额',
+        registerBonusHint: '邀请人和被邀请人注册时各获得的奖励金额',
+        commissionRate: '返利比例',
+        commissionRateHint: '被邀请人购买额度时，邀请人获得的返利比例 (0-1)',
+        maxTotalReward: '奖励上限',
+        maxTotalRewardHint: '单个邀请人可获得的最大累计奖励金额，0 表示无限制'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',

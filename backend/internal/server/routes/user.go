@@ -79,5 +79,28 @@ func RegisterUserRoutes(
 			subscriptions.GET("/progress", h.Subscription.GetProgress)
 			subscriptions.GET("/summary", h.Subscription.GetSummary)
 		}
+
+		// 邀请系统
+		referral := user.Group("/referral")
+		{
+			referral.GET("", h.Referral.GetReferralInfo)
+			referral.GET("/rewards", h.Referral.GetReferralRewards)
+		}
+
+		// 公告
+		announcements := authenticated.Group("/announcements")
+		{
+			announcements.GET("/unread", h.Announcement.GetUnreadAnnouncements)
+			announcements.POST("/:id/read", h.Announcement.MarkAsRead)
+			announcements.POST("/read-all", h.Announcement.MarkAllAsRead)
+		}
+	}
+}
+
+// RegisterReferralSettingsRoutes 注册公开的邀请系统设置路由
+func RegisterReferralSettingsRoutes(v1 *gin.RouterGroup, h *handler.Handlers) {
+	referral := v1.Group("/referral")
+	{
+		referral.GET("/settings", h.Referral.GetReferralSettings)
 	}
 }

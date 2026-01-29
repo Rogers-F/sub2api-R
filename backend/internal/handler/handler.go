@@ -23,6 +23,7 @@ type AdminHandlers struct {
 	Subscription     *admin.SubscriptionHandler
 	Usage            *admin.UsageHandler
 	UserAttribute    *admin.UserAttributeHandler
+	Announcement     *admin.AnnouncementHandler
 }
 
 // Handlers contains all HTTP handlers
@@ -38,6 +39,8 @@ type Handlers struct {
 	OpenAIGateway *OpenAIGatewayHandler
 	Setting       *SettingHandler
 	Totp          *TotpHandler
+	Referral      *ReferralHandler
+	Announcement  *AnnouncementHandler
 }
 
 // BuildInfo contains build-time information

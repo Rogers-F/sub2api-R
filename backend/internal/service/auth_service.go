@@ -53,6 +53,7 @@ type AuthService struct {
 	turnstileService  *TurnstileService
 	emailQueueService *EmailQueueService
 	promoService      *PromoService
+	referralService   *ReferralService
 }
 
 // NewAuthService 创建认证服务实例
@@ -74,6 +75,11 @@ func NewAuthService(
 		emailQueueService: emailQueueService,
 		promoService:      promoService,
 	}
+}
+
+// SetReferralService 设置邀请服务（避免循环依赖）
+func (s *AuthService) SetReferralService(referralService *ReferralService) {
+	s.referralService = referralService
 }
 
 // Register 用户注册，返回token和用户
@@ -160,6 +166,133 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 			log.Printf("[Auth] Failed to apply promo code for user %d: %v", user.ID, err)
 		} else {
 			// 重新获取用户信息以获取更新后的余额
+			if updatedUser, err := s.userRepo.GetByID(ctx, user.ID); err == nil {
+				user = updatedUser
+			}
+		}
+	}
+
+	// 生成token
+	token, err := s.GenerateToken(user)
+	if err != nil {
+		return "", nil, fmt.Errorf("generate token: %w", err)
+	}
+
+	return token, user, nil
+}
+
+// RegisterWithReferral 用户注册（支持邮件验证、优惠码和邀请码），返回token和用户
+func (s *AuthService) RegisterWithReferral(ctx context.Context, email, password, verifyCode, promoCode, referralCode string) (string, *User, error) {
+	// 检查是否开放注册（默认关闭：settingService 未配置时不允许注册）
+	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
+		return "", nil, ErrRegDisabled
+	}
+
+	// 防止用户注册 LinuxDo OAuth 合成邮箱
+	if isReservedEmail(email) {
+		return "", nil, ErrEmailReserved
+	}
+
+	// 处理邀请码 - 验证并获取邀请人
+	var referrer *User
+	if referralCode != "" && s.referralService != nil && s.referralService.IsEnabled(ctx) {
+		var err error
+		referrer, err = s.referralService.GetUserByReferralCode(ctx, referralCode)
+		if err != nil {
+			log.Printf("[Auth] Invalid referral code %s: %v", referralCode, err)
+			// 邀请码无效不阻止注册，只是不发放奖励
+			referrer = nil
+		}
+	}
+
+	// 检查是否需要邮件验证
+	if s.settingService != nil && s.settingService.IsEmailVerifyEnabled(ctx) {
+		if s.emailService == nil {
+			log.Println("[Auth] Email verification enabled but email service not configured, rejecting registration")
+			return "", nil, ErrServiceUnavailable
+		}
+		if verifyCode == "" {
+			return "", nil, ErrEmailVerifyRequired
+		}
+		if err := s.emailService.VerifyCode(ctx, email, verifyCode); err != nil {
+			return "", nil, fmt.Errorf("verify code: %w", err)
+		}
+	}
+
+	// 检查邮箱是否已存在
+	existsEmail, err := s.userRepo.ExistsByEmail(ctx, email)
+	if err != nil {
+		log.Printf("[Auth] Database error checking email exists: %v", err)
+		return "", nil, ErrServiceUnavailable
+	}
+	if existsEmail {
+		return "", nil, ErrEmailExists
+	}
+
+	// 密码哈希
+	hashedPassword, err := s.HashPassword(password)
+	if err != nil {
+		return "", nil, fmt.Errorf("hash password: %w", err)
+	}
+
+	// 获取默认配置
+	defaultBalance := s.cfg.Default.UserBalance
+	defaultConcurrency := s.cfg.Default.UserConcurrency
+	if s.settingService != nil {
+		defaultBalance = s.settingService.GetDefaultBalance(ctx)
+		defaultConcurrency = s.settingService.GetDefaultConcurrency(ctx)
+	}
+
+	// 生成邀请码
+	var userReferralCode *string
+	if s.referralService != nil && s.referralService.IsEnabled(ctx) {
+		code := s.referralService.GenerateReferralCode()
+		userReferralCode = &code
+	}
+
+	// 设置邀请人ID
+	var referrerID *int64
+	if referrer != nil {
+		referrerID = &referrer.ID
+	}
+
+	// 创建用户
+	user := &User{
+		Email:        email,
+		PasswordHash: hashedPassword,
+		Role:         RoleUser,
+		Balance:      defaultBalance,
+		Concurrency:  defaultConcurrency,
+		Status:       StatusActive,
+		ReferrerID:   referrerID,
+		ReferralCode: userReferralCode,
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		if errors.Is(err, ErrEmailExists) {
+			return "", nil, ErrEmailExists
+		}
+		log.Printf("[Auth] Database error creating user: %v", err)
+		return "", nil, ErrServiceUnavailable
+	}
+
+	// 处理邀请奖励
+	if referrer != nil && s.referralService != nil {
+		if _, err := s.referralService.ProcessRegistrationReferral(ctx, user.ID, referrer.ID); err != nil {
+			log.Printf("[Auth] Failed to process referral reward for user %d: %v", user.ID, err)
+		} else {
+			// 重新获取用户信息以获取更新后的余额
+			if updatedUser, err := s.userRepo.GetByID(ctx, user.ID); err == nil {
+				user = updatedUser
+			}
+		}
+	}
+
+	// 应用优惠码
+	if promoCode != "" && s.promoService != nil && s.settingService != nil && s.settingService.IsPromoCodeEnabled(ctx) {
+		if err := s.promoService.ApplyPromoCode(ctx, user.ID, promoCode); err != nil {
+			log.Printf("[Auth] Failed to apply promo code for user %d: %v", user.ID, err)
+		} else {
 			if updatedUser, err := s.userRepo.GetByID(ctx, user.ID); err == nil {
 				user = updatedUser
 			}

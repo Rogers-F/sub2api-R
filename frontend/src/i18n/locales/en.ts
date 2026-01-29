@@ -300,7 +300,8 @@ export default {
     logout: 'Logout',
     mySubscriptions: 'My Subscriptions',
     buySubscription: 'Purchase Subscription',
-    docs: 'Docs'
+    docs: 'Docs',
+    announcements: 'Announcements'
   },
 
   // Auth
@@ -355,6 +356,9 @@ export default {
     promoCodeAlreadyUsed: 'You have already used this promo code',
     promoCodeValidating: 'Promo code is being validated, please wait',
     promoCodeInvalidCannotRegister: 'Invalid promo code. Please check and try again or clear the promo code field',
+    referralCodeLabel: 'Referral Code',
+    referralCodePlaceholder: 'Enter referral code (optional)',
+    referralCodeHint: 'Use a referral code to get bonus rewards for both parties',
     linuxdo: {
       signIn: 'Continue with Linux.do',
       orContinue: 'or continue with email',
@@ -733,6 +737,45 @@ export default {
       sendCode: 'Send Code',
       codeSent: 'Verification code sent to your email',
       sendCodeFailed: 'Failed to send verification code'
+    },
+    // Referral
+    referral: {
+      title: 'Invite Friends',
+      description: 'Invite friends to register and earn rewards for both',
+      myCode: 'My Referral Code',
+      copyCode: 'Copy Code',
+      copyLink: 'Copy Invite Link',
+      codeCopied: 'Referral code copied',
+      linkCopied: 'Invite link copied',
+      stats: 'Referral Stats',
+      invitedCount: 'Invited Users',
+      totalRewards: 'Total Rewards',
+      viewRewards: 'View Reward History',
+      rewardsTitle: 'Reward History',
+      noRewards: 'No rewards yet',
+      rewardType: {
+        register: 'Registration Bonus',
+        commission: 'Commission'
+      },
+      referee: 'Invited User',
+      amount: 'Amount',
+      time: 'Time',
+      systemDisabled: 'Referral system is not enabled',
+      close: 'Close'
+    }
+  },
+
+  // Announcements
+  announcement: {
+    title: 'Announcements',
+    noAnnouncements: 'No announcements',
+    gotIt: 'Got it',
+    markAllRead: 'Mark all as read',
+    newAnnouncements: 'You have {count} new announcement(s)',
+    contentTypes: {
+      markdown: 'Markdown',
+      html: 'HTML',
+      url: 'External Link'
     }
   },
 
@@ -2912,6 +2955,57 @@ export default {
       }
     },
 
+    // Announcements
+    announcements: {
+      title: 'Announcements',
+      description: 'Manage system announcements',
+      create: 'Create Announcement',
+      edit: 'Edit Announcement',
+      delete: 'Delete Announcement',
+      deleteConfirm: 'Are you sure you want to delete this announcement? This action cannot be undone.',
+      noAnnouncements: 'No announcements',
+      columns: {
+        title: 'Title',
+        contentType: 'Content Type',
+        priority: 'Priority',
+        status: 'Status',
+        publishedAt: 'Published At',
+        expiresAt: 'Expires At',
+        createdAt: 'Created At',
+        actions: 'Actions'
+      },
+      form: {
+        title: 'Title',
+        titlePlaceholder: 'Enter announcement title',
+        content: 'Content',
+        contentPlaceholder: 'Enter announcement content',
+        contentType: 'Content Type',
+        priority: 'Priority',
+        priorityHint: 'Higher values appear first',
+        status: 'Status',
+        publishedAt: 'Publish Date',
+        publishedAtHint: 'Leave empty to publish immediately',
+        expiresAt: 'Expiry Date',
+        expiresAtHint: 'Leave empty for no expiration'
+      },
+      status: {
+        active: 'Active',
+        inactive: 'Inactive'
+      },
+      contentType: {
+        markdown: 'Markdown',
+        html: 'HTML',
+        url: 'External Link'
+      },
+      createSuccess: 'Announcement created successfully',
+      updateSuccess: 'Announcement updated successfully',
+      deleteSuccess: 'Announcement deleted successfully',
+      createFailed: 'Failed to create announcement',
+      updateFailed: 'Failed to update announcement',
+      deleteFailed: 'Failed to delete announcement',
+      loadFailed: 'Failed to load announcements'
+    },
+
     // Settings
     settings: {
       title: 'System Settings',
@@ -2931,6 +3025,18 @@ export default {
         totpHint: 'Allow users to use authenticator apps like Google Authenticator',
         totpKeyNotConfigured:
           'Please configure TOTP_ENCRYPTION_KEY in environment variables first. Generate a key with: openssl rand -hex 32'
+      },
+      referral: {
+        title: 'Referral System',
+        description: 'Configure user referral rewards',
+        enabled: 'Enable Referral System',
+        enabledHint: 'Allow users to invite new users with referral codes',
+        registerBonus: 'Registration Bonus',
+        registerBonusHint: 'Bonus amount for both referrer and referee upon registration',
+        commissionRate: 'Commission Rate',
+        commissionRateHint: 'Commission rate for referrer when referee purchases credits (0-1)',
+        maxTotalReward: 'Maximum Total Reward',
+        maxTotalRewardHint: 'Maximum cumulative reward a referrer can earn, 0 means unlimited'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',

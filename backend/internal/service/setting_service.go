@@ -839,3 +839,61 @@ func (s *SettingService) SetStreamTimeoutSettings(ctx context.Context, settings 
 
 	return s.settingRepo.Set(ctx, SettingKeyStreamTimeoutSettings, string(data))
 }
+
+// =========================
+// Referral System Settings
+// =========================
+
+// IsReferralEnabled 检查是否启用邀请系统
+func (s *SettingService) IsReferralEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralEnabled)
+	if err != nil {
+		return false // 默认关闭
+	}
+	return value == "true"
+}
+
+// GetReferralRegisterBonus 获取注册奖励金额
+func (s *SettingService) GetReferralRegisterBonus(ctx context.Context) float64 {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralRegisterBonus)
+	if err != nil {
+		return 5.0 // 默认 $5
+	}
+	if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0 {
+		return v
+	}
+	return 5.0
+}
+
+// GetReferralCommissionRate 获取返利比例
+func (s *SettingService) GetReferralCommissionRate(ctx context.Context) float64 {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralCommissionRate)
+	if err != nil {
+		return 0.3 // 默认 30%
+	}
+	if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0 && v <= 1 {
+		return v
+	}
+	return 0.3
+}
+
+// GetReferralMaxTotalReward 获取奖励上限（0=无限制）
+func (s *SettingService) GetReferralMaxTotalReward(ctx context.Context) float64 {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralMaxTotalReward)
+	if err != nil {
+		return 0 // 默认无限制
+	}
+	if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0 {
+		return v
+	}
+	return 0
+}
+
+// GetAPIBaseURL 获取 API 基础 URL
+func (s *SettingService) GetAPIBaseURL(ctx context.Context) string {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyAPIBaseURL)
+	if err != nil || value == "" {
+		return ""
+	}
+	return value
+}

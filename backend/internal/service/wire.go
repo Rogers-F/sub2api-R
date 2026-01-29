@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
@@ -209,17 +210,49 @@ func ProvideAPIKeyAuthCacheInvalidator(apiKeyService *APIKeyService) APIKeyAuthC
 	return apiKeyService
 }
 
+// ProvideAuthServiceWithReferral creates AuthService and injects ReferralService
+func ProvideAuthServiceWithReferral(
+	userRepo UserRepository,
+	cfg *config.Config,
+	settingService *SettingService,
+	emailService *EmailService,
+	turnstileService *TurnstileService,
+	emailQueueService *EmailQueueService,
+	promoService *PromoService,
+	referralService *ReferralService,
+) *AuthService {
+	svc := NewAuthService(userRepo, cfg, settingService, emailService, turnstileService, emailQueueService, promoService)
+	svc.SetReferralService(referralService)
+	return svc
+}
+
+// ProvideRedeemServiceWithReferral creates RedeemService and injects ReferralService
+func ProvideRedeemServiceWithReferral(
+	redeemRepo RedeemCodeRepository,
+	userRepo UserRepository,
+	subscriptionService *SubscriptionService,
+	cache RedeemCache,
+	billingCacheService *BillingCacheService,
+	entClient *dbent.Client,
+	authCacheInvalidator APIKeyAuthCacheInvalidator,
+	referralService *ReferralService,
+) *RedeemService {
+	svc := NewRedeemService(redeemRepo, userRepo, subscriptionService, cache, billingCacheService, entClient, authCacheInvalidator)
+	svc.SetReferralService(referralService)
+	return svc
+}
+
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
-	NewAuthService,
+	ProvideAuthServiceWithReferral,
 	NewUserService,
 	NewAPIKeyService,
 	ProvideAPIKeyAuthCacheInvalidator,
 	NewGroupService,
 	NewAccountService,
 	NewProxyService,
-	NewRedeemService,
+	ProvideRedeemServiceWithReferral,
 	NewPromoService,
 	NewUsageService,
 	NewDashboardService,
@@ -272,4 +305,6 @@ var ProviderSet = wire.NewSet(
 	NewUserAttributeService,
 	NewUsageCache,
 	NewTotpService,
+	NewReferralService,
+	NewAnnouncementService,
 )

@@ -204,6 +204,91 @@ var (
 			},
 		},
 	}
+	// AnnouncementsColumns holds the columns for the "announcements" table.
+	AnnouncementsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "title", Type: field.TypeString, Size: 255},
+		{Name: "content", Type: field.TypeString},
+		{Name: "content_type", Type: field.TypeString, Size: 20, Default: "markdown"},
+		{Name: "priority", Type: field.TypeInt, Default: 0},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+		{Name: "published_at", Type: field.TypeTime, Nullable: true},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// AnnouncementsTable holds the schema information for the "announcements" table.
+	AnnouncementsTable = &schema.Table{
+		Name:       "announcements",
+		Columns:    AnnouncementsColumns,
+		PrimaryKey: []*schema.Column{AnnouncementsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "announcement_status",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementsColumns[5]},
+			},
+			{
+				Name:    "announcement_priority",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementsColumns[4]},
+			},
+			{
+				Name:    "announcement_published_at",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementsColumns[6]},
+			},
+			{
+				Name:    "announcement_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementsColumns[7]},
+			},
+		},
+	}
+	// AnnouncementReadsColumns holds the columns for the "announcement_reads" table.
+	AnnouncementReadsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "read_at", Type: field.TypeTime},
+		{Name: "announcement_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+	}
+	// AnnouncementReadsTable holds the schema information for the "announcement_reads" table.
+	AnnouncementReadsTable = &schema.Table{
+		Name:       "announcement_reads",
+		Columns:    AnnouncementReadsColumns,
+		PrimaryKey: []*schema.Column{AnnouncementReadsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "announcement_reads_announcements_reads",
+				Columns:    []*schema.Column{AnnouncementReadsColumns[2]},
+				RefColumns: []*schema.Column{AnnouncementsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "announcement_reads_users_announcement_reads",
+				Columns:    []*schema.Column{AnnouncementReadsColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "announcementread_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementReadsColumns[3]},
+			},
+			{
+				Name:    "announcementread_announcement_id",
+				Unique:  false,
+				Columns: []*schema.Column{AnnouncementReadsColumns[2]},
+			},
+			{
+				Name:    "announcementread_user_id_announcement_id",
+				Unique:  true,
+				Columns: []*schema.Column{AnnouncementReadsColumns[3], AnnouncementReadsColumns[2]},
+			},
+		},
+	}
 	// GroupsColumns holds the columns for the "groups" table.
 	GroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -421,6 +506,61 @@ var (
 			},
 		},
 	}
+	// ReferralRewardsColumns holds the columns for the "referral_rewards" table.
+	ReferralRewardsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "reward_type", Type: field.TypeString, Size: 20},
+		{Name: "source_type", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "source_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "reward_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "commission_rate", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(5,4)"}},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "referrer_id", Type: field.TypeInt64},
+		{Name: "referee_id", Type: field.TypeInt64},
+	}
+	// ReferralRewardsTable holds the schema information for the "referral_rewards" table.
+	ReferralRewardsTable = &schema.Table{
+		Name:       "referral_rewards",
+		Columns:    ReferralRewardsColumns,
+		PrimaryKey: []*schema.Column{ReferralRewardsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "referral_rewards_users_referral_rewards_given",
+				Columns:    []*schema.Column{ReferralRewardsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "referral_rewards_users_referral_rewards_received",
+				Columns:    []*schema.Column{ReferralRewardsColumns[9]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralreward_referrer_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[8]},
+			},
+			{
+				Name:    "referralreward_referee_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[9]},
+			},
+			{
+				Name:    "referralreward_reward_type",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[1]},
+			},
+			{
+				Name:    "referralreward_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[7]},
+			},
+		},
+	}
 	// SettingsColumns holds the columns for the "settings" table.
 	SettingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -613,6 +753,8 @@ var (
 		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "referrer_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "referral_code", Type: field.TypeString, Nullable: true, Size: 16},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -840,11 +982,14 @@ var (
 		APIKeysTable,
 		AccountsTable,
 		AccountGroupsTable,
+		AnnouncementsTable,
+		AnnouncementReadsTable,
 		GroupsTable,
 		PromoCodesTable,
 		PromoCodeUsagesTable,
 		ProxiesTable,
 		RedeemCodesTable,
+		ReferralRewardsTable,
 		SettingsTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
@@ -871,6 +1016,14 @@ func init() {
 	AccountGroupsTable.Annotation = &entsql.Annotation{
 		Table: "account_groups",
 	}
+	AnnouncementsTable.Annotation = &entsql.Annotation{
+		Table: "announcements",
+	}
+	AnnouncementReadsTable.ForeignKeys[0].RefTable = AnnouncementsTable
+	AnnouncementReadsTable.ForeignKeys[1].RefTable = UsersTable
+	AnnouncementReadsTable.Annotation = &entsql.Annotation{
+		Table: "announcement_reads",
+	}
 	GroupsTable.Annotation = &entsql.Annotation{
 		Table: "groups",
 	}
@@ -889,6 +1042,11 @@ func init() {
 	RedeemCodesTable.ForeignKeys[1].RefTable = UsersTable
 	RedeemCodesTable.Annotation = &entsql.Annotation{
 		Table: "redeem_codes",
+	}
+	ReferralRewardsTable.ForeignKeys[0].RefTable = UsersTable
+	ReferralRewardsTable.ForeignKeys[1].RefTable = UsersTable
+	ReferralRewardsTable.Annotation = &entsql.Annotation{
+		Table: "referral_rewards",
 	}
 	SettingsTable.Annotation = &entsql.Annotation{
 		Table: "settings",

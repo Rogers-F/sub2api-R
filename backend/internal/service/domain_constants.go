@@ -63,6 +63,30 @@ const (
 	SubscriptionStatusSuspended = "suspended"
 )
 
+// Referral reward type constants
+const (
+	ReferralRewardTypeRegister   = "register"   // 注册奖励
+	ReferralRewardTypeCommission = "commission" // 返利奖励
+)
+
+// Referral source type constants
+const (
+	ReferralSourceTypeRedeemCode = "redeem_code" // 来自兑换码
+)
+
+// Announcement content type constants
+const (
+	AnnouncementContentTypeMarkdown = "markdown"
+	AnnouncementContentTypeHTML     = "html"
+	AnnouncementContentTypeURL      = "url"
+)
+
+// Announcement status constants
+const (
+	AnnouncementStatusActive   = "active"
+	AnnouncementStatusInactive = "inactive"
+)
+
 // LinuxDoConnectSyntheticEmailDomain 是 LinuxDo Connect 用户的合成邮箱后缀（RFC 保留域名）。
 const LinuxDoConnectSyntheticEmailDomain = "@linuxdo-connect.invalid"
 
@@ -73,6 +97,12 @@ const (
 	SettingKeyEmailVerifyEnabled   = "email_verify_enabled"   // 是否开启邮件验证
 	SettingKeyPromoCodeEnabled     = "promo_code_enabled"     // 是否启用优惠码功能
 	SettingKeyPasswordResetEnabled = "password_reset_enabled" // 是否启用忘记密码功能（需要先开启邮件验证）
+
+	// 邀请系统设置
+	SettingKeyReferralEnabled        = "referral_enabled"         // 是否启用邀请系统
+	SettingKeyReferralRegisterBonus  = "referral_register_bonus"  // 注册奖励金额（双方各得）
+	SettingKeyReferralCommissionRate = "referral_commission_rate" // 返利比例（0-1）
+	SettingKeyReferralMaxTotalReward = "referral_max_total_reward" // 奖励上限（0=无限制）
 
 	// 邮件服务设置
 	SettingKeySMTPHost     = "smtp_host"      // SMTP服务器地址

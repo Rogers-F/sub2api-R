@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, ref } from 'vue'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
+import AnnouncementModal from '@/components/announcement/AnnouncementModal.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
+import { announcementAPI } from '@/api/announcement'
 import { sanitizeUrl } from '@/utils/url'
+
+const showAnnouncementModal = ref(false)
 
 const router = useRouter()
 const route = useRoute()
@@ -75,13 +79,23 @@ watch(
 // Watch for authentication state and manage subscription data
 watch(
   () => authStore.isAuthenticated,
-  (isAuthenticated) => {
+  async (isAuthenticated) => {
     if (isAuthenticated) {
       // User logged in: preload subscriptions and start polling
       subscriptionStore.fetchActiveSubscriptions().catch((error) => {
         console.error('Failed to preload subscriptions:', error)
       })
       subscriptionStore.startPolling()
+
+      // Check for unread announcements
+      try {
+        const announcements = await announcementAPI.getUnreadAnnouncements()
+        if (announcements.length > 0) {
+          showAnnouncementModal.value = true
+        }
+      } catch (error) {
+        console.error('Failed to check unread announcements:', error)
+      }
     } else {
       // User logged out: clear data and stop polling
       subscriptionStore.clear()
@@ -131,4 +145,9 @@ onMounted(async () => {
   <NavigationProgress />
   <RouterView />
   <Toast />
+  <AnnouncementModal
+    :show="showAnnouncementModal"
+    @close="showAnnouncementModal = false"
+    @read="showAnnouncementModal = false"
+  />
 </template>

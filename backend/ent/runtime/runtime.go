@@ -7,12 +7,15 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -210,6 +213,58 @@ func init() {
 	accountgroupDescCreatedAt := accountgroupFields[3].Descriptor()
 	// accountgroup.DefaultCreatedAt holds the default value on creation for the created_at field.
 	accountgroup.DefaultCreatedAt = accountgroupDescCreatedAt.Default.(func() time.Time)
+	announcementFields := schema.Announcement{}.Fields()
+	_ = announcementFields
+	// announcementDescTitle is the schema descriptor for title field.
+	announcementDescTitle := announcementFields[0].Descriptor()
+	// announcement.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	announcement.TitleValidator = func() func(string) error {
+		validators := announcementDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// announcementDescContentType is the schema descriptor for content_type field.
+	announcementDescContentType := announcementFields[2].Descriptor()
+	// announcement.DefaultContentType holds the default value on creation for the content_type field.
+	announcement.DefaultContentType = announcementDescContentType.Default.(string)
+	// announcement.ContentTypeValidator is a validator for the "content_type" field. It is called by the builders before save.
+	announcement.ContentTypeValidator = announcementDescContentType.Validators[0].(func(string) error)
+	// announcementDescPriority is the schema descriptor for priority field.
+	announcementDescPriority := announcementFields[3].Descriptor()
+	// announcement.DefaultPriority holds the default value on creation for the priority field.
+	announcement.DefaultPriority = announcementDescPriority.Default.(int)
+	// announcementDescStatus is the schema descriptor for status field.
+	announcementDescStatus := announcementFields[4].Descriptor()
+	// announcement.DefaultStatus holds the default value on creation for the status field.
+	announcement.DefaultStatus = announcementDescStatus.Default.(string)
+	// announcement.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	announcement.StatusValidator = announcementDescStatus.Validators[0].(func(string) error)
+	// announcementDescCreatedAt is the schema descriptor for created_at field.
+	announcementDescCreatedAt := announcementFields[7].Descriptor()
+	// announcement.DefaultCreatedAt holds the default value on creation for the created_at field.
+	announcement.DefaultCreatedAt = announcementDescCreatedAt.Default.(func() time.Time)
+	// announcementDescUpdatedAt is the schema descriptor for updated_at field.
+	announcementDescUpdatedAt := announcementFields[8].Descriptor()
+	// announcement.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	announcement.DefaultUpdatedAt = announcementDescUpdatedAt.Default.(func() time.Time)
+	// announcement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	announcement.UpdateDefaultUpdatedAt = announcementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	announcementreadFields := schema.AnnouncementRead{}.Fields()
+	_ = announcementreadFields
+	// announcementreadDescReadAt is the schema descriptor for read_at field.
+	announcementreadDescReadAt := announcementreadFields[2].Descriptor()
+	// announcementread.DefaultReadAt holds the default value on creation for the read_at field.
+	announcementread.DefaultReadAt = announcementreadDescReadAt.Default.(func() time.Time)
 	groupMixin := schema.Group{}.Mixin()
 	groupMixinHooks1 := groupMixin[1].Hooks()
 	group.Hooks[0] = groupMixinHooks1[0]
@@ -470,6 +525,24 @@ func init() {
 	redeemcodeDescValidityDays := redeemcodeFields[9].Descriptor()
 	// redeemcode.DefaultValidityDays holds the default value on creation for the validity_days field.
 	redeemcode.DefaultValidityDays = redeemcodeDescValidityDays.Default.(int)
+	referralrewardFields := schema.ReferralReward{}.Fields()
+	_ = referralrewardFields
+	// referralrewardDescRewardType is the schema descriptor for reward_type field.
+	referralrewardDescRewardType := referralrewardFields[2].Descriptor()
+	// referralreward.RewardTypeValidator is a validator for the "reward_type" field. It is called by the builders before save.
+	referralreward.RewardTypeValidator = referralrewardDescRewardType.Validators[0].(func(string) error)
+	// referralrewardDescSourceType is the schema descriptor for source_type field.
+	referralrewardDescSourceType := referralrewardFields[3].Descriptor()
+	// referralreward.SourceTypeValidator is a validator for the "source_type" field. It is called by the builders before save.
+	referralreward.SourceTypeValidator = referralrewardDescSourceType.Validators[0].(func(string) error)
+	// referralrewardDescSourceAmount is the schema descriptor for source_amount field.
+	referralrewardDescSourceAmount := referralrewardFields[5].Descriptor()
+	// referralreward.DefaultSourceAmount holds the default value on creation for the source_amount field.
+	referralreward.DefaultSourceAmount = referralrewardDescSourceAmount.Default.(float64)
+	// referralrewardDescCreatedAt is the schema descriptor for created_at field.
+	referralrewardDescCreatedAt := referralrewardFields[8].Descriptor()
+	// referralreward.DefaultCreatedAt holds the default value on creation for the created_at field.
+	referralreward.DefaultCreatedAt = referralrewardDescCreatedAt.Default.(func() time.Time)
 	settingFields := schema.Setting{}.Fields()
 	_ = settingFields
 	// settingDescKey is the schema descriptor for key field.
@@ -740,6 +813,10 @@ func init() {
 	userDescTotpEnabled := userFields[9].Descriptor()
 	// user.DefaultTotpEnabled holds the default value on creation for the totp_enabled field.
 	user.DefaultTotpEnabled = userDescTotpEnabled.Default.(bool)
+	// userDescReferralCode is the schema descriptor for referral_code field.
+	userDescReferralCode := userFields[12].Descriptor()
+	// user.ReferralCodeValidator is a validator for the "referral_code" field. It is called by the builders before save.
+	user.ReferralCodeValidator = userDescReferralCode.Validators[0].(func(string) error)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
 	_ = userallowedgroupFields
 	// userallowedgroupDescCreatedAt is the schema descriptor for created_at field.

@@ -13,11 +13,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
@@ -28,20 +30,23 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx                       *QueryContext
-	order                     []user.OrderOption
-	inters                    []Interceptor
-	predicates                []predicate.User
-	withAPIKeys               *APIKeyQuery
-	withRedeemCodes           *RedeemCodeQuery
-	withSubscriptions         *UserSubscriptionQuery
-	withAssignedSubscriptions *UserSubscriptionQuery
-	withAllowedGroups         *GroupQuery
-	withUsageLogs             *UsageLogQuery
-	withAttributeValues       *UserAttributeValueQuery
-	withPromoCodeUsages       *PromoCodeUsageQuery
-	withUserAllowedGroups     *UserAllowedGroupQuery
-	modifiers                 []func(*sql.Selector)
+	ctx                         *QueryContext
+	order                       []user.OrderOption
+	inters                      []Interceptor
+	predicates                  []predicate.User
+	withAPIKeys                 *APIKeyQuery
+	withRedeemCodes             *RedeemCodeQuery
+	withSubscriptions           *UserSubscriptionQuery
+	withAssignedSubscriptions   *UserSubscriptionQuery
+	withAllowedGroups           *GroupQuery
+	withUsageLogs               *UsageLogQuery
+	withAttributeValues         *UserAttributeValueQuery
+	withPromoCodeUsages         *PromoCodeUsageQuery
+	withReferralRewardsGiven    *ReferralRewardQuery
+	withReferralRewardsReceived *ReferralRewardQuery
+	withAnnouncementReads       *AnnouncementReadQuery
+	withUserAllowedGroups       *UserAllowedGroupQuery
+	modifiers                   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -247,6 +252,72 @@ func (_q *UserQuery) QueryPromoCodeUsages() *PromoCodeUsageQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(promocodeusage.Table, promocodeusage.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.PromoCodeUsagesTable, user.PromoCodeUsagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReferralRewardsGiven chains the current query on the "referral_rewards_given" edge.
+func (_q *UserQuery) QueryReferralRewardsGiven() *ReferralRewardQuery {
+	query := (&ReferralRewardClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(referralreward.Table, referralreward.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReferralRewardsGivenTable, user.ReferralRewardsGivenColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReferralRewardsReceived chains the current query on the "referral_rewards_received" edge.
+func (_q *UserQuery) QueryReferralRewardsReceived() *ReferralRewardQuery {
+	query := (&ReferralRewardClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(referralreward.Table, referralreward.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReferralRewardsReceivedTable, user.ReferralRewardsReceivedColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAnnouncementReads chains the current query on the "announcement_reads" edge.
+func (_q *UserQuery) QueryAnnouncementReads() *AnnouncementReadQuery {
+	query := (&AnnouncementReadClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(announcementread.Table, announcementread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.AnnouncementReadsTable, user.AnnouncementReadsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -463,20 +534,23 @@ func (_q *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:                    _q.config,
-		ctx:                       _q.ctx.Clone(),
-		order:                     append([]user.OrderOption{}, _q.order...),
-		inters:                    append([]Interceptor{}, _q.inters...),
-		predicates:                append([]predicate.User{}, _q.predicates...),
-		withAPIKeys:               _q.withAPIKeys.Clone(),
-		withRedeemCodes:           _q.withRedeemCodes.Clone(),
-		withSubscriptions:         _q.withSubscriptions.Clone(),
-		withAssignedSubscriptions: _q.withAssignedSubscriptions.Clone(),
-		withAllowedGroups:         _q.withAllowedGroups.Clone(),
-		withUsageLogs:             _q.withUsageLogs.Clone(),
-		withAttributeValues:       _q.withAttributeValues.Clone(),
-		withPromoCodeUsages:       _q.withPromoCodeUsages.Clone(),
-		withUserAllowedGroups:     _q.withUserAllowedGroups.Clone(),
+		config:                      _q.config,
+		ctx:                         _q.ctx.Clone(),
+		order:                       append([]user.OrderOption{}, _q.order...),
+		inters:                      append([]Interceptor{}, _q.inters...),
+		predicates:                  append([]predicate.User{}, _q.predicates...),
+		withAPIKeys:                 _q.withAPIKeys.Clone(),
+		withRedeemCodes:             _q.withRedeemCodes.Clone(),
+		withSubscriptions:           _q.withSubscriptions.Clone(),
+		withAssignedSubscriptions:   _q.withAssignedSubscriptions.Clone(),
+		withAllowedGroups:           _q.withAllowedGroups.Clone(),
+		withUsageLogs:               _q.withUsageLogs.Clone(),
+		withAttributeValues:         _q.withAttributeValues.Clone(),
+		withPromoCodeUsages:         _q.withPromoCodeUsages.Clone(),
+		withReferralRewardsGiven:    _q.withReferralRewardsGiven.Clone(),
+		withReferralRewardsReceived: _q.withReferralRewardsReceived.Clone(),
+		withAnnouncementReads:       _q.withAnnouncementReads.Clone(),
+		withUserAllowedGroups:       _q.withUserAllowedGroups.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -571,6 +645,39 @@ func (_q *UserQuery) WithPromoCodeUsages(opts ...func(*PromoCodeUsageQuery)) *Us
 	return _q
 }
 
+// WithReferralRewardsGiven tells the query-builder to eager-load the nodes that are connected to
+// the "referral_rewards_given" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithReferralRewardsGiven(opts ...func(*ReferralRewardQuery)) *UserQuery {
+	query := (&ReferralRewardClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withReferralRewardsGiven = query
+	return _q
+}
+
+// WithReferralRewardsReceived tells the query-builder to eager-load the nodes that are connected to
+// the "referral_rewards_received" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithReferralRewardsReceived(opts ...func(*ReferralRewardQuery)) *UserQuery {
+	query := (&ReferralRewardClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withReferralRewardsReceived = query
+	return _q
+}
+
+// WithAnnouncementReads tells the query-builder to eager-load the nodes that are connected to
+// the "announcement_reads" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithAnnouncementReads(opts ...func(*AnnouncementReadQuery)) *UserQuery {
+	query := (&AnnouncementReadClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAnnouncementReads = query
+	return _q
+}
+
 // WithUserAllowedGroups tells the query-builder to eager-load the nodes that are connected to
 // the "user_allowed_groups" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *UserQuery) WithUserAllowedGroups(opts ...func(*UserAllowedGroupQuery)) *UserQuery {
@@ -660,7 +767,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [9]bool{
+		loadedTypes = [12]bool{
 			_q.withAPIKeys != nil,
 			_q.withRedeemCodes != nil,
 			_q.withSubscriptions != nil,
@@ -669,6 +776,9 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withUsageLogs != nil,
 			_q.withAttributeValues != nil,
 			_q.withPromoCodeUsages != nil,
+			_q.withReferralRewardsGiven != nil,
+			_q.withReferralRewardsReceived != nil,
+			_q.withAnnouncementReads != nil,
 			_q.withUserAllowedGroups != nil,
 		}
 	)
@@ -748,6 +858,31 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadPromoCodeUsages(ctx, query, nodes,
 			func(n *User) { n.Edges.PromoCodeUsages = []*PromoCodeUsage{} },
 			func(n *User, e *PromoCodeUsage) { n.Edges.PromoCodeUsages = append(n.Edges.PromoCodeUsages, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withReferralRewardsGiven; query != nil {
+		if err := _q.loadReferralRewardsGiven(ctx, query, nodes,
+			func(n *User) { n.Edges.ReferralRewardsGiven = []*ReferralReward{} },
+			func(n *User, e *ReferralReward) {
+				n.Edges.ReferralRewardsGiven = append(n.Edges.ReferralRewardsGiven, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withReferralRewardsReceived; query != nil {
+		if err := _q.loadReferralRewardsReceived(ctx, query, nodes,
+			func(n *User) { n.Edges.ReferralRewardsReceived = []*ReferralReward{} },
+			func(n *User, e *ReferralReward) {
+				n.Edges.ReferralRewardsReceived = append(n.Edges.ReferralRewardsReceived, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAnnouncementReads; query != nil {
+		if err := _q.loadAnnouncementReads(ctx, query, nodes,
+			func(n *User) { n.Edges.AnnouncementReads = []*AnnouncementRead{} },
+			func(n *User, e *AnnouncementRead) { n.Edges.AnnouncementReads = append(n.Edges.AnnouncementReads, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1023,6 +1158,96 @@ func (_q *UserQuery) loadPromoCodeUsages(ctx context.Context, query *PromoCodeUs
 	}
 	query.Where(predicate.PromoCodeUsage(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.PromoCodeUsagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadReferralRewardsGiven(ctx context.Context, query *ReferralRewardQuery, nodes []*User, init func(*User), assign func(*User, *ReferralReward)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(referralreward.FieldReferrerID)
+	}
+	query.Where(predicate.ReferralReward(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ReferralRewardsGivenColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ReferrerID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "referrer_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadReferralRewardsReceived(ctx context.Context, query *ReferralRewardQuery, nodes []*User, init func(*User), assign func(*User, *ReferralReward)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(referralreward.FieldRefereeID)
+	}
+	query.Where(predicate.ReferralReward(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ReferralRewardsReceivedColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.RefereeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "referee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadAnnouncementReads(ctx context.Context, query *AnnouncementReadQuery, nodes []*User, init func(*User), assign func(*User, *AnnouncementRead)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(announcementread.FieldUserID)
+	}
+	query.Where(predicate.AnnouncementRead(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.AnnouncementReadsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
