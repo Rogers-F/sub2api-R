@@ -61,7 +61,7 @@ func (r *announcementRepository) Update(ctx context.Context, id int64, input *se
 	// Build dynamic update query
 	var (
 		updates []string
-		args    []interface{}
+		args    []any
 		argIdx  = 1
 	)
 
@@ -334,7 +334,7 @@ func (r *announcementRepository) MarkAllAsRead(ctx context.Context, userID int64
 		INSERT INTO announcement_reads (user_id, announcement_id, read_at)
 		VALUES
 	`
-	var args []interface{}
+	var args []any
 	argIdx := 1
 	for i, annID := range announcementIDs {
 		if i > 0 {
