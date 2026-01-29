@@ -78,7 +78,7 @@ func (r *referralRepository) GetRewardsByReferrer(ctx context.Context, referrerI
 	if err != nil {
 		return nil, 0, fmt.Errorf("get referral rewards: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var rewards []*service.ReferralReward
 	for rows.Next() {
@@ -138,7 +138,7 @@ func (r *referralRepository) GetRewardStats(ctx context.Context, referrerID int6
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("get reward stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var rewardType string
