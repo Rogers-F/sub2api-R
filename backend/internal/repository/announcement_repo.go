@@ -332,7 +332,7 @@ func (r *announcementRepository) MarkAllAsRead(ctx context.Context, userID int64
 		INSERT INTO announcement_reads (user_id, announcement_id, read_at)
 		VALUES
 	`
-	args := []interface{}{}
+	var args []interface{}
 	argIdx := 1
 	for i, annID := range announcementIDs {
 		if i > 0 {
