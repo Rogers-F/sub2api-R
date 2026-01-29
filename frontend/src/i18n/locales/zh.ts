@@ -1,7 +1,6 @@
 export default {
   // Home Page
   home: {
-    viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',
     switchToLight: '切换到浅色模式',
@@ -296,7 +295,6 @@ export default {
     collapse: '收起',
     expand: '展开',
     logout: '退出登录',
-    github: 'GitHub',
     mySubscriptions: '我的订阅',
     docs: '文档'
   },
@@ -438,7 +436,21 @@ export default {
     viewUsage: '查看使用记录',
     checkDetailedLogs: '查看详细的使用日志',
     redeemCode: '兑换码',
-    addBalanceWithCode: '使用兑换码充值'
+    addBalanceWithCode: '使用兑换码充值',
+    // New dashboard sections
+    welcomeBack: '欢迎回来',
+    welcomeSubtitle: '这是您的账户概览',
+    quickStart: '快速开始',
+    documentation: '使用文档',
+    viewDocumentation: '查看 API 使用说明',
+    apiEndpoint: 'API 端点',
+    noQuickStartItems: '暂无快速开始项目',
+    contactUs: '联系我们',
+    announcements: '最新公告',
+    manageKeys: '管理密钥',
+    viewSubscriptions: '查看订阅',
+    checkUsage: '查看使用量',
+    redeemNow: '立即兑换'
   },
 
   // Groups (shared)
@@ -1328,10 +1340,12 @@ export default {
         status: '状态',
         schedulable: '调度',
         todayStats: '今日统计',
+        totalStats: '总使用量',
         groups: '分组',
         usageWindows: '用量窗口',
         proxy: '代理',
         lastUsed: '最近使用',
+        createdAt: '创建时间',
         expiresAt: '过期时间',
         actions: '操作'
       },
@@ -3269,8 +3283,6 @@ export default {
     releaseNotes: '更新日志',
     noReleaseNotes: '暂无更新日志',
     viewUpdate: '查看更新',
-    viewRelease: '查看发布',
-    viewChangelog: '查看更新日志',
     refresh: '刷新',
     sourceMode: '源码构建',
     sourceModeHint: '源码构建请使用 git pull 更新',

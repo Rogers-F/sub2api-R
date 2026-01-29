@@ -29,6 +29,7 @@ type UsageLogRepository interface {
 
 	GetAccountWindowStats(ctx context.Context, accountID int64, startTime time.Time) (*usagestats.AccountStats, error)
 	GetAccountTodayStats(ctx context.Context, accountID int64) (*usagestats.AccountStats, error)
+	GetAccountTotalStats(ctx context.Context, accountID int64) (*usagestats.AccountStats, error)
 
 	// Admin dashboard stats
 	GetDashboardStats(ctx context.Context) (*usagestats.DashboardStats, error)
@@ -418,6 +419,22 @@ func (s *AccountUsageService) GetTodayStats(ctx context.Context, accountID int64
 	stats, err := s.usageLogRepo.GetAccountTodayStats(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("get today stats failed: %w", err)
+	}
+
+	return &WindowStats{
+		Requests:     stats.Requests,
+		Tokens:       stats.Tokens,
+		Cost:         stats.Cost,
+		StandardCost: stats.StandardCost,
+		UserCost:     stats.UserCost,
+	}, nil
+}
+
+// GetTotalStats 获取账号全部时间的总统计
+func (s *AccountUsageService) GetTotalStats(ctx context.Context, accountID int64) (*WindowStats, error) {
+	stats, err := s.usageLogRepo.GetAccountTotalStats(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get total stats failed: %w", err)
 	}
 
 	return &WindowStats{

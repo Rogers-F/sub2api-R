@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4 md:space-y-6">
     <!-- Header (matches OpsDashboardHeader + overview blocks) -->
     <div :class="['rounded-3xl bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700', props.fullscreen ? 'p-8' : 'p-6']">
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4 dark:border-dark-700">
@@ -50,26 +50,26 @@ const props = withDefaults(defineProps<Props>(), {
     </div>
 
     <!-- Row: Concurrency + Throughput (matches OpsDashboard.vue) -->
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div :class="['min-h-[360px] rounded-3xl bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700 lg:col-span-1', props.fullscreen ? 'p-8' : 'p-6']">
+    <div class="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
+      <div :class="['min-h-[280px] rounded-3xl bg-white shadow-sm ring-1 ring-gray-900/5 md:min-h-[360px] dark:bg-dark-800 dark:ring-dark-700 lg:col-span-1', props.fullscreen ? 'p-8' : 'p-6']">
         <div class="h-4 w-44 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
-        <div class="mt-6 h-72 animate-pulse rounded-2xl bg-gray-100 dark:bg-dark-700/70"></div>
+        <div class="mt-6 h-56 animate-pulse rounded-2xl bg-gray-100 md:h-72 dark:bg-dark-700/70"></div>
       </div>
-      <div :class="['min-h-[360px] rounded-3xl bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700 lg:col-span-2', props.fullscreen ? 'p-8' : 'p-6']">
+      <div :class="['min-h-[280px] rounded-3xl bg-white shadow-sm ring-1 ring-gray-900/5 md:min-h-[360px] dark:bg-dark-800 dark:ring-dark-700 lg:col-span-2', props.fullscreen ? 'p-8' : 'p-6']">
         <div class="h-4 w-56 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
-        <div class="mt-6 h-72 animate-pulse rounded-2xl bg-gray-100 dark:bg-dark-700/70"></div>
+        <div class="mt-6 h-56 animate-pulse rounded-2xl bg-gray-100 md:h-72 dark:bg-dark-700/70"></div>
       </div>
     </div>
 
     <!-- Row: Visual Analysis (baseline 3-up grid) -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
       <div
         v-for="i in 3"
         :key="i"
         :class="['rounded-3xl bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700', props.fullscreen ? 'p-8' : 'p-6']"
       >
         <div class="h-4 w-44 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
-        <div class="mt-6 h-56 animate-pulse rounded-2xl bg-gray-100 dark:bg-dark-700/70"></div>
+        <div class="mt-6 h-48 animate-pulse rounded-2xl bg-gray-100 md:h-56 dark:bg-dark-700/70"></div>
       </div>
     </div>
 

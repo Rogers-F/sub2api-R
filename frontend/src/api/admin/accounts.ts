@@ -303,6 +303,16 @@ export async function getTodayStats(id: number): Promise<WindowStats> {
 }
 
 /**
+ * Get account total statistics
+ * @param id - Account ID
+ * @returns Total stats (requests, tokens, cost)
+ */
+export async function getTotalStats(id: number): Promise<WindowStats> {
+  const { data } = await apiClient.get<WindowStats>(`/admin/accounts/${id}/total-stats`)
+  return data
+}
+
+/**
  * Set account schedulable status
  * @param id - Account ID
  * @param schedulable - Whether the account should participate in scheduling

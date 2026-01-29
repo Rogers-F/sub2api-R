@@ -1,7 +1,6 @@
 export default {
   // Home Page
   home: {
-    viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
     switchToLight: 'Switch to Light Mode',
@@ -299,7 +298,6 @@ export default {
     collapse: 'Collapse',
     expand: 'Expand',
     logout: 'Logout',
-    github: 'GitHub',
     mySubscriptions: 'My Subscriptions',
     docs: 'Docs'
   },
@@ -441,7 +439,21 @@ export default {
     viewUsage: 'View Usage',
     checkDetailedLogs: 'Check detailed usage logs',
     redeemCode: 'Redeem Code',
-    addBalanceWithCode: 'Add balance with a code'
+    addBalanceWithCode: 'Add balance with a code',
+    // New dashboard sections
+    welcomeBack: 'Welcome back',
+    welcomeSubtitle: 'Here is your account overview',
+    quickStart: 'Quick Start',
+    documentation: 'Documentation',
+    viewDocumentation: 'View API documentation',
+    apiEndpoint: 'API Endpoint',
+    noQuickStartItems: 'No quick start items',
+    contactUs: 'Contact Us',
+    announcements: 'Announcements',
+    manageKeys: 'Manage keys',
+    viewSubscriptions: 'View subscriptions',
+    checkUsage: 'Check usage',
+    redeemNow: 'Redeem now'
   },
 
   // Groups (shared)
@@ -1282,10 +1294,12 @@ export default {
         status: 'Status',
         schedulable: 'Schedulable',
         todayStats: 'Today Stats',
+        totalStats: 'Total Usage',
         groups: 'Groups',
         usageWindows: 'Usage Windows',
         proxy: 'Proxy',
         lastUsed: 'Last Used',
+        createdAt: 'Created At',
         expiresAt: 'Expires At',
         actions: 'Actions'
       },
@@ -3119,8 +3133,6 @@ export default {
     releaseNotes: 'Release Notes',
     noReleaseNotes: 'No release notes',
     viewUpdate: 'View Update',
-    viewRelease: 'View Release',
-    viewChangelog: 'View Changelog',
     refresh: 'Refresh',
     sourceMode: 'Source Build',
     sourceModeHint: 'Source build, use git pull to update',

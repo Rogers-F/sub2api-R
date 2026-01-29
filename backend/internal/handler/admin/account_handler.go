@@ -1087,6 +1087,24 @@ func (h *AccountHandler) GetTodayStats(c *gin.Context) {
 	response.Success(c, stats)
 }
 
+// GetTotalStats handles getting account total statistics
+// GET /api/v1/admin/accounts/:id/total-stats
+func (h *AccountHandler) GetTotalStats(c *gin.Context) {
+	accountID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid account ID")
+		return
+	}
+
+	stats, err := h.accountUsageService.GetTotalStats(c.Request.Context(), accountID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, stats)
+}
+
 // SetSchedulableRequest represents the request body for setting schedulable status
 type SetSchedulableRequest struct {
 	Schedulable bool `json:"schedulable"`

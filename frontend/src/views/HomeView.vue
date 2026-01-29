@@ -328,9 +328,8 @@
         <p class="text-sm text-warm-600">
           &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
         </p>
-        <div class="flex items-center gap-6">
-          <a v-if="docUrl" :href="docUrl" target="_blank" class="text-sm text-warm-600 transition-colors hover:text-warm-900">{{ t('home.docs') }}</a>
-          <a :href="githubUrl" target="_blank" class="text-sm text-warm-600 transition-colors hover:text-warm-900">GitHub</a>
+        <div v-if="docUrl" class="flex items-center gap-6">
+          <a :href="docUrl" target="_blank" class="text-sm text-warm-600 transition-colors hover:text-warm-900">{{ t('home.docs') }}</a>
         </div>
       </div>
     </footer>
@@ -645,9 +644,8 @@
       <footer class="border-t border-white/5 px-6 py-8 backdrop-blur-sm">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
           <p class="text-sm text-gray-400">&copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}</p>
-          <div class="flex items-center gap-6">
-            <a v-if="docUrl" :href="docUrl" target="_blank" class="text-sm text-gray-400 transition-colors hover:text-cyan-400">{{ t('home.docs') }}</a>
-            <a :href="githubUrl" target="_blank" class="text-sm text-gray-400 transition-colors hover:text-cyan-400">GitHub</a>
+          <div v-if="docUrl" class="flex items-center gap-6">
+            <a :href="docUrl" target="_blank" class="text-sm text-gray-400 transition-colors hover:text-cyan-400">{{ t('home.docs') }}</a>
           </div>
         </div>
       </footer>
@@ -677,7 +675,6 @@ const isHomeContentUrl = computed(() => {
 })
 
 const isDark = ref(false)
-const githubUrl = 'https://github.com/Wei-Shaw/sub2api'
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
