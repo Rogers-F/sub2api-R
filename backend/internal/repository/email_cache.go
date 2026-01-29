@@ -139,7 +139,7 @@ func (c *emailCache) GetAndDeletePasswordResetToken(ctx context.Context, email s
 // Returns true if token matched and was deleted, false if token didn't match or doesn't exist.
 func (c *emailCache) ConsumePasswordResetTokenAtomic(ctx context.Context, email, token string) (bool, error) {
 	key := passwordResetKey(email)
-	result, err := compareAndDeleteScript.Run(ctx, c.rdb, []string{key}, token).Result()
+	result, err := compareAndDeleteScript.Run(ctx, c.rdb, []string{key}, token).Int64()
 	if err == redis.Nil {
 		// Key doesn't exist
 		return false, nil
@@ -148,7 +148,7 @@ func (c *emailCache) ConsumePasswordResetTokenAtomic(ctx context.Context, email,
 		return false, err
 	}
 	// result is 1 if matched and deleted, 0 if not matched
-	return result.(int64) == 1, nil
+	return result == 1, nil
 }
 
 // Password reset email cooldown methods
