@@ -1198,7 +1198,7 @@ export interface Announcement {
   content: string
   content_type: 'markdown' | 'html' | 'url'
   priority: number
-  status?: 'active' | 'inactive'
+  status: 'active' | 'inactive'
   published_at?: string | null
   expires_at?: string | null
   created_at: string

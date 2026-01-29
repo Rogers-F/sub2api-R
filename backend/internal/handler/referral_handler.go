@@ -125,9 +125,9 @@ func (h *ReferralHandler) GetReferralRewards(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"items": items,
-		"total": total,
-		"page":  page,
+		"items":     items,
+		"total":     total,
+		"page":      page,
 		"page_size": pageSize,
 	})
 }

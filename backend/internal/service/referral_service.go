@@ -49,9 +49,9 @@ func (s *ReferralService) IsEnabled(ctx context.Context) bool {
 func (s *ReferralService) GenerateReferralCode() string {
 	bytes := make([]byte, 6) // 6 bytes = 12 hex chars
 	if _, err := rand.Read(bytes); err != nil {
-		// Fallback to timestamp-based code
-		mathrand.Seed(time.Now().UnixNano())
-		code := fmt.Sprintf("%012x", mathrand.Int63())
+		// Fallback to timestamp-based code using new random source
+		rng := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
+		code := fmt.Sprintf("%012x", rng.Int63())
 		if len(code) > 12 {
 			code = code[:12]
 		}

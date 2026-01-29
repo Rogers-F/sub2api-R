@@ -11,13 +11,12 @@ import (
 )
 
 type announcementRepository struct {
-	client *dbent.Client
-	sql    *sql.DB
+	sql *sql.DB
 }
 
 // NewAnnouncementRepository creates a new announcement repository
-func NewAnnouncementRepository(client *dbent.Client, sqlDB *sql.DB) service.AnnouncementRepository {
-	return &announcementRepository{client: client, sql: sqlDB}
+func NewAnnouncementRepository(_ *dbent.Client, sqlDB *sql.DB) service.AnnouncementRepository {
+	return &announcementRepository{sql: sqlDB}
 }
 
 // Create creates a new announcement
@@ -192,7 +191,7 @@ func (r *announcementRepository) List(ctx context.Context, offset, limit int) ([
 	if err != nil {
 		return nil, 0, fmt.Errorf("list announcements: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var announcements []*service.Announcement
 	for rows.Next() {
@@ -234,7 +233,7 @@ func (r *announcementRepository) GetActiveAnnouncements(ctx context.Context) ([]
 	if err != nil {
 		return nil, fmt.Errorf("get active announcements: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var announcements []*service.Announcement
 	for rows.Next() {
@@ -280,7 +279,7 @@ func (r *announcementRepository) GetUnreadAnnouncements(ctx context.Context, use
 	if err != nil {
 		return nil, fmt.Errorf("get unread announcements: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var announcements []*service.Announcement
 	for rows.Next() {

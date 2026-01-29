@@ -11,13 +11,12 @@ import (
 )
 
 type referralRepository struct {
-	client *dbent.Client
-	sql    sqlQueryer
+	sql sqlQueryer
 }
 
 // NewReferralRepository creates a new referral repository
-func NewReferralRepository(client *dbent.Client, sqlDB *sql.DB) service.ReferralRepository {
-	return &referralRepository{client: client, sql: sqlDB}
+func NewReferralRepository(_ *dbent.Client, sqlDB *sql.DB) service.ReferralRepository {
+	return &referralRepository{sql: sqlDB}
 }
 
 // sqlQueryerFromContext returns the transaction's sql executor if available, otherwise the default one

@@ -20,8 +20,8 @@ type ReferralReward struct {
 	ID             int64
 	ReferrerID     int64
 	RefereeID      int64
-	RewardType     string   // register | commission
-	SourceType     *string  // redeem_code
+	RewardType     string  // register | commission
+	SourceType     *string // redeem_code
 	SourceID       *int64
 	SourceAmount   float64
 	RewardAmount   float64

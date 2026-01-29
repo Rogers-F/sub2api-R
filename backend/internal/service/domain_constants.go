@@ -99,9 +99,9 @@ const (
 	SettingKeyPasswordResetEnabled = "password_reset_enabled" // 是否启用忘记密码功能（需要先开启邮件验证）
 
 	// 邀请系统设置
-	SettingKeyReferralEnabled        = "referral_enabled"         // 是否启用邀请系统
-	SettingKeyReferralRegisterBonus  = "referral_register_bonus"  // 注册奖励金额（双方各得）
-	SettingKeyReferralCommissionRate = "referral_commission_rate" // 返利比例（0-1）
+	SettingKeyReferralEnabled        = "referral_enabled"          // 是否启用邀请系统
+	SettingKeyReferralRegisterBonus  = "referral_register_bonus"   // 注册奖励金额（双方各得）
+	SettingKeyReferralCommissionRate = "referral_commission_rate"  // 返利比例（0-1）
 	SettingKeyReferralMaxTotalReward = "referral_max_total_reward" // 奖励上限（0=无限制）
 
 	// 邮件服务设置
