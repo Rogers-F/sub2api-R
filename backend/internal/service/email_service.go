@@ -9,12 +9,20 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net"
 	"net/smtp"
 	"net/url"
 	"strconv"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+)
+
+const (
+	// SMTP connection timeout settings
+	smtpDialTimeout  = 30 * time.Second // Connection establishment timeout
+	smtpWriteTimeout = 30 * time.Second // Write operation timeout
+	smtpReadTimeout  = 30 * time.Second // Read operation timeout
 )
 
 var (
@@ -37,6 +45,13 @@ type EmailCache interface {
 	GetPasswordResetToken(ctx context.Context, email string) (*PasswordResetTokenData, error)
 	SetPasswordResetToken(ctx context.Context, email string, data *PasswordResetTokenData, ttl time.Duration) error
 	DeletePasswordResetToken(ctx context.Context, email string) error
+	// GetAndDeletePasswordResetToken gets and deletes the token (for backward compatibility)
+	// Deprecated: Use ConsumePasswordResetTokenAtomic for secure atomic operation
+	GetAndDeletePasswordResetToken(ctx context.Context, email string) (*PasswordResetTokenData, error)
+	// ConsumePasswordResetTokenAtomic atomically verifies and deletes the token using Lua script
+	// Returns true if token matched and was deleted, false otherwise
+	// This prevents both race conditions and DoS attacks (wrong token won't delete valid token)
+	ConsumePasswordResetTokenAtomic(ctx context.Context, email, token string) (bool, error)
 
 	// Password reset email cooldown methods
 	// Returns true if in cooldown period (email was sent recently)
@@ -162,10 +177,76 @@ func (s *EmailService) SendEmailWithConfig(config *SMTPConfig, to, subject, body
 		return s.sendMailTLS(addr, auth, config.From, to, []byte(msg), config.Host)
 	}
 
-	return smtp.SendMail(addr, auth, config.From, []string{to}, []byte(msg))
+	return s.sendMailPlain(addr, auth, config.From, to, []byte(msg), config.Host)
 }
 
-// sendMailTLS 使用TLS发送邮件
+// sendMailPlain 使用非TLS发送邮件（带超时控制，支持STARTTLS升级）
+func (s *EmailService) sendMailPlain(addr string, auth smtp.Auth, from, to string, msg []byte, host string) error {
+	// Use dialer with timeout to prevent hanging on network issues
+	dialer := &net.Dialer{
+		Timeout: smtpDialTimeout,
+	}
+	conn, err := dialer.Dial("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("dial: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
+
+	// Set read/write deadlines on the connection
+	deadline := time.Now().Add(smtpWriteTimeout + smtpReadTimeout)
+	if err := conn.SetDeadline(deadline); err != nil {
+		return fmt.Errorf("set deadline: %w", err)
+	}
+
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return fmt.Errorf("new smtp client: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	// Try to upgrade to TLS if server supports STARTTLS
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		tlsConfig := &tls.Config{
+			ServerName: host,
+			MinVersion: tls.VersionTLS12,
+		}
+		if err = client.StartTLS(tlsConfig); err != nil {
+			return fmt.Errorf("starttls: %w", err)
+		}
+	}
+
+	if err = client.Auth(auth); err != nil {
+		return fmt.Errorf("smtp auth: %w", err)
+	}
+
+	if err = client.Mail(from); err != nil {
+		return fmt.Errorf("smtp mail: %w", err)
+	}
+
+	if err = client.Rcpt(to); err != nil {
+		return fmt.Errorf("smtp rcpt: %w", err)
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("smtp data: %w", err)
+	}
+
+	_, err = w.Write(msg)
+	if err != nil {
+		return fmt.Errorf("write msg: %w", err)
+	}
+
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("close writer: %w", err)
+	}
+
+	_ = client.Quit()
+	return nil
+}
+
+// sendMailTLS 使用TLS发送邮件（带超时控制）
 func (s *EmailService) sendMailTLS(addr string, auth smtp.Auth, from, to string, msg []byte, host string) error {
 	tlsConfig := &tls.Config{
 		ServerName: host,
@@ -173,11 +254,21 @@ func (s *EmailService) sendMailTLS(addr string, auth smtp.Auth, from, to string,
 		MinVersion: tls.VersionTLS12,
 	}
 
-	conn, err := tls.Dial("tcp", addr, tlsConfig)
+	// Use dialer with timeout to prevent hanging on network issues
+	dialer := &net.Dialer{
+		Timeout: smtpDialTimeout,
+	}
+	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
 	if err != nil {
 		return fmt.Errorf("tls dial: %w", err)
 	}
 	defer func() { _ = conn.Close() }()
+
+	// Set read/write deadlines on the connection
+	deadline := time.Now().Add(smtpWriteTimeout + smtpReadTimeout)
+	if err := conn.SetDeadline(deadline); err != nil {
+		return fmt.Errorf("set deadline: %w", err)
+	}
 
 	client, err := smtp.NewClient(conn, host)
 	if err != nil {
@@ -341,9 +432,12 @@ func (s *EmailService) buildVerifyCodeEmailBody(code, siteName string) string {
 `, siteName, code)
 }
 
-// TestSMTPConnectionWithConfig 使用指定配置测试SMTP连接
+// TestSMTPConnectionWithConfig 使用指定配置测试SMTP连接（带超时控制）
 func (s *EmailService) TestSMTPConnectionWithConfig(config *SMTPConfig) error {
 	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
+	dialer := &net.Dialer{
+		Timeout: smtpDialTimeout,
+	}
 
 	if config.UseTLS {
 		tlsConfig := &tls.Config{
@@ -351,11 +445,16 @@ func (s *EmailService) TestSMTPConnectionWithConfig(config *SMTPConfig) error {
 			// 与发送逻辑一致，显式要求 TLS 1.2+。
 			MinVersion: tls.VersionTLS12,
 		}
-		conn, err := tls.Dial("tcp", addr, tlsConfig)
+		conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
 		if err != nil {
 			return fmt.Errorf("tls connection failed: %w", err)
 		}
 		defer func() { _ = conn.Close() }()
+
+		// Set deadline for test operations
+		if err := conn.SetDeadline(time.Now().Add(smtpReadTimeout)); err != nil {
+			return fmt.Errorf("set deadline: %w", err)
+		}
 
 		client, err := smtp.NewClient(conn, config.Host)
 		if err != nil {
@@ -371,12 +470,34 @@ func (s *EmailService) TestSMTPConnectionWithConfig(config *SMTPConfig) error {
 		return client.Quit()
 	}
 
-	// 非TLS连接测试
-	client, err := smtp.Dial(addr)
+	// 非TLS连接测试（支持STARTTLS升级）
+	conn, err := dialer.Dial("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("smtp connection failed: %w", err)
 	}
+	defer func() { _ = conn.Close() }()
+
+	// Set deadline for test operations
+	if err := conn.SetDeadline(time.Now().Add(smtpReadTimeout)); err != nil {
+		return fmt.Errorf("set deadline: %w", err)
+	}
+
+	client, err := smtp.NewClient(conn, config.Host)
+	if err != nil {
+		return fmt.Errorf("smtp client creation failed: %w", err)
+	}
 	defer func() { _ = client.Close() }()
+
+	// Try to upgrade to TLS if server supports STARTTLS
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		tlsConfig := &tls.Config{
+			ServerName: config.Host,
+			MinVersion: tls.VersionTLS12,
+		}
+		if err = client.StartTLS(tlsConfig); err != nil {
+			return fmt.Errorf("starttls upgrade failed: %w", err)
+		}
+	}
 
 	auth := smtp.PlainAuth("", config.Username, config.Password, config.Host)
 	if err = client.Auth(auth); err != nil {
@@ -478,17 +599,23 @@ func (s *EmailService) VerifyPasswordResetToken(ctx context.Context, email, toke
 	return nil
 }
 
-// ConsumePasswordResetToken verifies and deletes the token (one-time use)
+// ConsumePasswordResetToken atomically verifies and deletes the token (one-time use)
+// Uses a Lua script to compare token before deletion, which prevents:
+// 1. Race conditions where concurrent requests could both verify the same token
+// 2. DoS attacks where wrong token could delete valid token
 func (s *EmailService) ConsumePasswordResetToken(ctx context.Context, email, token string) error {
-	// Verify first
-	if err := s.VerifyPasswordResetToken(ctx, email, token); err != nil {
-		return err
+	// Use atomic compare-and-delete to prevent both race conditions and DoS
+	matched, err := s.cache.ConsumePasswordResetTokenAtomic(ctx, email, token)
+	if err != nil {
+		log.Printf("[Email] Error consuming password reset token for %s: %v", email, err)
+		return ErrInvalidResetToken
 	}
 
-	// Delete after verification (one-time use)
-	if err := s.cache.DeletePasswordResetToken(ctx, email); err != nil {
-		log.Printf("[Email] Failed to delete password reset token after consumption: %v", err)
+	if !matched {
+		// Token doesn't exist, doesn't match, or was already consumed
+		return ErrInvalidResetToken
 	}
+
 	return nil
 }
 

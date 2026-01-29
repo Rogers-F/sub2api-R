@@ -755,8 +755,19 @@ func (s *AuthService) preparePasswordReset(ctx context.Context, email, frontendB
 		siteName = s.settingService.GetSiteName(ctx)
 	}
 
+	// Security: Use configured api_base_url to prevent Host Header Injection attacks
+	// Only fall back to request-based URL if not configured (with warning)
+	baseURL := frontendBaseURL
+	if s.settingService != nil {
+		if configuredURL := s.settingService.GetAPIBaseURL(ctx); configuredURL != "" {
+			baseURL = configuredURL
+		} else {
+			log.Printf("[Auth] WARNING: api_base_url not configured, using request Host header for password reset URL. This may be vulnerable to Host Header Injection attacks.")
+		}
+	}
+
 	// Build reset URL base
-	resetURL := fmt.Sprintf("%s/reset-password", strings.TrimSuffix(frontendBaseURL, "/"))
+	resetURL := fmt.Sprintf("%s/reset-password", strings.TrimSuffix(baseURL, "/"))
 
 	return siteName, resetURL, true
 }
