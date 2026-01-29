@@ -20,7 +20,7 @@
           <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('dashboard.viewDocumentation') }}</p>
         </div>
         <Icon
-          name="arrowUpRight"
+          name="externalLink"
           size="md"
           class="text-gray-400 transition-colors group-hover:text-blue-500 dark:text-dark-500"
         />

@@ -370,6 +370,7 @@ export const accountsAPI = {
   clearError,
   getUsage,
   getTodayStats,
+  getTotalStats,
   clearRateLimit,
   getTempUnschedulableStatus,
   resetTempUnschedulable,

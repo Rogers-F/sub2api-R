@@ -48,15 +48,15 @@ const contactLines = computed(() => {
 
 const copiedIndex = ref<number | null>(null)
 
-const getContactIcon = (line: string): string => {
+const getContactIcon = (line: string) => {
   const lowerLine = line.toLowerCase()
-  if (lowerLine.includes('qq') || lowerLine.includes('群')) return 'users'
-  if (lowerLine.includes('微信') || lowerLine.includes('wechat')) return 'chat'
-  if (lowerLine.includes('邮箱') || lowerLine.includes('email') || lowerLine.includes('@')) return 'mail'
-  if (lowerLine.includes('电话') || lowerLine.includes('phone') || lowerLine.includes('tel')) return 'phone'
-  if (lowerLine.includes('telegram') || lowerLine.includes('tg')) return 'message'
-  if (lowerLine.includes('discord')) return 'users'
-  return 'info'
+  if (lowerLine.includes('qq') || lowerLine.includes('群')) return 'users' as const
+  if (lowerLine.includes('微信') || lowerLine.includes('wechat')) return 'chat' as const
+  if (lowerLine.includes('邮箱') || lowerLine.includes('email') || lowerLine.includes('@')) return 'mail' as const
+  if (lowerLine.includes('电话') || lowerLine.includes('phone') || lowerLine.includes('tel')) return 'chatBubble' as const
+  if (lowerLine.includes('telegram') || lowerLine.includes('tg')) return 'chatBubble' as const
+  if (lowerLine.includes('discord')) return 'users' as const
+  return 'infoCircle' as const
 }
 
 const copyText = async (text: string) => {
