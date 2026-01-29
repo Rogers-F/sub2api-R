@@ -3372,17 +3372,19 @@ func (s *GatewayService) parseSSEUsage(data string, usage *ClaudeUsage) {
 		} `json:"usage"`
 	}
 	if json.Unmarshal([]byte(data), &msgDelta) == nil && msgDelta.Type == "message_delta" {
-		// output_tokens 总是从 message_delta 获取
-		usage.OutputTokens = msgDelta.Usage.OutputTokens
-
-		// 如果 message_start 中没有值，则从 message_delta 获取（兼容GLM等API）
-		if usage.InputTokens == 0 {
+		// message_delta 仅覆盖存在且非0的字段
+		// 避免覆盖 message_start 中已有的值（如 input_tokens）
+		// Claude API 的 message_delta 通常只包含 output_tokens
+		if msgDelta.Usage.InputTokens > 0 {
 			usage.InputTokens = msgDelta.Usage.InputTokens
 		}
-		if usage.CacheCreationInputTokens == 0 {
+		if msgDelta.Usage.OutputTokens > 0 {
+			usage.OutputTokens = msgDelta.Usage.OutputTokens
+		}
+		if msgDelta.Usage.CacheCreationInputTokens > 0 {
 			usage.CacheCreationInputTokens = msgDelta.Usage.CacheCreationInputTokens
 		}
-		if usage.CacheReadInputTokens == 0 {
+		if msgDelta.Usage.CacheReadInputTokens > 0 {
 			usage.CacheReadInputTokens = msgDelta.Usage.CacheReadInputTokens
 		}
 	}
