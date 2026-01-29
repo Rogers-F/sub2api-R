@@ -59,9 +59,11 @@ func (r *announcementRepository) Create(ctx context.Context, input *service.Crea
 // Update updates an existing announcement
 func (r *announcementRepository) Update(ctx context.Context, id int64, input *service.UpdateAnnouncementInput) (*service.Announcement, error) {
 	// Build dynamic update query
-	var updates []string
-	var args []interface{}
-	argIdx := 1
+	var (
+		updates []string
+		args    []interface{}
+		argIdx  = 1
+	)
 
 	if input.Title != nil {
 		updates = append(updates, fmt.Sprintf("title = $%d", argIdx))
