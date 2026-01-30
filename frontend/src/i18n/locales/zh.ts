@@ -298,7 +298,9 @@ export default {
     mySubscriptions: '我的订阅',
     buySubscription: '购买订阅',
     docs: '文档',
-    announcements: '公告管理'
+    announcements: '公告管理',
+    usageStatistics: '使用统计',
+    redeemCode: '兑换码'
   },
 
   // Auth

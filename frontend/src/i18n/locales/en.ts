@@ -301,7 +301,9 @@ export default {
     mySubscriptions: 'My Subscriptions',
     buySubscription: 'Purchase Subscription',
     docs: 'Docs',
-    announcements: 'Announcements'
+    announcements: 'Announcements',
+    usageStatistics: 'Usage Statistics',
+    redeemCode: 'Redeem Code'
   },
 
   // Auth
