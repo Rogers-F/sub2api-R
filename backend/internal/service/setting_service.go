@@ -251,6 +251,12 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 		updates[SettingKeyOpsMetricsIntervalSeconds] = strconv.Itoa(settings.OpsMetricsIntervalSeconds)
 	}
 
+	// 邀请系统设置
+	updates[SettingKeyReferralEnabled] = strconv.FormatBool(settings.ReferralEnabled)
+	updates[SettingKeyReferralRegisterBonus] = strconv.FormatFloat(settings.ReferralRegisterBonus, 'f', 2, 64)
+	updates[SettingKeyReferralCommissionRate] = strconv.FormatFloat(settings.ReferralCommissionRate, 'f', 4, 64)
+	updates[SettingKeyReferralMaxTotalReward] = strconv.FormatFloat(settings.ReferralMaxTotalReward, 'f', 2, 64)
+
 	err := s.settingRepo.SetMultiple(ctx, updates)
 	if err == nil && s.onUpdate != nil {
 		s.onUpdate() // Invalidate cache after settings update
@@ -509,6 +515,24 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 			}
 			result.OpsMetricsIntervalSeconds = v
 		}
+	}
+
+	// Referral system settings
+	result.ReferralEnabled = settings[SettingKeyReferralEnabled] == "true"
+	if v, err := strconv.ParseFloat(settings[SettingKeyReferralRegisterBonus], 64); err == nil && v >= 0 {
+		result.ReferralRegisterBonus = v
+	} else {
+		result.ReferralRegisterBonus = 5.0 // 默认 $5
+	}
+	if v, err := strconv.ParseFloat(settings[SettingKeyReferralCommissionRate], 64); err == nil && v >= 0 && v <= 1 {
+		result.ReferralCommissionRate = v
+	} else {
+		result.ReferralCommissionRate = 0.3 // 默认 30%
+	}
+	if v, err := strconv.ParseFloat(settings[SettingKeyReferralMaxTotalReward], 64); err == nil && v >= 0 {
+		result.ReferralMaxTotalReward = v
+	} else {
+		result.ReferralMaxTotalReward = 0 // 默认无限制
 	}
 
 	return result

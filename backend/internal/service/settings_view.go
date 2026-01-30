@@ -58,6 +58,12 @@ type SystemSettings struct {
 	OpsRealtimeMonitoringEnabled bool
 	OpsQueryModeDefault          string
 	OpsMetricsIntervalSeconds    int
+
+	// 邀请系统设置
+	ReferralEnabled        bool
+	ReferralRegisterBonus  float64
+	ReferralCommissionRate float64
+	ReferralMaxTotalReward float64
 }
 
 type PublicSettings struct {

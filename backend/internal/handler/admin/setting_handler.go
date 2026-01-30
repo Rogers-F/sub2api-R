@@ -88,6 +88,10 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		OpsRealtimeMonitoringEnabled:         settings.OpsRealtimeMonitoringEnabled,
 		OpsQueryModeDefault:                  settings.OpsQueryModeDefault,
 		OpsMetricsIntervalSeconds:            settings.OpsMetricsIntervalSeconds,
+		ReferralEnabled:                      settings.ReferralEnabled,
+		ReferralRegisterBonus:                settings.ReferralRegisterBonus,
+		ReferralCommissionRate:               settings.ReferralCommissionRate,
+		ReferralMaxTotalReward:               settings.ReferralMaxTotalReward,
 	})
 }
 
@@ -152,6 +156,12 @@ type UpdateSettingsRequest struct {
 	OpsRealtimeMonitoringEnabled *bool   `json:"ops_realtime_monitoring_enabled"`
 	OpsQueryModeDefault          *string `json:"ops_query_mode_default"`
 	OpsMetricsIntervalSeconds    *int    `json:"ops_metrics_interval_seconds"`
+
+	// 邀请系统设置
+	ReferralEnabled        *bool    `json:"referral_enabled"`
+	ReferralRegisterBonus  *float64 `json:"referral_register_bonus"`
+	ReferralCommissionRate *float64 `json:"referral_commission_rate"`
+	ReferralMaxTotalReward *float64 `json:"referral_max_total_reward"`
 }
 
 // UpdateSettings 更新系统设置
@@ -348,6 +358,30 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 				return *req.OpsMetricsIntervalSeconds
 			}
 			return previousSettings.OpsMetricsIntervalSeconds
+		}(),
+		ReferralEnabled: func() bool {
+			if req.ReferralEnabled != nil {
+				return *req.ReferralEnabled
+			}
+			return previousSettings.ReferralEnabled
+		}(),
+		ReferralRegisterBonus: func() float64 {
+			if req.ReferralRegisterBonus != nil {
+				return *req.ReferralRegisterBonus
+			}
+			return previousSettings.ReferralRegisterBonus
+		}(),
+		ReferralCommissionRate: func() float64 {
+			if req.ReferralCommissionRate != nil {
+				return *req.ReferralCommissionRate
+			}
+			return previousSettings.ReferralCommissionRate
+		}(),
+		ReferralMaxTotalReward: func() float64 {
+			if req.ReferralMaxTotalReward != nil {
+				return *req.ReferralMaxTotalReward
+			}
+			return previousSettings.ReferralMaxTotalReward
 		}(),
 	}
 

@@ -56,6 +56,12 @@ type SystemSettings struct {
 	OpsRealtimeMonitoringEnabled bool   `json:"ops_realtime_monitoring_enabled"`
 	OpsQueryModeDefault          string `json:"ops_query_mode_default"`
 	OpsMetricsIntervalSeconds    int    `json:"ops_metrics_interval_seconds"`
+
+	// 邀请系统设置
+	ReferralEnabled        bool    `json:"referral_enabled"`
+	ReferralRegisterBonus  float64 `json:"referral_register_bonus"`
+	ReferralCommissionRate float64 `json:"referral_commission_rate"`
+	ReferralMaxTotalReward float64 `json:"referral_max_total_reward"`
 }
 
 type PublicSettings struct {
