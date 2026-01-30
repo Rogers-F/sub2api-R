@@ -491,7 +491,11 @@ func TestAPIContracts(t *testing.T) {
 					"home_content": "",
 					"hide_ccs_import_button": false,
 					"purchase_subscription_enabled": false,
-					"purchase_subscription_url": ""
+					"purchase_subscription_url": "",
+					"referral_enabled": false,
+					"referral_register_bonus": 5,
+					"referral_commission_rate": 0.3,
+					"referral_max_total_reward": 0
 				}
 			}`,
 		},
