@@ -65,6 +65,12 @@ export interface SystemSettings {
   ops_realtime_monitoring_enabled: boolean
   ops_query_mode_default: 'auto' | 'raw' | 'preagg' | string
   ops_metrics_interval_seconds: number
+
+  // Referral system settings
+  referral_enabled: boolean
+  referral_register_bonus: number
+  referral_commission_rate: number
+  referral_max_total_reward: number
 }
 
 export interface UpdateSettingsRequest {
@@ -110,6 +116,11 @@ export interface UpdateSettingsRequest {
   ops_realtime_monitoring_enabled?: boolean
   ops_query_mode_default?: 'auto' | 'raw' | 'preagg' | string
   ops_metrics_interval_seconds?: number
+  // Referral system settings
+  referral_enabled?: boolean
+  referral_register_bonus?: number
+  referral_commission_rate?: number
+  referral_max_total_reward?: number
 }
 
 /**

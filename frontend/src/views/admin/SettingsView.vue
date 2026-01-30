@@ -382,6 +382,102 @@
           </div>
         </div>
 
+        <!-- Referral System Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.referral.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.referral.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <!-- Enable Referral System -->
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.settings.referral.enabled')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.referral.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.referral_enabled" />
+            </div>
+
+            <!-- Referral Settings - Only show when enabled -->
+            <div
+              v-if="form.referral_enabled"
+              class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+            >
+              <!-- Registration Bonus -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.referral.registerBonus') }}
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-500">$</span>
+                  <input
+                    v-model.number="form.referral_register_bonus"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input w-32"
+                    placeholder="5.00"
+                  />
+                </div>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.referral.registerBonusHint') }}
+                </p>
+              </div>
+
+              <!-- Commission Rate -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.referral.commissionRate') }}
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model.number="form.referral_commission_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    class="input w-32"
+                    placeholder="0.10"
+                  />
+                  <span class="text-gray-500">({{ (form.referral_commission_rate * 100).toFixed(0) }}%)</span>
+                </div>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.referral.commissionRateHint') }}
+                </p>
+              </div>
+
+              <!-- Max Total Reward -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.referral.maxTotalReward') }}
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-500">$</span>
+                  <input
+                    v-model.number="form.referral_max_total_reward"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input w-32"
+                    placeholder="0"
+                  />
+                </div>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.referral.maxTotalRewardHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Cloudflare Turnstile Settings -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -1162,7 +1258,12 @@ const form = reactive<SettingsForm>({
   ops_monitoring_enabled: true,
   ops_realtime_monitoring_enabled: true,
   ops_query_mode_default: 'auto',
-  ops_metrics_interval_seconds: 60
+  ops_metrics_interval_seconds: 60,
+  // Referral system settings
+  referral_enabled: false,
+  referral_register_bonus: 5,
+  referral_commission_rate: 0.1,
+  referral_max_total_reward: 0
 })
 
 // LinuxDo OAuth redirect URL suggestion
@@ -1277,7 +1378,12 @@ async function saveSettings() {
       fallback_model_gemini: form.fallback_model_gemini,
       fallback_model_antigravity: form.fallback_model_antigravity,
       enable_identity_patch: form.enable_identity_patch,
-      identity_patch_prompt: form.identity_patch_prompt
+      identity_patch_prompt: form.identity_patch_prompt,
+      // Referral system settings
+      referral_enabled: form.referral_enabled,
+      referral_register_bonus: form.referral_register_bonus,
+      referral_commission_rate: form.referral_commission_rate,
+      referral_max_total_reward: form.referral_max_total_reward
     }
     const updated = await adminAPI.settings.updateSettings(payload)
     Object.assign(form, updated)
