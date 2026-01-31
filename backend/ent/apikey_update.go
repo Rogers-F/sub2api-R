@@ -170,6 +170,54 @@ func (_u *APIKeyUpdate) ClearIPBlacklist() *APIKeyUpdate {
 	return _u
 }
 
+// SetQuotaUsd sets the "quota_usd" field.
+func (_u *APIKeyUpdate) SetQuotaUsd(v float64) *APIKeyUpdate {
+	_u.mutation.ResetQuotaUsd()
+	_u.mutation.SetQuotaUsd(v)
+	return _u
+}
+
+// SetNillableQuotaUsd sets the "quota_usd" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableQuotaUsd(v *float64) *APIKeyUpdate {
+	if v != nil {
+		_u.SetQuotaUsd(*v)
+	}
+	return _u
+}
+
+// AddQuotaUsd adds value to the "quota_usd" field.
+func (_u *APIKeyUpdate) AddQuotaUsd(v float64) *APIKeyUpdate {
+	_u.mutation.AddQuotaUsd(v)
+	return _u
+}
+
+// ClearQuotaUsd clears the value of the "quota_usd" field.
+func (_u *APIKeyUpdate) ClearQuotaUsd() *APIKeyUpdate {
+	_u.mutation.ClearQuotaUsd()
+	return _u
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (_u *APIKeyUpdate) SetUsedUsd(v float64) *APIKeyUpdate {
+	_u.mutation.ResetUsedUsd()
+	_u.mutation.SetUsedUsd(v)
+	return _u
+}
+
+// SetNillableUsedUsd sets the "used_usd" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableUsedUsd(v *float64) *APIKeyUpdate {
+	if v != nil {
+		_u.SetUsedUsd(*v)
+	}
+	return _u
+}
+
+// AddUsedUsd adds value to the "used_usd" field.
+func (_u *APIKeyUpdate) AddUsedUsd(v float64) *APIKeyUpdate {
+	_u.mutation.AddUsedUsd(v)
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *APIKeyUpdate) SetUser(v *User) *APIKeyUpdate {
 	return _u.SetUserID(v.ID)
@@ -349,6 +397,21 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.IPBlacklistCleared() {
 		_spec.ClearField(apikey.FieldIPBlacklist, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.QuotaUsd(); ok {
+		_spec.SetField(apikey.FieldQuotaUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedQuotaUsd(); ok {
+		_spec.AddField(apikey.FieldQuotaUsd, field.TypeFloat64, value)
+	}
+	if _u.mutation.QuotaUsdCleared() {
+		_spec.ClearField(apikey.FieldQuotaUsd, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.UsedUsd(); ok {
+		_spec.SetField(apikey.FieldUsedUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUsedUsd(); ok {
+		_spec.AddField(apikey.FieldUsedUsd, field.TypeFloat64, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -611,6 +674,54 @@ func (_u *APIKeyUpdateOne) ClearIPBlacklist() *APIKeyUpdateOne {
 	return _u
 }
 
+// SetQuotaUsd sets the "quota_usd" field.
+func (_u *APIKeyUpdateOne) SetQuotaUsd(v float64) *APIKeyUpdateOne {
+	_u.mutation.ResetQuotaUsd()
+	_u.mutation.SetQuotaUsd(v)
+	return _u
+}
+
+// SetNillableQuotaUsd sets the "quota_usd" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableQuotaUsd(v *float64) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetQuotaUsd(*v)
+	}
+	return _u
+}
+
+// AddQuotaUsd adds value to the "quota_usd" field.
+func (_u *APIKeyUpdateOne) AddQuotaUsd(v float64) *APIKeyUpdateOne {
+	_u.mutation.AddQuotaUsd(v)
+	return _u
+}
+
+// ClearQuotaUsd clears the value of the "quota_usd" field.
+func (_u *APIKeyUpdateOne) ClearQuotaUsd() *APIKeyUpdateOne {
+	_u.mutation.ClearQuotaUsd()
+	return _u
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (_u *APIKeyUpdateOne) SetUsedUsd(v float64) *APIKeyUpdateOne {
+	_u.mutation.ResetUsedUsd()
+	_u.mutation.SetUsedUsd(v)
+	return _u
+}
+
+// SetNillableUsedUsd sets the "used_usd" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableUsedUsd(v *float64) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetUsedUsd(*v)
+	}
+	return _u
+}
+
+// AddUsedUsd adds value to the "used_usd" field.
+func (_u *APIKeyUpdateOne) AddUsedUsd(v float64) *APIKeyUpdateOne {
+	_u.mutation.AddUsedUsd(v)
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *APIKeyUpdateOne) SetUser(v *User) *APIKeyUpdateOne {
 	return _u.SetUserID(v.ID)
@@ -820,6 +931,21 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if _u.mutation.IPBlacklistCleared() {
 		_spec.ClearField(apikey.FieldIPBlacklist, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.QuotaUsd(); ok {
+		_spec.SetField(apikey.FieldQuotaUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedQuotaUsd(); ok {
+		_spec.AddField(apikey.FieldQuotaUsd, field.TypeFloat64, value)
+	}
+	if _u.mutation.QuotaUsdCleared() {
+		_spec.ClearField(apikey.FieldQuotaUsd, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.UsedUsd(); ok {
+		_spec.SetField(apikey.FieldUsedUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUsedUsd(); ok {
+		_spec.AddField(apikey.FieldUsedUsd, field.TypeFloat64, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

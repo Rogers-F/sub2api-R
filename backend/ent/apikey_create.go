@@ -125,6 +125,34 @@ func (_c *APIKeyCreate) SetIPBlacklist(v []string) *APIKeyCreate {
 	return _c
 }
 
+// SetQuotaUsd sets the "quota_usd" field.
+func (_c *APIKeyCreate) SetQuotaUsd(v float64) *APIKeyCreate {
+	_c.mutation.SetQuotaUsd(v)
+	return _c
+}
+
+// SetNillableQuotaUsd sets the "quota_usd" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableQuotaUsd(v *float64) *APIKeyCreate {
+	if v != nil {
+		_c.SetQuotaUsd(*v)
+	}
+	return _c
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (_c *APIKeyCreate) SetUsedUsd(v float64) *APIKeyCreate {
+	_c.mutation.SetUsedUsd(v)
+	return _c
+}
+
+// SetNillableUsedUsd sets the "used_usd" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableUsedUsd(v *float64) *APIKeyCreate {
+	if v != nil {
+		_c.SetUsedUsd(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *APIKeyCreate) SetUser(v *User) *APIKeyCreate {
 	return _c.SetUserID(v.ID)
@@ -205,6 +233,10 @@ func (_c *APIKeyCreate) defaults() error {
 		v := apikey.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.UsedUsd(); !ok {
+		v := apikey.DefaultUsedUsd
+		_c.mutation.SetUsedUsd(v)
+	}
 	return nil
 }
 
@@ -242,6 +274,9 @@ func (_c *APIKeyCreate) check() error {
 		if err := apikey.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.UsedUsd(); !ok {
+		return &ValidationError{Name: "used_usd", err: errors.New(`ent: missing required field "APIKey.used_usd"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "APIKey.user"`)}
@@ -304,6 +339,14 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IPBlacklist(); ok {
 		_spec.SetField(apikey.FieldIPBlacklist, field.TypeJSON, value)
 		_node.IPBlacklist = value
+	}
+	if value, ok := _c.mutation.QuotaUsd(); ok {
+		_spec.SetField(apikey.FieldQuotaUsd, field.TypeFloat64, value)
+		_node.QuotaUsd = &value
+	}
+	if value, ok := _c.mutation.UsedUsd(); ok {
+		_spec.SetField(apikey.FieldUsedUsd, field.TypeFloat64, value)
+		_node.UsedUsd = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -539,6 +582,48 @@ func (u *APIKeyUpsert) ClearIPBlacklist() *APIKeyUpsert {
 	return u
 }
 
+// SetQuotaUsd sets the "quota_usd" field.
+func (u *APIKeyUpsert) SetQuotaUsd(v float64) *APIKeyUpsert {
+	u.Set(apikey.FieldQuotaUsd, v)
+	return u
+}
+
+// UpdateQuotaUsd sets the "quota_usd" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateQuotaUsd() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldQuotaUsd)
+	return u
+}
+
+// AddQuotaUsd adds v to the "quota_usd" field.
+func (u *APIKeyUpsert) AddQuotaUsd(v float64) *APIKeyUpsert {
+	u.Add(apikey.FieldQuotaUsd, v)
+	return u
+}
+
+// ClearQuotaUsd clears the value of the "quota_usd" field.
+func (u *APIKeyUpsert) ClearQuotaUsd() *APIKeyUpsert {
+	u.SetNull(apikey.FieldQuotaUsd)
+	return u
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (u *APIKeyUpsert) SetUsedUsd(v float64) *APIKeyUpsert {
+	u.Set(apikey.FieldUsedUsd, v)
+	return u
+}
+
+// UpdateUsedUsd sets the "used_usd" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateUsedUsd() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldUsedUsd)
+	return u
+}
+
+// AddUsedUsd adds v to the "used_usd" field.
+func (u *APIKeyUpsert) AddUsedUsd(v float64) *APIKeyUpsert {
+	u.Add(apikey.FieldUsedUsd, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -735,6 +820,55 @@ func (u *APIKeyUpsertOne) UpdateIPBlacklist() *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) ClearIPBlacklist() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearIPBlacklist()
+	})
+}
+
+// SetQuotaUsd sets the "quota_usd" field.
+func (u *APIKeyUpsertOne) SetQuotaUsd(v float64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetQuotaUsd(v)
+	})
+}
+
+// AddQuotaUsd adds v to the "quota_usd" field.
+func (u *APIKeyUpsertOne) AddQuotaUsd(v float64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddQuotaUsd(v)
+	})
+}
+
+// UpdateQuotaUsd sets the "quota_usd" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateQuotaUsd() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateQuotaUsd()
+	})
+}
+
+// ClearQuotaUsd clears the value of the "quota_usd" field.
+func (u *APIKeyUpsertOne) ClearQuotaUsd() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearQuotaUsd()
+	})
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (u *APIKeyUpsertOne) SetUsedUsd(v float64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetUsedUsd(v)
+	})
+}
+
+// AddUsedUsd adds v to the "used_usd" field.
+func (u *APIKeyUpsertOne) AddUsedUsd(v float64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddUsedUsd(v)
+	})
+}
+
+// UpdateUsedUsd sets the "used_usd" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateUsedUsd() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateUsedUsd()
 	})
 }
 
@@ -1100,6 +1234,55 @@ func (u *APIKeyUpsertBulk) UpdateIPBlacklist() *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) ClearIPBlacklist() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearIPBlacklist()
+	})
+}
+
+// SetQuotaUsd sets the "quota_usd" field.
+func (u *APIKeyUpsertBulk) SetQuotaUsd(v float64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetQuotaUsd(v)
+	})
+}
+
+// AddQuotaUsd adds v to the "quota_usd" field.
+func (u *APIKeyUpsertBulk) AddQuotaUsd(v float64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddQuotaUsd(v)
+	})
+}
+
+// UpdateQuotaUsd sets the "quota_usd" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateQuotaUsd() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateQuotaUsd()
+	})
+}
+
+// ClearQuotaUsd clears the value of the "quota_usd" field.
+func (u *APIKeyUpsertBulk) ClearQuotaUsd() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearQuotaUsd()
+	})
+}
+
+// SetUsedUsd sets the "used_usd" field.
+func (u *APIKeyUpsertBulk) SetUsedUsd(v float64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetUsedUsd(v)
+	})
+}
+
+// AddUsedUsd adds v to the "used_usd" field.
+func (u *APIKeyUpsertBulk) AddUsedUsd(v float64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddUsedUsd(v)
+	})
+}
+
+// UpdateUsedUsd sets the "used_usd" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateUsedUsd() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateUsedUsd()
 	})
 }
 

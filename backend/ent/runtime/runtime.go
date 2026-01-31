@@ -92,6 +92,10 @@ func init() {
 	apikey.DefaultStatus = apikeyDescStatus.Default.(string)
 	// apikey.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	apikey.StatusValidator = apikeyDescStatus.Validators[0].(func(string) error)
+	// apikeyDescUsedUsd is the schema descriptor for used_usd field.
+	apikeyDescUsedUsd := apikeyFields[8].Descriptor()
+	// apikey.DefaultUsedUsd holds the default value on creation for the used_usd field.
+	apikey.DefaultUsedUsd = apikeyDescUsedUsd.Default.(float64)
 	accountMixin := schema.Account{}.Mixin()
 	accountMixinHooks1 := accountMixin[1].Hooks()
 	account.Hooks[0] = accountMixinHooks1[0]

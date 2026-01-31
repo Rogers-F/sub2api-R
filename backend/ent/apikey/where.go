@@ -95,6 +95,16 @@ func Status(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldStatus, v))
 }
 
+// QuotaUsd applies equality check predicate on the "quota_usd" field. It's identical to QuotaUsdEQ.
+func QuotaUsd(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldQuotaUsd, v))
+}
+
+// UsedUsd applies equality check predicate on the "used_usd" field. It's identical to UsedUsdEQ.
+func UsedUsd(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldUsedUsd, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldCreatedAt, v))
@@ -488,6 +498,96 @@ func IPBlacklistIsNil() predicate.APIKey {
 // IPBlacklistNotNil applies the NotNil predicate on the "ip_blacklist" field.
 func IPBlacklistNotNil() predicate.APIKey {
 	return predicate.APIKey(sql.FieldNotNull(FieldIPBlacklist))
+}
+
+// QuotaUsdEQ applies the EQ predicate on the "quota_usd" field.
+func QuotaUsdEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldQuotaUsd, v))
+}
+
+// QuotaUsdNEQ applies the NEQ predicate on the "quota_usd" field.
+func QuotaUsdNEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldQuotaUsd, v))
+}
+
+// QuotaUsdIn applies the In predicate on the "quota_usd" field.
+func QuotaUsdIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldQuotaUsd, vs...))
+}
+
+// QuotaUsdNotIn applies the NotIn predicate on the "quota_usd" field.
+func QuotaUsdNotIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldQuotaUsd, vs...))
+}
+
+// QuotaUsdGT applies the GT predicate on the "quota_usd" field.
+func QuotaUsdGT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldQuotaUsd, v))
+}
+
+// QuotaUsdGTE applies the GTE predicate on the "quota_usd" field.
+func QuotaUsdGTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldQuotaUsd, v))
+}
+
+// QuotaUsdLT applies the LT predicate on the "quota_usd" field.
+func QuotaUsdLT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldQuotaUsd, v))
+}
+
+// QuotaUsdLTE applies the LTE predicate on the "quota_usd" field.
+func QuotaUsdLTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldQuotaUsd, v))
+}
+
+// QuotaUsdIsNil applies the IsNil predicate on the "quota_usd" field.
+func QuotaUsdIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldQuotaUsd))
+}
+
+// QuotaUsdNotNil applies the NotNil predicate on the "quota_usd" field.
+func QuotaUsdNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldQuotaUsd))
+}
+
+// UsedUsdEQ applies the EQ predicate on the "used_usd" field.
+func UsedUsdEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldUsedUsd, v))
+}
+
+// UsedUsdNEQ applies the NEQ predicate on the "used_usd" field.
+func UsedUsdNEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldUsedUsd, v))
+}
+
+// UsedUsdIn applies the In predicate on the "used_usd" field.
+func UsedUsdIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldUsedUsd, vs...))
+}
+
+// UsedUsdNotIn applies the NotIn predicate on the "used_usd" field.
+func UsedUsdNotIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldUsedUsd, vs...))
+}
+
+// UsedUsdGT applies the GT predicate on the "used_usd" field.
+func UsedUsdGT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldUsedUsd, v))
+}
+
+// UsedUsdGTE applies the GTE predicate on the "used_usd" field.
+func UsedUsdGTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldUsedUsd, v))
+}
+
+// UsedUsdLT applies the LT predicate on the "used_usd" field.
+func UsedUsdLT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldUsedUsd, v))
+}
+
+// UsedUsdLTE applies the LTE predicate on the "used_usd" field.
+func UsedUsdLTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldUsedUsd, v))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.
