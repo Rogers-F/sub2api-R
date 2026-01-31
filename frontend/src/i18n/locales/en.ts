@@ -461,7 +461,12 @@ export default {
     manageKeys: 'Manage keys',
     viewSubscriptions: 'View subscriptions',
     checkUsage: 'Check usage',
-    redeemNow: 'Redeem now'
+    redeemNow: 'Redeem now',
+    subscriptionStatus: 'Subscriptions',
+    activeSubscriptions: 'Active',
+    totalCost: 'Total Cost',
+    viewAll: 'View All',
+    noAnnouncements: 'No announcements'
   },
 
   // Groups (shared)

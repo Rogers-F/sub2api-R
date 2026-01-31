@@ -458,7 +458,12 @@ export default {
     manageKeys: '管理密钥',
     viewSubscriptions: '查看订阅',
     checkUsage: '查看使用量',
-    redeemNow: '立即兑换'
+    redeemNow: '立即兑换',
+    subscriptionStatus: '订阅状态',
+    activeSubscriptions: '活跃订阅',
+    totalCost: '总费用',
+    viewAll: '查看全部',
+    noAnnouncements: '暂无公告'
   },
 
   // Groups (shared)
