@@ -214,8 +214,8 @@ type GatewayService struct {
 	deferredService        *DeferredService
 	concurrencyService     *ConcurrencyService
 	claudeTokenProvider    *ClaudeTokenProvider
-	sessionLimitCache      SessionLimitCache              // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
-	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator     // API Key 认证缓存失效器
+	sessionLimitCache      SessionLimitCache          // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
+	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator // API Key 认证缓存失效器
 }
 
 // NewGatewayService creates a new GatewayService
