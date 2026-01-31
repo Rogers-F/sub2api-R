@@ -36,15 +36,7 @@
             class="sidebar-link mb-1"
             :class="{ 'sidebar-link-active': isActive(item.path) }"
             :title="sidebarCollapsed ? item.label : undefined"
-            :id="
-              item.path === '/admin/accounts'
-                ? 'sidebar-channel-manage'
-                : item.path === '/admin/groups'
-                  ? 'sidebar-group-manage'
-                  : item.path === '/admin/redeem'
-                    ? 'sidebar-wallet'
-                    : undefined
-            "
+            :id="getNavItemId(item.path)"
             @click="handleMenuItemClick(item.path)"
           >
             <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
@@ -169,6 +161,21 @@ const siteLogo = computed(() => appStore.siteLogo)
 const siteVersion = computed(() => appStore.siteVersion)
 
 // SVG Icon Components
+const HomeIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'm2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25'
+        })
+      ]
+    )
+}
+
 const DashboardIcon = {
   render: () =>
     h(
@@ -432,6 +439,7 @@ const ChevronDoubleRightIcon = {
 // User navigation items (for regular users)
 const userNavItems = computed(() => {
   const items = [
+    { path: '/user-home', label: t('nav.userHome'), icon: HomeIcon },
     { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
@@ -540,6 +548,15 @@ function handleMenuItemClick(itemPath: string) {
 
 function isActive(path: string): boolean {
   return route.path === path || route.path.startsWith(path + '/')
+}
+
+function getNavItemId(path: string): string | undefined {
+  const pathToId: Record<string, string> = {
+    '/admin/accounts': 'sidebar-channel-manage',
+    '/admin/groups': 'sidebar-group-manage',
+    '/admin/redeem': 'sidebar-wallet'
+  }
+  return pathToId[path]
 }
 
 // Initialize theme

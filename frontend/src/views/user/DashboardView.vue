@@ -9,20 +9,6 @@
         <!-- Stats Row -->
         <UserDashboardStats :stats="stats" :balance="user?.balance || 0" :is-simple="authStore.isSimpleMode" />
 
-        <!-- Quick Start + Announcements Row -->
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div class="space-y-6">
-            <UserDashboardQuickStart />
-            <UserDashboardContact />
-          </div>
-          <div>
-            <UserDashboardAnnouncements />
-          </div>
-        </div>
-
-        <!-- Quick Actions (4 columns) -->
-        <UserDashboardQuickActions />
-
         <!-- Charts -->
         <UserDashboardCharts v-model:startDate="startDate" v-model:endDate="endDate" v-model:granularity="granularity" :loading="loadingCharts" :trend="trendData" :models="modelStats" @dateRangeChange="loadCharts" @granularityChange="loadCharts" />
 
@@ -43,10 +29,6 @@ import UserDashboardWelcome from '@/components/user/dashboard/UserDashboardWelco
 import UserDashboardStats from '@/components/user/dashboard/UserDashboardStats.vue'
 import UserDashboardCharts from '@/components/user/dashboard/UserDashboardCharts.vue'
 import UserDashboardRecentUsage from '@/components/user/dashboard/UserDashboardRecentUsage.vue'
-import UserDashboardQuickActions from '@/components/user/dashboard/UserDashboardQuickActions.vue'
-import UserDashboardQuickStart from '@/components/user/dashboard/UserDashboardQuickStart.vue'
-import UserDashboardContact from '@/components/user/dashboard/UserDashboardContact.vue'
-import UserDashboardAnnouncements from '@/components/user/dashboard/UserDashboardAnnouncements.vue'
 import type { UsageLog, TrendDataPoint, ModelStat } from '@/types'
 
 const authStore = useAuthStore()

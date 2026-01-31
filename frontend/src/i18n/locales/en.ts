@@ -278,6 +278,7 @@ export default {
 
   // Navigation
   nav: {
+    userHome: 'Home',
     dashboard: 'Dashboard',
     apiKeys: 'API Keys',
     usage: 'Usage',

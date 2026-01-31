@@ -275,6 +275,7 @@ export default {
 
   // Navigation
   nav: {
+    userHome: '首页',
     dashboard: '仪表盘',
     apiKeys: 'API 密钥',
     usage: '使用记录',
