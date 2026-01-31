@@ -301,6 +301,8 @@ export interface ApiKey {
   status: 'active' | 'inactive'
   ip_whitelist: string[]
   ip_blacklist: string[]
+  quota_usd: number | null
+  used_usd: number
   created_at: string
   updated_at: string
   group?: Group
@@ -312,6 +314,7 @@ export interface CreateApiKeyRequest {
   custom_key?: string // Optional custom API Key
   ip_whitelist?: string[]
   ip_blacklist?: string[]
+  quota_usd?: number | null // Usage quota in USD, null means unlimited
 }
 
 export interface UpdateApiKeyRequest {
@@ -320,6 +323,7 @@ export interface UpdateApiKeyRequest {
   status?: 'active' | 'inactive'
   ip_whitelist?: string[]
   ip_blacklist?: string[]
+  quota_usd?: number | null // Usage quota in USD, null means unlimited
 }
 
 export interface CreateGroupRequest {

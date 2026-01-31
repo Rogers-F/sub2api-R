@@ -197,23 +197,25 @@ func (e *UpstreamFailoverError) Error() string {
 
 // GatewayService handles API gateway operations
 type GatewayService struct {
-	accountRepo         AccountRepository
-	groupRepo           GroupRepository
-	usageLogRepo        UsageLogRepository
-	userRepo            UserRepository
-	userSubRepo         UserSubscriptionRepository
-	cache               GatewayCache
-	cfg                 *config.Config
-	schedulerSnapshot   *SchedulerSnapshotService
-	billingService      *BillingService
-	rateLimitService    *RateLimitService
-	billingCacheService *BillingCacheService
-	identityService     *IdentityService
-	httpUpstream        HTTPUpstream
-	deferredService     *DeferredService
-	concurrencyService  *ConcurrencyService
-	claudeTokenProvider *ClaudeTokenProvider
-	sessionLimitCache   SessionLimitCache // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
+	accountRepo            AccountRepository
+	groupRepo              GroupRepository
+	usageLogRepo           UsageLogRepository
+	userRepo               UserRepository
+	userSubRepo            UserSubscriptionRepository
+	apiKeyRepo             APIKeyRepository
+	cache                  GatewayCache
+	cfg                    *config.Config
+	schedulerSnapshot      *SchedulerSnapshotService
+	billingService         *BillingService
+	rateLimitService       *RateLimitService
+	billingCacheService    *BillingCacheService
+	identityService        *IdentityService
+	httpUpstream           HTTPUpstream
+	deferredService        *DeferredService
+	concurrencyService     *ConcurrencyService
+	claudeTokenProvider    *ClaudeTokenProvider
+	sessionLimitCache      SessionLimitCache              // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
+	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator     // API Key 认证缓存失效器
 }
 
 // NewGatewayService creates a new GatewayService
@@ -223,6 +225,7 @@ func NewGatewayService(
 	usageLogRepo UsageLogRepository,
 	userRepo UserRepository,
 	userSubRepo UserSubscriptionRepository,
+	apiKeyRepo APIKeyRepository,
 	cache GatewayCache,
 	cfg *config.Config,
 	schedulerSnapshot *SchedulerSnapshotService,
@@ -235,25 +238,28 @@ func NewGatewayService(
 	deferredService *DeferredService,
 	claudeTokenProvider *ClaudeTokenProvider,
 	sessionLimitCache SessionLimitCache,
+	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator,
 ) *GatewayService {
 	return &GatewayService{
-		accountRepo:         accountRepo,
-		groupRepo:           groupRepo,
-		usageLogRepo:        usageLogRepo,
-		userRepo:            userRepo,
-		userSubRepo:         userSubRepo,
-		cache:               cache,
-		cfg:                 cfg,
-		schedulerSnapshot:   schedulerSnapshot,
-		concurrencyService:  concurrencyService,
-		billingService:      billingService,
-		rateLimitService:    rateLimitService,
-		billingCacheService: billingCacheService,
-		identityService:     identityService,
-		httpUpstream:        httpUpstream,
-		deferredService:     deferredService,
-		claudeTokenProvider: claudeTokenProvider,
-		sessionLimitCache:   sessionLimitCache,
+		accountRepo:            accountRepo,
+		groupRepo:              groupRepo,
+		usageLogRepo:           usageLogRepo,
+		userRepo:               userRepo,
+		userSubRepo:            userSubRepo,
+		apiKeyRepo:             apiKeyRepo,
+		cache:                  cache,
+		cfg:                    cfg,
+		schedulerSnapshot:      schedulerSnapshot,
+		concurrencyService:     concurrencyService,
+		billingService:         billingService,
+		rateLimitService:       rateLimitService,
+		billingCacheService:    billingCacheService,
+		identityService:        identityService,
+		httpUpstream:           httpUpstream,
+		deferredService:        deferredService,
+		claudeTokenProvider:    claudeTokenProvider,
+		sessionLimitCache:      sessionLimitCache,
+		apiKeyCacheInvalidator: apiKeyCacheInvalidator,
 	}
 }
 
@@ -3593,6 +3599,17 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 			}
 			// 异步更新余额缓存
 			s.billingCacheService.QueueDeductBalance(user.ID, cost.ActualCost)
+
+			// 累加 API Key 已用额度（仅当设置了额度限制时）
+			if apiKey.HasQuota() {
+				if err := s.apiKeyRepo.IncrementUsedUSD(ctx, apiKey.ID, cost.ActualCost); err != nil {
+					log.Printf("Failed to increment API key used_usd: %v", err)
+				}
+				// 失效认证缓存以更新额度信息
+				if s.apiKeyCacheInvalidator != nil {
+					s.apiKeyCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+				}
+			}
 		}
 	}
 

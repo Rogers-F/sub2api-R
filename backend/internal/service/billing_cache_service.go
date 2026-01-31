@@ -18,6 +18,7 @@ import (
 var (
 	ErrSubscriptionInvalid       = infraerrors.Forbidden("SUBSCRIPTION_INVALID", "subscription is invalid or expired")
 	ErrBillingServiceUnavailable = infraerrors.ServiceUnavailable("BILLING_SERVICE_ERROR", "Billing service temporarily unavailable. Please retry later.")
+	ErrAPIKeyQuotaExceeded       = infraerrors.Forbidden("API_KEY_QUOTA_EXCEEDED", "API key usage quota exceeded")
 )
 
 // subscriptionCacheData 订阅缓存数据结构（内部使用）
@@ -446,7 +447,7 @@ func (s *BillingCacheService) InvalidateSubscription(ctx context.Context, userID
 // ============================================
 
 // CheckBillingEligibility 检查用户是否有资格发起请求
-// 余额模式：检查缓存余额 > 0
+// 余额模式：检查缓存余额 > 0，检查 API Key 额度
 // 订阅模式：检查缓存用量未超过限额（Group限额从参数传入）
 func (s *BillingCacheService) CheckBillingEligibility(ctx context.Context, user *User, apiKey *APIKey, group *Group, subscription *UserSubscription) error {
 	// 简易模式：跳过所有计费检查
@@ -462,6 +463,11 @@ func (s *BillingCacheService) CheckBillingEligibility(ctx context.Context, user 
 
 	if isSubscriptionMode {
 		return s.checkSubscriptionEligibility(ctx, user.ID, group, subscription)
+	}
+
+	// 余额模式：检查 API Key 额度（软限额）
+	if apiKey != nil && apiKey.IsQuotaExceeded() {
+		return ErrAPIKeyQuotaExceeded
 	}
 
 	return s.checkBalanceEligibility(ctx, user.ID)

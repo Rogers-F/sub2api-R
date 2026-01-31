@@ -108,6 +108,17 @@
                   ${{ (usageStats[row.id]?.total_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
+              <div v-if="row.quota_usd !== null" class="mt-0.5 flex items-center gap-1.5">
+                <span class="text-gray-500 dark:text-gray-400">{{ t('keys.quotaUsed') }}:</span>
+                <span
+                  class="font-medium"
+                  :class="row.used_usd >= row.quota_usd
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-900 dark:text-white'"
+                >
+                  ${{ row.used_usd.toFixed(4) }} / ${{ row.quota_usd.toFixed(2) }}
+                </span>
+              </div>
             </div>
           </template>
 
@@ -287,6 +298,42 @@
             :options="statusOptions"
             :placeholder="t('keys.selectStatus')"
           />
+        </div>
+
+        <!-- Quota Limit Section -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="input-label mb-0">{{ t('keys.quotaLimit') }}</label>
+            <button
+              type="button"
+              @click="formData.enable_quota = !formData.enable_quota"
+              :class="[
+                'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                formData.enable_quota ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  formData.enable_quota ? 'translate-x-4' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+          <div v-if="formData.enable_quota" class="pt-2">
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+              <input
+                v-model.number="formData.quota_usd"
+                type="number"
+                step="0.01"
+                min="0.01"
+                class="input pl-7"
+                :placeholder="t('keys.quotaPlaceholder')"
+              />
+            </div>
+            <p class="input-hint">{{ t('keys.quotaHint') }}</p>
+          </div>
         </div>
 
         <!-- IP Restriction Section -->
@@ -585,6 +632,8 @@ const formData = ref({
   status: 'active' as 'active' | 'inactive',
   use_custom_key: false,
   custom_key: '',
+  enable_quota: false,
+  quota_usd: null as number | null,
   enable_ip_restriction: false,
   ip_whitelist: '',
   ip_blacklist: ''
@@ -724,12 +773,15 @@ const handlePageSizeChange = (pageSize: number) => {
 const editKey = (key: ApiKey) => {
   selectedKey.value = key
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
+  const hasQuota = key.quota_usd !== null
   formData.value = {
     name: key.name,
     group_id: key.group_id,
     status: key.status,
     use_custom_key: false,
     custom_key: '',
+    enable_quota: hasQuota,
+    quota_usd: key.quota_usd,
     enable_ip_restriction: hasIPRestriction,
     ip_whitelist: (key.ip_whitelist || []).join('\n'),
     ip_blacklist: (key.ip_blacklist || []).join('\n')
@@ -820,6 +872,9 @@ const handleSubmit = async () => {
   const ipWhitelist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_whitelist) : []
   const ipBlacklist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_blacklist) : []
 
+  // Get quota value only if enabled
+  const quotaUsd = formData.value.enable_quota ? formData.value.quota_usd : null
+
   submitting.value = true
   try {
     if (showEditModal.value && selectedKey.value) {
@@ -828,12 +883,13 @@ const handleSubmit = async () => {
         group_id: formData.value.group_id,
         status: formData.value.status,
         ip_whitelist: ipWhitelist,
-        ip_blacklist: ipBlacklist
+        ip_blacklist: ipBlacklist,
+        quota_usd: quotaUsd
       })
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
       const customKey = formData.value.use_custom_key ? formData.value.custom_key : undefined
-      await keysAPI.create(formData.value.name, formData.value.group_id, customKey, ipWhitelist, ipBlacklist)
+      await keysAPI.create(formData.value.name, formData.value.group_id, customKey, ipWhitelist, ipBlacklist, quotaUsd)
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
       if (onboardingStore.isCurrentStep('[data-tour="key-form-submit"]')) {
@@ -881,6 +937,8 @@ const closeModals = () => {
     status: 'active',
     use_custom_key: false,
     custom_key: '',
+    enable_quota: false,
+    quota_usd: null,
     enable_ip_restriction: false,
     ip_whitelist: '',
     ip_blacklist: ''

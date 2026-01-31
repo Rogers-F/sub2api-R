@@ -51,6 +51,8 @@ type APIKeyRepository interface {
 	CountByGroupID(ctx context.Context, groupID int64) (int64, error)
 	ListKeysByUserID(ctx context.Context, userID int64) ([]string, error)
 	ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error)
+	// IncrementUsedUSD atomically increments the used_usd field
+	IncrementUsedUSD(ctx context.Context, id int64, delta float64) error
 }
 
 // APIKeyCache defines cache operations for API key service
@@ -85,6 +87,7 @@ type CreateAPIKeyRequest struct {
 	CustomKey   *string  `json:"custom_key"`   // 可选的自定义key
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
+	QuotaUSD    *float64 `json:"quota_usd"`    // 额度上限（USD），nil 表示无限制
 }
 
 // UpdateAPIKeyRequest 更新API Key请求
@@ -94,6 +97,7 @@ type UpdateAPIKeyRequest struct {
 	Status      *string  `json:"status"`
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单（空数组清空）
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单（空数组清空）
+	QuotaUSD    *float64 `json:"quota_usd"`    // 额度上限（USD），nil 表示无限制
 }
 
 // APIKeyService API Key服务
@@ -289,6 +293,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		Status:      StatusActive,
 		IPWhitelist: req.IPWhitelist,
 		IPBlacklist: req.IPBlacklist,
+		QuotaUSD:    req.QuotaUSD,
 	}
 
 	if err := s.apiKeyRepo.Create(ctx, apiKey); err != nil {
@@ -439,6 +444,9 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 	// 更新 IP 限制（空数组会清空设置）
 	apiKey.IPWhitelist = req.IPWhitelist
 	apiKey.IPBlacklist = req.IPBlacklist
+
+	// 更新额度限制
+	apiKey.QuotaUSD = req.QuotaUSD
 
 	if err := s.apiKeyRepo.Update(ctx, apiKey); err != nil {
 		return nil, fmt.Errorf("update api key: %w", err)

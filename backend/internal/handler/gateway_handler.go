@@ -969,6 +969,9 @@ func billingErrorDetails(err error) (status int, code, message string) {
 		}
 		return http.StatusServiceUnavailable, "billing_service_error", msg
 	}
+	if errors.Is(err, service.ErrAPIKeyQuotaExceeded) {
+		return http.StatusForbidden, "api_key_quota_exceeded", "API key usage quota exceeded"
+	}
 	msg := pkgerrors.Message(err)
 	if msg == "" {
 		msg = err.Error()

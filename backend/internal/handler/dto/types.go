@@ -35,6 +35,8 @@ type APIKey struct {
 	Status      string    `json:"status"`
 	IPWhitelist []string  `json:"ip_whitelist"`
 	IPBlacklist []string  `json:"ip_blacklist"`
+	QuotaUSD    *float64  `json:"quota_usd"`
+	UsedUSD     float64   `json:"used_usd"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 

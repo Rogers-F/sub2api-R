@@ -76,6 +76,8 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		Status:      k.Status,
 		IPWhitelist: k.IPWhitelist,
 		IPBlacklist: k.IPBlacklist,
+		QuotaUSD:    k.QuotaUSD,
+		UsedUSD:     k.UsedUSD,
 		CreatedAt:   k.CreatedAt,
 		UpdatedAt:   k.UpdatedAt,
 		User:        UserFromServiceShallow(k.User),

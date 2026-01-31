@@ -166,21 +166,23 @@ type OpenAIForwardResult struct {
 
 // OpenAIGatewayService handles OpenAI API gateway operations
 type OpenAIGatewayService struct {
-	accountRepo         AccountRepository
-	usageLogRepo        UsageLogRepository
-	userRepo            UserRepository
-	userSubRepo         UserSubscriptionRepository
-	cache               GatewayCache
-	cfg                 *config.Config
-	schedulerSnapshot   *SchedulerSnapshotService
-	concurrencyService  *ConcurrencyService
-	billingService      *BillingService
-	rateLimitService    *RateLimitService
-	billingCacheService *BillingCacheService
-	httpUpstream        HTTPUpstream
-	deferredService     *DeferredService
-	openAITokenProvider *OpenAITokenProvider
-	toolCorrector       *CodexToolCorrector
+	accountRepo            AccountRepository
+	usageLogRepo           UsageLogRepository
+	userRepo               UserRepository
+	userSubRepo            UserSubscriptionRepository
+	apiKeyRepo             APIKeyRepository
+	cache                  GatewayCache
+	cfg                    *config.Config
+	schedulerSnapshot      *SchedulerSnapshotService
+	concurrencyService     *ConcurrencyService
+	billingService         *BillingService
+	rateLimitService       *RateLimitService
+	billingCacheService    *BillingCacheService
+	httpUpstream           HTTPUpstream
+	deferredService        *DeferredService
+	openAITokenProvider    *OpenAITokenProvider
+	toolCorrector          *CodexToolCorrector
+	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator
 }
 
 // NewOpenAIGatewayService creates a new OpenAIGatewayService
@@ -189,6 +191,7 @@ func NewOpenAIGatewayService(
 	usageLogRepo UsageLogRepository,
 	userRepo UserRepository,
 	userSubRepo UserSubscriptionRepository,
+	apiKeyRepo APIKeyRepository,
 	cache GatewayCache,
 	cfg *config.Config,
 	schedulerSnapshot *SchedulerSnapshotService,
@@ -199,23 +202,26 @@ func NewOpenAIGatewayService(
 	httpUpstream HTTPUpstream,
 	deferredService *DeferredService,
 	openAITokenProvider *OpenAITokenProvider,
+	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator,
 ) *OpenAIGatewayService {
 	return &OpenAIGatewayService{
-		accountRepo:         accountRepo,
-		usageLogRepo:        usageLogRepo,
-		userRepo:            userRepo,
-		userSubRepo:         userSubRepo,
-		cache:               cache,
-		cfg:                 cfg,
-		schedulerSnapshot:   schedulerSnapshot,
-		concurrencyService:  concurrencyService,
-		billingService:      billingService,
-		rateLimitService:    rateLimitService,
-		billingCacheService: billingCacheService,
-		httpUpstream:        httpUpstream,
-		deferredService:     deferredService,
-		openAITokenProvider: openAITokenProvider,
-		toolCorrector:       NewCodexToolCorrector(),
+		accountRepo:            accountRepo,
+		usageLogRepo:           usageLogRepo,
+		userRepo:               userRepo,
+		userSubRepo:            userSubRepo,
+		apiKeyRepo:             apiKeyRepo,
+		cache:                  cache,
+		cfg:                    cfg,
+		schedulerSnapshot:      schedulerSnapshot,
+		concurrencyService:     concurrencyService,
+		billingService:         billingService,
+		rateLimitService:       rateLimitService,
+		billingCacheService:    billingCacheService,
+		httpUpstream:           httpUpstream,
+		deferredService:        deferredService,
+		openAITokenProvider:    openAITokenProvider,
+		toolCorrector:          NewCodexToolCorrector(),
+		apiKeyCacheInvalidator: apiKeyCacheInvalidator,
 	}
 }
 
@@ -1742,6 +1748,17 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		if shouldBill && cost.ActualCost > 0 {
 			_ = s.userRepo.DeductBalance(ctx, user.ID, cost.ActualCost)
 			s.billingCacheService.QueueDeductBalance(user.ID, cost.ActualCost)
+
+			// 累加 API Key 已用额度（仅当设置了额度限制时）
+			if apiKey.HasQuota() {
+				if err := s.apiKeyRepo.IncrementUsedUSD(ctx, apiKey.ID, cost.ActualCost); err != nil {
+					log.Printf("Failed to increment API key used_usd: %v", err)
+				}
+				// 失效认证缓存以更新额度信息
+				if s.apiKeyCacheInvalidator != nil {
+					s.apiKeyCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+				}
+			}
 		}
 	}
 
