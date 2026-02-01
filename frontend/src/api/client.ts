@@ -140,8 +140,15 @@ apiClient.interceptors.response.use(
         if ((hasToken || sentAuth) && !isAuthEndpoint) {
           sessionStorage.setItem('auth_expired', '1')
         }
-        // Only redirect if not already on login page
-        if (!window.location.pathname.includes('/login')) {
+        // Only redirect if on protected page and had valid auth context
+        // Public pages (requiresAuth: false in router) should not trigger redirect
+        const publicPaths = [
+          '/login', '/register', '/forgot-password', '/reset-password', '/email-verify',
+          '/home', '/setup', '/auth/callback', '/auth/linuxdo/callback'
+        ]
+        const pathname = window.location.pathname
+        const isPublicPage = publicPaths.some((p) => pathname.includes(p))
+        if (!isPublicPage && (hasToken || sentAuth) && !isAuthEndpoint) {
           window.location.href = '/login'
         }
       }
