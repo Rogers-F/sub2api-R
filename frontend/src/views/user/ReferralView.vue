@@ -64,7 +64,7 @@
                   </span>
                 </div>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('referral.referrerCommissionDesc') }}</p>
-                <p class="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">{{ ((settings?.commission_rate || 0) * 100).toFixed(0) }}%</p>
+                <p class="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">{{ ((referralInfo?.commission_rate || settings?.commission_rate || 0) * 100).toFixed(0) }}%</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('referral.ofPurchase') }}</p>
               </div>
             </div>

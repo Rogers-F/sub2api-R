@@ -73,6 +73,12 @@ func (h *ReferralHandler) GetReferralInfo(c *gin.Context) {
 		return
 	}
 
+	// Use user's custom commission rate if set, otherwise use global rate
+	commissionRate := settings.CommissionRate
+	if info.UserCommissionRate != nil {
+		commissionRate = *info.UserCommissionRate
+	}
+
 	response.Success(c, ReferralInfoResponse{
 		Enabled:          true,
 		ReferralCode:     info.ReferralCode,
@@ -82,7 +88,7 @@ func (h *ReferralHandler) GetReferralInfo(c *gin.Context) {
 		RegisterReward:   info.RegisterReward,
 		CommissionReward: info.CommissionReward,
 		RegisterBonus:    settings.RegisterBonus,
-		CommissionRate:   settings.CommissionRate,
+		CommissionRate:   commissionRate,
 	})
 }
 

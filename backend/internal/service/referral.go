@@ -31,12 +31,13 @@ type ReferralReward struct {
 
 // ReferralInfo contains user's referral information
 type ReferralInfo struct {
-	ReferralCode     string  `json:"referral_code"`
-	ReferralLink     string  `json:"referral_link"`
-	TotalInvited     int     `json:"total_invited"`
-	TotalReward      float64 `json:"total_reward"`
-	RegisterReward   float64 `json:"register_reward"`
-	CommissionReward float64 `json:"commission_reward"`
+	ReferralCode       string   `json:"referral_code"`
+	ReferralLink       string   `json:"referral_link"`
+	TotalInvited       int      `json:"total_invited"`
+	TotalReward        float64  `json:"total_reward"`
+	RegisterReward     float64  `json:"register_reward"`
+	CommissionReward   float64  `json:"commission_reward"`
+	UserCommissionRate *float64 `json:"-"` // User's custom commission rate (nil = use global)
 }
 
 // ReferralSettings contains referral system settings

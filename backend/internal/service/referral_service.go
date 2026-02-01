@@ -241,12 +241,13 @@ func (s *ReferralService) GetReferralInfo(ctx context.Context, userID int64, api
 	}
 
 	return &ReferralInfo{
-		ReferralCode:     referralCode,
-		ReferralLink:     referralLink,
-		TotalInvited:     totalInvited,
-		TotalReward:      registerReward + commissionReward,
-		RegisterReward:   registerReward,
-		CommissionReward: commissionReward,
+		ReferralCode:       referralCode,
+		ReferralLink:       referralLink,
+		TotalInvited:       totalInvited,
+		TotalReward:        registerReward + commissionReward,
+		RegisterReward:     registerReward,
+		CommissionReward:   commissionReward,
+		UserCommissionRate: user.CommissionRate,
 	}, nil
 }
 
