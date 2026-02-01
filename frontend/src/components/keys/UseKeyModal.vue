@@ -139,6 +139,7 @@ import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useClipboard } from '@/composables/useClipboard'
+import { useAppStore } from '@/stores/app'
 import type { GroupPlatform } from '@/types'
 
 interface Props {
@@ -170,6 +171,14 @@ const emit = defineEmits<Emits>()
 
 const { t } = useI18n()
 const { copyToClipboard: clipboardCopy } = useClipboard()
+const appStore = useAppStore()
+
+// Get site name for config display, fallback to 'sub2api'
+const providerName = computed(() => {
+  const name = appStore.siteName || 'Sub2API'
+  // Convert to lowercase and remove spaces for config key
+  return name.toLowerCase().replace(/\s+/g, '-')
+})
 
 const copiedIndex = ref<number | null>(null)
 const activeTab = ref<string>('unix')
@@ -490,9 +499,11 @@ ${keyword('$env:')}${variable('GEMINI_MODEL')}${operator('=')}${string(`"${model
 function generateOpenAIFiles(baseUrl: string, apiKey: string): FileConfig[] {
   const isWindows = activeTab.value === 'windows'
   const configDir = isWindows ? '%userprofile%\\.codex' : '~/.codex'
+  const provider = providerName.value
+  const displayName = appStore.siteName || 'Sub2API'
 
   // config.toml content
-  const configContent = `model_provider = "sub2api"
+  const configContent = `model_provider = "${provider}"
 model = "gpt-5.2-codex"
 model_reasoning_effort = "high"
 network_access = "enabled"
@@ -500,8 +511,8 @@ disable_response_storage = true
 windows_wsl_setup_acknowledged = true
 model_verbosity = "high"
 
-[model_providers.sub2api]
-name = "sub2api"
+[model_providers.${provider}]
+name = "${displayName}"
 base_url = "${baseUrl}"
 wire_api = "responses"
 requires_openai_auth = true`
