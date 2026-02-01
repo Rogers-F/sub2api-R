@@ -105,6 +105,10 @@ func (s *userRepoStub) DisableTotp(ctx context.Context, userID int64) error {
 	panic("unexpected DisableTotp call")
 }
 
+func (s *userRepoStub) UpdateCommissionRate(ctx context.Context, userID int64, rate *float64) error {
+	panic("unexpected UpdateCommissionRate call")
+}
+
 type groupRepoStub struct {
 	affectedUserIDs []int64
 	deleteErr       error

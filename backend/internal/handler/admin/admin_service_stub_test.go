@@ -290,5 +290,10 @@ func (s *stubAdminService) ExpireRedeemCode(ctx context.Context, id int64) (*ser
 	return &code, nil
 }
 
+func (s *stubAdminService) UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*service.User, error) {
+	user := service.User{ID: userID, Email: "user@example.com", Status: service.StatusActive, CommissionRate: rate}
+	return &user, nil
+}
+
 // Ensure stub implements interface.
 var _ service.AdminService = (*stubAdminService)(nil)
