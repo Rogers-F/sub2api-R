@@ -177,7 +177,7 @@ func (s *ReferralService) ProcessRedeemCommission(ctx context.Context, userID in
 
 	sourceType := ReferralSourceTypeRedeemCode
 	// Create commission reward record
-	_, err := s.referralRepo.CreateReward(ctx, &ReferralReward{
+	_, err = s.referralRepo.CreateReward(ctx, &ReferralReward{
 		ReferrerID:     referrerID,
 		RefereeID:      userID,
 		RewardType:     ReferralRewardTypeCommission,

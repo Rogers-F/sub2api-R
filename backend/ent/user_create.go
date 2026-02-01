@@ -239,6 +239,20 @@ func (_c *UserCreate) SetNillableReferralCode(v *string) *UserCreate {
 	return _c
 }
 
+// SetCommissionRate sets the "commission_rate" field.
+func (_c *UserCreate) SetCommissionRate(v float64) *UserCreate {
+	_c.mutation.SetCommissionRate(v)
+	return _c
+}
+
+// SetNillableCommissionRate sets the "commission_rate" field if the given value is not nil.
+func (_c *UserCreate) SetNillableCommissionRate(v *float64) *UserCreate {
+	if v != nil {
+		_c.SetCommissionRate(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *UserCreate) AddAPIKeyIDs(ids ...int64) *UserCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -641,6 +655,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ReferralCode(); ok {
 		_spec.SetField(user.FieldReferralCode, field.TypeString, value)
 		_node.ReferralCode = &value
+	}
+	if value, ok := _c.mutation.CommissionRate(); ok {
+		_spec.SetField(user.FieldCommissionRate, field.TypeFloat64, value)
+		_node.CommissionRate = &value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1102,6 +1120,30 @@ func (u *UserUpsert) ClearReferralCode() *UserUpsert {
 	return u
 }
 
+// SetCommissionRate sets the "commission_rate" field.
+func (u *UserUpsert) SetCommissionRate(v float64) *UserUpsert {
+	u.Set(user.FieldCommissionRate, v)
+	return u
+}
+
+// UpdateCommissionRate sets the "commission_rate" field to the value that was provided on create.
+func (u *UserUpsert) UpdateCommissionRate() *UserUpsert {
+	u.SetExcluded(user.FieldCommissionRate)
+	return u
+}
+
+// AddCommissionRate adds v to the "commission_rate" field.
+func (u *UserUpsert) AddCommissionRate(v float64) *UserUpsert {
+	u.Add(user.FieldCommissionRate, v)
+	return u
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (u *UserUpsert) ClearCommissionRate() *UserUpsert {
+	u.SetNull(user.FieldCommissionRate)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1410,6 +1452,34 @@ func (u *UserUpsertOne) UpdateReferralCode() *UserUpsertOne {
 func (u *UserUpsertOne) ClearReferralCode() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearReferralCode()
+	})
+}
+
+// SetCommissionRate sets the "commission_rate" field.
+func (u *UserUpsertOne) SetCommissionRate(v float64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetCommissionRate(v)
+	})
+}
+
+// AddCommissionRate adds v to the "commission_rate" field.
+func (u *UserUpsertOne) AddCommissionRate(v float64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddCommissionRate(v)
+	})
+}
+
+// UpdateCommissionRate sets the "commission_rate" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateCommissionRate() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateCommissionRate()
+	})
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (u *UserUpsertOne) ClearCommissionRate() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearCommissionRate()
 	})
 }
 
@@ -1887,6 +1957,34 @@ func (u *UserUpsertBulk) UpdateReferralCode() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearReferralCode() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearReferralCode()
+	})
+}
+
+// SetCommissionRate sets the "commission_rate" field.
+func (u *UserUpsertBulk) SetCommissionRate(v float64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetCommissionRate(v)
+	})
+}
+
+// AddCommissionRate adds v to the "commission_rate" field.
+func (u *UserUpsertBulk) AddCommissionRate(v float64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddCommissionRate(v)
+	})
+}
+
+// UpdateCommissionRate sets the "commission_rate" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateCommissionRate() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateCommissionRate()
+	})
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (u *UserUpsertBulk) ClearCommissionRate() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearCommissionRate()
 	})
 }
 

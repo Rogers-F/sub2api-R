@@ -290,6 +290,33 @@ func (_u *UserUpdate) ClearReferralCode() *UserUpdate {
 	return _u
 }
 
+// SetCommissionRate sets the "commission_rate" field.
+func (_u *UserUpdate) SetCommissionRate(v float64) *UserUpdate {
+	_u.mutation.ResetCommissionRate()
+	_u.mutation.SetCommissionRate(v)
+	return _u
+}
+
+// SetNillableCommissionRate sets the "commission_rate" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableCommissionRate(v *float64) *UserUpdate {
+	if v != nil {
+		_u.SetCommissionRate(*v)
+	}
+	return _u
+}
+
+// AddCommissionRate adds value to the "commission_rate" field.
+func (_u *UserUpdate) AddCommissionRate(v float64) *UserUpdate {
+	_u.mutation.AddCommissionRate(v)
+	return _u
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (_u *UserUpdate) ClearCommissionRate() *UserUpdate {
+	_u.mutation.ClearCommissionRate()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *UserUpdate) AddAPIKeyIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -848,6 +875,15 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ReferralCodeCleared() {
 		_spec.ClearField(user.FieldReferralCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.CommissionRate(); ok {
+		_spec.SetField(user.FieldCommissionRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCommissionRate(); ok {
+		_spec.AddField(user.FieldCommissionRate, field.TypeFloat64, value)
+	}
+	if _u.mutation.CommissionRateCleared() {
+		_spec.ClearField(user.FieldCommissionRate, field.TypeFloat64)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1629,6 +1665,33 @@ func (_u *UserUpdateOne) ClearReferralCode() *UserUpdateOne {
 	return _u
 }
 
+// SetCommissionRate sets the "commission_rate" field.
+func (_u *UserUpdateOne) SetCommissionRate(v float64) *UserUpdateOne {
+	_u.mutation.ResetCommissionRate()
+	_u.mutation.SetCommissionRate(v)
+	return _u
+}
+
+// SetNillableCommissionRate sets the "commission_rate" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableCommissionRate(v *float64) *UserUpdateOne {
+	if v != nil {
+		_u.SetCommissionRate(*v)
+	}
+	return _u
+}
+
+// AddCommissionRate adds value to the "commission_rate" field.
+func (_u *UserUpdateOne) AddCommissionRate(v float64) *UserUpdateOne {
+	_u.mutation.AddCommissionRate(v)
+	return _u
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (_u *UserUpdateOne) ClearCommissionRate() *UserUpdateOne {
+	_u.mutation.ClearCommissionRate()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *UserUpdateOne) AddAPIKeyIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2217,6 +2280,15 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.ReferralCodeCleared() {
 		_spec.ClearField(user.FieldReferralCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.CommissionRate(); ok {
+		_spec.SetField(user.FieldCommissionRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCommissionRate(); ok {
+		_spec.AddField(user.FieldCommissionRate, field.TypeFloat64, value)
+	}
+	if _u.mutation.CommissionRateCleared() {
+		_spec.ClearField(user.FieldCommissionRate, field.TypeFloat64)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

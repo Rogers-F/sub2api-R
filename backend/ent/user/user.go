@@ -47,6 +47,8 @@ const (
 	FieldReferrerID = "referrer_id"
 	// FieldReferralCode holds the string denoting the referral_code field in the database.
 	FieldReferralCode = "referral_code"
+	// FieldCommissionRate holds the string denoting the commission_rate field in the database.
+	FieldCommissionRate = "commission_rate"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -176,6 +178,7 @@ var Columns = []string{
 	FieldTotpEnabledAt,
 	FieldReferrerID,
 	FieldReferralCode,
+	FieldCommissionRate,
 }
 
 var (
@@ -322,6 +325,11 @@ func ByReferrerID(opts ...sql.OrderTermOption) OrderOption {
 // ByReferralCode orders the results by the referral_code field.
 func ByReferralCode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReferralCode, opts...).ToFunc()
+}
+
+// ByCommissionRate orders the results by the commission_rate field.
+func ByCommissionRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommissionRate, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

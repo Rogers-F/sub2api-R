@@ -135,6 +135,11 @@ func ReferralCode(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldReferralCode, v))
 }
 
+// CommissionRate applies equality check predicate on the "commission_rate" field. It's identical to CommissionRateEQ.
+func CommissionRate(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldCommissionRate, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -993,6 +998,56 @@ func ReferralCodeEqualFold(v string) predicate.User {
 // ReferralCodeContainsFold applies the ContainsFold predicate on the "referral_code" field.
 func ReferralCodeContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldReferralCode, v))
+}
+
+// CommissionRateEQ applies the EQ predicate on the "commission_rate" field.
+func CommissionRateEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldCommissionRate, v))
+}
+
+// CommissionRateNEQ applies the NEQ predicate on the "commission_rate" field.
+func CommissionRateNEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldCommissionRate, v))
+}
+
+// CommissionRateIn applies the In predicate on the "commission_rate" field.
+func CommissionRateIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldCommissionRate, vs...))
+}
+
+// CommissionRateNotIn applies the NotIn predicate on the "commission_rate" field.
+func CommissionRateNotIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldCommissionRate, vs...))
+}
+
+// CommissionRateGT applies the GT predicate on the "commission_rate" field.
+func CommissionRateGT(v float64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldCommissionRate, v))
+}
+
+// CommissionRateGTE applies the GTE predicate on the "commission_rate" field.
+func CommissionRateGTE(v float64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldCommissionRate, v))
+}
+
+// CommissionRateLT applies the LT predicate on the "commission_rate" field.
+func CommissionRateLT(v float64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldCommissionRate, v))
+}
+
+// CommissionRateLTE applies the LTE predicate on the "commission_rate" field.
+func CommissionRateLTE(v float64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldCommissionRate, v))
+}
+
+// CommissionRateIsNil applies the IsNil predicate on the "commission_rate" field.
+func CommissionRateIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldCommissionRate))
+}
+
+// CommissionRateNotNil applies the NotNil predicate on the "commission_rate" field.
+func CommissionRateNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldCommissionRate))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

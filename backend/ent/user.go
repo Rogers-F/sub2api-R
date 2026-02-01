@@ -49,6 +49,8 @@ type User struct {
 	ReferrerID *int64 `json:"referrer_id,omitempty"`
 	// ReferralCode holds the value of the "referral_code" field.
 	ReferralCode *string `json:"referral_code,omitempty"`
+	// CommissionRate holds the value of the "commission_rate" field.
+	CommissionRate *float64 `json:"commission_rate,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -201,7 +203,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldTotpEnabled:
 			values[i] = new(sql.NullBool)
-		case user.FieldBalance:
+		case user.FieldBalance, user.FieldCommissionRate:
 			values[i] = new(sql.NullFloat64)
 		case user.FieldID, user.FieldConcurrency, user.FieldReferrerID:
 			values[i] = new(sql.NullInt64)
@@ -330,6 +332,13 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ReferralCode = new(string)
 				*_m.ReferralCode = value.String
+			}
+		case user.FieldCommissionRate:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field commission_rate", values[i])
+			} else if value.Valid {
+				_m.CommissionRate = new(float64)
+				*_m.CommissionRate = value.Float64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -483,6 +492,11 @@ func (_m *User) String() string {
 	if v := _m.ReferralCode; v != nil {
 		builder.WriteString("referral_code=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.CommissionRate; v != nil {
+		builder.WriteString("commission_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

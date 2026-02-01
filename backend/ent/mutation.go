@@ -17086,6 +17086,8 @@ type UserMutation struct {
 	referrer_id                      *int64
 	addreferrer_id                   *int64
 	referral_code                    *string
+	commission_rate                  *float64
+	addcommission_rate               *float64
 	clearedFields                    map[string]struct{}
 	api_keys                         map[int64]struct{}
 	removedapi_keys                  map[int64]struct{}
@@ -17925,6 +17927,76 @@ func (m *UserMutation) ResetReferralCode() {
 	delete(m.clearedFields, user.FieldReferralCode)
 }
 
+// SetCommissionRate sets the "commission_rate" field.
+func (m *UserMutation) SetCommissionRate(f float64) {
+	m.commission_rate = &f
+	m.addcommission_rate = nil
+}
+
+// CommissionRate returns the value of the "commission_rate" field in the mutation.
+func (m *UserMutation) CommissionRate() (r float64, exists bool) {
+	v := m.commission_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommissionRate returns the old "commission_rate" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldCommissionRate(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommissionRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommissionRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommissionRate: %w", err)
+	}
+	return oldValue.CommissionRate, nil
+}
+
+// AddCommissionRate adds f to the "commission_rate" field.
+func (m *UserMutation) AddCommissionRate(f float64) {
+	if m.addcommission_rate != nil {
+		*m.addcommission_rate += f
+	} else {
+		m.addcommission_rate = &f
+	}
+}
+
+// AddedCommissionRate returns the value that was added to the "commission_rate" field in this mutation.
+func (m *UserMutation) AddedCommissionRate() (r float64, exists bool) {
+	v := m.addcommission_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (m *UserMutation) ClearCommissionRate() {
+	m.commission_rate = nil
+	m.addcommission_rate = nil
+	m.clearedFields[user.FieldCommissionRate] = struct{}{}
+}
+
+// CommissionRateCleared returns if the "commission_rate" field was cleared in this mutation.
+func (m *UserMutation) CommissionRateCleared() bool {
+	_, ok := m.clearedFields[user.FieldCommissionRate]
+	return ok
+}
+
+// ResetCommissionRate resets all changes to the "commission_rate" field.
+func (m *UserMutation) ResetCommissionRate() {
+	m.commission_rate = nil
+	m.addcommission_rate = nil
+	delete(m.clearedFields, user.FieldCommissionRate)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *UserMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -18553,7 +18625,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -18602,6 +18674,9 @@ func (m *UserMutation) Fields() []string {
 	if m.referral_code != nil {
 		fields = append(fields, user.FieldReferralCode)
 	}
+	if m.commission_rate != nil {
+		fields = append(fields, user.FieldCommissionRate)
+	}
 	return fields
 }
 
@@ -18642,6 +18717,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.ReferrerID()
 	case user.FieldReferralCode:
 		return m.ReferralCode()
+	case user.FieldCommissionRate:
+		return m.CommissionRate()
 	}
 	return nil, false
 }
@@ -18683,6 +18760,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldReferrerID(ctx)
 	case user.FieldReferralCode:
 		return m.OldReferralCode(ctx)
+	case user.FieldCommissionRate:
+		return m.OldCommissionRate(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -18804,6 +18883,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetReferralCode(v)
 		return nil
+	case user.FieldCommissionRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommissionRate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -18821,6 +18907,9 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addreferrer_id != nil {
 		fields = append(fields, user.FieldReferrerID)
 	}
+	if m.addcommission_rate != nil {
+		fields = append(fields, user.FieldCommissionRate)
+	}
 	return fields
 }
 
@@ -18835,6 +18924,8 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedConcurrency()
 	case user.FieldReferrerID:
 		return m.AddedReferrerID()
+	case user.FieldCommissionRate:
+		return m.AddedCommissionRate()
 	}
 	return nil, false
 }
@@ -18865,6 +18956,13 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddReferrerID(v)
 		return nil
+	case user.FieldCommissionRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCommissionRate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -18887,6 +18985,9 @@ func (m *UserMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(user.FieldReferralCode) {
 		fields = append(fields, user.FieldReferralCode)
+	}
+	if m.FieldCleared(user.FieldCommissionRate) {
+		fields = append(fields, user.FieldCommissionRate)
 	}
 	return fields
 }
@@ -18916,6 +19017,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldReferralCode:
 		m.ClearReferralCode()
+		return nil
+	case user.FieldCommissionRate:
+		m.ClearCommissionRate()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -18972,6 +19076,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldReferralCode:
 		m.ResetReferralCode()
+		return nil
+	case user.FieldCommissionRate:
+		m.ResetCommissionRate()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
