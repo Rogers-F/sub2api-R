@@ -61,11 +61,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
 
 const appStore = useAppStore()
+
+// Ensure public settings are loaded when AuthLayout mounts
+// This handles cases where window.__APP_CONFIG__ is not available
+onMounted(() => {
+  if (!appStore.publicSettingsLoaded) {
+    appStore.fetchPublicSettings()
+  }
+})
 
 // Use cached settings from appStore (initialized from SSR-injected window.__APP_CONFIG__)
 // This eliminates the flash of default content on login/register pages

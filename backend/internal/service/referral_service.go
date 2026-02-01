@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	mathrand "math/rand"
+	"strings"
 	"time"
 )
 
@@ -224,7 +225,9 @@ func (s *ReferralService) GetReferralInfo(ctx context.Context, userID int64, api
 	// Build referral link
 	referralLink := ""
 	if referralCode != "" && apiBaseURL != "" {
-		referralLink = fmt.Sprintf("%s/register?ref=%s", apiBaseURL, referralCode)
+		// Remove trailing slash to prevent double slashes in URL
+		baseURL := strings.TrimSuffix(apiBaseURL, "/")
+		referralLink = fmt.Sprintf("%s/register?ref=%s", baseURL, referralCode)
 	}
 
 	return &ReferralInfo{

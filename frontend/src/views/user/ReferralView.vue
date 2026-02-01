@@ -310,6 +310,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { referralAPI } from '@/api/referral'
+import { copyToClipboard } from '@/utils/clipboard'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import QRCode from 'qrcode'
@@ -378,26 +379,25 @@ async function loadRecords(newPage: number): Promise<void> {
   }
 }
 
-async function copyToClipboard(text: string, successKey: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text)
-    appStore.showSuccess(t(successKey))
-  } catch {
-    console.error('Failed to copy to clipboard')
-  }
-}
-
-function copyLink(): void {
+async function copyLink(): Promise<void> {
   const link = computedReferralLink.value
-  if (link) {
-    copyToClipboard(link, 'profile.referral.linkCopied')
+  if (!link) return
+  const success = await copyToClipboard(link)
+  if (success) {
+    appStore.showSuccess(t('profile.referral.linkCopied'))
+  } else {
+    appStore.showError(t('common.copyFailed'))
   }
 }
 
-function copyCode(): void {
+async function copyCode(): Promise<void> {
   const code = referralInfo.value?.referral_code
-  if (code) {
-    copyToClipboard(code, 'profile.referral.codeCopied')
+  if (!code) return
+  const success = await copyToClipboard(code)
+  if (success) {
+    appStore.showSuccess(t('profile.referral.codeCopied'))
+  } else {
+    appStore.showError(t('common.copyFailed'))
   }
 }
 

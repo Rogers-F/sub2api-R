@@ -98,6 +98,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { referralAPI } from '@/api/referral'
+import { copyToClipboard } from '@/utils/clipboard'
 import Icon from '@/components/icons/Icon.vue'
 import ReferralRewardsModal from './ReferralRewardsModal.vue'
 import type { ReferralInfo, ReferralSettings } from '@/types'
@@ -110,7 +111,7 @@ const referralInfo = ref<ReferralInfo | null>(null)
 const settings = ref<ReferralSettings | null>(null)
 const showRewardsModal = ref(false)
 
-const loadData = async () => {
+async function loadData(): Promise<void> {
   loading.value = true
   try {
     const [infoRes, settingsRes] = await Promise.all([
@@ -126,28 +127,26 @@ const loadData = async () => {
   }
 }
 
-const copyCode = async () => {
+async function copyCode(): Promise<void> {
   if (!referralInfo.value?.referral_code) return
-  try {
-    await navigator.clipboard.writeText(referralInfo.value.referral_code)
+  const success = await copyToClipboard(referralInfo.value.referral_code)
+  if (success) {
     appStore.showSuccess(t('profile.referral.codeCopied'))
-  } catch {
-    console.error('Failed to copy code')
+  } else {
+    appStore.showError(t('common.copyFailed'))
   }
 }
 
-const copyLink = async () => {
+async function copyLink(): Promise<void> {
   if (!referralInfo.value?.referral_code) return
-  try {
-    const link = `${window.location.origin}/register?ref=${referralInfo.value.referral_code}`
-    await navigator.clipboard.writeText(link)
+  const link = `${window.location.origin}/register?ref=${referralInfo.value.referral_code}`
+  const success = await copyToClipboard(link)
+  if (success) {
     appStore.showSuccess(t('profile.referral.linkCopied'))
-  } catch {
-    console.error('Failed to copy link')
+  } else {
+    appStore.showError(t('common.copyFailed'))
   }
 }
 
-onMounted(() => {
-  loadData()
-})
+onMounted(loadData)
 </script>
