@@ -1007,6 +1007,17 @@ export default {
       failedToUpdateAllowedGroups: 'Failed to update allowed groups',
       deposit: 'Deposit',
       withdraw: 'Withdraw',
+      commissionRate: {
+        menuItem: 'Commission Rate',
+        title: 'Commission Rate Settings',
+        globalRate: 'Global Commission Rate',
+        useGlobal: 'Use Global Setting',
+        customRate: 'Custom Commission Rate',
+        effectiveRate: 'Effective Rate',
+        ratePlaceholder: 'Enter a number between 0-100',
+        rateHint: 'Set the commission rate when this user is a referrer (0-100%)',
+        invalidRate: 'Commission rate must be between 0-100%'
+      },
       depositAmount: 'Deposit Amount',
       withdrawAmount: 'Withdraw Amount',
       withdrawAll: 'All',

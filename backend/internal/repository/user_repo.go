@@ -68,6 +68,10 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 	if userIn.ReferralCode != nil {
 		createOp = createOp.SetReferralCode(*userIn.ReferralCode)
 	}
+	// 设置自定义佣金比例
+	if userIn.CommissionRate != nil {
+		createOp = createOp.SetCommissionRate(*userIn.CommissionRate)
+	}
 
 	created, err := createOp.Save(ctx)
 	if err != nil {
@@ -151,6 +155,7 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
+		SetNillableCommissionRate(userIn.CommissionRate).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)
@@ -514,6 +519,23 @@ func (r *userRepository) DisableTotp(ctx context.Context, userID int64) error {
 		ClearTotpEnabledAt().
 		ClearTotpSecretEncrypted().
 		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	return nil
+}
+
+// UpdateCommissionRate 更新用户的自定义佣金比例
+// rate 为 nil 时清除自定义比例（使用全局设置）
+func (r *userRepository) UpdateCommissionRate(ctx context.Context, userID int64, rate *float64) error {
+	client := clientFromContext(ctx, r.client)
+	update := client.User.UpdateOneID(userID)
+	if rate == nil {
+		update = update.ClearCommissionRate()
+	} else {
+		update = update.SetCommissionRate(*rate)
+	}
+	_, err := update.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, nil)
 	}

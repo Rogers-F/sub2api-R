@@ -41,6 +41,15 @@ export interface User {
 export interface AdminUser extends User {
   // 管理员备注（普通用户接口不返回）
   notes: string
+  // 自定义佣金比例（null=使用全局设置，0-1=自定义比例）
+  commission_rate?: number | null
+}
+
+// 用户佣金比例信息
+export interface UserCommissionRateInfo {
+  user_commission_rate: number | null
+  global_commission_rate: number
+  effective_rate: number
 }
 
 export interface LoginRequest {

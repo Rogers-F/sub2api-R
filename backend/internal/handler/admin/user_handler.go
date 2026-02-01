@@ -13,13 +13,15 @@ import (
 
 // UserHandler handles admin user management
 type UserHandler struct {
-	adminService service.AdminService
+	adminService   service.AdminService
+	settingService *service.SettingService
 }
 
 // NewUserHandler creates a new admin user handler
-func NewUserHandler(adminService service.AdminService) *UserHandler {
+func NewUserHandler(adminService service.AdminService, settingService *service.SettingService) *UserHandler {
 	return &UserHandler{
-		adminService: adminService,
+		adminService:   adminService,
+		settingService: settingService,
 	}
 }
 
@@ -276,4 +278,86 @@ func (h *UserHandler) GetUserUsage(c *gin.Context) {
 	}
 
 	response.Success(c, stats)
+}
+
+// UpdateCommissionRateRequest represents the request to update user commission rate
+type UpdateCommissionRateRequest struct {
+	CommissionRate *float64 `json:"commission_rate"` // nil to use global, 0-1 for custom rate
+}
+
+// CommissionRateResponse represents the commission rate response
+type CommissionRateResponse struct {
+	UserCommissionRate   *float64 `json:"user_commission_rate"`   // nil if using global
+	GlobalCommissionRate float64  `json:"global_commission_rate"` // global rate from settings
+	EffectiveRate        float64  `json:"effective_rate"`         // the rate that will be used
+}
+
+// GetCommissionRate handles getting user's commission rate
+// GET /api/v1/admin/users/:id/commission-rate
+func (h *UserHandler) GetCommissionRate(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	user, err := h.adminService.GetUser(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	globalRate := h.settingService.GetReferralCommissionRate(c.Request.Context())
+	effectiveRate := globalRate
+	if user.CommissionRate != nil {
+		effectiveRate = *user.CommissionRate
+	}
+
+	response.Success(c, CommissionRateResponse{
+		UserCommissionRate:   user.CommissionRate,
+		GlobalCommissionRate: globalRate,
+		EffectiveRate:        effectiveRate,
+	})
+}
+
+// UpdateCommissionRate handles updating user's commission rate
+// PUT /api/v1/admin/users/:id/commission-rate
+func (h *UserHandler) UpdateCommissionRate(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	var req UpdateCommissionRateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Validate rate if provided
+	if req.CommissionRate != nil {
+		if *req.CommissionRate < 0 || *req.CommissionRate > 1 {
+			response.BadRequest(c, "Commission rate must be between 0 and 1")
+			return
+		}
+	}
+
+	user, err := h.adminService.UpdateUserCommissionRate(c.Request.Context(), userID, req.CommissionRate)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	globalRate := h.settingService.GetReferralCommissionRate(c.Request.Context())
+	effectiveRate := globalRate
+	if user.CommissionRate != nil {
+		effectiveRate = *user.CommissionRate
+	}
+
+	response.Success(c, CommissionRateResponse{
+		UserCommissionRate:   user.CommissionRate,
+		GlobalCommissionRate: globalRate,
+		EffectiveRate:        effectiveRate,
+	})
 }

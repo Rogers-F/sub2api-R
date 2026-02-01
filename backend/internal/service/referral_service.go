@@ -143,6 +143,16 @@ func (s *ReferralService) ProcessRedeemCommission(ctx context.Context, userID in
 	settings := s.GetSettings(ctx)
 	rate := settings.CommissionRate
 
+	// 检查推荐人是否有自定义佣金比例
+	// 如果推荐人不存在或已被删除，静默使用全局费率继续计算
+	referrer, err := s.userRepo.GetByID(ctx, referrerID)
+	if err != nil {
+		log.Printf("[Referral] Warning: failed to get referrer %d, using global rate: %v", referrerID, err)
+	} else if referrer.CommissionRate != nil {
+		rate = *referrer.CommissionRate
+		log.Printf("[Referral] Using custom commission rate %.4f for referrer %d", rate, referrerID)
+	}
+
 	if rate <= 0 {
 		return 0, nil
 	}

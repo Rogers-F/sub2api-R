@@ -43,6 +43,9 @@ type UserRepository interface {
 	UpdateTotpSecret(ctx context.Context, userID int64, encryptedSecret *string) error
 	EnableTotp(ctx context.Context, userID int64) error
 	DisableTotp(ctx context.Context, userID int64) error
+
+	// Commission rate 相关方法
+	UpdateCommissionRate(ctx context.Context, userID int64, rate *float64) error
 }
 
 // UpdateProfileRequest 更新用户资料请求

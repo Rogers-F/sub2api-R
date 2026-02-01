@@ -456,6 +456,15 @@
                 {{ t('admin.users.withdraw') }}
               </button>
 
+              <!-- Commission Rate -->
+              <button
+                @click="handleCommissionRate(user); closeActionMenu()"
+                class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+              >
+                <Icon name="chart" size="sm" class="text-blue-500" :stroke-width="2" />
+                {{ t('admin.users.commissionRate.menuItem') }}
+              </button>
+
               <div class="my-1 border-t border-gray-100 dark:border-dark-700"></div>
 
               <!-- Delete (not for admin) -->
@@ -479,6 +488,7 @@
     <UserApiKeysModal :show="showApiKeysModal" :user="viewingUser" @close="closeApiKeysModal" />
     <UserAllowedGroupsModal :show="showAllowedGroupsModal" :user="allowedGroupsUser" @close="closeAllowedGroupsModal" @success="loadUsers" />
     <UserBalanceModal :show="showBalanceModal" :user="balanceUser" :operation="balanceOperation" @close="closeBalanceModal" @success="loadUsers" />
+    <UserCommissionRateModal :show="showCommissionRateModal" :user="commissionRateUser" @close="closeCommissionRateModal" @success="loadUsers" />
     <UserAttributesConfigModal :show="showAttributesModal" @close="handleAttributesModalClose" />
   </AppLayout>
 </template>
@@ -509,6 +519,7 @@ import UserEditModal from '@/components/admin/user/UserEditModal.vue'
 import UserApiKeysModal from '@/components/admin/user/UserApiKeysModal.vue'
 import UserAllowedGroupsModal from '@/components/admin/user/UserAllowedGroupsModal.vue'
 import UserBalanceModal from '@/components/admin/user/UserBalanceModal.vue'
+import UserCommissionRateModal from '@/components/admin/user/UserCommissionRateModal.vue'
 
 const appStore = useAppStore()
 
@@ -828,6 +839,10 @@ const showBalanceModal = ref(false)
 const balanceUser = ref<AdminUser | null>(null)
 const balanceOperation = ref<'add' | 'subtract'>('add')
 
+// Commission Rate modal state
+const showCommissionRateModal = ref(false)
+const commissionRateUser = ref<AdminUser | null>(null)
+
 // 计算剩余天数
 const getDaysRemaining = (expiresAt: string): number => {
   const now = new Date()
@@ -1076,6 +1091,16 @@ const handleWithdraw = (user: AdminUser) => {
 const closeBalanceModal = () => {
   showBalanceModal.value = false
   balanceUser.value = null
+}
+
+const handleCommissionRate = (user: AdminUser) => {
+  commissionRateUser.value = user
+  showCommissionRateModal.value = true
+}
+
+const closeCommissionRateModal = () => {
+  showCommissionRateModal.value = false
+  commissionRateUser.value = null
 }
 
 // 滚动时关闭菜单

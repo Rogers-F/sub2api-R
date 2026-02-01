@@ -81,6 +81,13 @@ func (User) Fields() []ent.Field {
 			MaxLen(16).
 			Optional().
 			Nillable(),
+
+		// 自定义佣金比例（作为推荐人时使用）
+		// NULL 表示使用全局设置，非 NULL 表示自定义比例
+		field.Float("commission_rate").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(5,4)"}).
+			Optional().
+			Nillable(),
 	}
 }
 

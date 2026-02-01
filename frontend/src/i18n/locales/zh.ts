@@ -1061,6 +1061,17 @@ export default {
       failedToUpdateAllowedGroups: '更新允许分组失败',
       deposit: '充值',
       withdraw: '退款',
+      commissionRate: {
+        menuItem: '返利比例',
+        title: '消费返利比例设置',
+        globalRate: '全局返利比例',
+        useGlobal: '使用全局设置',
+        customRate: '自定义返利比例',
+        effectiveRate: '生效比例',
+        ratePlaceholder: '输入 0-100 之间的数字',
+        rateHint: '设置该用户作为推荐人时的佣金比例（0-100%）',
+        invalidRate: '返利比例必须在 0-100% 之间'
+      },
       depositAmount: '充值金额',
       withdrawAmount: '退款金额',
       withdrawAll: '全部',

@@ -20,6 +20,7 @@ type AdminService interface {
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
 	DeleteUser(ctx context.Context, id int64) error
 	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
+	UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*User, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int) ([]APIKey, int64, error)
 	GetUserUsageStats(ctx context.Context, userID int64, period string) (any, error)
 
@@ -520,6 +521,13 @@ func (s *adminServiceImpl) GetUserUsageStats(ctx context.Context, userID int64, 
 		"total_tokens":    0,
 		"avg_duration_ms": 0,
 	}, nil
+}
+
+func (s *adminServiceImpl) UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*User, error) {
+	if err := s.userRepo.UpdateCommissionRate(ctx, userID, rate); err != nil {
+		return nil, err
+	}
+	return s.userRepo.GetByID(ctx, userID)
 }
 
 // Group management implementations

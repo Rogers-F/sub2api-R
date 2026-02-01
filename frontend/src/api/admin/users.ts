@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from '../client'
-import type { AdminUser, UpdateUserRequest, PaginatedResponse } from '@/types'
+import type { AdminUser, UpdateUserRequest, PaginatedResponse, UserCommissionRateInfo } from '@/types'
 
 /**
  * List all users with pagination
@@ -174,6 +174,32 @@ export async function getUserUsageStats(
   return data
 }
 
+/**
+ * Get user's commission rate
+ * @param id - User ID
+ * @returns Commission rate info (user rate, global rate, effective rate)
+ */
+export async function getCommissionRate(id: number): Promise<UserCommissionRateInfo> {
+  const { data } = await apiClient.get<UserCommissionRateInfo>(`/admin/users/${id}/commission-rate`)
+  return data
+}
+
+/**
+ * Update user's commission rate
+ * @param id - User ID
+ * @param rate - Commission rate (null to use global setting, 0-1 for custom rate)
+ * @returns Updated commission rate info
+ */
+export async function updateCommissionRate(
+  id: number,
+  rate: number | null
+): Promise<UserCommissionRateInfo> {
+  const { data } = await apiClient.put<UserCommissionRateInfo>(`/admin/users/${id}/commission-rate`, {
+    commission_rate: rate
+  })
+  return data
+}
+
 export const usersAPI = {
   list,
   getById,
@@ -184,7 +210,9 @@ export const usersAPI = {
   updateConcurrency,
   toggleStatus,
   getUserApiKeys,
-  getUserUsageStats
+  getUserUsageStats,
+  getCommissionRate,
+  updateCommissionRate
 }
 
 export default usersAPI

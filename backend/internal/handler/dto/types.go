@@ -23,7 +23,8 @@ type User struct {
 type AdminUser struct {
 	User
 
-	Notes string `json:"notes"`
+	Notes          string   `json:"notes"`
+	CommissionRate *float64 `json:"commission_rate"` // 自定义佣金比例（nil=使用全局设置）
 }
 
 type APIKey struct {

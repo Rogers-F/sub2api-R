@@ -30,6 +30,10 @@ type User struct {
 	ReferrerID   *int64  // 邀请人ID
 	ReferralCode *string // 用户的邀请码
 
+	// 自定义佣金比例（作为推荐人时使用）
+	// nil 表示使用全局设置，非 nil 表示自定义比例 (0-1)
+	CommissionRate *float64
+
 	APIKeys       []APIKey
 	Subscriptions []UserSubscription
 }
