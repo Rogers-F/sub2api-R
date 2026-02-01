@@ -779,6 +779,20 @@ func (r *stubUserRepo) DisableTotp(ctx context.Context, userID int64) error {
 	return errors.New("not implemented")
 }
 
+func (r *stubUserRepo) UpdateCommissionRate(ctx context.Context, userID int64, rate *float64) error {
+	u, ok := r.users[userID]
+	if !ok {
+		return service.ErrUserNotFound
+	}
+	if rate == nil {
+		u.CommissionRate = nil
+		return nil
+	}
+	v := *rate
+	u.CommissionRate = &v
+	return nil
+}
+
 type stubApiKeyCache struct{}
 
 func (stubApiKeyCache) GetCreateAttemptCount(ctx context.Context, userID int64) (int, error) {
