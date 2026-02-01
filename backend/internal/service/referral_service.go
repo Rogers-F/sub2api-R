@@ -202,6 +202,19 @@ func (s *ReferralService) GetReferralInfo(ctx context.Context, userID int64, api
 		referralCode = *user.ReferralCode
 	}
 
+	// Auto-generate referral code for existing users who don't have one
+	if referralCode == "" && s.IsEnabled(ctx) {
+		newCode := s.GenerateReferralCode()
+		user.ReferralCode = &newCode
+		if err := s.userRepo.Update(ctx, user); err != nil {
+			log.Printf("[Referral] Failed to generate referral code for user %d: %v", userID, err)
+			// Continue without referral code rather than failing
+		} else {
+			referralCode = newCode
+			log.Printf("[Referral] Generated referral code for existing user %d: %s", userID, newCode)
+		}
+	}
+
 	// Get stats
 	totalInvited, registerReward, commissionReward, err := s.referralRepo.GetRewardStats(ctx, userID)
 	if err != nil {
