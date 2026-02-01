@@ -81,7 +81,7 @@
           <div class="p-6">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div class="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-sm dark:border-dark-600 dark:bg-dark-800 overflow-x-auto">
-                {{ referralInfo?.referral_link || '-' }}
+                {{ computedReferralLink || '-' }}
               </div>
               <div class="flex gap-2">
                 <button
@@ -91,6 +91,14 @@
                 >
                   <Icon name="copy" size="sm" class="mr-1" />
                   {{ t('referral.copyLink') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  :title="t('referral.showQRCode')"
+                  @click="showQRCode"
+                >
+                  <Icon name="qrCode" size="md" />
                 </button>
                 <button
                   type="button"
@@ -256,17 +264,55 @@
           </div>
         </div>
       </template>
+
+      <!-- QR Code Modal -->
+      <Teleport to="body">
+        <div
+          v-if="showQRModal"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          @click.self="showQRModal = false"
+        >
+          <div class="mx-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-dark-800">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t('referral.qrCodeTitle') }}
+              </h3>
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                @click="showQRModal = false"
+              >
+                <Icon name="x" size="md" />
+              </button>
+            </div>
+            <div class="flex flex-col items-center">
+              <div class="rounded-lg bg-white p-2">
+                <img
+                  v-if="qrCodeDataUrl"
+                  :src="qrCodeDataUrl"
+                  alt="Referral QR Code"
+                  class="h-64 w-64"
+                />
+              </div>
+              <p class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                {{ t('referral.qrCodeHint') }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Teleport>
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { referralAPI } from '@/api/referral'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import QRCode from 'qrcode'
 import type { ReferralInfo, ReferralSettings, ReferralReward } from '@/types'
 
 const { t } = useI18n()
@@ -280,6 +326,22 @@ const rewards = ref<ReferralReward[]>([])
 const page = ref(1)
 const pageSize = 10
 const totalPages = ref(1)
+
+// QR code modal state
+const showQRModal = ref(false)
+const qrCodeDataUrl = ref('')
+
+// Computed referral link - use backend value or generate from code
+const computedReferralLink = computed(() => {
+  if (referralInfo.value?.referral_link) {
+    return referralInfo.value.referral_link
+  }
+  const code = referralInfo.value?.referral_code
+  if (code) {
+    return `${window.location.origin}/register?ref=${encodeURIComponent(code)}`
+  }
+  return ''
+})
 
 async function loadData(): Promise<void> {
   loading.value = true
@@ -326,7 +388,7 @@ async function copyToClipboard(text: string, successKey: string): Promise<void> 
 }
 
 function copyLink(): void {
-  const link = referralInfo.value?.referral_link
+  const link = computedReferralLink.value
   if (link) {
     copyToClipboard(link, 'profile.referral.linkCopied')
   }
@@ -336,6 +398,25 @@ function copyCode(): void {
   const code = referralInfo.value?.referral_code
   if (code) {
     copyToClipboard(code, 'profile.referral.codeCopied')
+  }
+}
+
+async function showQRCode(): Promise<void> {
+  const link = computedReferralLink.value
+  if (!link) return
+  try {
+    qrCodeDataUrl.value = await QRCode.toDataURL(link, {
+      width: 256,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    })
+    showQRModal.value = true
+  } catch (err) {
+    console.error('Failed to generate QR code:', err)
+    appStore.showError(t('common.error'))
   }
 }
 
