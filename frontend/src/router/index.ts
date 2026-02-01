@@ -198,6 +198,18 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'purchase.description'
     }
   },
+  {
+    path: '/referral',
+    name: 'Referral',
+    component: () => import('@/views/user/ReferralView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Referral Rewards',
+      titleKey: 'nav.referral',
+      descriptionKey: 'profile.referral.description'
+    }
+  },
 
   // ==================== Admin Routes ====================
   {

@@ -301,7 +301,37 @@ export default {
     docs: '文档',
     announcements: '公告管理',
     usageStatistics: '使用统计',
-    redeemCode: '兑换码'
+    redeemCode: '兑换码',
+    referral: '推荐奖励'
+  },
+
+  // Referral Page
+  referral: {
+    rewardRules: '奖励规则',
+    referrerRegister: '注册奖励',
+    basicReward: '基础奖励',
+    referrerRegisterDesc: '好友成功注册',
+    perInvite: '每次邀请',
+    referrerCommission: '消费返利',
+    advancedRebate: '返利奖励',
+    referrerCommissionDesc: '好友消费返利',
+    ofPurchase: '消费金额比例',
+    myLink: '我的推广链接',
+    copyLink: '复制链接',
+    copyCode: '复制邀请码',
+    linkHint: '分享此链接给好友，好友注册后您将获得奖励',
+    statistics: '推广统计',
+    totalEarned: '总奖励',
+    totalInvited: '总邀请人数',
+    registerReward: '注册奖励',
+    commissionReward: '返利奖励',
+    records: '推广记录',
+    referredUser: '推荐用户',
+    time: '时间',
+    rewardType: '类型',
+    rewardAmount: '奖励',
+    registerType: '注册',
+    commissionType: '返利'
   },
 
   // Auth

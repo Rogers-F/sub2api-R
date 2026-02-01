@@ -304,7 +304,37 @@ export default {
     docs: 'Docs',
     announcements: 'Announcements',
     usageStatistics: 'Usage Statistics',
-    redeemCode: 'Redeem Code'
+    redeemCode: 'Redeem Code',
+    referral: 'Referral Rewards'
+  },
+
+  // Referral Page
+  referral: {
+    rewardRules: 'Reward Rules',
+    referrerRegister: 'Register Reward',
+    basicReward: 'Basic Reward',
+    referrerRegisterDesc: 'Friend successfully registers',
+    perInvite: 'Per invite',
+    referrerCommission: 'Commission',
+    advancedRebate: 'Rebate',
+    referrerCommissionDesc: 'Friend purchase rebate',
+    ofPurchase: 'Of purchase amount',
+    myLink: 'My Referral Link',
+    copyLink: 'Copy Link',
+    copyCode: 'Copy Code',
+    linkHint: 'Share this link with friends. You will earn rewards when they register.',
+    statistics: 'Statistics',
+    totalEarned: 'Total Earned',
+    totalInvited: 'Total Invited',
+    registerReward: 'Register Reward',
+    commissionReward: 'Commission Reward',
+    records: 'Referral Records',
+    referredUser: 'Referred User',
+    time: 'Time',
+    rewardType: 'Type',
+    rewardAmount: 'Reward',
+    registerType: 'Register',
+    commissionType: 'Commission'
   },
 
   // Auth
