@@ -3427,7 +3427,8 @@ export default {
       failedToLoad: '加载设置失败',
       failedToSave: '保存设置失败',
       failedToTestSmtp: 'SMTP 连接测试失败',
-      failedToSendTestEmail: '发送测试邮件失败'
+      failedToSendTestEmail: '发送测试邮件失败',
+      loadFailedCannotSave: '设置加载失败，请刷新页面后重试'
     }
   },
 

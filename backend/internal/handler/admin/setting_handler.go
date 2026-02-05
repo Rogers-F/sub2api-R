@@ -104,14 +104,14 @@ type UpdateSettingsRequest struct {
 	PasswordResetEnabled bool `json:"password_reset_enabled"`
 	TotpEnabled          bool `json:"totp_enabled"` // TOTP 双因素认证
 
-	// 邮件服务设置
-	SMTPHost     string `json:"smtp_host"`
-	SMTPPort     int    `json:"smtp_port"`
-	SMTPUsername string `json:"smtp_username"`
-	SMTPPassword string `json:"smtp_password"`
-	SMTPFrom     string `json:"smtp_from_email"`
-	SMTPFromName string `json:"smtp_from_name"`
-	SMTPUseTLS   bool   `json:"smtp_use_tls"`
+	// 邮件服务设置 - 使用指针类型，允许前端只发送变更字段
+	SMTPHost     *string `json:"smtp_host"`
+	SMTPPort     *int    `json:"smtp_port"`
+	SMTPUsername *string `json:"smtp_username"`
+	SMTPPassword *string `json:"smtp_password"`
+	SMTPFrom     *string `json:"smtp_from_email"`
+	SMTPFromName *string `json:"smtp_from_name"`
+	SMTPUseTLS   *bool   `json:"smtp_use_tls"`
 
 	// Cloudflare Turnstile 设置
 	TurnstileEnabled   bool   `json:"turnstile_enabled"`
@@ -185,9 +185,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	}
 	if req.DefaultBalance < 0 {
 		req.DefaultBalance = 0
-	}
-	if req.SMTPPort <= 0 {
-		req.SMTPPort = 587
 	}
 
 	// Turnstile 参数验证
@@ -297,18 +294,56 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	settings := &service.SystemSettings{
-		RegistrationEnabled:         req.RegistrationEnabled,
-		EmailVerifyEnabled:          req.EmailVerifyEnabled,
-		PromoCodeEnabled:            req.PromoCodeEnabled,
-		PasswordResetEnabled:        req.PasswordResetEnabled,
-		TotpEnabled:                 req.TotpEnabled,
-		SMTPHost:                    req.SMTPHost,
-		SMTPPort:                    req.SMTPPort,
-		SMTPUsername:                req.SMTPUsername,
-		SMTPPassword:                req.SMTPPassword,
-		SMTPFrom:                    req.SMTPFrom,
-		SMTPFromName:                req.SMTPFromName,
-		SMTPUseTLS:                  req.SMTPUseTLS,
+		RegistrationEnabled:  req.RegistrationEnabled,
+		EmailVerifyEnabled:   req.EmailVerifyEnabled,
+		PromoCodeEnabled:     req.PromoCodeEnabled,
+		PasswordResetEnabled: req.PasswordResetEnabled,
+		TotpEnabled:          req.TotpEnabled,
+		SMTPHost: func() string {
+			if req.SMTPHost != nil {
+				return *req.SMTPHost
+			}
+			return previousSettings.SMTPHost
+		}(),
+		SMTPPort: func() int {
+			if req.SMTPPort != nil && *req.SMTPPort > 0 {
+				return *req.SMTPPort
+			}
+			if previousSettings.SMTPPort > 0 {
+				return previousSettings.SMTPPort
+			}
+			return 587 // 默认值
+		}(),
+		SMTPUsername: func() string {
+			if req.SMTPUsername != nil {
+				return *req.SMTPUsername
+			}
+			return previousSettings.SMTPUsername
+		}(),
+		SMTPPassword: func() string {
+			if req.SMTPPassword != nil && *req.SMTPPassword != "" {
+				return *req.SMTPPassword
+			}
+			return "" // 密码空值时保留旧值（由 service 层处理）
+		}(),
+		SMTPFrom: func() string {
+			if req.SMTPFrom != nil {
+				return *req.SMTPFrom
+			}
+			return previousSettings.SMTPFrom
+		}(),
+		SMTPFromName: func() string {
+			if req.SMTPFromName != nil {
+				return *req.SMTPFromName
+			}
+			return previousSettings.SMTPFromName
+		}(),
+		SMTPUseTLS: func() bool {
+			if req.SMTPUseTLS != nil {
+				return *req.SMTPUseTLS
+			}
+			return previousSettings.SMTPUseTLS
+		}(),
 		TurnstileEnabled:            req.TurnstileEnabled,
 		TurnstileSiteKey:            req.TurnstileSiteKey,
 		TurnstileSecretKey:          req.TurnstileSecretKey,
@@ -489,7 +524,7 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.SMTPUsername != after.SMTPUsername {
 		changed = append(changed, "smtp_username")
 	}
-	if req.SMTPPassword != "" {
+	if req.SMTPPassword != nil && *req.SMTPPassword != "" {
 		changed = append(changed, "smtp_password")
 	}
 	if before.SMTPFrom != after.SMTPFrom {

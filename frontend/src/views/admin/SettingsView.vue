@@ -1137,7 +1137,7 @@
 
         <!-- Save Button -->
         <div class="flex justify-end">
-          <button type="submit" :disabled="saving" class="btn btn-primary">
+          <button type="submit" :disabled="saving || loading || loadFailed" class="btn btn-primary">
             <svg v-if="saving" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
@@ -1177,6 +1177,7 @@ const appStore = useAppStore()
 const { copyToClipboard } = useClipboard()
 
 const loading = ref(true)
+const loadFailed = ref(false)
 const saving = ref(false)
 const testingSmtp = ref(false)
 const sendingTestEmail = ref(false)
@@ -1233,7 +1234,7 @@ const form = reactive<SettingsForm>({
   smtp_password_configured: false,
   smtp_from_email: '',
   smtp_from_name: '',
-  smtp_use_tls: true,
+  smtp_use_tls: false,
   // Cloudflare Turnstile
   turnstile_enabled: false,
   turnstile_site_key: '',
@@ -1262,7 +1263,7 @@ const form = reactive<SettingsForm>({
   // Referral system settings
   referral_enabled: false,
   referral_register_bonus: 5,
-  referral_commission_rate: 0.1,
+  referral_commission_rate: 0.3,
   referral_max_total_reward: 0
 })
 
@@ -1322,6 +1323,7 @@ function handleLogoUpload(event: Event) {
 
 async function loadSettings() {
   loading.value = true
+  loadFailed.value = false
   try {
     const settings = await adminAPI.settings.getSettings()
     Object.assign(form, settings)
@@ -1329,6 +1331,7 @@ async function loadSettings() {
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
   } catch (error: any) {
+    loadFailed.value = true
     appStore.showError(
       t('admin.settings.failedToLoad') + ': ' + (error.message || t('common.unknownError'))
     )
@@ -1338,6 +1341,10 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
+  if (loadFailed.value) {
+    appStore.showError(t('admin.settings.loadFailedCannotSave'))
+    return
+  }
   saving.value = true
   try {
     const payload: UpdateSettingsRequest = {

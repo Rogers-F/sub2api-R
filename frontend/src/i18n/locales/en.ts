@@ -3277,7 +3277,8 @@ export default {
       failedToLoad: 'Failed to load settings',
       failedToSave: 'Failed to save settings',
       failedToTestSmtp: 'SMTP connection test failed',
-      failedToSendTestEmail: 'Failed to send test email'
+      failedToSendTestEmail: 'Failed to send test email',
+      loadFailedCannotSave: 'Settings failed to load. Please refresh the page and try again.'
     }
   },
 
