@@ -303,7 +303,6 @@ export default {
     mySubscriptions: '我的订阅',
     buySubscription: '购买订阅',
     docs: '文档',
-    announcements: '公告管理',
     usageStatistics: '使用统计',
     redeemCode: '兑换码',
     referral: '推荐奖励'
@@ -3405,57 +3404,6 @@ export default {
         downloadChart: '下载',
         downloadChartHint: '下载图表图片'
       }
-    },
-
-    // Announcements
-    announcements: {
-      title: '公告管理',
-      description: '管理系统公告',
-      create: '创建公告',
-      edit: '编辑公告',
-      delete: '删除公告',
-      deleteConfirm: '确定要删除此公告吗？此操作无法撤销。',
-      noAnnouncements: '暂无公告',
-      columns: {
-        title: '标题',
-        contentType: '内容类型',
-        priority: '优先级',
-        status: '状态',
-        publishedAt: '发布时间',
-        expiresAt: '过期时间',
-        createdAt: '创建时间',
-        actions: '操作'
-      },
-      form: {
-        title: '标题',
-        titlePlaceholder: '请输入公告标题',
-        content: '内容',
-        contentPlaceholder: '请输入公告内容',
-        contentType: '内容类型',
-        priority: '优先级',
-        priorityHint: '数值越大优先级越高',
-        status: '状态',
-        publishedAt: '发布时间',
-        publishedAtHint: '留空立即发布',
-        expiresAt: '过期时间',
-        expiresAtHint: '留空则永不过期'
-      },
-      status: {
-        active: '已发布',
-        inactive: '未发布'
-      },
-      contentType: {
-        markdown: 'Markdown',
-        html: 'HTML',
-        url: '外部链接'
-      },
-      createSuccess: '公告创建成功',
-      updateSuccess: '公告更新成功',
-      deleteSuccess: '公告删除成功',
-      createFailed: '创建公告失败',
-      updateFailed: '更新公告失败',
-      deleteFailed: '删除公告失败',
-      loadFailed: '加载公告列表失败'
     },
 
     // Settings

@@ -71,8 +71,6 @@ const (
 	EdgeReferralRewardsGiven = "referral_rewards_given"
 	// EdgeReferralRewardsReceived holds the string denoting the referral_rewards_received edge name in mutations.
 	EdgeReferralRewardsReceived = "referral_rewards_received"
-	// EdgeAnnouncementReads holds the string denoting the announcement_reads edge name in mutations.
-	EdgeAnnouncementReads = "announcement_reads"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -152,13 +150,6 @@ const (
 	ReferralRewardsReceivedInverseTable = "referral_rewards"
 	// ReferralRewardsReceivedColumn is the table column denoting the referral_rewards_received relation/edge.
 	ReferralRewardsReceivedColumn = "referee_id"
-	// AnnouncementReadsTable is the table that holds the announcement_reads relation/edge.
-	AnnouncementReadsTable = "announcement_reads"
-	// AnnouncementReadsInverseTable is the table name for the AnnouncementRead entity.
-	// It exists in this package in order to avoid circular dependency with the "announcementread" package.
-	AnnouncementReadsInverseTable = "announcement_reads"
-	// AnnouncementReadsColumn is the table column denoting the announcement_reads relation/edge.
-	AnnouncementReadsColumn = "user_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -495,20 +486,6 @@ func ByReferralRewardsReceived(term sql.OrderTerm, terms ...sql.OrderTerm) Order
 	}
 }
 
-// ByAnnouncementReadsCount orders the results by announcement_reads count.
-func ByAnnouncementReadsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newAnnouncementReadsStep(), opts...)
-	}
-}
-
-// ByAnnouncementReads orders the results by announcement_reads terms.
-func ByAnnouncementReads(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAnnouncementReadsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -597,13 +574,6 @@ func newReferralRewardsReceivedStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReferralRewardsReceivedInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsReceivedTable, ReferralRewardsReceivedColumn),
-	)
-}
-func newAnnouncementReadsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AnnouncementReadsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, AnnouncementReadsTable, AnnouncementReadsColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

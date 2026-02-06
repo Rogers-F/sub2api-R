@@ -1361,39 +1361,3 @@ export interface ReferralSettings {
   commission_rate: number
 }
 
-// ==================== Announcement Types ====================
-
-export interface Announcement {
-  id: number
-  title: string
-  content: string
-  content_type: 'markdown' | 'html' | 'url'
-  priority: number
-  status: 'active' | 'inactive'
-  published_at?: string | null
-  expires_at?: string | null
-  created_at: string
-  updated_at?: string
-}
-
-export interface CreateAnnouncementRequest {
-  title: string
-  content: string
-  content_type?: string
-  priority?: number
-  status?: string
-  published_at?: string | null
-  expires_at?: string | null
-}
-
-export interface UpdateAnnouncementRequest {
-  title?: string
-  content?: string
-  content_type?: string
-  priority?: number
-  status?: string
-  published_at?: string | null
-  expires_at?: string | null
-  clear_published_at?: boolean
-  clear_expires_at?: boolean
-}

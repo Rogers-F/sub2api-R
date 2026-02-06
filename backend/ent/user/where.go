@@ -1303,29 +1303,6 @@ func HasReferralRewardsReceivedWith(preds ...predicate.ReferralReward) predicate
 	})
 }
 
-// HasAnnouncementReads applies the HasEdge predicate on the "announcement_reads" edge.
-func HasAnnouncementReads() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AnnouncementReadsTable, AnnouncementReadsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasAnnouncementReadsWith applies the HasEdge predicate on the "announcement_reads" edge with a given conditions (other predicates).
-func HasAnnouncementReadsWith(preds ...predicate.AnnouncementRead) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := newAnnouncementReadsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasUserAllowedGroups applies the HasEdge predicate on the "user_allowed_groups" edge.
 func HasUserAllowedGroups() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

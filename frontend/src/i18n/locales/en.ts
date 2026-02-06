@@ -306,7 +306,6 @@ export default {
     mySubscriptions: 'My Subscriptions',
     buySubscription: 'Purchase Subscription',
     docs: 'Docs',
-    announcements: 'Announcements',
     usageStatistics: 'Usage Statistics',
     redeemCode: 'Redeem Code',
     referral: 'Referral Rewards'
@@ -3235,57 +3234,6 @@ export default {
         downloadChart: 'Download',
         downloadChartHint: 'Download chart as image'
       }
-    },
-
-    // Announcements
-    announcements: {
-      title: 'Announcements',
-      description: 'Manage system announcements',
-      create: 'Create Announcement',
-      edit: 'Edit Announcement',
-      delete: 'Delete Announcement',
-      deleteConfirm: 'Are you sure you want to delete this announcement? This action cannot be undone.',
-      noAnnouncements: 'No announcements',
-      columns: {
-        title: 'Title',
-        contentType: 'Content Type',
-        priority: 'Priority',
-        status: 'Status',
-        publishedAt: 'Published At',
-        expiresAt: 'Expires At',
-        createdAt: 'Created At',
-        actions: 'Actions'
-      },
-      form: {
-        title: 'Title',
-        titlePlaceholder: 'Enter announcement title',
-        content: 'Content',
-        contentPlaceholder: 'Enter announcement content',
-        contentType: 'Content Type',
-        priority: 'Priority',
-        priorityHint: 'Higher values appear first',
-        status: 'Status',
-        publishedAt: 'Publish Date',
-        publishedAtHint: 'Leave empty to publish immediately',
-        expiresAt: 'Expiry Date',
-        expiresAtHint: 'Leave empty for no expiration'
-      },
-      status: {
-        active: 'Active',
-        inactive: 'Inactive'
-      },
-      contentType: {
-        markdown: 'Markdown',
-        html: 'HTML',
-        url: 'External Link'
-      },
-      createSuccess: 'Announcement created successfully',
-      updateSuccess: 'Announcement updated successfully',
-      deleteSuccess: 'Announcement deleted successfully',
-      createFailed: 'Failed to create announcement',
-      updateFailed: 'Failed to update announcement',
-      deleteFailed: 'Failed to delete announcement',
-      loadFailed: 'Failed to load announcements'
     },
 
     // Settings
