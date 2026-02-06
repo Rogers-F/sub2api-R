@@ -478,6 +478,10 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		OpsRealtimeMonitoringEnabled:         updatedSettings.OpsRealtimeMonitoringEnabled,
 		OpsQueryModeDefault:                  updatedSettings.OpsQueryModeDefault,
 		OpsMetricsIntervalSeconds:            updatedSettings.OpsMetricsIntervalSeconds,
+		ReferralEnabled:                      updatedSettings.ReferralEnabled,
+		ReferralRegisterBonus:                updatedSettings.ReferralRegisterBonus,
+		ReferralCommissionRate:               updatedSettings.ReferralCommissionRate,
+		ReferralMaxTotalReward:               updatedSettings.ReferralMaxTotalReward,
 	})
 }
 
@@ -619,6 +623,21 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.OpsMetricsIntervalSeconds != after.OpsMetricsIntervalSeconds {
 		changed = append(changed, "ops_metrics_interval_seconds")
+	}
+	if before.PromoCodeEnabled != after.PromoCodeEnabled {
+		changed = append(changed, "promo_code_enabled")
+	}
+	if before.ReferralEnabled != after.ReferralEnabled {
+		changed = append(changed, "referral_enabled")
+	}
+	if before.ReferralRegisterBonus != after.ReferralRegisterBonus {
+		changed = append(changed, "referral_register_bonus")
+	}
+	if before.ReferralCommissionRate != after.ReferralCommissionRate {
+		changed = append(changed, "referral_commission_rate")
+	}
+	if before.ReferralMaxTotalReward != after.ReferralMaxTotalReward {
+		changed = append(changed, "referral_max_total_reward")
 	}
 	return changed
 }
