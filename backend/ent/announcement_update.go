@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 // AnnouncementUpdate is the builder for updating Announcement entities.
@@ -57,41 +58,6 @@ func (_u *AnnouncementUpdate) SetNillableContent(v *string) *AnnouncementUpdate 
 	return _u
 }
 
-// SetContentType sets the "content_type" field.
-func (_u *AnnouncementUpdate) SetContentType(v string) *AnnouncementUpdate {
-	_u.mutation.SetContentType(v)
-	return _u
-}
-
-// SetNillableContentType sets the "content_type" field if the given value is not nil.
-func (_u *AnnouncementUpdate) SetNillableContentType(v *string) *AnnouncementUpdate {
-	if v != nil {
-		_u.SetContentType(*v)
-	}
-	return _u
-}
-
-// SetPriority sets the "priority" field.
-func (_u *AnnouncementUpdate) SetPriority(v int) *AnnouncementUpdate {
-	_u.mutation.ResetPriority()
-	_u.mutation.SetPriority(v)
-	return _u
-}
-
-// SetNillablePriority sets the "priority" field if the given value is not nil.
-func (_u *AnnouncementUpdate) SetNillablePriority(v *int) *AnnouncementUpdate {
-	if v != nil {
-		_u.SetPriority(*v)
-	}
-	return _u
-}
-
-// AddPriority adds value to the "priority" field.
-func (_u *AnnouncementUpdate) AddPriority(v int) *AnnouncementUpdate {
-	_u.mutation.AddPriority(v)
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *AnnouncementUpdate) SetStatus(v string) *AnnouncementUpdate {
 	_u.mutation.SetStatus(v)
@@ -106,43 +72,117 @@ func (_u *AnnouncementUpdate) SetNillableStatus(v *string) *AnnouncementUpdate {
 	return _u
 }
 
-// SetPublishedAt sets the "published_at" field.
-func (_u *AnnouncementUpdate) SetPublishedAt(v time.Time) *AnnouncementUpdate {
-	_u.mutation.SetPublishedAt(v)
+// SetTargeting sets the "targeting" field.
+func (_u *AnnouncementUpdate) SetTargeting(v domain.AnnouncementTargeting) *AnnouncementUpdate {
+	_u.mutation.SetTargeting(v)
 	return _u
 }
 
-// SetNillablePublishedAt sets the "published_at" field if the given value is not nil.
-func (_u *AnnouncementUpdate) SetNillablePublishedAt(v *time.Time) *AnnouncementUpdate {
+// SetNillableTargeting sets the "targeting" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableTargeting(v *domain.AnnouncementTargeting) *AnnouncementUpdate {
 	if v != nil {
-		_u.SetPublishedAt(*v)
+		_u.SetTargeting(*v)
 	}
 	return _u
 }
 
-// ClearPublishedAt clears the value of the "published_at" field.
-func (_u *AnnouncementUpdate) ClearPublishedAt() *AnnouncementUpdate {
-	_u.mutation.ClearPublishedAt()
+// ClearTargeting clears the value of the "targeting" field.
+func (_u *AnnouncementUpdate) ClearTargeting() *AnnouncementUpdate {
+	_u.mutation.ClearTargeting()
 	return _u
 }
 
-// SetExpiresAt sets the "expires_at" field.
-func (_u *AnnouncementUpdate) SetExpiresAt(v time.Time) *AnnouncementUpdate {
-	_u.mutation.SetExpiresAt(v)
+// SetStartsAt sets the "starts_at" field.
+func (_u *AnnouncementUpdate) SetStartsAt(v time.Time) *AnnouncementUpdate {
+	_u.mutation.SetStartsAt(v)
 	return _u
 }
 
-// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_u *AnnouncementUpdate) SetNillableExpiresAt(v *time.Time) *AnnouncementUpdate {
+// SetNillableStartsAt sets the "starts_at" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableStartsAt(v *time.Time) *AnnouncementUpdate {
 	if v != nil {
-		_u.SetExpiresAt(*v)
+		_u.SetStartsAt(*v)
 	}
 	return _u
 }
 
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (_u *AnnouncementUpdate) ClearExpiresAt() *AnnouncementUpdate {
-	_u.mutation.ClearExpiresAt()
+// ClearStartsAt clears the value of the "starts_at" field.
+func (_u *AnnouncementUpdate) ClearStartsAt() *AnnouncementUpdate {
+	_u.mutation.ClearStartsAt()
+	return _u
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (_u *AnnouncementUpdate) SetEndsAt(v time.Time) *AnnouncementUpdate {
+	_u.mutation.SetEndsAt(v)
+	return _u
+}
+
+// SetNillableEndsAt sets the "ends_at" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableEndsAt(v *time.Time) *AnnouncementUpdate {
+	if v != nil {
+		_u.SetEndsAt(*v)
+	}
+	return _u
+}
+
+// ClearEndsAt clears the value of the "ends_at" field.
+func (_u *AnnouncementUpdate) ClearEndsAt() *AnnouncementUpdate {
+	_u.mutation.ClearEndsAt()
+	return _u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (_u *AnnouncementUpdate) SetCreatedBy(v int64) *AnnouncementUpdate {
+	_u.mutation.ResetCreatedBy()
+	_u.mutation.SetCreatedBy(v)
+	return _u
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableCreatedBy(v *int64) *AnnouncementUpdate {
+	if v != nil {
+		_u.SetCreatedBy(*v)
+	}
+	return _u
+}
+
+// AddCreatedBy adds value to the "created_by" field.
+func (_u *AnnouncementUpdate) AddCreatedBy(v int64) *AnnouncementUpdate {
+	_u.mutation.AddCreatedBy(v)
+	return _u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (_u *AnnouncementUpdate) ClearCreatedBy() *AnnouncementUpdate {
+	_u.mutation.ClearCreatedBy()
+	return _u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (_u *AnnouncementUpdate) SetUpdatedBy(v int64) *AnnouncementUpdate {
+	_u.mutation.ResetUpdatedBy()
+	_u.mutation.SetUpdatedBy(v)
+	return _u
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableUpdatedBy(v *int64) *AnnouncementUpdate {
+	if v != nil {
+		_u.SetUpdatedBy(*v)
+	}
+	return _u
+}
+
+// AddUpdatedBy adds value to the "updated_by" field.
+func (_u *AnnouncementUpdate) AddUpdatedBy(v int64) *AnnouncementUpdate {
+	_u.mutation.AddUpdatedBy(v)
+	return _u
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (_u *AnnouncementUpdate) ClearUpdatedBy() *AnnouncementUpdate {
+	_u.mutation.ClearUpdatedBy()
 	return _u
 }
 
@@ -236,9 +276,9 @@ func (_u *AnnouncementUpdate) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Announcement.title": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ContentType(); ok {
-		if err := announcement.ContentTypeValidator(v); err != nil {
-			return &ValidationError{Name: "content_type", err: fmt.Errorf(`ent: validator failed for field "Announcement.content_type": %w`, err)}
+	if v, ok := _u.mutation.Content(); ok {
+		if err := announcement.ContentValidator(v); err != nil {
+			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Announcement.content": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Status(); ok {
@@ -267,29 +307,44 @@ func (_u *AnnouncementUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if value, ok := _u.mutation.Content(); ok {
 		_spec.SetField(announcement.FieldContent, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ContentType(); ok {
-		_spec.SetField(announcement.FieldContentType, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Priority(); ok {
-		_spec.SetField(announcement.FieldPriority, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedPriority(); ok {
-		_spec.AddField(announcement.FieldPriority, field.TypeInt, value)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(announcement.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.PublishedAt(); ok {
-		_spec.SetField(announcement.FieldPublishedAt, field.TypeTime, value)
+	if value, ok := _u.mutation.Targeting(); ok {
+		_spec.SetField(announcement.FieldTargeting, field.TypeJSON, value)
 	}
-	if _u.mutation.PublishedAtCleared() {
-		_spec.ClearField(announcement.FieldPublishedAt, field.TypeTime)
+	if _u.mutation.TargetingCleared() {
+		_spec.ClearField(announcement.FieldTargeting, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.ExpiresAt(); ok {
-		_spec.SetField(announcement.FieldExpiresAt, field.TypeTime, value)
+	if value, ok := _u.mutation.StartsAt(); ok {
+		_spec.SetField(announcement.FieldStartsAt, field.TypeTime, value)
 	}
-	if _u.mutation.ExpiresAtCleared() {
-		_spec.ClearField(announcement.FieldExpiresAt, field.TypeTime)
+	if _u.mutation.StartsAtCleared() {
+		_spec.ClearField(announcement.FieldStartsAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EndsAt(); ok {
+		_spec.SetField(announcement.FieldEndsAt, field.TypeTime, value)
+	}
+	if _u.mutation.EndsAtCleared() {
+		_spec.ClearField(announcement.FieldEndsAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CreatedBy(); ok {
+		_spec.SetField(announcement.FieldCreatedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCreatedBy(); ok {
+		_spec.AddField(announcement.FieldCreatedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.CreatedByCleared() {
+		_spec.ClearField(announcement.FieldCreatedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.UpdatedBy(); ok {
+		_spec.SetField(announcement.FieldUpdatedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedUpdatedBy(); ok {
+		_spec.AddField(announcement.FieldUpdatedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.UpdatedByCleared() {
+		_spec.ClearField(announcement.FieldUpdatedBy, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(announcement.FieldUpdatedAt, field.TypeTime, value)
@@ -387,41 +442,6 @@ func (_u *AnnouncementUpdateOne) SetNillableContent(v *string) *AnnouncementUpda
 	return _u
 }
 
-// SetContentType sets the "content_type" field.
-func (_u *AnnouncementUpdateOne) SetContentType(v string) *AnnouncementUpdateOne {
-	_u.mutation.SetContentType(v)
-	return _u
-}
-
-// SetNillableContentType sets the "content_type" field if the given value is not nil.
-func (_u *AnnouncementUpdateOne) SetNillableContentType(v *string) *AnnouncementUpdateOne {
-	if v != nil {
-		_u.SetContentType(*v)
-	}
-	return _u
-}
-
-// SetPriority sets the "priority" field.
-func (_u *AnnouncementUpdateOne) SetPriority(v int) *AnnouncementUpdateOne {
-	_u.mutation.ResetPriority()
-	_u.mutation.SetPriority(v)
-	return _u
-}
-
-// SetNillablePriority sets the "priority" field if the given value is not nil.
-func (_u *AnnouncementUpdateOne) SetNillablePriority(v *int) *AnnouncementUpdateOne {
-	if v != nil {
-		_u.SetPriority(*v)
-	}
-	return _u
-}
-
-// AddPriority adds value to the "priority" field.
-func (_u *AnnouncementUpdateOne) AddPriority(v int) *AnnouncementUpdateOne {
-	_u.mutation.AddPriority(v)
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *AnnouncementUpdateOne) SetStatus(v string) *AnnouncementUpdateOne {
 	_u.mutation.SetStatus(v)
@@ -436,43 +456,117 @@ func (_u *AnnouncementUpdateOne) SetNillableStatus(v *string) *AnnouncementUpdat
 	return _u
 }
 
-// SetPublishedAt sets the "published_at" field.
-func (_u *AnnouncementUpdateOne) SetPublishedAt(v time.Time) *AnnouncementUpdateOne {
-	_u.mutation.SetPublishedAt(v)
+// SetTargeting sets the "targeting" field.
+func (_u *AnnouncementUpdateOne) SetTargeting(v domain.AnnouncementTargeting) *AnnouncementUpdateOne {
+	_u.mutation.SetTargeting(v)
 	return _u
 }
 
-// SetNillablePublishedAt sets the "published_at" field if the given value is not nil.
-func (_u *AnnouncementUpdateOne) SetNillablePublishedAt(v *time.Time) *AnnouncementUpdateOne {
+// SetNillableTargeting sets the "targeting" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableTargeting(v *domain.AnnouncementTargeting) *AnnouncementUpdateOne {
 	if v != nil {
-		_u.SetPublishedAt(*v)
+		_u.SetTargeting(*v)
 	}
 	return _u
 }
 
-// ClearPublishedAt clears the value of the "published_at" field.
-func (_u *AnnouncementUpdateOne) ClearPublishedAt() *AnnouncementUpdateOne {
-	_u.mutation.ClearPublishedAt()
+// ClearTargeting clears the value of the "targeting" field.
+func (_u *AnnouncementUpdateOne) ClearTargeting() *AnnouncementUpdateOne {
+	_u.mutation.ClearTargeting()
 	return _u
 }
 
-// SetExpiresAt sets the "expires_at" field.
-func (_u *AnnouncementUpdateOne) SetExpiresAt(v time.Time) *AnnouncementUpdateOne {
-	_u.mutation.SetExpiresAt(v)
+// SetStartsAt sets the "starts_at" field.
+func (_u *AnnouncementUpdateOne) SetStartsAt(v time.Time) *AnnouncementUpdateOne {
+	_u.mutation.SetStartsAt(v)
 	return _u
 }
 
-// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_u *AnnouncementUpdateOne) SetNillableExpiresAt(v *time.Time) *AnnouncementUpdateOne {
+// SetNillableStartsAt sets the "starts_at" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableStartsAt(v *time.Time) *AnnouncementUpdateOne {
 	if v != nil {
-		_u.SetExpiresAt(*v)
+		_u.SetStartsAt(*v)
 	}
 	return _u
 }
 
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (_u *AnnouncementUpdateOne) ClearExpiresAt() *AnnouncementUpdateOne {
-	_u.mutation.ClearExpiresAt()
+// ClearStartsAt clears the value of the "starts_at" field.
+func (_u *AnnouncementUpdateOne) ClearStartsAt() *AnnouncementUpdateOne {
+	_u.mutation.ClearStartsAt()
+	return _u
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (_u *AnnouncementUpdateOne) SetEndsAt(v time.Time) *AnnouncementUpdateOne {
+	_u.mutation.SetEndsAt(v)
+	return _u
+}
+
+// SetNillableEndsAt sets the "ends_at" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableEndsAt(v *time.Time) *AnnouncementUpdateOne {
+	if v != nil {
+		_u.SetEndsAt(*v)
+	}
+	return _u
+}
+
+// ClearEndsAt clears the value of the "ends_at" field.
+func (_u *AnnouncementUpdateOne) ClearEndsAt() *AnnouncementUpdateOne {
+	_u.mutation.ClearEndsAt()
+	return _u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (_u *AnnouncementUpdateOne) SetCreatedBy(v int64) *AnnouncementUpdateOne {
+	_u.mutation.ResetCreatedBy()
+	_u.mutation.SetCreatedBy(v)
+	return _u
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableCreatedBy(v *int64) *AnnouncementUpdateOne {
+	if v != nil {
+		_u.SetCreatedBy(*v)
+	}
+	return _u
+}
+
+// AddCreatedBy adds value to the "created_by" field.
+func (_u *AnnouncementUpdateOne) AddCreatedBy(v int64) *AnnouncementUpdateOne {
+	_u.mutation.AddCreatedBy(v)
+	return _u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (_u *AnnouncementUpdateOne) ClearCreatedBy() *AnnouncementUpdateOne {
+	_u.mutation.ClearCreatedBy()
+	return _u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (_u *AnnouncementUpdateOne) SetUpdatedBy(v int64) *AnnouncementUpdateOne {
+	_u.mutation.ResetUpdatedBy()
+	_u.mutation.SetUpdatedBy(v)
+	return _u
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableUpdatedBy(v *int64) *AnnouncementUpdateOne {
+	if v != nil {
+		_u.SetUpdatedBy(*v)
+	}
+	return _u
+}
+
+// AddUpdatedBy adds value to the "updated_by" field.
+func (_u *AnnouncementUpdateOne) AddUpdatedBy(v int64) *AnnouncementUpdateOne {
+	_u.mutation.AddUpdatedBy(v)
+	return _u
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (_u *AnnouncementUpdateOne) ClearUpdatedBy() *AnnouncementUpdateOne {
+	_u.mutation.ClearUpdatedBy()
 	return _u
 }
 
@@ -579,9 +673,9 @@ func (_u *AnnouncementUpdateOne) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Announcement.title": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ContentType(); ok {
-		if err := announcement.ContentTypeValidator(v); err != nil {
-			return &ValidationError{Name: "content_type", err: fmt.Errorf(`ent: validator failed for field "Announcement.content_type": %w`, err)}
+	if v, ok := _u.mutation.Content(); ok {
+		if err := announcement.ContentValidator(v); err != nil {
+			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Announcement.content": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Status(); ok {
@@ -627,29 +721,44 @@ func (_u *AnnouncementUpdateOne) sqlSave(ctx context.Context) (_node *Announceme
 	if value, ok := _u.mutation.Content(); ok {
 		_spec.SetField(announcement.FieldContent, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ContentType(); ok {
-		_spec.SetField(announcement.FieldContentType, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Priority(); ok {
-		_spec.SetField(announcement.FieldPriority, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedPriority(); ok {
-		_spec.AddField(announcement.FieldPriority, field.TypeInt, value)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(announcement.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.PublishedAt(); ok {
-		_spec.SetField(announcement.FieldPublishedAt, field.TypeTime, value)
+	if value, ok := _u.mutation.Targeting(); ok {
+		_spec.SetField(announcement.FieldTargeting, field.TypeJSON, value)
 	}
-	if _u.mutation.PublishedAtCleared() {
-		_spec.ClearField(announcement.FieldPublishedAt, field.TypeTime)
+	if _u.mutation.TargetingCleared() {
+		_spec.ClearField(announcement.FieldTargeting, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.ExpiresAt(); ok {
-		_spec.SetField(announcement.FieldExpiresAt, field.TypeTime, value)
+	if value, ok := _u.mutation.StartsAt(); ok {
+		_spec.SetField(announcement.FieldStartsAt, field.TypeTime, value)
 	}
-	if _u.mutation.ExpiresAtCleared() {
-		_spec.ClearField(announcement.FieldExpiresAt, field.TypeTime)
+	if _u.mutation.StartsAtCleared() {
+		_spec.ClearField(announcement.FieldStartsAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EndsAt(); ok {
+		_spec.SetField(announcement.FieldEndsAt, field.TypeTime, value)
+	}
+	if _u.mutation.EndsAtCleared() {
+		_spec.ClearField(announcement.FieldEndsAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CreatedBy(); ok {
+		_spec.SetField(announcement.FieldCreatedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCreatedBy(); ok {
+		_spec.AddField(announcement.FieldCreatedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.CreatedByCleared() {
+		_spec.ClearField(announcement.FieldCreatedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.UpdatedBy(); ok {
+		_spec.SetField(announcement.FieldUpdatedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedUpdatedBy(); ok {
+		_spec.AddField(announcement.FieldUpdatedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.UpdatedByCleared() {
+		_spec.ClearField(announcement.FieldUpdatedBy, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(announcement.FieldUpdatedAt, field.TypeTime, value)

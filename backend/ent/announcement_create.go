@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 // AnnouncementCreate is the builder for creating a Announcement entity.
@@ -35,34 +36,6 @@ func (_c *AnnouncementCreate) SetContent(v string) *AnnouncementCreate {
 	return _c
 }
 
-// SetContentType sets the "content_type" field.
-func (_c *AnnouncementCreate) SetContentType(v string) *AnnouncementCreate {
-	_c.mutation.SetContentType(v)
-	return _c
-}
-
-// SetNillableContentType sets the "content_type" field if the given value is not nil.
-func (_c *AnnouncementCreate) SetNillableContentType(v *string) *AnnouncementCreate {
-	if v != nil {
-		_c.SetContentType(*v)
-	}
-	return _c
-}
-
-// SetPriority sets the "priority" field.
-func (_c *AnnouncementCreate) SetPriority(v int) *AnnouncementCreate {
-	_c.mutation.SetPriority(v)
-	return _c
-}
-
-// SetNillablePriority sets the "priority" field if the given value is not nil.
-func (_c *AnnouncementCreate) SetNillablePriority(v *int) *AnnouncementCreate {
-	if v != nil {
-		_c.SetPriority(*v)
-	}
-	return _c
-}
-
 // SetStatus sets the "status" field.
 func (_c *AnnouncementCreate) SetStatus(v string) *AnnouncementCreate {
 	_c.mutation.SetStatus(v)
@@ -77,30 +50,72 @@ func (_c *AnnouncementCreate) SetNillableStatus(v *string) *AnnouncementCreate {
 	return _c
 }
 
-// SetPublishedAt sets the "published_at" field.
-func (_c *AnnouncementCreate) SetPublishedAt(v time.Time) *AnnouncementCreate {
-	_c.mutation.SetPublishedAt(v)
+// SetTargeting sets the "targeting" field.
+func (_c *AnnouncementCreate) SetTargeting(v domain.AnnouncementTargeting) *AnnouncementCreate {
+	_c.mutation.SetTargeting(v)
 	return _c
 }
 
-// SetNillablePublishedAt sets the "published_at" field if the given value is not nil.
-func (_c *AnnouncementCreate) SetNillablePublishedAt(v *time.Time) *AnnouncementCreate {
+// SetNillableTargeting sets the "targeting" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableTargeting(v *domain.AnnouncementTargeting) *AnnouncementCreate {
 	if v != nil {
-		_c.SetPublishedAt(*v)
+		_c.SetTargeting(*v)
 	}
 	return _c
 }
 
-// SetExpiresAt sets the "expires_at" field.
-func (_c *AnnouncementCreate) SetExpiresAt(v time.Time) *AnnouncementCreate {
-	_c.mutation.SetExpiresAt(v)
+// SetStartsAt sets the "starts_at" field.
+func (_c *AnnouncementCreate) SetStartsAt(v time.Time) *AnnouncementCreate {
+	_c.mutation.SetStartsAt(v)
 	return _c
 }
 
-// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_c *AnnouncementCreate) SetNillableExpiresAt(v *time.Time) *AnnouncementCreate {
+// SetNillableStartsAt sets the "starts_at" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableStartsAt(v *time.Time) *AnnouncementCreate {
 	if v != nil {
-		_c.SetExpiresAt(*v)
+		_c.SetStartsAt(*v)
+	}
+	return _c
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (_c *AnnouncementCreate) SetEndsAt(v time.Time) *AnnouncementCreate {
+	_c.mutation.SetEndsAt(v)
+	return _c
+}
+
+// SetNillableEndsAt sets the "ends_at" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableEndsAt(v *time.Time) *AnnouncementCreate {
+	if v != nil {
+		_c.SetEndsAt(*v)
+	}
+	return _c
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (_c *AnnouncementCreate) SetCreatedBy(v int64) *AnnouncementCreate {
+	_c.mutation.SetCreatedBy(v)
+	return _c
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableCreatedBy(v *int64) *AnnouncementCreate {
+	if v != nil {
+		_c.SetCreatedBy(*v)
+	}
+	return _c
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (_c *AnnouncementCreate) SetUpdatedBy(v int64) *AnnouncementCreate {
+	_c.mutation.SetUpdatedBy(v)
+	return _c
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableUpdatedBy(v *int64) *AnnouncementCreate {
+	if v != nil {
+		_c.SetUpdatedBy(*v)
 	}
 	return _c
 }
@@ -183,14 +198,6 @@ func (_c *AnnouncementCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *AnnouncementCreate) defaults() {
-	if _, ok := _c.mutation.ContentType(); !ok {
-		v := announcement.DefaultContentType
-		_c.mutation.SetContentType(v)
-	}
-	if _, ok := _c.mutation.Priority(); !ok {
-		v := announcement.DefaultPriority
-		_c.mutation.SetPriority(v)
-	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := announcement.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -218,16 +225,10 @@ func (_c *AnnouncementCreate) check() error {
 	if _, ok := _c.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "Announcement.content"`)}
 	}
-	if _, ok := _c.mutation.ContentType(); !ok {
-		return &ValidationError{Name: "content_type", err: errors.New(`ent: missing required field "Announcement.content_type"`)}
-	}
-	if v, ok := _c.mutation.ContentType(); ok {
-		if err := announcement.ContentTypeValidator(v); err != nil {
-			return &ValidationError{Name: "content_type", err: fmt.Errorf(`ent: validator failed for field "Announcement.content_type": %w`, err)}
+	if v, ok := _c.mutation.Content(); ok {
+		if err := announcement.ContentValidator(v); err != nil {
+			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Announcement.content": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Priority(); !ok {
-		return &ValidationError{Name: "priority", err: errors.New(`ent: missing required field "Announcement.priority"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Announcement.status"`)}
@@ -278,25 +279,29 @@ func (_c *AnnouncementCreate) createSpec() (*Announcement, *sqlgraph.CreateSpec)
 		_spec.SetField(announcement.FieldContent, field.TypeString, value)
 		_node.Content = value
 	}
-	if value, ok := _c.mutation.ContentType(); ok {
-		_spec.SetField(announcement.FieldContentType, field.TypeString, value)
-		_node.ContentType = value
-	}
-	if value, ok := _c.mutation.Priority(); ok {
-		_spec.SetField(announcement.FieldPriority, field.TypeInt, value)
-		_node.Priority = value
-	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(announcement.FieldStatus, field.TypeString, value)
 		_node.Status = value
 	}
-	if value, ok := _c.mutation.PublishedAt(); ok {
-		_spec.SetField(announcement.FieldPublishedAt, field.TypeTime, value)
-		_node.PublishedAt = &value
+	if value, ok := _c.mutation.Targeting(); ok {
+		_spec.SetField(announcement.FieldTargeting, field.TypeJSON, value)
+		_node.Targeting = value
 	}
-	if value, ok := _c.mutation.ExpiresAt(); ok {
-		_spec.SetField(announcement.FieldExpiresAt, field.TypeTime, value)
-		_node.ExpiresAt = &value
+	if value, ok := _c.mutation.StartsAt(); ok {
+		_spec.SetField(announcement.FieldStartsAt, field.TypeTime, value)
+		_node.StartsAt = &value
+	}
+	if value, ok := _c.mutation.EndsAt(); ok {
+		_spec.SetField(announcement.FieldEndsAt, field.TypeTime, value)
+		_node.EndsAt = &value
+	}
+	if value, ok := _c.mutation.CreatedBy(); ok {
+		_spec.SetField(announcement.FieldCreatedBy, field.TypeInt64, value)
+		_node.CreatedBy = &value
+	}
+	if value, ok := _c.mutation.UpdatedBy(); ok {
+		_spec.SetField(announcement.FieldUpdatedBy, field.TypeInt64, value)
+		_node.UpdatedBy = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(announcement.FieldCreatedAt, field.TypeTime, value)
@@ -398,36 +403,6 @@ func (u *AnnouncementUpsert) UpdateContent() *AnnouncementUpsert {
 	return u
 }
 
-// SetContentType sets the "content_type" field.
-func (u *AnnouncementUpsert) SetContentType(v string) *AnnouncementUpsert {
-	u.Set(announcement.FieldContentType, v)
-	return u
-}
-
-// UpdateContentType sets the "content_type" field to the value that was provided on create.
-func (u *AnnouncementUpsert) UpdateContentType() *AnnouncementUpsert {
-	u.SetExcluded(announcement.FieldContentType)
-	return u
-}
-
-// SetPriority sets the "priority" field.
-func (u *AnnouncementUpsert) SetPriority(v int) *AnnouncementUpsert {
-	u.Set(announcement.FieldPriority, v)
-	return u
-}
-
-// UpdatePriority sets the "priority" field to the value that was provided on create.
-func (u *AnnouncementUpsert) UpdatePriority() *AnnouncementUpsert {
-	u.SetExcluded(announcement.FieldPriority)
-	return u
-}
-
-// AddPriority adds v to the "priority" field.
-func (u *AnnouncementUpsert) AddPriority(v int) *AnnouncementUpsert {
-	u.Add(announcement.FieldPriority, v)
-	return u
-}
-
 // SetStatus sets the "status" field.
 func (u *AnnouncementUpsert) SetStatus(v string) *AnnouncementUpsert {
 	u.Set(announcement.FieldStatus, v)
@@ -440,39 +415,105 @@ func (u *AnnouncementUpsert) UpdateStatus() *AnnouncementUpsert {
 	return u
 }
 
-// SetPublishedAt sets the "published_at" field.
-func (u *AnnouncementUpsert) SetPublishedAt(v time.Time) *AnnouncementUpsert {
-	u.Set(announcement.FieldPublishedAt, v)
+// SetTargeting sets the "targeting" field.
+func (u *AnnouncementUpsert) SetTargeting(v domain.AnnouncementTargeting) *AnnouncementUpsert {
+	u.Set(announcement.FieldTargeting, v)
 	return u
 }
 
-// UpdatePublishedAt sets the "published_at" field to the value that was provided on create.
-func (u *AnnouncementUpsert) UpdatePublishedAt() *AnnouncementUpsert {
-	u.SetExcluded(announcement.FieldPublishedAt)
+// UpdateTargeting sets the "targeting" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateTargeting() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldTargeting)
 	return u
 }
 
-// ClearPublishedAt clears the value of the "published_at" field.
-func (u *AnnouncementUpsert) ClearPublishedAt() *AnnouncementUpsert {
-	u.SetNull(announcement.FieldPublishedAt)
+// ClearTargeting clears the value of the "targeting" field.
+func (u *AnnouncementUpsert) ClearTargeting() *AnnouncementUpsert {
+	u.SetNull(announcement.FieldTargeting)
 	return u
 }
 
-// SetExpiresAt sets the "expires_at" field.
-func (u *AnnouncementUpsert) SetExpiresAt(v time.Time) *AnnouncementUpsert {
-	u.Set(announcement.FieldExpiresAt, v)
+// SetStartsAt sets the "starts_at" field.
+func (u *AnnouncementUpsert) SetStartsAt(v time.Time) *AnnouncementUpsert {
+	u.Set(announcement.FieldStartsAt, v)
 	return u
 }
 
-// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
-func (u *AnnouncementUpsert) UpdateExpiresAt() *AnnouncementUpsert {
-	u.SetExcluded(announcement.FieldExpiresAt)
+// UpdateStartsAt sets the "starts_at" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateStartsAt() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldStartsAt)
 	return u
 }
 
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (u *AnnouncementUpsert) ClearExpiresAt() *AnnouncementUpsert {
-	u.SetNull(announcement.FieldExpiresAt)
+// ClearStartsAt clears the value of the "starts_at" field.
+func (u *AnnouncementUpsert) ClearStartsAt() *AnnouncementUpsert {
+	u.SetNull(announcement.FieldStartsAt)
+	return u
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (u *AnnouncementUpsert) SetEndsAt(v time.Time) *AnnouncementUpsert {
+	u.Set(announcement.FieldEndsAt, v)
+	return u
+}
+
+// UpdateEndsAt sets the "ends_at" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateEndsAt() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldEndsAt)
+	return u
+}
+
+// ClearEndsAt clears the value of the "ends_at" field.
+func (u *AnnouncementUpsert) ClearEndsAt() *AnnouncementUpsert {
+	u.SetNull(announcement.FieldEndsAt)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *AnnouncementUpsert) SetCreatedBy(v int64) *AnnouncementUpsert {
+	u.Set(announcement.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateCreatedBy() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldCreatedBy)
+	return u
+}
+
+// AddCreatedBy adds v to the "created_by" field.
+func (u *AnnouncementUpsert) AddCreatedBy(v int64) *AnnouncementUpsert {
+	u.Add(announcement.FieldCreatedBy, v)
+	return u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *AnnouncementUpsert) ClearCreatedBy() *AnnouncementUpsert {
+	u.SetNull(announcement.FieldCreatedBy)
+	return u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *AnnouncementUpsert) SetUpdatedBy(v int64) *AnnouncementUpsert {
+	u.Set(announcement.FieldUpdatedBy, v)
+	return u
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateUpdatedBy() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldUpdatedBy)
+	return u
+}
+
+// AddUpdatedBy adds v to the "updated_by" field.
+func (u *AnnouncementUpsert) AddUpdatedBy(v int64) *AnnouncementUpsert {
+	u.Add(announcement.FieldUpdatedBy, v)
+	return u
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (u *AnnouncementUpsert) ClearUpdatedBy() *AnnouncementUpsert {
+	u.SetNull(announcement.FieldUpdatedBy)
 	return u
 }
 
@@ -561,41 +602,6 @@ func (u *AnnouncementUpsertOne) UpdateContent() *AnnouncementUpsertOne {
 	})
 }
 
-// SetContentType sets the "content_type" field.
-func (u *AnnouncementUpsertOne) SetContentType(v string) *AnnouncementUpsertOne {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetContentType(v)
-	})
-}
-
-// UpdateContentType sets the "content_type" field to the value that was provided on create.
-func (u *AnnouncementUpsertOne) UpdateContentType() *AnnouncementUpsertOne {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdateContentType()
-	})
-}
-
-// SetPriority sets the "priority" field.
-func (u *AnnouncementUpsertOne) SetPriority(v int) *AnnouncementUpsertOne {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetPriority(v)
-	})
-}
-
-// AddPriority adds v to the "priority" field.
-func (u *AnnouncementUpsertOne) AddPriority(v int) *AnnouncementUpsertOne {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.AddPriority(v)
-	})
-}
-
-// UpdatePriority sets the "priority" field to the value that was provided on create.
-func (u *AnnouncementUpsertOne) UpdatePriority() *AnnouncementUpsertOne {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdatePriority()
-	})
-}
-
 // SetStatus sets the "status" field.
 func (u *AnnouncementUpsertOne) SetStatus(v string) *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
@@ -610,45 +616,122 @@ func (u *AnnouncementUpsertOne) UpdateStatus() *AnnouncementUpsertOne {
 	})
 }
 
-// SetPublishedAt sets the "published_at" field.
-func (u *AnnouncementUpsertOne) SetPublishedAt(v time.Time) *AnnouncementUpsertOne {
+// SetTargeting sets the "targeting" field.
+func (u *AnnouncementUpsertOne) SetTargeting(v domain.AnnouncementTargeting) *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetPublishedAt(v)
+		s.SetTargeting(v)
 	})
 }
 
-// UpdatePublishedAt sets the "published_at" field to the value that was provided on create.
-func (u *AnnouncementUpsertOne) UpdatePublishedAt() *AnnouncementUpsertOne {
+// UpdateTargeting sets the "targeting" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateTargeting() *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdatePublishedAt()
+		s.UpdateTargeting()
 	})
 }
 
-// ClearPublishedAt clears the value of the "published_at" field.
-func (u *AnnouncementUpsertOne) ClearPublishedAt() *AnnouncementUpsertOne {
+// ClearTargeting clears the value of the "targeting" field.
+func (u *AnnouncementUpsertOne) ClearTargeting() *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.ClearPublishedAt()
+		s.ClearTargeting()
 	})
 }
 
-// SetExpiresAt sets the "expires_at" field.
-func (u *AnnouncementUpsertOne) SetExpiresAt(v time.Time) *AnnouncementUpsertOne {
+// SetStartsAt sets the "starts_at" field.
+func (u *AnnouncementUpsertOne) SetStartsAt(v time.Time) *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetExpiresAt(v)
+		s.SetStartsAt(v)
 	})
 }
 
-// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
-func (u *AnnouncementUpsertOne) UpdateExpiresAt() *AnnouncementUpsertOne {
+// UpdateStartsAt sets the "starts_at" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateStartsAt() *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdateExpiresAt()
+		s.UpdateStartsAt()
 	})
 }
 
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (u *AnnouncementUpsertOne) ClearExpiresAt() *AnnouncementUpsertOne {
+// ClearStartsAt clears the value of the "starts_at" field.
+func (u *AnnouncementUpsertOne) ClearStartsAt() *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.ClearExpiresAt()
+		s.ClearStartsAt()
+	})
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (u *AnnouncementUpsertOne) SetEndsAt(v time.Time) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetEndsAt(v)
+	})
+}
+
+// UpdateEndsAt sets the "ends_at" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateEndsAt() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateEndsAt()
+	})
+}
+
+// ClearEndsAt clears the value of the "ends_at" field.
+func (u *AnnouncementUpsertOne) ClearEndsAt() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearEndsAt()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *AnnouncementUpsertOne) SetCreatedBy(v int64) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// AddCreatedBy adds v to the "created_by" field.
+func (u *AnnouncementUpsertOne) AddCreatedBy(v int64) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.AddCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateCreatedBy() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *AnnouncementUpsertOne) ClearCreatedBy() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *AnnouncementUpsertOne) SetUpdatedBy(v int64) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetUpdatedBy(v)
+	})
+}
+
+// AddUpdatedBy adds v to the "updated_by" field.
+func (u *AnnouncementUpsertOne) AddUpdatedBy(v int64) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.AddUpdatedBy(v)
+	})
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateUpdatedBy() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateUpdatedBy()
+	})
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (u *AnnouncementUpsertOne) ClearUpdatedBy() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearUpdatedBy()
 	})
 }
 
@@ -905,41 +988,6 @@ func (u *AnnouncementUpsertBulk) UpdateContent() *AnnouncementUpsertBulk {
 	})
 }
 
-// SetContentType sets the "content_type" field.
-func (u *AnnouncementUpsertBulk) SetContentType(v string) *AnnouncementUpsertBulk {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetContentType(v)
-	})
-}
-
-// UpdateContentType sets the "content_type" field to the value that was provided on create.
-func (u *AnnouncementUpsertBulk) UpdateContentType() *AnnouncementUpsertBulk {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdateContentType()
-	})
-}
-
-// SetPriority sets the "priority" field.
-func (u *AnnouncementUpsertBulk) SetPriority(v int) *AnnouncementUpsertBulk {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetPriority(v)
-	})
-}
-
-// AddPriority adds v to the "priority" field.
-func (u *AnnouncementUpsertBulk) AddPriority(v int) *AnnouncementUpsertBulk {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.AddPriority(v)
-	})
-}
-
-// UpdatePriority sets the "priority" field to the value that was provided on create.
-func (u *AnnouncementUpsertBulk) UpdatePriority() *AnnouncementUpsertBulk {
-	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdatePriority()
-	})
-}
-
 // SetStatus sets the "status" field.
 func (u *AnnouncementUpsertBulk) SetStatus(v string) *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
@@ -954,45 +1002,122 @@ func (u *AnnouncementUpsertBulk) UpdateStatus() *AnnouncementUpsertBulk {
 	})
 }
 
-// SetPublishedAt sets the "published_at" field.
-func (u *AnnouncementUpsertBulk) SetPublishedAt(v time.Time) *AnnouncementUpsertBulk {
+// SetTargeting sets the "targeting" field.
+func (u *AnnouncementUpsertBulk) SetTargeting(v domain.AnnouncementTargeting) *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetPublishedAt(v)
+		s.SetTargeting(v)
 	})
 }
 
-// UpdatePublishedAt sets the "published_at" field to the value that was provided on create.
-func (u *AnnouncementUpsertBulk) UpdatePublishedAt() *AnnouncementUpsertBulk {
+// UpdateTargeting sets the "targeting" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateTargeting() *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdatePublishedAt()
+		s.UpdateTargeting()
 	})
 }
 
-// ClearPublishedAt clears the value of the "published_at" field.
-func (u *AnnouncementUpsertBulk) ClearPublishedAt() *AnnouncementUpsertBulk {
+// ClearTargeting clears the value of the "targeting" field.
+func (u *AnnouncementUpsertBulk) ClearTargeting() *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.ClearPublishedAt()
+		s.ClearTargeting()
 	})
 }
 
-// SetExpiresAt sets the "expires_at" field.
-func (u *AnnouncementUpsertBulk) SetExpiresAt(v time.Time) *AnnouncementUpsertBulk {
+// SetStartsAt sets the "starts_at" field.
+func (u *AnnouncementUpsertBulk) SetStartsAt(v time.Time) *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.SetExpiresAt(v)
+		s.SetStartsAt(v)
 	})
 }
 
-// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
-func (u *AnnouncementUpsertBulk) UpdateExpiresAt() *AnnouncementUpsertBulk {
+// UpdateStartsAt sets the "starts_at" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateStartsAt() *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.UpdateExpiresAt()
+		s.UpdateStartsAt()
 	})
 }
 
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (u *AnnouncementUpsertBulk) ClearExpiresAt() *AnnouncementUpsertBulk {
+// ClearStartsAt clears the value of the "starts_at" field.
+func (u *AnnouncementUpsertBulk) ClearStartsAt() *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
-		s.ClearExpiresAt()
+		s.ClearStartsAt()
+	})
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (u *AnnouncementUpsertBulk) SetEndsAt(v time.Time) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetEndsAt(v)
+	})
+}
+
+// UpdateEndsAt sets the "ends_at" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateEndsAt() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateEndsAt()
+	})
+}
+
+// ClearEndsAt clears the value of the "ends_at" field.
+func (u *AnnouncementUpsertBulk) ClearEndsAt() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearEndsAt()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *AnnouncementUpsertBulk) SetCreatedBy(v int64) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// AddCreatedBy adds v to the "created_by" field.
+func (u *AnnouncementUpsertBulk) AddCreatedBy(v int64) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.AddCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateCreatedBy() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *AnnouncementUpsertBulk) ClearCreatedBy() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *AnnouncementUpsertBulk) SetUpdatedBy(v int64) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetUpdatedBy(v)
+	})
+}
+
+// AddUpdatedBy adds v to the "updated_by" field.
+func (u *AnnouncementUpsertBulk) AddUpdatedBy(v int64) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.AddUpdatedBy(v)
+	})
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateUpdatedBy() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateUpdatedBy()
+	})
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (u *AnnouncementUpsertBulk) ClearUpdatedBy() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.ClearUpdatedBy()
 	})
 }
 

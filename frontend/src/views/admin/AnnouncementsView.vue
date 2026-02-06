@@ -11,9 +11,9 @@
           >
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
           </button>
-          <button @click="showCreateDialog = true" class="btn btn-primary">
+          <button @click="openCreateDialog" class="btn btn-primary">
             <Icon name="plus" size="md" class="mr-1" />
-            {{ t('admin.announcements.create') }}
+            {{ t('admin.announcements.createAnnouncement') }}
           </button>
         </div>
       </template>
@@ -24,7 +24,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              :placeholder="t('common.search')"
+              :placeholder="t('admin.announcements.searchAnnouncements')"
               class="input"
               @input="handleSearch"
             />
@@ -32,9 +32,9 @@
           <div class="flex gap-2">
             <Select
               v-model="filters.status"
-              :options="filterStatusOptions"
-              class="w-36"
-              @change="loadAnnouncements"
+              :options="statusFilterOptions"
+              class="w-40"
+              @change="handleStatusChange"
             />
           </div>
         </div>
@@ -42,53 +42,68 @@
 
       <template #table>
         <DataTable :columns="columns" :data="announcements" :loading="loading">
-          <template #cell-title="{ value }">
-            <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
-          </template>
-
-          <template #cell-content_type="{ value }">
-            <span class="badge badge-gray">
-              {{ t(`admin.announcements.contentType.${value}`) }}
-            </span>
-          </template>
-
-          <template #cell-priority="{ value }">
-            <span class="text-sm text-gray-600 dark:text-gray-300">{{ value }}</span>
+          <template #cell-title="{ value, row }">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="truncate font-medium text-gray-900 dark:text-white">{{ value }}</span>
+              </div>
+              <div class="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-dark-400">
+                <span>#{{ row.id }}</span>
+                <span class="text-gray-300 dark:text-dark-700">·</span>
+                <span>{{ formatDateTime(row.created_at) }}</span>
+              </div>
+            </div>
           </template>
 
           <template #cell-status="{ value }">
             <span
               :class="[
                 'badge',
-                value === 'active' ? 'badge-success' : 'badge-gray'
+                value === 'active'
+                  ? 'badge-success'
+                  : value === 'draft'
+                    ? 'badge-gray'
+                    : 'badge-warning'
               ]"
             >
-              {{ t(`admin.announcements.status.${value}`) }}
+              {{ statusLabel(value) }}
             </span>
           </template>
 
-          <template #cell-published_at="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">
-              {{ value ? formatDateTime(value) : '-' }}
+          <template #cell-targeting="{ row }">
+            <span class="text-sm text-gray-600 dark:text-gray-300">
+              {{ targetingSummary(row.targeting) }}
             </span>
           </template>
 
-          <template #cell-expires_at="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">
-              {{ value ? formatDateTime(value) : '-' }}
-            </span>
+          <template #cell-timeRange="{ row }">
+            <div class="text-sm text-gray-600 dark:text-gray-300">
+              <div>
+                <span class="font-medium">{{ t('admin.announcements.form.startsAt') }}:</span>
+                <span class="ml-1">{{ row.starts_at ? formatDateTime(row.starts_at) : t('admin.announcements.timeImmediate') }}</span>
+              </div>
+              <div class="mt-0.5">
+                <span class="font-medium">{{ t('admin.announcements.form.endsAt') }}:</span>
+                <span class="ml-1">{{ row.ends_at ? formatDateTime(row.ends_at) : t('admin.announcements.timeNever') }}</span>
+              </div>
+            </div>
           </template>
 
-          <template #cell-created_at="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">
-              {{ formatDateTime(value) }}
-            </span>
+          <template #cell-createdAt="{ value }">
+            <span class="text-sm text-gray-500 dark:text-dark-400">{{ formatDateTime(value) }}</span>
           </template>
 
           <template #cell-actions="{ row }">
             <div class="flex items-center space-x-1">
               <button
-                @click="handleEdit(row)"
+                @click="openReadStatus(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                :title="t('admin.announcements.readStatus')"
+              >
+                <Icon name="eye" size="sm" />
+              </button>
+              <button
+                @click="openEditDialog(row)"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-dark-600 dark:hover:text-gray-300"
                 :title="t('common.edit')"
               >
@@ -102,6 +117,15 @@
                 <Icon name="trash" size="sm" />
               </button>
             </div>
+          </template>
+
+          <template #empty>
+            <EmptyState
+              :title="t('empty.noData')"
+              :description="t('admin.announcements.failedToLoad')"
+              :action-text="t('admin.announcements.createAnnouncement')"
+              @action="openCreateDialog"
+            />
           </template>
         </DataTable>
       </template>
@@ -118,183 +142,67 @@
       </template>
     </TablePageLayout>
 
-    <!-- Create Dialog -->
-    <BaseDialog
-      :show="showCreateDialog"
-      :title="t('admin.announcements.create')"
-      width="wide"
-      @close="showCreateDialog = false"
-    >
-      <form id="create-announcement-form" @submit.prevent="handleCreate" class="space-y-4">
-        <div>
-          <label class="input-label">{{ t('admin.announcements.form.title') }}</label>
-          <input
-            v-model="createForm.title"
-            type="text"
-            required
-            class="input"
-            :placeholder="t('admin.announcements.form.titlePlaceholder')"
-          />
-        </div>
-        <div>
-          <label class="input-label">{{ t('admin.announcements.form.contentType') }}</label>
-          <Select v-model="createForm.content_type" :options="contentTypeOptions" />
-        </div>
-        <div>
-          <label class="input-label">{{ t('admin.announcements.form.content') }}</label>
-          <textarea
-            v-model="createForm.content"
-            rows="6"
-            required
-            class="input font-mono text-sm"
-            :placeholder="t('admin.announcements.form.contentPlaceholder')"
-          ></textarea>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="input-label">{{ t('admin.announcements.form.priority') }}</label>
-            <input
-              v-model.number="createForm.priority"
-              type="number"
-              min="0"
-              class="input"
-            />
-            <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
-              {{ t('admin.announcements.form.priorityHint') }}
-            </p>
-          </div>
-          <div>
-            <label class="input-label">{{ t('admin.announcements.form.status') }}</label>
-            <Select v-model="createForm.status" :options="statusOptions" />
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="input-label">
-              {{ t('admin.announcements.form.publishedAt') }}
-              <span class="ml-1 text-xs font-normal text-gray-400">({{ t('common.optional') }})</span>
-            </label>
-            <input
-              v-model="createForm.published_at_str"
-              type="datetime-local"
-              class="input"
-            />
-            <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
-              {{ t('admin.announcements.form.publishedAtHint') }}
-            </p>
-          </div>
-          <div>
-            <label class="input-label">
-              {{ t('admin.announcements.form.expiresAt') }}
-              <span class="ml-1 text-xs font-normal text-gray-400">({{ t('common.optional') }})</span>
-            </label>
-            <input
-              v-model="createForm.expires_at_str"
-              type="datetime-local"
-              class="input"
-            />
-            <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
-              {{ t('admin.announcements.form.expiresAtHint') }}
-            </p>
-          </div>
-        </div>
-      </form>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="showCreateDialog = false" class="btn btn-secondary">
-            {{ t('common.cancel') }}
-          </button>
-          <button type="submit" form="create-announcement-form" :disabled="creating" class="btn btn-primary">
-            {{ creating ? t('common.creating') : t('common.create') }}
-          </button>
-        </div>
-      </template>
-    </BaseDialog>
-
-    <!-- Edit Dialog -->
+    <!-- Create/Edit Dialog -->
     <BaseDialog
       :show="showEditDialog"
-      :title="t('admin.announcements.edit')"
+      :title="isEditing ? t('admin.announcements.editAnnouncement') : t('admin.announcements.createAnnouncement')"
       width="wide"
-      @close="closeEditDialog"
+      @close="closeEdit"
     >
-      <form id="edit-announcement-form" @submit.prevent="handleUpdate" class="space-y-4">
+      <form id="announcement-form" @submit.prevent="handleSave" class="space-y-4">
         <div>
           <label class="input-label">{{ t('admin.announcements.form.title') }}</label>
-          <input
-            v-model="editForm.title"
-            type="text"
-            required
-            class="input"
-          />
+          <input v-model="form.title" type="text" class="input" required />
         </div>
-        <div>
-          <label class="input-label">{{ t('admin.announcements.form.contentType') }}</label>
-          <Select v-model="editForm.content_type" :options="contentTypeOptions" />
-        </div>
+
         <div>
           <label class="input-label">{{ t('admin.announcements.form.content') }}</label>
-          <textarea
-            v-model="editForm.content"
-            rows="6"
-            required
-            class="input font-mono text-sm"
-          ></textarea>
+          <textarea v-model="form.content" rows="6" class="input" required></textarea>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="input-label">{{ t('admin.announcements.form.priority') }}</label>
-            <input
-              v-model.number="editForm.priority"
-              type="number"
-              min="0"
-              class="input"
-            />
-          </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.announcements.form.status') }}</label>
-            <Select v-model="editForm.status" :options="statusOptions" />
+            <Select v-model="form.status" :options="statusOptions" />
           </div>
+          <div></div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label class="input-label">
-              {{ t('admin.announcements.form.publishedAt') }}
-            </label>
-            <input
-              v-model="editForm.published_at_str"
-              type="datetime-local"
-              class="input"
-            />
+            <label class="input-label">{{ t('admin.announcements.form.startsAt') }}</label>
+            <input v-model="form.starts_at_str" type="datetime-local" class="input" />
+            <p class="input-hint">{{ t('admin.announcements.form.startsAtHint') }}</p>
           </div>
           <div>
-            <label class="input-label">
-              {{ t('admin.announcements.form.expiresAt') }}
-            </label>
-            <input
-              v-model="editForm.expires_at_str"
-              type="datetime-local"
-              class="input"
-            />
+            <label class="input-label">{{ t('admin.announcements.form.endsAt') }}</label>
+            <input v-model="form.ends_at_str" type="datetime-local" class="input" />
+            <p class="input-hint">{{ t('admin.announcements.form.endsAtHint') }}</p>
           </div>
         </div>
+
+        <AnnouncementTargetingEditor
+          v-model="form.targeting"
+          :groups="subscriptionGroups"
+        />
       </form>
+
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button type="button" @click="closeEditDialog" class="btn btn-secondary">
+          <button type="button" @click="closeEdit" class="btn btn-secondary">
             {{ t('common.cancel') }}
           </button>
-          <button type="submit" form="edit-announcement-form" :disabled="updating" class="btn btn-primary">
-            {{ updating ? t('common.saving') : t('common.save') }}
+          <button type="submit" form="announcement-form" :disabled="saving" class="btn btn-primary">
+            {{ saving ? t('common.saving') : t('common.save') }}
           </button>
         </div>
       </template>
     </BaseDialog>
 
-    <!-- Delete Confirmation Dialog -->
+    <!-- Delete Confirmation -->
     <ConfirmDialog
       :show="showDeleteDialog"
-      :title="t('admin.announcements.delete')"
+      :title="t('admin.announcements.deleteAnnouncement')"
       :message="t('admin.announcements.deleteConfirm')"
       :confirm-text="t('common.delete')"
       :cancel-text="t('common.cancel')"
@@ -302,266 +210,329 @@
       @confirm="confirmDelete"
       @cancel="showDeleteDialog = false"
     />
+
+    <!-- Read Status Dialog -->
+    <AnnouncementReadStatusDialog
+      :show="showReadStatusDialog"
+      :announcement-id="readStatusAnnouncementId"
+      @close="showReadStatusDialog = false"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { adminAnnouncementAPI } from '@/api/announcement'
-import { formatDateTime } from '@/utils/format'
-import type { Announcement } from '@/types'
+import { adminAPI } from '@/api/admin'
+import { formatDateTime, formatDateTimeLocalInput, parseDateTimeLocalInput } from '@/utils/format'
+import type { AdminGroup, Announcement, AnnouncementTargeting } from '@/types'
 import type { Column } from '@/components/common/types'
+
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import Icon from '@/components/icons/Icon.vue'
+
+import AnnouncementTargetingEditor from '@/components/admin/announcements/AnnouncementTargetingEditor.vue'
+import AnnouncementReadStatusDialog from '@/components/admin/announcements/AnnouncementReadStatusDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
 
-// State
 const announcements = ref<Announcement[]>([])
 const loading = ref(false)
-const creating = ref(false)
-const updating = ref(false)
-const searchQuery = ref('')
 
 const filters = reactive({
-  status: ''
+  status: '',
 })
+const searchQuery = ref('')
 
 const pagination = reactive({
   page: 1,
   page_size: 20,
-  total: 0
+  total: 0,
+  pages: 0
 })
 
-// Dialogs
-const showCreateDialog = ref(false)
-const showEditDialog = ref(false)
-const showDeleteDialog = ref(false)
-
-const editingAnnouncement = ref<Announcement | null>(null)
-const deletingAnnouncement = ref<Announcement | null>(null)
-
-// Forms
-const createForm = reactive({
-  title: '',
-  content: '',
-  content_type: 'markdown' as 'markdown' | 'html' | 'url',
-  priority: 0,
-  status: 'active' as 'active' | 'inactive',
-  published_at_str: '',
-  expires_at_str: ''
-})
-
-const editForm = reactive({
-  title: '',
-  content: '',
-  content_type: 'markdown' as 'markdown' | 'html' | 'url',
-  priority: 0,
-  status: 'active' as 'active' | 'inactive',
-  published_at_str: '',
-  expires_at_str: ''
-})
-
-// Options
-const filterStatusOptions = computed(() => [
-  { value: '', label: t('common.all') },
-  { value: 'active', label: t('admin.announcements.status.active') },
-  { value: 'inactive', label: t('admin.announcements.status.inactive') }
+const statusFilterOptions = computed(() => [
+  { value: '', label: t('admin.announcements.allStatus') },
+  { value: 'draft', label: t('admin.announcements.statusLabels.draft') },
+  { value: 'active', label: t('admin.announcements.statusLabels.active') },
+  { value: 'archived', label: t('admin.announcements.statusLabels.archived') }
 ])
 
 const statusOptions = computed(() => [
-  { value: 'active', label: t('admin.announcements.status.active') },
-  { value: 'inactive', label: t('admin.announcements.status.inactive') }
-])
-
-const contentTypeOptions = computed(() => [
-  { value: 'markdown', label: t('admin.announcements.contentType.markdown') },
-  { value: 'html', label: t('admin.announcements.contentType.html') },
-  { value: 'url', label: t('admin.announcements.contentType.url') }
+  { value: 'draft', label: t('admin.announcements.statusLabels.draft') },
+  { value: 'active', label: t('admin.announcements.statusLabels.active') },
+  { value: 'archived', label: t('admin.announcements.statusLabels.archived') }
 ])
 
 const columns = computed<Column[]>(() => [
   { key: 'title', label: t('admin.announcements.columns.title') },
-  { key: 'content_type', label: t('admin.announcements.columns.contentType') },
-  { key: 'priority', label: t('admin.announcements.columns.priority'), sortable: true },
-  { key: 'status', label: t('admin.announcements.columns.status'), sortable: true },
-  { key: 'published_at', label: t('admin.announcements.columns.publishedAt'), sortable: true },
-  { key: 'expires_at', label: t('admin.announcements.columns.expiresAt'), sortable: true },
-  { key: 'created_at', label: t('admin.announcements.columns.createdAt'), sortable: true },
+  { key: 'status', label: t('admin.announcements.columns.status') },
+  { key: 'targeting', label: t('admin.announcements.columns.targeting') },
+  { key: 'timeRange', label: t('admin.announcements.columns.timeRange') },
+  { key: 'createdAt', label: t('admin.announcements.columns.createdAt') },
   { key: 'actions', label: t('admin.announcements.columns.actions') }
 ])
 
-// API calls
-let abortController: AbortController | null = null
+const statusLabel = (status: string) => {
+  if (status === 'draft') return t('admin.announcements.statusLabels.draft')
+  if (status === 'active') return t('admin.announcements.statusLabels.active')
+  if (status === 'archived') return t('admin.announcements.statusLabels.archived')
+  return status
+}
 
-const loadAnnouncements = async () => {
-  if (abortController) {
-    abortController.abort()
-  }
-  const currentController = new AbortController()
-  abortController = currentController
-  loading.value = true
+const targetingSummary = (targeting: AnnouncementTargeting) => {
+  const anyOf = targeting?.any_of ?? []
+  if (!anyOf || anyOf.length === 0) return t('admin.announcements.targetingSummaryAll')
+  return t('admin.announcements.targetingSummaryCustom', { groups: anyOf.length })
+}
+
+// ===== CRUD / list =====
+let currentController: AbortController | null = null
+
+async function loadAnnouncements() {
+  if (currentController) currentController.abort()
+  currentController = new AbortController()
 
   try {
-    const response = await adminAnnouncementAPI.list(
-      pagination.page,
-      pagination.page_size
-    )
-    if (currentController.signal.aborted) return
+    loading.value = true
+    const res = await adminAPI.announcements.list(pagination.page, pagination.page_size, {
+      status: filters.status || undefined,
+      search: searchQuery.value || undefined
+    })
 
-    announcements.value = response.items
-    pagination.total = response.total
+    announcements.value = res.items
+    pagination.total = res.total
+    pagination.pages = res.pages
+    pagination.page = res.page
+    pagination.page_size = res.page_size
   } catch (error: any) {
     if (currentController.signal.aborted || error?.name === 'AbortError') return
-    appStore.showError(t('admin.announcements.loadFailed'))
     console.error('Error loading announcements:', error)
+    appStore.showError(error.response?.data?.detail || t('admin.announcements.failedToLoad'))
   } finally {
-    if (abortController === currentController && !currentController.signal.aborted) {
-      loading.value = false
-      abortController = null
-    }
+    loading.value = false
   }
 }
 
-let searchTimeout: ReturnType<typeof setTimeout>
-const handleSearch = () => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    pagination.page = 1
-    loadAnnouncements()
-  }, 300)
-}
-
-const handlePageChange = (page: number) => {
+function handlePageChange(page: number) {
   pagination.page = page
   loadAnnouncements()
 }
 
-const handlePageSizeChange = (pageSize: number) => {
+function handlePageSizeChange(pageSize: number) {
   pagination.page_size = pageSize
   pagination.page = 1
   loadAnnouncements()
 }
 
-// Helper to convert datetime-local to ISO 8601
-const toISOString = (dateStr: string): string | undefined => {
-  if (!dateStr) return undefined
-  // datetime-local format: "YYYY-MM-DDTHH:mm"
-  // Convert to ISO 8601: "YYYY-MM-DDTHH:mm:ss.000Z"
-  return new Date(dateStr).toISOString()
+function handleStatusChange() {
+  pagination.page = 1
+  loadAnnouncements()
 }
 
-// Create
-const handleCreate = async () => {
-  creating.value = true
-  try {
-    await adminAnnouncementAPI.create({
-      title: createForm.title,
-      content: createForm.content,
-      content_type: createForm.content_type,
-      priority: createForm.priority,
-      status: createForm.status,
-      published_at: toISOString(createForm.published_at_str),
-      expires_at: toISOString(createForm.expires_at_str)
-    })
-    appStore.showSuccess(t('admin.announcements.createSuccess'))
-    showCreateDialog.value = false
-    resetCreateForm()
+let searchDebounceTimer: number | null = null
+function handleSearch() {
+  if (searchDebounceTimer) window.clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = window.setTimeout(() => {
+    pagination.page = 1
     loadAnnouncements()
+  }, 300)
+}
+
+// ===== Create/Edit dialog =====
+const showEditDialog = ref(false)
+const saving = ref(false)
+const editingAnnouncement = ref<Announcement | null>(null)
+
+const isEditing = computed(() => !!editingAnnouncement.value)
+
+const form = reactive({
+  title: '',
+  content: '',
+  status: 'draft',
+  starts_at_str: '',
+  ends_at_str: '',
+  targeting: { any_of: [] } as AnnouncementTargeting
+})
+
+const subscriptionGroups = ref<AdminGroup[]>([])
+
+async function loadSubscriptionGroups() {
+  try {
+    const all = await adminAPI.groups.getAll()
+    subscriptionGroups.value = (all || []).filter((g) => g.subscription_type === 'subscription')
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.announcements.createFailed'))
-  } finally {
-    creating.value = false
+    console.error('Error loading groups:', error)
+    // not fatal
   }
 }
 
-const resetCreateForm = () => {
-  createForm.title = ''
-  createForm.content = ''
-  createForm.content_type = 'markdown'
-  createForm.priority = 0
-  createForm.status = 'active'
-  createForm.published_at_str = ''
-  createForm.expires_at_str = ''
+function resetForm() {
+  form.title = ''
+  form.content = ''
+  form.status = 'draft'
+  form.starts_at_str = ''
+  form.ends_at_str = ''
+  form.targeting = { any_of: [] }
 }
 
-// Edit
-const handleEdit = (announcement: Announcement) => {
-  editingAnnouncement.value = announcement
-  editForm.title = announcement.title
-  editForm.content = announcement.content
-  editForm.content_type = announcement.content_type
-  editForm.priority = announcement.priority
-  editForm.status = announcement.status
-  editForm.published_at_str = announcement.published_at ? new Date(announcement.published_at).toISOString().slice(0, 16) : ''
-  editForm.expires_at_str = announcement.expires_at ? new Date(announcement.expires_at).toISOString().slice(0, 16) : ''
+function fillFormFromAnnouncement(a: Announcement) {
+  form.title = a.title
+  form.content = a.content
+  form.status = a.status
+
+  // Backend returns RFC3339 strings
+  form.starts_at_str = a.starts_at ? formatDateTimeLocalInput(Math.floor(new Date(a.starts_at).getTime() / 1000)) : ''
+  form.ends_at_str = a.ends_at ? formatDateTimeLocalInput(Math.floor(new Date(a.ends_at).getTime() / 1000)) : ''
+
+  form.targeting = a.targeting ?? { any_of: [] }
+}
+
+function openCreateDialog() {
+  editingAnnouncement.value = null
+  resetForm()
   showEditDialog.value = true
 }
 
-const closeEditDialog = () => {
+function openEditDialog(row: Announcement) {
+  editingAnnouncement.value = row
+  fillFormFromAnnouncement(row)
+  showEditDialog.value = true
+}
+
+function closeEdit() {
   showEditDialog.value = false
   editingAnnouncement.value = null
 }
 
-const handleUpdate = async () => {
-  if (!editingAnnouncement.value) return
+function buildCreatePayload() {
+  const startsAt = parseDateTimeLocalInput(form.starts_at_str)
+  const endsAt = parseDateTimeLocalInput(form.ends_at_str)
 
-  updating.value = true
-  try {
-    await adminAnnouncementAPI.update(editingAnnouncement.value.id, {
-      title: editForm.title,
-      content: editForm.content,
-      content_type: editForm.content_type,
-      priority: editForm.priority,
-      status: editForm.status,
-      published_at: toISOString(editForm.published_at_str),
-      expires_at: toISOString(editForm.expires_at_str)
-    })
-    appStore.showSuccess(t('admin.announcements.updateSuccess'))
-    closeEditDialog()
-    loadAnnouncements()
-  } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.announcements.updateFailed'))
-  } finally {
-    updating.value = false
+  return {
+    title: form.title,
+    content: form.content,
+    status: form.status as any,
+    targeting: form.targeting,
+    starts_at: startsAt ?? undefined,
+    ends_at: endsAt ?? undefined
   }
 }
 
-// Delete
-const handleDelete = (announcement: Announcement) => {
-  deletingAnnouncement.value = announcement
+function buildUpdatePayload(original: Announcement) {
+  const payload: any = {}
+
+  if (form.title !== original.title) payload.title = form.title
+  if (form.content !== original.content) payload.content = form.content
+  if (form.status !== original.status) payload.status = form.status
+
+  // starts_at / ends_at: distinguish unchanged vs clear(0) vs set
+  const originalStarts = original.starts_at ? Math.floor(new Date(original.starts_at).getTime() / 1000) : null
+  const originalEnds = original.ends_at ? Math.floor(new Date(original.ends_at).getTime() / 1000) : null
+
+  const newStarts = parseDateTimeLocalInput(form.starts_at_str)
+  const newEnds = parseDateTimeLocalInput(form.ends_at_str)
+
+  if (newStarts !== originalStarts) {
+    payload.starts_at = newStarts === null ? 0 : newStarts
+  }
+  if (newEnds !== originalEnds) {
+    payload.ends_at = newEnds === null ? 0 : newEnds
+  }
+
+  // targeting: do shallow compare by JSON
+  if (JSON.stringify(form.targeting ?? {}) !== JSON.stringify(original.targeting ?? {})) {
+    payload.targeting = form.targeting
+  }
+
+  return payload
+}
+
+async function handleSave() {
+  // Frontend validation for targeting (to avoid ANNOUNCEMENT_INVALID_TARGET)
+  const anyOf = form.targeting?.any_of ?? []
+  if (anyOf.length > 50) {
+    appStore.showError(t('admin.announcements.failedToCreate'))
+    return
+  }
+  for (const g of anyOf) {
+    const allOf = g?.all_of ?? []
+    if (allOf.length > 50) {
+      appStore.showError(t('admin.announcements.failedToCreate'))
+      return
+    }
+  }
+
+  saving.value = true
+  try {
+    if (!editingAnnouncement.value) {
+      const payload = buildCreatePayload()
+      await adminAPI.announcements.create(payload)
+      appStore.showSuccess(t('common.success'))
+      showEditDialog.value = false
+      await loadAnnouncements()
+      return
+    }
+
+    const original = editingAnnouncement.value
+    const payload = buildUpdatePayload(original)
+    await adminAPI.announcements.update(original.id, payload)
+    appStore.showSuccess(t('common.success'))
+    showEditDialog.value = false
+    editingAnnouncement.value = null
+    await loadAnnouncements()
+  } catch (error: any) {
+    console.error('Failed to save announcement:', error)
+    appStore.showError(error.response?.data?.detail || (editingAnnouncement.value ? t('admin.announcements.failedToUpdate') : t('admin.announcements.failedToCreate')))
+  } finally {
+    saving.value = false
+  }
+}
+
+// ===== Delete =====
+const showDeleteDialog = ref(false)
+const deletingAnnouncement = ref<Announcement | null>(null)
+
+function handleDelete(row: Announcement) {
+  deletingAnnouncement.value = row
   showDeleteDialog.value = true
 }
 
-const confirmDelete = async () => {
+async function confirmDelete() {
   if (!deletingAnnouncement.value) return
 
   try {
-    await adminAnnouncementAPI.delete(deletingAnnouncement.value.id)
-    appStore.showSuccess(t('admin.announcements.deleteSuccess'))
+    await adminAPI.announcements.delete(deletingAnnouncement.value.id)
+    appStore.showSuccess(t('common.success'))
     showDeleteDialog.value = false
     deletingAnnouncement.value = null
-    loadAnnouncements()
+    await loadAnnouncements()
   } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.announcements.deleteFailed'))
+    console.error('Failed to delete announcement:', error)
+    appStore.showError(error.response?.data?.detail || t('admin.announcements.failedToDelete'))
   }
 }
 
-onMounted(() => {
-  loadAnnouncements()
-})
+// ===== Read status =====
+const showReadStatusDialog = ref(false)
+const readStatusAnnouncementId = ref<number | null>(null)
 
-onUnmounted(() => {
-  clearTimeout(searchTimeout)
-  abortController?.abort()
+function openReadStatus(row: Announcement) {
+  readStatusAnnouncementId.value = row.id
+  showReadStatusDialog.value = true
+}
+
+onMounted(async () => {
+  await loadSubscriptionGroups()
+  await loadAnnouncements()
 })
 </script>

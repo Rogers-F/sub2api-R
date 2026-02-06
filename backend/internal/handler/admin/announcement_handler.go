@@ -2,159 +2,99 @@ package admin
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-// AnnouncementHandler handles admin announcement-related requests
+// AnnouncementHandler handles admin announcement management
 type AnnouncementHandler struct {
 	announcementService *service.AnnouncementService
 }
 
-// NewAnnouncementHandler creates a new admin AnnouncementHandler
+// NewAnnouncementHandler creates a new admin announcement handler
 func NewAnnouncementHandler(announcementService *service.AnnouncementService) *AnnouncementHandler {
 	return &AnnouncementHandler{
 		announcementService: announcementService,
 	}
 }
 
-// AnnouncementResponse represents an announcement for admin API response
-type AnnouncementResponse struct {
-	ID          int64   `json:"id"`
-	Title       string  `json:"title"`
-	Content     string  `json:"content"`
-	ContentType string  `json:"content_type"`
-	Priority    int     `json:"priority"`
-	Status      string  `json:"status"`
-	PublishedAt *string `json:"published_at"`
-	ExpiresAt   *string `json:"expires_at"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
-}
-
-// CreateAnnouncementRequest represents the create announcement request
 type CreateAnnouncementRequest struct {
-	Title       string  `json:"title" binding:"required"`
-	Content     string  `json:"content" binding:"required"`
-	ContentType string  `json:"content_type"`
-	Priority    int     `json:"priority"`
-	Status      string  `json:"status"`
-	PublishedAt *string `json:"published_at"`
-	ExpiresAt   *string `json:"expires_at"`
+	Title     string                        `json:"title" binding:"required"`
+	Content   string                        `json:"content" binding:"required"`
+	Status    string                        `json:"status" binding:"omitempty,oneof=draft active archived"`
+	Targeting service.AnnouncementTargeting `json:"targeting"`
+	StartsAt  *int64                        `json:"starts_at"` // Unix seconds, 0/empty = immediate
+	EndsAt    *int64                        `json:"ends_at"`   // Unix seconds, 0/empty = never
 }
 
-// UpdateAnnouncementRequest represents the update announcement request
 type UpdateAnnouncementRequest struct {
-	Title            *string `json:"title"`
-	Content          *string `json:"content"`
-	ContentType      *string `json:"content_type"`
-	Priority         *int    `json:"priority"`
-	Status           *string `json:"status"`
-	PublishedAt      *string `json:"published_at"`
-	ExpiresAt        *string `json:"expires_at"`
-	ClearPublishedAt bool    `json:"clear_published_at"`
-	ClearExpiresAt   bool    `json:"clear_expires_at"`
+	Title     *string                        `json:"title"`
+	Content   *string                        `json:"content"`
+	Status    *string                        `json:"status" binding:"omitempty,oneof=draft active archived"`
+	Targeting *service.AnnouncementTargeting `json:"targeting"`
+	StartsAt  *int64                         `json:"starts_at"` // Unix seconds, 0 = clear
+	EndsAt    *int64                         `json:"ends_at"`   // Unix seconds, 0 = clear
 }
 
-// parseFlexibleTime parses time strings in RFC3339 format with optional milliseconds
-// This supports both "2006-01-02T15:04:05Z" and "2006-01-02T15:04:05.000Z" formats
-func parseFlexibleTime(s string) (time.Time, error) {
-	// Try RFC3339 first (without milliseconds)
-	t, err := time.Parse(time.RFC3339, s)
-	if err == nil {
-		return t, nil
-	}
-	// Try RFC3339Nano (with milliseconds/nanoseconds)
-	t, err = time.Parse(time.RFC3339Nano, s)
-	if err == nil {
-		return t, nil
-	}
-	// Try ISO 8601 with milliseconds explicitly
-	t, err = time.Parse("2006-01-02T15:04:05.000Z07:00", s)
-	if err == nil {
-		return t, nil
-	}
-	return time.Time{}, err
-}
-
-func toAnnouncementResponse(a *service.Announcement) AnnouncementResponse {
-	resp := AnnouncementResponse{
-		ID:          a.ID,
-		Title:       a.Title,
-		Content:     a.Content,
-		ContentType: a.ContentType,
-		Priority:    a.Priority,
-		Status:      a.Status,
-		CreatedAt:   a.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   a.UpdatedAt.Format(time.RFC3339),
-	}
-	if a.PublishedAt != nil {
-		t := a.PublishedAt.Format(time.RFC3339)
-		resp.PublishedAt = &t
-	}
-	if a.ExpiresAt != nil {
-		t := a.ExpiresAt.Format(time.RFC3339)
-		resp.ExpiresAt = &t
-	}
-	return resp
-}
-
-// List returns all announcements with pagination
+// List handles listing announcements with filters
 // GET /api/v1/admin/announcements
 func (h *AnnouncementHandler) List(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	if page < 1 {
-		page = 1
+	page, pageSize := response.ParsePagination(c)
+	status := strings.TrimSpace(c.Query("status"))
+	search := strings.TrimSpace(c.Query("search"))
+	if len(search) > 200 {
+		search = search[:200]
 	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-	offset := (page - 1) * pageSize
 
-	announcements, total, err := h.announcementService.List(c.Request.Context(), offset, pageSize)
+	params := pagination.PaginationParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	items, paginationResult, err := h.announcementService.List(
+		c.Request.Context(),
+		params,
+		service.AnnouncementListFilters{Status: status, Search: search},
+	)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
-	items := make([]AnnouncementResponse, 0, len(announcements))
-	for _, a := range announcements {
-		items = append(items, toAnnouncementResponse(a))
+	out := make([]dto.Announcement, 0, len(items))
+	for i := range items {
+		out = append(out, *dto.AnnouncementFromService(&items[i]))
 	}
-
-	response.Success(c, gin.H{
-		"items":     items,
-		"total":     total,
-		"page":      page,
-		"page_size": pageSize,
-	})
+	response.Paginated(c, out, paginationResult.Total, page, pageSize)
 }
 
-// Get returns an announcement by ID
+// GetByID handles getting an announcement by ID
 // GET /api/v1/admin/announcements/:id
-func (h *AnnouncementHandler) Get(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+func (h *AnnouncementHandler) GetByID(c *gin.Context) {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
 		response.BadRequest(c, "Invalid announcement ID")
 		return
 	}
 
-	announcement, err := h.announcementService.GetByID(c.Request.Context(), id)
+	item, err := h.announcementService.GetByID(c.Request.Context(), announcementID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
-	response.Success(c, toAnnouncementResponse(announcement))
+	response.Success(c, dto.AnnouncementFromService(item))
 }
 
-// Create creates a new announcement
+// Create handles creating a new announcement
 // POST /api/v1/admin/announcements
 func (h *AnnouncementHandler) Create(c *gin.Context) {
 	var req CreateAnnouncementRequest
@@ -163,47 +103,43 @@ func (h *AnnouncementHandler) Create(c *gin.Context) {
 		return
 	}
 
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
 	input := &service.CreateAnnouncementInput{
-		Title:       req.Title,
-		Content:     req.Content,
-		ContentType: req.ContentType,
-		Priority:    req.Priority,
-		Status:      req.Status,
+		Title:     req.Title,
+		Content:   req.Content,
+		Status:    req.Status,
+		Targeting: req.Targeting,
+		ActorID:   &subject.UserID,
 	}
 
-	if req.PublishedAt != nil && *req.PublishedAt != "" {
-		t, err := parseFlexibleTime(*req.PublishedAt)
-		if err != nil {
-			response.BadRequest(c, "Invalid published_at format, expected RFC3339")
-			return
-		}
-		input.PublishedAt = &t
+	if req.StartsAt != nil && *req.StartsAt > 0 {
+		t := time.Unix(*req.StartsAt, 0)
+		input.StartsAt = &t
+	}
+	if req.EndsAt != nil && *req.EndsAt > 0 {
+		t := time.Unix(*req.EndsAt, 0)
+		input.EndsAt = &t
 	}
 
-	if req.ExpiresAt != nil && *req.ExpiresAt != "" {
-		t, err := parseFlexibleTime(*req.ExpiresAt)
-		if err != nil {
-			response.BadRequest(c, "Invalid expires_at format, expected RFC3339")
-			return
-		}
-		input.ExpiresAt = &t
-	}
-
-	announcement, err := h.announcementService.Create(c.Request.Context(), input)
+	created, err := h.announcementService.Create(c.Request.Context(), input)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
-	response.Created(c, toAnnouncementResponse(announcement))
+	response.Success(c, dto.AnnouncementFromService(created))
 }
 
-// Update updates an existing announcement
+// Update handles updating an announcement
 // PUT /api/v1/admin/announcements/:id
 func (h *AnnouncementHandler) Update(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
 		response.BadRequest(c, "Invalid announcement ID")
 		return
 	}
@@ -214,57 +150,97 @@ func (h *AnnouncementHandler) Update(c *gin.Context) {
 		return
 	}
 
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
 	input := &service.UpdateAnnouncementInput{
-		Title:            req.Title,
-		Content:          req.Content,
-		ContentType:      req.ContentType,
-		Priority:         req.Priority,
-		Status:           req.Status,
-		ClearPublishedAt: req.ClearPublishedAt,
-		ClearExpiresAt:   req.ClearExpiresAt,
+		Title:     req.Title,
+		Content:   req.Content,
+		Status:    req.Status,
+		Targeting: req.Targeting,
+		ActorID:   &subject.UserID,
 	}
 
-	if req.PublishedAt != nil && *req.PublishedAt != "" {
-		t, err := parseFlexibleTime(*req.PublishedAt)
-		if err != nil {
-			response.BadRequest(c, "Invalid published_at format, expected RFC3339")
-			return
+	if req.StartsAt != nil {
+		if *req.StartsAt == 0 {
+			var cleared *time.Time = nil
+			input.StartsAt = &cleared
+		} else {
+			t := time.Unix(*req.StartsAt, 0)
+			ptr := &t
+			input.StartsAt = &ptr
 		}
-		input.PublishedAt = &t
 	}
 
-	if req.ExpiresAt != nil && *req.ExpiresAt != "" {
-		t, err := parseFlexibleTime(*req.ExpiresAt)
-		if err != nil {
-			response.BadRequest(c, "Invalid expires_at format, expected RFC3339")
-			return
+	if req.EndsAt != nil {
+		if *req.EndsAt == 0 {
+			var cleared *time.Time = nil
+			input.EndsAt = &cleared
+		} else {
+			t := time.Unix(*req.EndsAt, 0)
+			ptr := &t
+			input.EndsAt = &ptr
 		}
-		input.ExpiresAt = &t
 	}
 
-	announcement, err := h.announcementService.Update(c.Request.Context(), id, input)
+	updated, err := h.announcementService.Update(c.Request.Context(), announcementID, input)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
-	response.Success(c, toAnnouncementResponse(announcement))
+	response.Success(c, dto.AnnouncementFromService(updated))
 }
 
-// Delete deletes an announcement
+// Delete handles deleting an announcement
 // DELETE /api/v1/admin/announcements/:id
 func (h *AnnouncementHandler) Delete(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
 		response.BadRequest(c, "Invalid announcement ID")
 		return
 	}
 
-	if err := h.announcementService.Delete(c.Request.Context(), id); err != nil {
+	if err := h.announcementService.Delete(c.Request.Context(), announcementID); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 
-	response.Success(c, gin.H{"message": "Announcement deleted"})
+	response.Success(c, gin.H{"message": "Announcement deleted successfully"})
+}
+
+// ListReadStatus handles listing users read status for an announcement
+// GET /api/v1/admin/announcements/:id/read-status
+func (h *AnnouncementHandler) ListReadStatus(c *gin.Context) {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+
+	page, pageSize := response.ParsePagination(c)
+	params := pagination.PaginationParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	search := strings.TrimSpace(c.Query("search"))
+	if len(search) > 200 {
+		search = search[:200]
+	}
+
+	items, paginationResult, err := h.announcementService.ListUserReadStatus(
+		c.Request.Context(),
+		announcementID,
+		params,
+		search,
+	)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Paginated(c, items, paginationResult.Total, page, pageSize)
 }

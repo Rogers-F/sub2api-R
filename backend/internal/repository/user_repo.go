@@ -206,6 +206,7 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 			dbuser.Or(
 				dbuser.EmailContainsFold(filters.Search),
 				dbuser.UsernameContainsFold(filters.Search),
+				dbuser.NotesContainsFold(filters.Search),
 			),
 		)
 	}

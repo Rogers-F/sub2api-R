@@ -18,16 +18,18 @@ const (
 	FieldTitle = "title"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
-	// FieldContentType holds the string denoting the content_type field in the database.
-	FieldContentType = "content_type"
-	// FieldPriority holds the string denoting the priority field in the database.
-	FieldPriority = "priority"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldPublishedAt holds the string denoting the published_at field in the database.
-	FieldPublishedAt = "published_at"
-	// FieldExpiresAt holds the string denoting the expires_at field in the database.
-	FieldExpiresAt = "expires_at"
+	// FieldTargeting holds the string denoting the targeting field in the database.
+	FieldTargeting = "targeting"
+	// FieldStartsAt holds the string denoting the starts_at field in the database.
+	FieldStartsAt = "starts_at"
+	// FieldEndsAt holds the string denoting the ends_at field in the database.
+	FieldEndsAt = "ends_at"
+	// FieldCreatedBy holds the string denoting the created_by field in the database.
+	FieldCreatedBy = "created_by"
+	// FieldUpdatedBy holds the string denoting the updated_by field in the database.
+	FieldUpdatedBy = "updated_by"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -50,11 +52,12 @@ var Columns = []string{
 	FieldID,
 	FieldTitle,
 	FieldContent,
-	FieldContentType,
-	FieldPriority,
 	FieldStatus,
-	FieldPublishedAt,
-	FieldExpiresAt,
+	FieldTargeting,
+	FieldStartsAt,
+	FieldEndsAt,
+	FieldCreatedBy,
+	FieldUpdatedBy,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -72,12 +75,8 @@ func ValidColumn(column string) bool {
 var (
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	TitleValidator func(string) error
-	// DefaultContentType holds the default value on creation for the "content_type" field.
-	DefaultContentType string
-	// ContentTypeValidator is a validator for the "content_type" field. It is called by the builders before save.
-	ContentTypeValidator func(string) error
-	// DefaultPriority holds the default value on creation for the "priority" field.
-	DefaultPriority int
+	// ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	ContentValidator func(string) error
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
@@ -108,29 +107,29 @@ func ByContent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContent, opts...).ToFunc()
 }
 
-// ByContentType orders the results by the content_type field.
-func ByContentType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldContentType, opts...).ToFunc()
-}
-
-// ByPriority orders the results by the priority field.
-func ByPriority(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPriority, opts...).ToFunc()
-}
-
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
-// ByPublishedAt orders the results by the published_at field.
-func ByPublishedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPublishedAt, opts...).ToFunc()
+// ByStartsAt orders the results by the starts_at field.
+func ByStartsAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartsAt, opts...).ToFunc()
 }
 
-// ByExpiresAt orders the results by the expires_at field.
-func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
+// ByEndsAt orders the results by the ends_at field.
+func ByEndsAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndsAt, opts...).ToFunc()
+}
+
+// ByCreatedBy orders the results by the created_by field.
+func ByCreatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedBy, opts...).ToFunc()
+}
+
+// ByUpdatedBy orders the results by the updated_by field.
+func ByUpdatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedBy, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

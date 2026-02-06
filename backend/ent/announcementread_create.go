@@ -24,15 +24,15 @@ type AnnouncementReadCreate struct {
 	conflict []sql.ConflictOption
 }
 
-// SetUserID sets the "user_id" field.
-func (_c *AnnouncementReadCreate) SetUserID(v int64) *AnnouncementReadCreate {
-	_c.mutation.SetUserID(v)
-	return _c
-}
-
 // SetAnnouncementID sets the "announcement_id" field.
 func (_c *AnnouncementReadCreate) SetAnnouncementID(v int64) *AnnouncementReadCreate {
 	_c.mutation.SetAnnouncementID(v)
+	return _c
+}
+
+// SetUserID sets the "user_id" field.
+func (_c *AnnouncementReadCreate) SetUserID(v int64) *AnnouncementReadCreate {
+	_c.mutation.SetUserID(v)
 	return _c
 }
 
@@ -50,14 +50,28 @@ func (_c *AnnouncementReadCreate) SetNillableReadAt(v *time.Time) *AnnouncementR
 	return _c
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (_c *AnnouncementReadCreate) SetUser(v *User) *AnnouncementReadCreate {
-	return _c.SetUserID(v.ID)
+// SetCreatedAt sets the "created_at" field.
+func (_c *AnnouncementReadCreate) SetCreatedAt(v time.Time) *AnnouncementReadCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_c *AnnouncementReadCreate) SetNillableCreatedAt(v *time.Time) *AnnouncementReadCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
+	}
+	return _c
 }
 
 // SetAnnouncement sets the "announcement" edge to the Announcement entity.
 func (_c *AnnouncementReadCreate) SetAnnouncement(v *Announcement) *AnnouncementReadCreate {
 	return _c.SetAnnouncementID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_c *AnnouncementReadCreate) SetUser(v *User) *AnnouncementReadCreate {
+	return _c.SetUserID(v.ID)
 }
 
 // Mutation returns the AnnouncementReadMutation object of the builder.
@@ -99,24 +113,31 @@ func (_c *AnnouncementReadCreate) defaults() {
 		v := announcementread.DefaultReadAt()
 		_c.mutation.SetReadAt(v)
 	}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		v := announcementread.DefaultCreatedAt()
+		_c.mutation.SetCreatedAt(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *AnnouncementReadCreate) check() error {
-	if _, ok := _c.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "AnnouncementRead.user_id"`)}
-	}
 	if _, ok := _c.mutation.AnnouncementID(); !ok {
 		return &ValidationError{Name: "announcement_id", err: errors.New(`ent: missing required field "AnnouncementRead.announcement_id"`)}
+	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "AnnouncementRead.user_id"`)}
 	}
 	if _, ok := _c.mutation.ReadAt(); !ok {
 		return &ValidationError{Name: "read_at", err: errors.New(`ent: missing required field "AnnouncementRead.read_at"`)}
 	}
-	if len(_c.mutation.UserIDs()) == 0 {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "AnnouncementRead.user"`)}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "AnnouncementRead.created_at"`)}
 	}
 	if len(_c.mutation.AnnouncementIDs()) == 0 {
 		return &ValidationError{Name: "announcement", err: errors.New(`ent: missing required edge "AnnouncementRead.announcement"`)}
+	}
+	if len(_c.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "AnnouncementRead.user"`)}
 	}
 	return nil
 }
@@ -149,22 +170,9 @@ func (_c *AnnouncementReadCreate) createSpec() (*AnnouncementRead, *sqlgraph.Cre
 		_spec.SetField(announcementread.FieldReadAt, field.TypeTime, value)
 		_node.ReadAt = value
 	}
-	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   announcementread.UserTable,
-			Columns: []string{announcementread.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.UserID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := _c.mutation.CreatedAt(); ok {
+		_spec.SetField(announcementread.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
 	}
 	if nodes := _c.mutation.AnnouncementIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -183,6 +191,23 @@ func (_c *AnnouncementReadCreate) createSpec() (*AnnouncementRead, *sqlgraph.Cre
 		_node.AnnouncementID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   announcementread.UserTable,
+			Columns: []string{announcementread.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UserID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -190,7 +215,7 @@ func (_c *AnnouncementReadCreate) createSpec() (*AnnouncementRead, *sqlgraph.Cre
 // of the `INSERT` statement. For example:
 //
 //	client.AnnouncementRead.Create().
-//		SetUserID(v).
+//		SetAnnouncementID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -199,7 +224,7 @@ func (_c *AnnouncementReadCreate) createSpec() (*AnnouncementRead, *sqlgraph.Cre
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.AnnouncementReadUpsert) {
-//			SetUserID(v+v).
+//			SetAnnouncementID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *AnnouncementReadCreate) OnConflict(opts ...sql.ConflictOption) *AnnouncementReadUpsertOne {
@@ -235,6 +260,18 @@ type (
 	}
 )
 
+// SetAnnouncementID sets the "announcement_id" field.
+func (u *AnnouncementReadUpsert) SetAnnouncementID(v int64) *AnnouncementReadUpsert {
+	u.Set(announcementread.FieldAnnouncementID, v)
+	return u
+}
+
+// UpdateAnnouncementID sets the "announcement_id" field to the value that was provided on create.
+func (u *AnnouncementReadUpsert) UpdateAnnouncementID() *AnnouncementReadUpsert {
+	u.SetExcluded(announcementread.FieldAnnouncementID)
+	return u
+}
+
 // SetUserID sets the "user_id" field.
 func (u *AnnouncementReadUpsert) SetUserID(v int64) *AnnouncementReadUpsert {
 	u.Set(announcementread.FieldUserID, v)
@@ -247,15 +284,15 @@ func (u *AnnouncementReadUpsert) UpdateUserID() *AnnouncementReadUpsert {
 	return u
 }
 
-// SetAnnouncementID sets the "announcement_id" field.
-func (u *AnnouncementReadUpsert) SetAnnouncementID(v int64) *AnnouncementReadUpsert {
-	u.Set(announcementread.FieldAnnouncementID, v)
+// SetReadAt sets the "read_at" field.
+func (u *AnnouncementReadUpsert) SetReadAt(v time.Time) *AnnouncementReadUpsert {
+	u.Set(announcementread.FieldReadAt, v)
 	return u
 }
 
-// UpdateAnnouncementID sets the "announcement_id" field to the value that was provided on create.
-func (u *AnnouncementReadUpsert) UpdateAnnouncementID() *AnnouncementReadUpsert {
-	u.SetExcluded(announcementread.FieldAnnouncementID)
+// UpdateReadAt sets the "read_at" field to the value that was provided on create.
+func (u *AnnouncementReadUpsert) UpdateReadAt() *AnnouncementReadUpsert {
+	u.SetExcluded(announcementread.FieldReadAt)
 	return u
 }
 
@@ -270,8 +307,8 @@ func (u *AnnouncementReadUpsert) UpdateAnnouncementID() *AnnouncementReadUpsert 
 func (u *AnnouncementReadUpsertOne) UpdateNewValues() *AnnouncementReadUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ReadAt(); exists {
-			s.SetIgnore(announcementread.FieldReadAt)
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(announcementread.FieldCreatedAt)
 		}
 	}))
 	return u
@@ -304,6 +341,20 @@ func (u *AnnouncementReadUpsertOne) Update(set func(*AnnouncementReadUpsert)) *A
 	return u
 }
 
+// SetAnnouncementID sets the "announcement_id" field.
+func (u *AnnouncementReadUpsertOne) SetAnnouncementID(v int64) *AnnouncementReadUpsertOne {
+	return u.Update(func(s *AnnouncementReadUpsert) {
+		s.SetAnnouncementID(v)
+	})
+}
+
+// UpdateAnnouncementID sets the "announcement_id" field to the value that was provided on create.
+func (u *AnnouncementReadUpsertOne) UpdateAnnouncementID() *AnnouncementReadUpsertOne {
+	return u.Update(func(s *AnnouncementReadUpsert) {
+		s.UpdateAnnouncementID()
+	})
+}
+
 // SetUserID sets the "user_id" field.
 func (u *AnnouncementReadUpsertOne) SetUserID(v int64) *AnnouncementReadUpsertOne {
 	return u.Update(func(s *AnnouncementReadUpsert) {
@@ -318,17 +369,17 @@ func (u *AnnouncementReadUpsertOne) UpdateUserID() *AnnouncementReadUpsertOne {
 	})
 }
 
-// SetAnnouncementID sets the "announcement_id" field.
-func (u *AnnouncementReadUpsertOne) SetAnnouncementID(v int64) *AnnouncementReadUpsertOne {
+// SetReadAt sets the "read_at" field.
+func (u *AnnouncementReadUpsertOne) SetReadAt(v time.Time) *AnnouncementReadUpsertOne {
 	return u.Update(func(s *AnnouncementReadUpsert) {
-		s.SetAnnouncementID(v)
+		s.SetReadAt(v)
 	})
 }
 
-// UpdateAnnouncementID sets the "announcement_id" field to the value that was provided on create.
-func (u *AnnouncementReadUpsertOne) UpdateAnnouncementID() *AnnouncementReadUpsertOne {
+// UpdateReadAt sets the "read_at" field to the value that was provided on create.
+func (u *AnnouncementReadUpsertOne) UpdateReadAt() *AnnouncementReadUpsertOne {
 	return u.Update(func(s *AnnouncementReadUpsert) {
-		s.UpdateAnnouncementID()
+		s.UpdateReadAt()
 	})
 }
 
@@ -467,7 +518,7 @@ func (_c *AnnouncementReadCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.AnnouncementReadUpsert) {
-//			SetUserID(v+v).
+//			SetAnnouncementID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *AnnouncementReadCreateBulk) OnConflict(opts ...sql.ConflictOption) *AnnouncementReadUpsertBulk {
@@ -508,8 +559,8 @@ func (u *AnnouncementReadUpsertBulk) UpdateNewValues() *AnnouncementReadUpsertBu
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ReadAt(); exists {
-				s.SetIgnore(announcementread.FieldReadAt)
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(announcementread.FieldCreatedAt)
 			}
 		}
 	}))
@@ -543,6 +594,20 @@ func (u *AnnouncementReadUpsertBulk) Update(set func(*AnnouncementReadUpsert)) *
 	return u
 }
 
+// SetAnnouncementID sets the "announcement_id" field.
+func (u *AnnouncementReadUpsertBulk) SetAnnouncementID(v int64) *AnnouncementReadUpsertBulk {
+	return u.Update(func(s *AnnouncementReadUpsert) {
+		s.SetAnnouncementID(v)
+	})
+}
+
+// UpdateAnnouncementID sets the "announcement_id" field to the value that was provided on create.
+func (u *AnnouncementReadUpsertBulk) UpdateAnnouncementID() *AnnouncementReadUpsertBulk {
+	return u.Update(func(s *AnnouncementReadUpsert) {
+		s.UpdateAnnouncementID()
+	})
+}
+
 // SetUserID sets the "user_id" field.
 func (u *AnnouncementReadUpsertBulk) SetUserID(v int64) *AnnouncementReadUpsertBulk {
 	return u.Update(func(s *AnnouncementReadUpsert) {
@@ -557,17 +622,17 @@ func (u *AnnouncementReadUpsertBulk) UpdateUserID() *AnnouncementReadUpsertBulk 
 	})
 }
 
-// SetAnnouncementID sets the "announcement_id" field.
-func (u *AnnouncementReadUpsertBulk) SetAnnouncementID(v int64) *AnnouncementReadUpsertBulk {
+// SetReadAt sets the "read_at" field.
+func (u *AnnouncementReadUpsertBulk) SetReadAt(v time.Time) *AnnouncementReadUpsertBulk {
 	return u.Update(func(s *AnnouncementReadUpsert) {
-		s.SetAnnouncementID(v)
+		s.SetReadAt(v)
 	})
 }
 
-// UpdateAnnouncementID sets the "announcement_id" field to the value that was provided on create.
-func (u *AnnouncementReadUpsertBulk) UpdateAnnouncementID() *AnnouncementReadUpsertBulk {
+// UpdateReadAt sets the "read_at" field to the value that was provided on create.
+func (u *AnnouncementReadUpsertBulk) UpdateReadAt() *AnnouncementReadUpsertBulk {
 	return u.Update(func(s *AnnouncementReadUpsert) {
-		s.UpdateAnnouncementID()
+		s.UpdateReadAt()
 	})
 }
 

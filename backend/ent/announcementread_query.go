@@ -25,8 +25,8 @@ type AnnouncementReadQuery struct {
 	order            []announcementread.OrderOption
 	inters           []Interceptor
 	predicates       []predicate.AnnouncementRead
-	withUser         *UserQuery
 	withAnnouncement *AnnouncementQuery
+	withUser         *UserQuery
 	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -64,28 +64,6 @@ func (_q *AnnouncementReadQuery) Order(o ...announcementread.OrderOption) *Annou
 	return _q
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (_q *AnnouncementReadQuery) QueryUser() *UserQuery {
-	query := (&UserClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(announcementread.Table, announcementread.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, announcementread.UserTable, announcementread.UserColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryAnnouncement chains the current query on the "announcement" edge.
 func (_q *AnnouncementReadQuery) QueryAnnouncement() *AnnouncementQuery {
 	query := (&AnnouncementClient{config: _q.config}).Query()
@@ -101,6 +79,28 @@ func (_q *AnnouncementReadQuery) QueryAnnouncement() *AnnouncementQuery {
 			sqlgraph.From(announcementread.Table, announcementread.FieldID, selector),
 			sqlgraph.To(announcement.Table, announcement.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, announcementread.AnnouncementTable, announcementread.AnnouncementColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUser chains the current query on the "user" edge.
+func (_q *AnnouncementReadQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(announcementread.Table, announcementread.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, announcementread.UserTable, announcementread.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -300,23 +300,12 @@ func (_q *AnnouncementReadQuery) Clone() *AnnouncementReadQuery {
 		order:            append([]announcementread.OrderOption{}, _q.order...),
 		inters:           append([]Interceptor{}, _q.inters...),
 		predicates:       append([]predicate.AnnouncementRead{}, _q.predicates...),
-		withUser:         _q.withUser.Clone(),
 		withAnnouncement: _q.withAnnouncement.Clone(),
+		withUser:         _q.withUser.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
-}
-
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *AnnouncementReadQuery) WithUser(opts ...func(*UserQuery)) *AnnouncementReadQuery {
-	query := (&UserClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withUser = query
-	return _q
 }
 
 // WithAnnouncement tells the query-builder to eager-load the nodes that are connected to
@@ -330,18 +319,29 @@ func (_q *AnnouncementReadQuery) WithAnnouncement(opts ...func(*AnnouncementQuer
 	return _q
 }
 
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AnnouncementReadQuery) WithUser(opts ...func(*UserQuery)) *AnnouncementReadQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUser = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
 //
 //	var v []struct {
-//		UserID int64 `json:"user_id,omitempty"`
+//		AnnouncementID int64 `json:"announcement_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.AnnouncementRead.Query().
-//		GroupBy(announcementread.FieldUserID).
+//		GroupBy(announcementread.FieldAnnouncementID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *AnnouncementReadQuery) GroupBy(field string, fields ...string) *AnnouncementReadGroupBy {
@@ -359,11 +359,11 @@ func (_q *AnnouncementReadQuery) GroupBy(field string, fields ...string) *Announ
 // Example:
 //
 //	var v []struct {
-//		UserID int64 `json:"user_id,omitempty"`
+//		AnnouncementID int64 `json:"announcement_id,omitempty"`
 //	}
 //
 //	client.AnnouncementRead.Query().
-//		Select(announcementread.FieldUserID).
+//		Select(announcementread.FieldAnnouncementID).
 //		Scan(ctx, &v)
 func (_q *AnnouncementReadQuery) Select(fields ...string) *AnnouncementReadSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -409,8 +409,8 @@ func (_q *AnnouncementReadQuery) sqlAll(ctx context.Context, hooks ...queryHook)
 		nodes       = []*AnnouncementRead{}
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			_q.withUser != nil,
 			_q.withAnnouncement != nil,
+			_q.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -434,50 +434,21 @@ func (_q *AnnouncementReadQuery) sqlAll(ctx context.Context, hooks ...queryHook)
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withUser; query != nil {
-		if err := _q.loadUser(ctx, query, nodes, nil,
-			func(n *AnnouncementRead, e *User) { n.Edges.User = e }); err != nil {
-			return nil, err
-		}
-	}
 	if query := _q.withAnnouncement; query != nil {
 		if err := _q.loadAnnouncement(ctx, query, nodes, nil,
 			func(n *AnnouncementRead, e *Announcement) { n.Edges.Announcement = e }); err != nil {
 			return nil, err
 		}
 	}
+	if query := _q.withUser; query != nil {
+		if err := _q.loadUser(ctx, query, nodes, nil,
+			func(n *AnnouncementRead, e *User) { n.Edges.User = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
-func (_q *AnnouncementReadQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*AnnouncementRead, init func(*AnnouncementRead), assign func(*AnnouncementRead, *User)) error {
-	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*AnnouncementRead)
-	for i := range nodes {
-		fk := nodes[i].UserID
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(user.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
 func (_q *AnnouncementReadQuery) loadAnnouncement(ctx context.Context, query *AnnouncementQuery, nodes []*AnnouncementRead, init func(*AnnouncementRead), assign func(*AnnouncementRead, *Announcement)) error {
 	ids := make([]int64, 0, len(nodes))
 	nodeids := make(map[int64][]*AnnouncementRead)
@@ -500,6 +471,35 @@ func (_q *AnnouncementReadQuery) loadAnnouncement(ctx context.Context, query *An
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "announcement_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *AnnouncementReadQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*AnnouncementRead, init func(*AnnouncementRead), assign func(*AnnouncementRead, *User)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*AnnouncementRead)
+	for i := range nodes {
+		fk := nodes[i].UserID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -536,11 +536,11 @@ func (_q *AnnouncementReadQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withUser != nil {
-			_spec.Node.AddColumnOnce(announcementread.FieldUserID)
-		}
 		if _q.withAnnouncement != nil {
 			_spec.Node.AddColumnOnce(announcementread.FieldAnnouncementID)
+		}
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(announcementread.FieldUserID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -125,30 +125,44 @@ func (_c *APIKeyCreate) SetIPBlacklist(v []string) *APIKeyCreate {
 	return _c
 }
 
-// SetQuotaUsd sets the "quota_usd" field.
-func (_c *APIKeyCreate) SetQuotaUsd(v float64) *APIKeyCreate {
-	_c.mutation.SetQuotaUsd(v)
+// SetQuota sets the "quota" field.
+func (_c *APIKeyCreate) SetQuota(v float64) *APIKeyCreate {
+	_c.mutation.SetQuota(v)
 	return _c
 }
 
-// SetNillableQuotaUsd sets the "quota_usd" field if the given value is not nil.
-func (_c *APIKeyCreate) SetNillableQuotaUsd(v *float64) *APIKeyCreate {
+// SetNillableQuota sets the "quota" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableQuota(v *float64) *APIKeyCreate {
 	if v != nil {
-		_c.SetQuotaUsd(*v)
+		_c.SetQuota(*v)
 	}
 	return _c
 }
 
-// SetUsedUsd sets the "used_usd" field.
-func (_c *APIKeyCreate) SetUsedUsd(v float64) *APIKeyCreate {
-	_c.mutation.SetUsedUsd(v)
+// SetQuotaUsed sets the "quota_used" field.
+func (_c *APIKeyCreate) SetQuotaUsed(v float64) *APIKeyCreate {
+	_c.mutation.SetQuotaUsed(v)
 	return _c
 }
 
-// SetNillableUsedUsd sets the "used_usd" field if the given value is not nil.
-func (_c *APIKeyCreate) SetNillableUsedUsd(v *float64) *APIKeyCreate {
+// SetNillableQuotaUsed sets the "quota_used" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableQuotaUsed(v *float64) *APIKeyCreate {
 	if v != nil {
-		_c.SetUsedUsd(*v)
+		_c.SetQuotaUsed(*v)
+	}
+	return _c
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (_c *APIKeyCreate) SetExpiresAt(v time.Time) *APIKeyCreate {
+	_c.mutation.SetExpiresAt(v)
+	return _c
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableExpiresAt(v *time.Time) *APIKeyCreate {
+	if v != nil {
+		_c.SetExpiresAt(*v)
 	}
 	return _c
 }
@@ -233,9 +247,13 @@ func (_c *APIKeyCreate) defaults() error {
 		v := apikey.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
-	if _, ok := _c.mutation.UsedUsd(); !ok {
-		v := apikey.DefaultUsedUsd
-		_c.mutation.SetUsedUsd(v)
+	if _, ok := _c.mutation.Quota(); !ok {
+		v := apikey.DefaultQuota
+		_c.mutation.SetQuota(v)
+	}
+	if _, ok := _c.mutation.QuotaUsed(); !ok {
+		v := apikey.DefaultQuotaUsed
+		_c.mutation.SetQuotaUsed(v)
 	}
 	return nil
 }
@@ -275,8 +293,11 @@ func (_c *APIKeyCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.UsedUsd(); !ok {
-		return &ValidationError{Name: "used_usd", err: errors.New(`ent: missing required field "APIKey.used_usd"`)}
+	if _, ok := _c.mutation.Quota(); !ok {
+		return &ValidationError{Name: "quota", err: errors.New(`ent: missing required field "APIKey.quota"`)}
+	}
+	if _, ok := _c.mutation.QuotaUsed(); !ok {
+		return &ValidationError{Name: "quota_used", err: errors.New(`ent: missing required field "APIKey.quota_used"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "APIKey.user"`)}
@@ -340,13 +361,17 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 		_spec.SetField(apikey.FieldIPBlacklist, field.TypeJSON, value)
 		_node.IPBlacklist = value
 	}
-	if value, ok := _c.mutation.QuotaUsd(); ok {
-		_spec.SetField(apikey.FieldQuotaUsd, field.TypeFloat64, value)
-		_node.QuotaUsd = &value
+	if value, ok := _c.mutation.Quota(); ok {
+		_spec.SetField(apikey.FieldQuota, field.TypeFloat64, value)
+		_node.Quota = value
 	}
-	if value, ok := _c.mutation.UsedUsd(); ok {
-		_spec.SetField(apikey.FieldUsedUsd, field.TypeFloat64, value)
-		_node.UsedUsd = value
+	if value, ok := _c.mutation.QuotaUsed(); ok {
+		_spec.SetField(apikey.FieldQuotaUsed, field.TypeFloat64, value)
+		_node.QuotaUsed = value
+	}
+	if value, ok := _c.mutation.ExpiresAt(); ok {
+		_spec.SetField(apikey.FieldExpiresAt, field.TypeTime, value)
+		_node.ExpiresAt = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -582,45 +607,57 @@ func (u *APIKeyUpsert) ClearIPBlacklist() *APIKeyUpsert {
 	return u
 }
 
-// SetQuotaUsd sets the "quota_usd" field.
-func (u *APIKeyUpsert) SetQuotaUsd(v float64) *APIKeyUpsert {
-	u.Set(apikey.FieldQuotaUsd, v)
+// SetQuota sets the "quota" field.
+func (u *APIKeyUpsert) SetQuota(v float64) *APIKeyUpsert {
+	u.Set(apikey.FieldQuota, v)
 	return u
 }
 
-// UpdateQuotaUsd sets the "quota_usd" field to the value that was provided on create.
-func (u *APIKeyUpsert) UpdateQuotaUsd() *APIKeyUpsert {
-	u.SetExcluded(apikey.FieldQuotaUsd)
+// UpdateQuota sets the "quota" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateQuota() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldQuota)
 	return u
 }
 
-// AddQuotaUsd adds v to the "quota_usd" field.
-func (u *APIKeyUpsert) AddQuotaUsd(v float64) *APIKeyUpsert {
-	u.Add(apikey.FieldQuotaUsd, v)
+// AddQuota adds v to the "quota" field.
+func (u *APIKeyUpsert) AddQuota(v float64) *APIKeyUpsert {
+	u.Add(apikey.FieldQuota, v)
 	return u
 }
 
-// ClearQuotaUsd clears the value of the "quota_usd" field.
-func (u *APIKeyUpsert) ClearQuotaUsd() *APIKeyUpsert {
-	u.SetNull(apikey.FieldQuotaUsd)
+// SetQuotaUsed sets the "quota_used" field.
+func (u *APIKeyUpsert) SetQuotaUsed(v float64) *APIKeyUpsert {
+	u.Set(apikey.FieldQuotaUsed, v)
 	return u
 }
 
-// SetUsedUsd sets the "used_usd" field.
-func (u *APIKeyUpsert) SetUsedUsd(v float64) *APIKeyUpsert {
-	u.Set(apikey.FieldUsedUsd, v)
+// UpdateQuotaUsed sets the "quota_used" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateQuotaUsed() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldQuotaUsed)
 	return u
 }
 
-// UpdateUsedUsd sets the "used_usd" field to the value that was provided on create.
-func (u *APIKeyUpsert) UpdateUsedUsd() *APIKeyUpsert {
-	u.SetExcluded(apikey.FieldUsedUsd)
+// AddQuotaUsed adds v to the "quota_used" field.
+func (u *APIKeyUpsert) AddQuotaUsed(v float64) *APIKeyUpsert {
+	u.Add(apikey.FieldQuotaUsed, v)
 	return u
 }
 
-// AddUsedUsd adds v to the "used_usd" field.
-func (u *APIKeyUpsert) AddUsedUsd(v float64) *APIKeyUpsert {
-	u.Add(apikey.FieldUsedUsd, v)
+// SetExpiresAt sets the "expires_at" field.
+func (u *APIKeyUpsert) SetExpiresAt(v time.Time) *APIKeyUpsert {
+	u.Set(apikey.FieldExpiresAt, v)
+	return u
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateExpiresAt() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldExpiresAt)
+	return u
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *APIKeyUpsert) ClearExpiresAt() *APIKeyUpsert {
+	u.SetNull(apikey.FieldExpiresAt)
 	return u
 }
 
@@ -823,52 +860,66 @@ func (u *APIKeyUpsertOne) ClearIPBlacklist() *APIKeyUpsertOne {
 	})
 }
 
-// SetQuotaUsd sets the "quota_usd" field.
-func (u *APIKeyUpsertOne) SetQuotaUsd(v float64) *APIKeyUpsertOne {
+// SetQuota sets the "quota" field.
+func (u *APIKeyUpsertOne) SetQuota(v float64) *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.SetQuotaUsd(v)
+		s.SetQuota(v)
 	})
 }
 
-// AddQuotaUsd adds v to the "quota_usd" field.
-func (u *APIKeyUpsertOne) AddQuotaUsd(v float64) *APIKeyUpsertOne {
+// AddQuota adds v to the "quota" field.
+func (u *APIKeyUpsertOne) AddQuota(v float64) *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.AddQuotaUsd(v)
+		s.AddQuota(v)
 	})
 }
 
-// UpdateQuotaUsd sets the "quota_usd" field to the value that was provided on create.
-func (u *APIKeyUpsertOne) UpdateQuotaUsd() *APIKeyUpsertOne {
+// UpdateQuota sets the "quota" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateQuota() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.UpdateQuotaUsd()
+		s.UpdateQuota()
 	})
 }
 
-// ClearQuotaUsd clears the value of the "quota_usd" field.
-func (u *APIKeyUpsertOne) ClearQuotaUsd() *APIKeyUpsertOne {
+// SetQuotaUsed sets the "quota_used" field.
+func (u *APIKeyUpsertOne) SetQuotaUsed(v float64) *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.ClearQuotaUsd()
+		s.SetQuotaUsed(v)
 	})
 }
 
-// SetUsedUsd sets the "used_usd" field.
-func (u *APIKeyUpsertOne) SetUsedUsd(v float64) *APIKeyUpsertOne {
+// AddQuotaUsed adds v to the "quota_used" field.
+func (u *APIKeyUpsertOne) AddQuotaUsed(v float64) *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.SetUsedUsd(v)
+		s.AddQuotaUsed(v)
 	})
 }
 
-// AddUsedUsd adds v to the "used_usd" field.
-func (u *APIKeyUpsertOne) AddUsedUsd(v float64) *APIKeyUpsertOne {
+// UpdateQuotaUsed sets the "quota_used" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateQuotaUsed() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.AddUsedUsd(v)
+		s.UpdateQuotaUsed()
 	})
 }
 
-// UpdateUsedUsd sets the "used_usd" field to the value that was provided on create.
-func (u *APIKeyUpsertOne) UpdateUsedUsd() *APIKeyUpsertOne {
+// SetExpiresAt sets the "expires_at" field.
+func (u *APIKeyUpsertOne) SetExpiresAt(v time.Time) *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.UpdateUsedUsd()
+		s.SetExpiresAt(v)
+	})
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateExpiresAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateExpiresAt()
+	})
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *APIKeyUpsertOne) ClearExpiresAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearExpiresAt()
 	})
 }
 
@@ -1237,52 +1288,66 @@ func (u *APIKeyUpsertBulk) ClearIPBlacklist() *APIKeyUpsertBulk {
 	})
 }
 
-// SetQuotaUsd sets the "quota_usd" field.
-func (u *APIKeyUpsertBulk) SetQuotaUsd(v float64) *APIKeyUpsertBulk {
+// SetQuota sets the "quota" field.
+func (u *APIKeyUpsertBulk) SetQuota(v float64) *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.SetQuotaUsd(v)
+		s.SetQuota(v)
 	})
 }
 
-// AddQuotaUsd adds v to the "quota_usd" field.
-func (u *APIKeyUpsertBulk) AddQuotaUsd(v float64) *APIKeyUpsertBulk {
+// AddQuota adds v to the "quota" field.
+func (u *APIKeyUpsertBulk) AddQuota(v float64) *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.AddQuotaUsd(v)
+		s.AddQuota(v)
 	})
 }
 
-// UpdateQuotaUsd sets the "quota_usd" field to the value that was provided on create.
-func (u *APIKeyUpsertBulk) UpdateQuotaUsd() *APIKeyUpsertBulk {
+// UpdateQuota sets the "quota" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateQuota() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.UpdateQuotaUsd()
+		s.UpdateQuota()
 	})
 }
 
-// ClearQuotaUsd clears the value of the "quota_usd" field.
-func (u *APIKeyUpsertBulk) ClearQuotaUsd() *APIKeyUpsertBulk {
+// SetQuotaUsed sets the "quota_used" field.
+func (u *APIKeyUpsertBulk) SetQuotaUsed(v float64) *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.ClearQuotaUsd()
+		s.SetQuotaUsed(v)
 	})
 }
 
-// SetUsedUsd sets the "used_usd" field.
-func (u *APIKeyUpsertBulk) SetUsedUsd(v float64) *APIKeyUpsertBulk {
+// AddQuotaUsed adds v to the "quota_used" field.
+func (u *APIKeyUpsertBulk) AddQuotaUsed(v float64) *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.SetUsedUsd(v)
+		s.AddQuotaUsed(v)
 	})
 }
 
-// AddUsedUsd adds v to the "used_usd" field.
-func (u *APIKeyUpsertBulk) AddUsedUsd(v float64) *APIKeyUpsertBulk {
+// UpdateQuotaUsed sets the "quota_used" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateQuotaUsed() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.AddUsedUsd(v)
+		s.UpdateQuotaUsed()
 	})
 }
 
-// UpdateUsedUsd sets the "used_usd" field to the value that was provided on create.
-func (u *APIKeyUpsertBulk) UpdateUsedUsd() *APIKeyUpsertBulk {
+// SetExpiresAt sets the "expires_at" field.
+func (u *APIKeyUpsertBulk) SetExpiresAt(v time.Time) *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
-		s.UpdateUsedUsd()
+		s.SetExpiresAt(v)
+	})
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateExpiresAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateExpiresAt()
+	})
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *APIKeyUpsertBulk) ClearExpiresAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearExpiresAt()
 	})
 }
 

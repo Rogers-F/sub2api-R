@@ -73,6 +73,7 @@
                   :platform="row.group.platform"
                   :subscription-type="row.group.subscription_type"
                   :rate-multiplier="row.group.rate_multiplier"
+                  :user-rate-multiplier="userGroupRates[row.group.id]"
                 />
                 <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
                   t('keys.noGroup')
@@ -108,23 +109,53 @@
                   ${{ (usageStats[row.id]?.total_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
-              <div v-if="row.quota_usd !== null" class="mt-0.5 flex items-center gap-1.5">
-                <span class="text-gray-500 dark:text-gray-400">{{ t('keys.quotaUsed') }}:</span>
-                <span
-                  class="font-medium"
-                  :class="row.used_usd >= row.quota_usd
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-gray-900 dark:text-white'"
-                >
-                  ${{ row.used_usd.toFixed(4) }} / ${{ row.quota_usd.toFixed(2) }}
-                </span>
+              <!-- Quota progress (if quota is set) -->
+              <div v-if="row.quota > 0" class="mt-1.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-gray-500 dark:text-gray-400">{{ t('keys.quota') }}:</span>
+                  <span :class="[
+                    'font-medium',
+                    row.quota_used >= row.quota ? 'text-red-500' :
+                    row.quota_used >= row.quota * 0.8 ? 'text-yellow-500' :
+                    'text-gray-900 dark:text-white'
+                  ]">
+                    ${{ row.quota_used?.toFixed(2) || '0.00' }} / ${{ row.quota?.toFixed(2) }}
+                  </span>
+                </div>
+                <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                  <div
+                    :class="[
+                      'h-full rounded-full transition-all',
+                      row.quota_used >= row.quota ? 'bg-red-500' :
+                      row.quota_used >= row.quota * 0.8 ? 'bg-yellow-500' :
+                      'bg-primary-500'
+                    ]"
+                    :style="{ width: Math.min((row.quota_used / row.quota) * 100, 100) + '%' }"
+                  />
+                </div>
               </div>
             </div>
           </template>
 
+          <template #cell-expires_at="{ value }">
+            <span v-if="value" :class="[
+              'text-sm',
+              new Date(value) < new Date() ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-dark-400'
+            ]">
+              {{ formatDateTime(value) }}
+            </span>
+            <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{ t('keys.noExpiration') }}</span>
+          </template>
+
           <template #cell-status="{ value }">
-            <span :class="['badge', value === 'active' ? 'badge-success' : 'badge-gray']">
-              {{ t('admin.accounts.status.' + value) }}
+            <span :class="[
+              'badge',
+              value === 'active' ? 'badge-success' :
+              value === 'quota_exhausted' ? 'badge-warning' :
+              value === 'expired' ? 'badge-danger' :
+              'badge-gray'
+            ]">
+              {{ t('keys.status.' + value) }}
             </span>
           </template>
 
@@ -242,6 +273,7 @@
                 :platform="(option as unknown as GroupOption).platform"
                 :subscription-type="(option as unknown as GroupOption).subscriptionType"
                 :rate-multiplier="(option as unknown as GroupOption).rate"
+                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
               />
               <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
             </template>
@@ -251,6 +283,7 @@
                 :platform="(option as unknown as GroupOption).platform"
                 :subscription-type="(option as unknown as GroupOption).subscriptionType"
                 :rate-multiplier="(option as unknown as GroupOption).rate"
+                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
                 :description="(option as unknown as GroupOption).description"
                 :selected="selected"
               />
@@ -381,6 +414,145 @@
             </div>
           </div>
         </div>
+
+        <!-- Quota Limit Section -->
+        <div class="space-y-3">
+          <label class="input-label">{{ t('keys.quotaLimit') }}</label>
+          <!-- Switch commented out - always show input, 0 = unlimited
+          <div class="flex items-center justify-between">
+            <label class="input-label mb-0">{{ t('keys.quotaLimit') }}</label>
+            <button
+              type="button"
+              @click="formData.enable_quota = !formData.enable_quota"
+              :class="[
+                'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                formData.enable_quota ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  formData.enable_quota ? 'translate-x-4' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+          -->
+
+          <div class="space-y-4">
+            <div>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  v-model.number="formData.quota"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="input pl-7"
+                  :placeholder="t('keys.quotaAmountPlaceholder')"
+                />
+              </div>
+              <p class="input-hint">{{ t('keys.quotaAmountHint') }}</p>
+            </div>
+
+            <!-- Quota used display (only in edit mode) -->
+            <div v-if="showEditModal && selectedKey && selectedKey.quota > 0">
+              <label class="input-label">{{ t('keys.quotaUsed') }}</label>
+              <div class="flex items-center gap-2">
+                <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700">
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    ${{ selectedKey.quota_used?.toFixed(4) || '0.0000' }}
+                  </span>
+                  <span class="mx-2 text-gray-400">/</span>
+                  <span class="text-gray-500 dark:text-gray-400">
+                    ${{ selectedKey.quota?.toFixed(2) || '0.00' }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  @click="confirmResetQuota"
+                  class="btn btn-secondary text-sm"
+                  :title="t('keys.resetQuotaUsed')"
+                >
+                  {{ t('keys.reset') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expiration Section -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="input-label mb-0">{{ t('keys.expiration') }}</label>
+            <button
+              type="button"
+              @click="formData.enable_expiration = !formData.enable_expiration"
+              :class="[
+                'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                formData.enable_expiration ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  formData.enable_expiration ? 'translate-x-4' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+
+          <div v-if="formData.enable_expiration" class="space-y-4 pt-2">
+            <!-- Quick select buttons (for both create and edit mode) -->
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="days in ['7', '30', '90']"
+                :key="days"
+                type="button"
+                @click="setExpirationDays(parseInt(days))"
+                :class="[
+                  'rounded-lg px-3 py-1.5 text-sm transition-colors',
+                  formData.expiration_preset === days
+                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600'
+                ]"
+              >
+                {{ showEditModal ? t('keys.extendDays', { days }) : t('keys.expiresInDays', { days }) }}
+              </button>
+              <button
+                type="button"
+                @click="formData.expiration_preset = 'custom'"
+                :class="[
+                  'rounded-lg px-3 py-1.5 text-sm transition-colors',
+                  formData.expiration_preset === 'custom'
+                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600'
+                ]"
+              >
+                {{ t('keys.customDate') }}
+              </button>
+            </div>
+
+            <!-- Date picker (always show for precise adjustment) -->
+            <div>
+              <label class="input-label">{{ t('keys.expirationDate') }}</label>
+              <input
+                v-model="formData.expiration_date"
+                type="datetime-local"
+                class="input"
+              />
+              <p class="input-hint">{{ t('keys.expirationDateHint') }}</p>
+            </div>
+
+            <!-- Current expiration display (only in edit mode) -->
+            <div v-if="showEditModal && selectedKey?.expires_at" class="text-sm">
+              <span class="text-gray-500 dark:text-gray-400">{{ t('keys.currentExpiration') }}: </span>
+              <span class="font-medium text-gray-900 dark:text-white">
+                {{ formatDateTime(selectedKey.expires_at) }}
+              </span>
+            </div>
+          </div>
+        </div>
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
@@ -436,6 +608,18 @@
       :danger="true"
       @confirm="handleDelete"
       @cancel="showDeleteDialog = false"
+    />
+
+    <!-- Reset Quota Confirmation Dialog -->
+    <ConfirmDialog
+      :show="showResetQuotaDialog"
+      :title="t('keys.resetQuotaTitle')"
+      :message="t('keys.resetQuotaConfirmMessage', { name: selectedKey?.name, used: selectedKey?.quota_used?.toFixed(4) })"
+      :confirm-text="t('keys.reset')"
+      :cancel-text="t('common.cancel')"
+      :danger="true"
+      @confirm="resetQuotaUsed"
+      @cancel="showResetQuotaDialog = false"
     />
 
     <!-- Use Key Modal -->
@@ -522,6 +706,7 @@
               :platform="option.platform"
               :subscription-type="option.subscriptionType"
               :rate-multiplier="option.rate"
+              :user-rate-multiplier="option.userRate"
               :description="option.description"
               :selected="
                 selectedKeyForGroup?.group_id === option.value ||
@@ -561,11 +746,19 @@ import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
 
+// Helper to format date for datetime-local input
+const formatDateTimeLocal = (isoDate: string): string => {
+  const date = new Date(isoDate)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 interface GroupOption {
   value: number
   label: string
   description: string | null
   rate: number
+  userRate: number | null
   subscriptionType: SubscriptionType
   platform: GroupPlatform
 }
@@ -579,6 +772,7 @@ const columns = computed<Column[]>(() => [
   { key: 'key', label: t('keys.apiKey'), sortable: false },
   { key: 'group', label: t('keys.group'), sortable: false },
   { key: 'usage', label: t('keys.usage'), sortable: false },
+  { key: 'expires_at', label: t('keys.expiresAt'), sortable: true },
   { key: 'status', label: t('common.status'), sortable: true },
   { key: 'created_at', label: t('keys.created'), sortable: true },
   { key: 'actions', label: t('common.actions'), sortable: false }
@@ -589,6 +783,7 @@ const groups = ref<Group[]>([])
 const loading = ref(false)
 const submitting = ref(false)
 const usageStats = ref<Record<string, BatchApiKeyUsageStats>>({})
+const userGroupRates = ref<Record<number, number>>({})
 
 const pagination = ref({
   page: 1,
@@ -600,6 +795,7 @@ const pagination = ref({
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
+const showResetQuotaDialog = ref(false)
 const showUseKeyModal = ref(false)
 const showCcsClientSelect = ref(false)
 const pendingCcsRow = ref<ApiKey | null>(null)
@@ -636,7 +832,13 @@ const formData = ref({
   quota_usd: null as number | null,
   enable_ip_restriction: false,
   ip_whitelist: '',
-  ip_blacklist: ''
+  ip_blacklist: '',
+  // Quota settings (empty = unlimited)
+  enable_quota: false,
+  quota: null as number | null,
+  enable_expiration: false,
+  expiration_preset: '30' as '7' | '30' | '90' | 'custom',
+  expiration_date: ''
 })
 
 // 自定义Key验证
@@ -667,6 +869,7 @@ const groupOptions = computed(() =>
     label: group.name,
     description: group.description,
     rate: group.rate_multiplier,
+    userRate: userGroupRates.value[group.id] ?? null,
     subscriptionType: group.subscription_type,
     platform: group.platform
   }))
@@ -741,6 +944,14 @@ const loadGroups = async () => {
   }
 }
 
+const loadUserGroupRates = async () => {
+  try {
+    userGroupRates.value = await userGroupsAPI.getUserGroupRates()
+  } catch (error) {
+    console.error('Failed to load user group rates:', error)
+  }
+}
+
 const loadPublicSettings = async () => {
   try {
     publicSettings.value = await authAPI.getPublicSettings()
@@ -773,18 +984,23 @@ const handlePageSizeChange = (pageSize: number) => {
 const editKey = (key: ApiKey) => {
   selectedKey.value = key
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
-  const hasQuota = key.quota_usd !== null
+  const hasExpiration = !!key.expires_at
   formData.value = {
     name: key.name,
     group_id: key.group_id,
-    status: key.status,
+    status: key.status === 'quota_exhausted' || key.status === 'expired' ? 'inactive' : key.status,
     use_custom_key: false,
     custom_key: '',
     enable_quota: hasQuota,
     quota_usd: key.quota_usd,
     enable_ip_restriction: hasIPRestriction,
     ip_whitelist: (key.ip_whitelist || []).join('\n'),
-    ip_blacklist: (key.ip_blacklist || []).join('\n')
+    ip_blacklist: (key.ip_blacklist || []).join('\n'),
+    enable_quota: key.quota > 0,
+    quota: key.quota > 0 ? key.quota : null,
+    enable_expiration: hasExpiration,
+    expiration_preset: 'custom',
+    expiration_date: key.expires_at ? formatDateTimeLocal(key.expires_at) : ''
   }
   showEditModal.value = true
 }
@@ -872,8 +1088,27 @@ const handleSubmit = async () => {
   const ipWhitelist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_whitelist) : []
   const ipBlacklist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_blacklist) : []
 
-  // Get quota value only if enabled
-  const quotaUsd = formData.value.enable_quota ? formData.value.quota_usd : null
+  // Calculate quota value (null/empty/0 = unlimited, stored as 0)
+  const quota = formData.value.quota && formData.value.quota > 0 ? formData.value.quota : 0
+
+  // Calculate expiration
+  let expiresInDays: number | undefined
+  let expiresAt: string | null | undefined
+  if (formData.value.enable_expiration && formData.value.expiration_date) {
+    if (!showEditModal.value) {
+      // Create mode: calculate days from date
+      const expDate = new Date(formData.value.expiration_date)
+      const now = new Date()
+      const diffDays = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      expiresInDays = diffDays > 0 ? diffDays : 1
+    } else {
+      // Edit mode: use custom date directly
+      expiresAt = new Date(formData.value.expiration_date).toISOString()
+    }
+  } else if (showEditModal.value) {
+    // Edit mode: if expiration disabled or date cleared, send empty string to clear
+    expiresAt = ''
+  }
 
   submitting.value = true
   try {
@@ -884,12 +1119,21 @@ const handleSubmit = async () => {
         status: formData.value.status,
         ip_whitelist: ipWhitelist,
         ip_blacklist: ipBlacklist,
-        quota_usd: quotaUsd
+        quota: quota,
+        expires_at: expiresAt
       })
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
       const customKey = formData.value.use_custom_key ? formData.value.custom_key : undefined
-      await keysAPI.create(formData.value.name, formData.value.group_id, customKey, ipWhitelist, ipBlacklist, quotaUsd)
+      await keysAPI.create(
+        formData.value.name,
+        formData.value.group_id,
+        customKey,
+        ipWhitelist,
+        ipBlacklist,
+        quota,
+        expiresInDays
+      )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
       if (onboardingStore.isCurrentStep('[data-tour="key-form-submit"]')) {
@@ -941,7 +1185,42 @@ const closeModals = () => {
     quota_usd: null,
     enable_ip_restriction: false,
     ip_whitelist: '',
-    ip_blacklist: ''
+    ip_blacklist: '',
+    enable_quota: false,
+    quota: null,
+    enable_expiration: false,
+    expiration_preset: '30',
+    expiration_date: ''
+  }
+}
+
+// Show reset quota confirmation dialog
+const confirmResetQuota = () => {
+  showResetQuotaDialog.value = true
+}
+
+// Set expiration date based on quick select days
+const setExpirationDays = (days: number) => {
+  formData.value.expiration_preset = days.toString() as '7' | '30' | '90'
+  const expDate = new Date()
+  expDate.setDate(expDate.getDate() + days)
+  formData.value.expiration_date = formatDateTimeLocal(expDate.toISOString())
+}
+
+// Reset quota used for an API key
+const resetQuotaUsed = async () => {
+  if (!selectedKey.value) return
+  showResetQuotaDialog.value = false
+  try {
+    await keysAPI.update(selectedKey.value.id, { reset_quota: true })
+    appStore.showSuccess(t('keys.quotaResetSuccess'))
+    // Update local state
+    if (selectedKey.value) {
+      selectedKey.value.quota_used = 0
+    }
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.detail || t('keys.failedToResetQuota')
+    appStore.showError(errorMsg)
   }
 }
 
@@ -1046,6 +1325,7 @@ const closeCcsClientSelect = () => {
 onMounted(() => {
   loadApiKeys()
   loadGroups()
+  loadUserGroupRates()
   loadPublicSettings()
   document.addEventListener('click', closeGroupSelector)
 })

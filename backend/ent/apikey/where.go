@@ -95,14 +95,19 @@ func Status(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldStatus, v))
 }
 
-// QuotaUsd applies equality check predicate on the "quota_usd" field. It's identical to QuotaUsdEQ.
-func QuotaUsd(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldEQ(FieldQuotaUsd, v))
+// Quota applies equality check predicate on the "quota" field. It's identical to QuotaEQ.
+func Quota(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldQuota, v))
 }
 
-// UsedUsd applies equality check predicate on the "used_usd" field. It's identical to UsedUsdEQ.
-func UsedUsd(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldEQ(FieldUsedUsd, v))
+// QuotaUsed applies equality check predicate on the "quota_used" field. It's identical to QuotaUsedEQ.
+func QuotaUsed(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldQuotaUsed, v))
+}
+
+// ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
+func ExpiresAt(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldExpiresAt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -500,94 +505,134 @@ func IPBlacklistNotNil() predicate.APIKey {
 	return predicate.APIKey(sql.FieldNotNull(FieldIPBlacklist))
 }
 
-// QuotaUsdEQ applies the EQ predicate on the "quota_usd" field.
-func QuotaUsdEQ(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldEQ(FieldQuotaUsd, v))
+// QuotaEQ applies the EQ predicate on the "quota" field.
+func QuotaEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldQuota, v))
 }
 
-// QuotaUsdNEQ applies the NEQ predicate on the "quota_usd" field.
-func QuotaUsdNEQ(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldNEQ(FieldQuotaUsd, v))
+// QuotaNEQ applies the NEQ predicate on the "quota" field.
+func QuotaNEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldQuota, v))
 }
 
-// QuotaUsdIn applies the In predicate on the "quota_usd" field.
-func QuotaUsdIn(vs ...float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldIn(FieldQuotaUsd, vs...))
+// QuotaIn applies the In predicate on the "quota" field.
+func QuotaIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldQuota, vs...))
 }
 
-// QuotaUsdNotIn applies the NotIn predicate on the "quota_usd" field.
-func QuotaUsdNotIn(vs ...float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldNotIn(FieldQuotaUsd, vs...))
+// QuotaNotIn applies the NotIn predicate on the "quota" field.
+func QuotaNotIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldQuota, vs...))
 }
 
-// QuotaUsdGT applies the GT predicate on the "quota_usd" field.
-func QuotaUsdGT(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldGT(FieldQuotaUsd, v))
+// QuotaGT applies the GT predicate on the "quota" field.
+func QuotaGT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldQuota, v))
 }
 
-// QuotaUsdGTE applies the GTE predicate on the "quota_usd" field.
-func QuotaUsdGTE(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldGTE(FieldQuotaUsd, v))
+// QuotaGTE applies the GTE predicate on the "quota" field.
+func QuotaGTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldQuota, v))
 }
 
-// QuotaUsdLT applies the LT predicate on the "quota_usd" field.
-func QuotaUsdLT(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldLT(FieldQuotaUsd, v))
+// QuotaLT applies the LT predicate on the "quota" field.
+func QuotaLT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldQuota, v))
 }
 
-// QuotaUsdLTE applies the LTE predicate on the "quota_usd" field.
-func QuotaUsdLTE(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldLTE(FieldQuotaUsd, v))
+// QuotaLTE applies the LTE predicate on the "quota" field.
+func QuotaLTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldQuota, v))
 }
 
-// QuotaUsdIsNil applies the IsNil predicate on the "quota_usd" field.
-func QuotaUsdIsNil() predicate.APIKey {
-	return predicate.APIKey(sql.FieldIsNull(FieldQuotaUsd))
+// QuotaUsedEQ applies the EQ predicate on the "quota_used" field.
+func QuotaUsedEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldQuotaUsed, v))
 }
 
-// QuotaUsdNotNil applies the NotNil predicate on the "quota_usd" field.
-func QuotaUsdNotNil() predicate.APIKey {
-	return predicate.APIKey(sql.FieldNotNull(FieldQuotaUsd))
+// QuotaUsedNEQ applies the NEQ predicate on the "quota_used" field.
+func QuotaUsedNEQ(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldQuotaUsed, v))
 }
 
-// UsedUsdEQ applies the EQ predicate on the "used_usd" field.
-func UsedUsdEQ(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldEQ(FieldUsedUsd, v))
+// QuotaUsedIn applies the In predicate on the "quota_used" field.
+func QuotaUsedIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldQuotaUsed, vs...))
 }
 
-// UsedUsdNEQ applies the NEQ predicate on the "used_usd" field.
-func UsedUsdNEQ(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldNEQ(FieldUsedUsd, v))
+// QuotaUsedNotIn applies the NotIn predicate on the "quota_used" field.
+func QuotaUsedNotIn(vs ...float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldQuotaUsed, vs...))
 }
 
-// UsedUsdIn applies the In predicate on the "used_usd" field.
-func UsedUsdIn(vs ...float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldIn(FieldUsedUsd, vs...))
+// QuotaUsedGT applies the GT predicate on the "quota_used" field.
+func QuotaUsedGT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldQuotaUsed, v))
 }
 
-// UsedUsdNotIn applies the NotIn predicate on the "used_usd" field.
-func UsedUsdNotIn(vs ...float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldNotIn(FieldUsedUsd, vs...))
+// QuotaUsedGTE applies the GTE predicate on the "quota_used" field.
+func QuotaUsedGTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldQuotaUsed, v))
 }
 
-// UsedUsdGT applies the GT predicate on the "used_usd" field.
-func UsedUsdGT(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldGT(FieldUsedUsd, v))
+// QuotaUsedLT applies the LT predicate on the "quota_used" field.
+func QuotaUsedLT(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldQuotaUsed, v))
 }
 
-// UsedUsdGTE applies the GTE predicate on the "used_usd" field.
-func UsedUsdGTE(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldGTE(FieldUsedUsd, v))
+// QuotaUsedLTE applies the LTE predicate on the "quota_used" field.
+func QuotaUsedLTE(v float64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldQuotaUsed, v))
 }
 
-// UsedUsdLT applies the LT predicate on the "used_usd" field.
-func UsedUsdLT(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldLT(FieldUsedUsd, v))
+// ExpiresAtEQ applies the EQ predicate on the "expires_at" field.
+func ExpiresAtEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldExpiresAt, v))
 }
 
-// UsedUsdLTE applies the LTE predicate on the "used_usd" field.
-func UsedUsdLTE(v float64) predicate.APIKey {
-	return predicate.APIKey(sql.FieldLTE(FieldUsedUsd, v))
+// ExpiresAtNEQ applies the NEQ predicate on the "expires_at" field.
+func ExpiresAtNEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldExpiresAt, v))
+}
+
+// ExpiresAtIn applies the In predicate on the "expires_at" field.
+func ExpiresAtIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldExpiresAt, vs...))
+}
+
+// ExpiresAtNotIn applies the NotIn predicate on the "expires_at" field.
+func ExpiresAtNotIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldExpiresAt, vs...))
+}
+
+// ExpiresAtGT applies the GT predicate on the "expires_at" field.
+func ExpiresAtGT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldExpiresAt, v))
+}
+
+// ExpiresAtGTE applies the GTE predicate on the "expires_at" field.
+func ExpiresAtGTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldExpiresAt, v))
+}
+
+// ExpiresAtLT applies the LT predicate on the "expires_at" field.
+func ExpiresAtLT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldExpiresAt, v))
+}
+
+// ExpiresAtLTE applies the LTE predicate on the "expires_at" field.
+func ExpiresAtLTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldExpiresAt, v))
+}
+
+// ExpiresAtIsNil applies the IsNil predicate on the "expires_at" field.
+func ExpiresAtIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldExpiresAt))
+}
+
+// ExpiresAtNotNil applies the NotNil predicate on the "expires_at" field.
+func ExpiresAtNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldExpiresAt))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

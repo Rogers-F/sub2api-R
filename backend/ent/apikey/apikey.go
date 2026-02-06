@@ -35,10 +35,12 @@ const (
 	FieldIPWhitelist = "ip_whitelist"
 	// FieldIPBlacklist holds the string denoting the ip_blacklist field in the database.
 	FieldIPBlacklist = "ip_blacklist"
-	// FieldQuotaUsd holds the string denoting the quota_usd field in the database.
-	FieldQuotaUsd = "quota_usd"
-	// FieldUsedUsd holds the string denoting the used_usd field in the database.
-	FieldUsedUsd = "used_usd"
+	// FieldQuota holds the string denoting the quota field in the database.
+	FieldQuota = "quota"
+	// FieldQuotaUsed holds the string denoting the quota_used field in the database.
+	FieldQuotaUsed = "quota_used"
+	// FieldExpiresAt holds the string denoting the expires_at field in the database.
+	FieldExpiresAt = "expires_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
@@ -83,8 +85,9 @@ var Columns = []string{
 	FieldStatus,
 	FieldIPWhitelist,
 	FieldIPBlacklist,
-	FieldQuotaUsd,
-	FieldUsedUsd,
+	FieldQuota,
+	FieldQuotaUsed,
+	FieldExpiresAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -119,8 +122,10 @@ var (
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
-	// DefaultUsedUsd holds the default value on creation for the "used_usd" field.
-	DefaultUsedUsd float64
+	// DefaultQuota holds the default value on creation for the "quota" field.
+	DefaultQuota float64
+	// DefaultQuotaUsed holds the default value on creation for the "quota_used" field.
+	DefaultQuotaUsed float64
 )
 
 // OrderOption defines the ordering options for the APIKey queries.
@@ -171,14 +176,19 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
-// ByQuotaUsd orders the results by the quota_usd field.
-func ByQuotaUsd(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldQuotaUsd, opts...).ToFunc()
+// ByQuota orders the results by the quota field.
+func ByQuota(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuota, opts...).ToFunc()
 }
 
-// ByUsedUsd orders the results by the used_usd field.
-func ByUsedUsd(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUsedUsd, opts...).ToFunc()
+// ByQuotaUsed orders the results by the quota_used field.
+func ByQuotaUsed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuotaUsed, opts...).ToFunc()
+}
+
+// ByExpiresAt orders the results by the expires_at field.
+func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

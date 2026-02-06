@@ -55,14 +55,14 @@ func IDLTE(id int64) predicate.AnnouncementRead {
 	return predicate.AnnouncementRead(sql.FieldLTE(FieldID, id))
 }
 
-// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
-func UserID(v int64) predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(sql.FieldEQ(FieldUserID, v))
-}
-
 // AnnouncementID applies equality check predicate on the "announcement_id" field. It's identical to AnnouncementIDEQ.
 func AnnouncementID(v int64) predicate.AnnouncementRead {
 	return predicate.AnnouncementRead(sql.FieldEQ(FieldAnnouncementID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v int64) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldEQ(FieldUserID, v))
 }
 
 // ReadAt applies equality check predicate on the "read_at" field. It's identical to ReadAtEQ.
@@ -70,24 +70,9 @@ func ReadAt(v time.Time) predicate.AnnouncementRead {
 	return predicate.AnnouncementRead(sql.FieldEQ(FieldReadAt, v))
 }
 
-// UserIDEQ applies the EQ predicate on the "user_id" field.
-func UserIDEQ(v int64) predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(sql.FieldEQ(FieldUserID, v))
-}
-
-// UserIDNEQ applies the NEQ predicate on the "user_id" field.
-func UserIDNEQ(v int64) predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(sql.FieldNEQ(FieldUserID, v))
-}
-
-// UserIDIn applies the In predicate on the "user_id" field.
-func UserIDIn(vs ...int64) predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(sql.FieldIn(FieldUserID, vs...))
-}
-
-// UserIDNotIn applies the NotIn predicate on the "user_id" field.
-func UserIDNotIn(vs ...int64) predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(sql.FieldNotIn(FieldUserID, vs...))
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // AnnouncementIDEQ applies the EQ predicate on the "announcement_id" field.
@@ -108,6 +93,26 @@ func AnnouncementIDIn(vs ...int64) predicate.AnnouncementRead {
 // AnnouncementIDNotIn applies the NotIn predicate on the "announcement_id" field.
 func AnnouncementIDNotIn(vs ...int64) predicate.AnnouncementRead {
 	return predicate.AnnouncementRead(sql.FieldNotIn(FieldAnnouncementID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v int64) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v int64) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...int64) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...int64) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // ReadAtEQ applies the EQ predicate on the "read_at" field.
@@ -150,27 +155,44 @@ func ReadAtLTE(v time.Time) predicate.AnnouncementRead {
 	return predicate.AnnouncementRead(sql.FieldLTE(FieldReadAt, v))
 }
 
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.User) predicate.AnnouncementRead {
-	return predicate.AnnouncementRead(func(s *sql.Selector) {
-		step := newUserStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldNEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldNotIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldGT(FieldCreatedAt, v))
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldGTE(FieldCreatedAt, v))
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldLT(FieldCreatedAt, v))
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // HasAnnouncement applies the HasEdge predicate on the "announcement" edge.
@@ -188,6 +210,29 @@ func HasAnnouncement() predicate.AnnouncementRead {
 func HasAnnouncementWith(preds ...predicate.Announcement) predicate.AnnouncementRead {
 	return predicate.AnnouncementRead(func(s *sql.Selector) {
 		step := newAnnouncementStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.AnnouncementRead {
+	return predicate.AnnouncementRead(func(s *sql.Selector) {
+		step := newUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

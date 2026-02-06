@@ -122,6 +122,10 @@ func (s *apiKeyRepoStub) IncrementUsedUSD(ctx context.Context, id int64, delta f
 	panic("unexpected IncrementUsedUSD call")
 }
 
+func (s *apiKeyRepoStub) IncrementQuotaUsed(ctx context.Context, id int64, amount float64) (float64, error) {
+	panic("unexpected IncrementQuotaUsed call")
+}
+
 // apiKeyCacheStub 是 APIKeyCache 接口的测试桩实现。
 // 用于验证删除操作时缓存清理逻辑是否被正确调用。
 //

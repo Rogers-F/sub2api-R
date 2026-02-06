@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -29,20 +30,6 @@ func (_u *AnnouncementReadUpdate) Where(ps ...predicate.AnnouncementRead) *Annou
 	return _u
 }
 
-// SetUserID sets the "user_id" field.
-func (_u *AnnouncementReadUpdate) SetUserID(v int64) *AnnouncementReadUpdate {
-	_u.mutation.SetUserID(v)
-	return _u
-}
-
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *AnnouncementReadUpdate) SetNillableUserID(v *int64) *AnnouncementReadUpdate {
-	if v != nil {
-		_u.SetUserID(*v)
-	}
-	return _u
-}
-
 // SetAnnouncementID sets the "announcement_id" field.
 func (_u *AnnouncementReadUpdate) SetAnnouncementID(v int64) *AnnouncementReadUpdate {
 	_u.mutation.SetAnnouncementID(v)
@@ -57,9 +44,32 @@ func (_u *AnnouncementReadUpdate) SetNillableAnnouncementID(v *int64) *Announcem
 	return _u
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (_u *AnnouncementReadUpdate) SetUser(v *User) *AnnouncementReadUpdate {
-	return _u.SetUserID(v.ID)
+// SetUserID sets the "user_id" field.
+func (_u *AnnouncementReadUpdate) SetUserID(v int64) *AnnouncementReadUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *AnnouncementReadUpdate) SetNillableUserID(v *int64) *AnnouncementReadUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetReadAt sets the "read_at" field.
+func (_u *AnnouncementReadUpdate) SetReadAt(v time.Time) *AnnouncementReadUpdate {
+	_u.mutation.SetReadAt(v)
+	return _u
+}
+
+// SetNillableReadAt sets the "read_at" field if the given value is not nil.
+func (_u *AnnouncementReadUpdate) SetNillableReadAt(v *time.Time) *AnnouncementReadUpdate {
+	if v != nil {
+		_u.SetReadAt(*v)
+	}
+	return _u
 }
 
 // SetAnnouncement sets the "announcement" edge to the Announcement entity.
@@ -67,20 +77,25 @@ func (_u *AnnouncementReadUpdate) SetAnnouncement(v *Announcement) *Announcement
 	return _u.SetAnnouncementID(v.ID)
 }
 
+// SetUser sets the "user" edge to the User entity.
+func (_u *AnnouncementReadUpdate) SetUser(v *User) *AnnouncementReadUpdate {
+	return _u.SetUserID(v.ID)
+}
+
 // Mutation returns the AnnouncementReadMutation object of the builder.
 func (_u *AnnouncementReadUpdate) Mutation() *AnnouncementReadMutation {
 	return _u.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (_u *AnnouncementReadUpdate) ClearUser() *AnnouncementReadUpdate {
-	_u.mutation.ClearUser()
-	return _u
-}
-
 // ClearAnnouncement clears the "announcement" edge to the Announcement entity.
 func (_u *AnnouncementReadUpdate) ClearAnnouncement() *AnnouncementReadUpdate {
 	_u.mutation.ClearAnnouncement()
+	return _u
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *AnnouncementReadUpdate) ClearUser() *AnnouncementReadUpdate {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -113,11 +128,11 @@ func (_u *AnnouncementReadUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AnnouncementReadUpdate) check() error {
-	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "AnnouncementRead.user"`)
-	}
 	if _u.mutation.AnnouncementCleared() && len(_u.mutation.AnnouncementIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AnnouncementRead.announcement"`)
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "AnnouncementRead.user"`)
 	}
 	return nil
 }
@@ -134,34 +149,8 @@ func (_u *AnnouncementReadUpdate) sqlSave(ctx context.Context) (_node int, err e
 			}
 		}
 	}
-	if _u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   announcementread.UserTable,
-			Columns: []string{announcementread.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   announcementread.UserTable,
-			Columns: []string{announcementread.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := _u.mutation.ReadAt(); ok {
+		_spec.SetField(announcementread.FieldReadAt, field.TypeTime, value)
 	}
 	if _u.mutation.AnnouncementCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -192,6 +181,35 @@ func (_u *AnnouncementReadUpdate) sqlSave(ctx context.Context) (_node int, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   announcementread.UserTable,
+			Columns: []string{announcementread.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   announcementread.UserTable,
+			Columns: []string{announcementread.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{announcementread.Label}
@@ -212,20 +230,6 @@ type AnnouncementReadUpdateOne struct {
 	mutation *AnnouncementReadMutation
 }
 
-// SetUserID sets the "user_id" field.
-func (_u *AnnouncementReadUpdateOne) SetUserID(v int64) *AnnouncementReadUpdateOne {
-	_u.mutation.SetUserID(v)
-	return _u
-}
-
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *AnnouncementReadUpdateOne) SetNillableUserID(v *int64) *AnnouncementReadUpdateOne {
-	if v != nil {
-		_u.SetUserID(*v)
-	}
-	return _u
-}
-
 // SetAnnouncementID sets the "announcement_id" field.
 func (_u *AnnouncementReadUpdateOne) SetAnnouncementID(v int64) *AnnouncementReadUpdateOne {
 	_u.mutation.SetAnnouncementID(v)
@@ -240,9 +244,32 @@ func (_u *AnnouncementReadUpdateOne) SetNillableAnnouncementID(v *int64) *Announ
 	return _u
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (_u *AnnouncementReadUpdateOne) SetUser(v *User) *AnnouncementReadUpdateOne {
-	return _u.SetUserID(v.ID)
+// SetUserID sets the "user_id" field.
+func (_u *AnnouncementReadUpdateOne) SetUserID(v int64) *AnnouncementReadUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *AnnouncementReadUpdateOne) SetNillableUserID(v *int64) *AnnouncementReadUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetReadAt sets the "read_at" field.
+func (_u *AnnouncementReadUpdateOne) SetReadAt(v time.Time) *AnnouncementReadUpdateOne {
+	_u.mutation.SetReadAt(v)
+	return _u
+}
+
+// SetNillableReadAt sets the "read_at" field if the given value is not nil.
+func (_u *AnnouncementReadUpdateOne) SetNillableReadAt(v *time.Time) *AnnouncementReadUpdateOne {
+	if v != nil {
+		_u.SetReadAt(*v)
+	}
+	return _u
 }
 
 // SetAnnouncement sets the "announcement" edge to the Announcement entity.
@@ -250,20 +277,25 @@ func (_u *AnnouncementReadUpdateOne) SetAnnouncement(v *Announcement) *Announcem
 	return _u.SetAnnouncementID(v.ID)
 }
 
+// SetUser sets the "user" edge to the User entity.
+func (_u *AnnouncementReadUpdateOne) SetUser(v *User) *AnnouncementReadUpdateOne {
+	return _u.SetUserID(v.ID)
+}
+
 // Mutation returns the AnnouncementReadMutation object of the builder.
 func (_u *AnnouncementReadUpdateOne) Mutation() *AnnouncementReadMutation {
 	return _u.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (_u *AnnouncementReadUpdateOne) ClearUser() *AnnouncementReadUpdateOne {
-	_u.mutation.ClearUser()
-	return _u
-}
-
 // ClearAnnouncement clears the "announcement" edge to the Announcement entity.
 func (_u *AnnouncementReadUpdateOne) ClearAnnouncement() *AnnouncementReadUpdateOne {
 	_u.mutation.ClearAnnouncement()
+	return _u
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *AnnouncementReadUpdateOne) ClearUser() *AnnouncementReadUpdateOne {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -309,11 +341,11 @@ func (_u *AnnouncementReadUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AnnouncementReadUpdateOne) check() error {
-	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "AnnouncementRead.user"`)
-	}
 	if _u.mutation.AnnouncementCleared() && len(_u.mutation.AnnouncementIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AnnouncementRead.announcement"`)
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "AnnouncementRead.user"`)
 	}
 	return nil
 }
@@ -347,34 +379,8 @@ func (_u *AnnouncementReadUpdateOne) sqlSave(ctx context.Context) (_node *Announ
 			}
 		}
 	}
-	if _u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   announcementread.UserTable,
-			Columns: []string{announcementread.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   announcementread.UserTable,
-			Columns: []string{announcementread.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := _u.mutation.ReadAt(); ok {
+		_spec.SetField(announcementread.FieldReadAt, field.TypeTime, value)
 	}
 	if _u.mutation.AnnouncementCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -398,6 +404,35 @@ func (_u *AnnouncementReadUpdateOne) sqlSave(ctx context.Context) (_node *Announ
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(announcement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   announcementread.UserTable,
+			Columns: []string{announcementread.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   announcementread.UserTable,
+			Columns: []string{announcementread.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

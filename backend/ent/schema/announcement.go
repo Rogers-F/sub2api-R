@@ -3,7 +3,10 @@ package schema
 import (
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/domain"
+
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -13,8 +16,7 @@ import (
 
 // Announcement holds the schema definition for the Announcement entity.
 //
-// 系统公告：管理员发布的公告信息
-// 用户登录时会检查是否有未读公告并弹窗显示
+// 删除策略：硬删除（已读记录通过外键级联删除）
 type Announcement struct {
 	ent.Schema
 }
@@ -28,38 +30,47 @@ func (Announcement) Annotations() []schema.Annotation {
 func (Announcement) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("title").
-			MaxLen(255).
+			MaxLen(200).
 			NotEmpty().
 			Comment("公告标题"),
 		field.String("content").
-			Comment("公告内容"),
-		field.String("content_type").
-			MaxLen(20).
-			Default("markdown").
-			Comment("内容类型：markdown/html/url"),
-		field.Int("priority").
-			Default(0).
-			Comment("排序优先级，越大越靠前"),
+			SchemaType(map[string]string{dialect.Postgres: "text"}).
+			NotEmpty().
+			Comment("公告内容（支持 Markdown）"),
 		field.String("status").
 			MaxLen(20).
-			Default("active").
-			Comment("状态：active=启用，inactive=禁用"),
-		field.Time("published_at").
+			Default(domain.AnnouncementStatusDraft).
+			Comment("状态: draft, active, archived"),
+		field.JSON("targeting", domain.AnnouncementTargeting{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("展示条件（JSON 规则）"),
+		field.Time("starts_at").
 			Optional().
 			Nillable().
-			Comment("发布时间，NULL表示立即发布"),
-		field.Time("expires_at").
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("开始展示时间（为空表示立即生效）"),
+		field.Time("ends_at").
 			Optional().
 			Nillable().
-			Comment("过期时间，NULL表示永不过期"),
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("结束展示时间（为空表示永久生效）"),
+		field.Int64("created_by").
+			Optional().
+			Nillable().
+			Comment("创建人用户ID（管理员）"),
+		field.Int64("updated_by").
+			Optional().
+			Nillable().
+			Comment("更新人用户ID（管理员）"),
 		field.Time("created_at").
-			Default(time.Now).
 			Immutable().
-			Comment("创建时间"),
+			Default(time.Now).
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Time("updated_at").
 			Default(time.Now).
 			UpdateDefault(time.Now).
-			Comment("更新时间"),
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 	}
 }
 
@@ -72,8 +83,8 @@ func (Announcement) Edges() []ent.Edge {
 func (Announcement) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("status"),
-		index.Fields("priority"),
-		index.Fields("published_at"),
-		index.Fields("expires_at"),
+		index.Fields("created_at"),
+		index.Fields("starts_at"),
+		index.Fields("ends_at"),
 	}
 }

@@ -19,12 +19,14 @@ type AnnouncementRead struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int64 `json:"id,omitempty"`
-	// 用户ID
-	UserID int64 `json:"user_id,omitempty"`
-	// 公告ID
+	// AnnouncementID holds the value of the "announcement_id" field.
 	AnnouncementID int64 `json:"announcement_id,omitempty"`
-	// 阅读时间
+	// UserID holds the value of the "user_id" field.
+	UserID int64 `json:"user_id,omitempty"`
+	// 用户首次已读时间
 	ReadAt time.Time `json:"read_at,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AnnouncementReadQuery when eager-loading is set.
 	Edges        AnnouncementReadEdges `json:"edges"`
@@ -33,24 +35,13 @@ type AnnouncementRead struct {
 
 // AnnouncementReadEdges holds the relations/edges for other nodes in the graph.
 type AnnouncementReadEdges struct {
-	// User holds the value of the user edge.
-	User *User `json:"user,omitempty"`
 	// Announcement holds the value of the announcement edge.
 	Announcement *Announcement `json:"announcement,omitempty"`
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
-}
-
-// UserOrErr returns the User value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e AnnouncementReadEdges) UserOrErr() (*User, error) {
-	if e.User != nil {
-		return e.User, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: user.Label}
-	}
-	return nil, &NotLoadedError{edge: "user"}
 }
 
 // AnnouncementOrErr returns the Announcement value or an error if the edge
@@ -58,10 +49,21 @@ func (e AnnouncementReadEdges) UserOrErr() (*User, error) {
 func (e AnnouncementReadEdges) AnnouncementOrErr() (*Announcement, error) {
 	if e.Announcement != nil {
 		return e.Announcement, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[0] {
 		return nil, &NotFoundError{label: announcement.Label}
 	}
 	return nil, &NotLoadedError{edge: "announcement"}
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AnnouncementReadEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -69,9 +71,9 @@ func (*AnnouncementRead) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case announcementread.FieldID, announcementread.FieldUserID, announcementread.FieldAnnouncementID:
+		case announcementread.FieldID, announcementread.FieldAnnouncementID, announcementread.FieldUserID:
 			values[i] = new(sql.NullInt64)
-		case announcementread.FieldReadAt:
+		case announcementread.FieldReadAt, announcementread.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -94,23 +96,29 @@ func (_m *AnnouncementRead) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int64(value.Int64)
-		case announcementread.FieldUserID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field user_id", values[i])
-			} else if value.Valid {
-				_m.UserID = value.Int64
-			}
 		case announcementread.FieldAnnouncementID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field announcement_id", values[i])
 			} else if value.Valid {
 				_m.AnnouncementID = value.Int64
 			}
+		case announcementread.FieldUserID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value.Valid {
+				_m.UserID = value.Int64
+			}
 		case announcementread.FieldReadAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field read_at", values[i])
 			} else if value.Valid {
 				_m.ReadAt = value.Time
+			}
+		case announcementread.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -125,14 +133,14 @@ func (_m *AnnouncementRead) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryUser queries the "user" edge of the AnnouncementRead entity.
-func (_m *AnnouncementRead) QueryUser() *UserQuery {
-	return NewAnnouncementReadClient(_m.config).QueryUser(_m)
-}
-
 // QueryAnnouncement queries the "announcement" edge of the AnnouncementRead entity.
 func (_m *AnnouncementRead) QueryAnnouncement() *AnnouncementQuery {
 	return NewAnnouncementReadClient(_m.config).QueryAnnouncement(_m)
+}
+
+// QueryUser queries the "user" edge of the AnnouncementRead entity.
+func (_m *AnnouncementRead) QueryUser() *UserQuery {
+	return NewAnnouncementReadClient(_m.config).QueryUser(_m)
 }
 
 // Update returns a builder for updating this AnnouncementRead.
@@ -158,14 +166,17 @@ func (_m *AnnouncementRead) String() string {
 	var builder strings.Builder
 	builder.WriteString("AnnouncementRead(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
-	builder.WriteString(", ")
 	builder.WriteString("announcement_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AnnouncementID))
 	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(", ")
 	builder.WriteString("read_at=")
 	builder.WriteString(_m.ReadAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
