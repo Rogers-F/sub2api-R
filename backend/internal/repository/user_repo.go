@@ -156,6 +156,8 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
 		SetNillableCommissionRate(userIn.CommissionRate).
+		SetNillableReferralCode(userIn.ReferralCode).
+		SetNillableReferrerID(userIn.ReferrerID).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)

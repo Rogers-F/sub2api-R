@@ -164,12 +164,11 @@ func (r *referralRepository) GetRewardStats(ctx context.Context, referrerID int6
 func (r *referralRepository) GetUserByReferralCode(ctx context.Context, code string) (*service.User, error) {
 	sqlq := r.sqlQueryerFromContext(ctx)
 	query := `
-		SELECT id, email, username, notes, password_hash, role, balance, concurrency, status, token_version, created_at, updated_at
+		SELECT id, email, username, notes, password_hash, role, balance, concurrency, status, created_at, updated_at
 		FROM users
 		WHERE referral_code = $1 AND deleted_at IS NULL
 	`
 	var u service.User
-	var tokenVersion sql.NullInt64
 	err := scanSingleRow(ctx, sqlq, query, []any{code},
 		&u.ID,
 		&u.Email,
@@ -180,7 +179,6 @@ func (r *referralRepository) GetUserByReferralCode(ctx context.Context, code str
 		&u.Balance,
 		&u.Concurrency,
 		&u.Status,
-		&tokenVersion,
 		&u.CreatedAt,
 		&u.UpdatedAt,
 	)
@@ -189,9 +187,6 @@ func (r *referralRepository) GetUserByReferralCode(ctx context.Context, code str
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get user by referral code: %w", err)
-	}
-	if tokenVersion.Valid {
-		u.TokenVersion = tokenVersion.Int64
 	}
 	return &u, nil
 }
