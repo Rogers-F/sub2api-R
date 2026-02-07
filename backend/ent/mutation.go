@@ -18817,56 +18817,67 @@ func (m *UsageLogMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                            Op
-	typ                           string
-	id                            *int64
-	created_at                    *time.Time
-	updated_at                    *time.Time
-	deleted_at                    *time.Time
-	email                         *string
-	password_hash                 *string
-	role                          *string
-	balance                       *float64
-	addbalance                    *float64
-	concurrency                   *int
-	addconcurrency                *int
-	status                        *string
-	username                      *string
-	notes                         *string
-	totp_secret_encrypted         *string
-	totp_enabled                  *bool
-	totp_enabled_at               *time.Time
-	clearedFields                 map[string]struct{}
-	api_keys                      map[int64]struct{}
-	removedapi_keys               map[int64]struct{}
-	clearedapi_keys               bool
-	redeem_codes                  map[int64]struct{}
-	removedredeem_codes           map[int64]struct{}
-	clearedredeem_codes           bool
-	subscriptions                 map[int64]struct{}
-	removedsubscriptions          map[int64]struct{}
-	clearedsubscriptions          bool
-	assigned_subscriptions        map[int64]struct{}
-	removedassigned_subscriptions map[int64]struct{}
-	clearedassigned_subscriptions bool
-	announcement_reads            map[int64]struct{}
-	removedannouncement_reads     map[int64]struct{}
-	clearedannouncement_reads     bool
-	allowed_groups                map[int64]struct{}
-	removedallowed_groups         map[int64]struct{}
-	clearedallowed_groups         bool
-	usage_logs                    map[int64]struct{}
-	removedusage_logs             map[int64]struct{}
-	clearedusage_logs             bool
-	attribute_values              map[int64]struct{}
-	removedattribute_values       map[int64]struct{}
-	clearedattribute_values       bool
-	promo_code_usages             map[int64]struct{}
-	removedpromo_code_usages      map[int64]struct{}
-	clearedpromo_code_usages      bool
-	done                          bool
-	oldValue                      func(context.Context) (*User, error)
-	predicates                    []predicate.User
+	op                               Op
+	typ                              string
+	id                               *int64
+	created_at                       *time.Time
+	updated_at                       *time.Time
+	deleted_at                       *time.Time
+	email                            *string
+	password_hash                    *string
+	role                             *string
+	balance                          *float64
+	addbalance                       *float64
+	concurrency                      *int
+	addconcurrency                   *int
+	status                           *string
+	username                         *string
+	notes                            *string
+	totp_secret_encrypted            *string
+	totp_enabled                     *bool
+	totp_enabled_at                  *time.Time
+	referrer_id                      *int64
+	addreferrer_id                   *int64
+	referral_code                    *string
+	commission_rate                  *float64
+	addcommission_rate               *float64
+	clearedFields                    map[string]struct{}
+	api_keys                         map[int64]struct{}
+	removedapi_keys                  map[int64]struct{}
+	clearedapi_keys                  bool
+	redeem_codes                     map[int64]struct{}
+	removedredeem_codes              map[int64]struct{}
+	clearedredeem_codes              bool
+	subscriptions                    map[int64]struct{}
+	removedsubscriptions             map[int64]struct{}
+	clearedsubscriptions             bool
+	assigned_subscriptions           map[int64]struct{}
+	removedassigned_subscriptions    map[int64]struct{}
+	clearedassigned_subscriptions    bool
+	allowed_groups                   map[int64]struct{}
+	removedallowed_groups            map[int64]struct{}
+	clearedallowed_groups            bool
+	usage_logs                       map[int64]struct{}
+	removedusage_logs                map[int64]struct{}
+	clearedusage_logs                bool
+	attribute_values                 map[int64]struct{}
+	removedattribute_values          map[int64]struct{}
+	clearedattribute_values          bool
+	promo_code_usages                map[int64]struct{}
+	removedpromo_code_usages         map[int64]struct{}
+	clearedpromo_code_usages         bool
+	referral_rewards_given           map[int64]struct{}
+	removedreferral_rewards_given    map[int64]struct{}
+	clearedreferral_rewards_given    bool
+	referral_rewards_received        map[int64]struct{}
+	removedreferral_rewards_received map[int64]struct{}
+	clearedreferral_rewards_received bool
+	announcement_reads               map[int64]struct{}
+	removedannouncement_reads        map[int64]struct{}
+	clearedannouncement_reads        bool
+	done                             bool
+	oldValue                         func(context.Context) (*User, error)
+	predicates                       []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -19550,6 +19561,195 @@ func (m *UserMutation) ResetTotpEnabledAt() {
 	delete(m.clearedFields, user.FieldTotpEnabledAt)
 }
 
+// SetReferrerID sets the "referrer_id" field.
+func (m *UserMutation) SetReferrerID(i int64) {
+	m.referrer_id = &i
+	m.addreferrer_id = nil
+}
+
+// ReferrerID returns the value of the "referrer_id" field in the mutation.
+func (m *UserMutation) ReferrerID() (r int64, exists bool) {
+	v := m.referrer_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferrerID returns the old "referrer_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldReferrerID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferrerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferrerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferrerID: %w", err)
+	}
+	return oldValue.ReferrerID, nil
+}
+
+// AddReferrerID adds i to the "referrer_id" field.
+func (m *UserMutation) AddReferrerID(i int64) {
+	if m.addreferrer_id != nil {
+		*m.addreferrer_id += i
+	} else {
+		m.addreferrer_id = &i
+	}
+}
+
+// AddedReferrerID returns the value that was added to the "referrer_id" field in this mutation.
+func (m *UserMutation) AddedReferrerID() (r int64, exists bool) {
+	v := m.addreferrer_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearReferrerID clears the value of the "referrer_id" field.
+func (m *UserMutation) ClearReferrerID() {
+	m.referrer_id = nil
+	m.addreferrer_id = nil
+	m.clearedFields[user.FieldReferrerID] = struct{}{}
+}
+
+// ReferrerIDCleared returns if the "referrer_id" field was cleared in this mutation.
+func (m *UserMutation) ReferrerIDCleared() bool {
+	_, ok := m.clearedFields[user.FieldReferrerID]
+	return ok
+}
+
+// ResetReferrerID resets all changes to the "referrer_id" field.
+func (m *UserMutation) ResetReferrerID() {
+	m.referrer_id = nil
+	m.addreferrer_id = nil
+	delete(m.clearedFields, user.FieldReferrerID)
+}
+
+// SetReferralCode sets the "referral_code" field.
+func (m *UserMutation) SetReferralCode(s string) {
+	m.referral_code = &s
+}
+
+// ReferralCode returns the value of the "referral_code" field in the mutation.
+func (m *UserMutation) ReferralCode() (r string, exists bool) {
+	v := m.referral_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferralCode returns the old "referral_code" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldReferralCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferralCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferralCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferralCode: %w", err)
+	}
+	return oldValue.ReferralCode, nil
+}
+
+// ClearReferralCode clears the value of the "referral_code" field.
+func (m *UserMutation) ClearReferralCode() {
+	m.referral_code = nil
+	m.clearedFields[user.FieldReferralCode] = struct{}{}
+}
+
+// ReferralCodeCleared returns if the "referral_code" field was cleared in this mutation.
+func (m *UserMutation) ReferralCodeCleared() bool {
+	_, ok := m.clearedFields[user.FieldReferralCode]
+	return ok
+}
+
+// ResetReferralCode resets all changes to the "referral_code" field.
+func (m *UserMutation) ResetReferralCode() {
+	m.referral_code = nil
+	delete(m.clearedFields, user.FieldReferralCode)
+}
+
+// SetCommissionRate sets the "commission_rate" field.
+func (m *UserMutation) SetCommissionRate(f float64) {
+	m.commission_rate = &f
+	m.addcommission_rate = nil
+}
+
+// CommissionRate returns the value of the "commission_rate" field in the mutation.
+func (m *UserMutation) CommissionRate() (r float64, exists bool) {
+	v := m.commission_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCommissionRate returns the old "commission_rate" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldCommissionRate(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCommissionRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCommissionRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCommissionRate: %w", err)
+	}
+	return oldValue.CommissionRate, nil
+}
+
+// AddCommissionRate adds f to the "commission_rate" field.
+func (m *UserMutation) AddCommissionRate(f float64) {
+	if m.addcommission_rate != nil {
+		*m.addcommission_rate += f
+	} else {
+		m.addcommission_rate = &f
+	}
+}
+
+// AddedCommissionRate returns the value that was added to the "commission_rate" field in this mutation.
+func (m *UserMutation) AddedCommissionRate() (r float64, exists bool) {
+	v := m.addcommission_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCommissionRate clears the value of the "commission_rate" field.
+func (m *UserMutation) ClearCommissionRate() {
+	m.commission_rate = nil
+	m.addcommission_rate = nil
+	m.clearedFields[user.FieldCommissionRate] = struct{}{}
+}
+
+// CommissionRateCleared returns if the "commission_rate" field was cleared in this mutation.
+func (m *UserMutation) CommissionRateCleared() bool {
+	_, ok := m.clearedFields[user.FieldCommissionRate]
+	return ok
+}
+
+// ResetCommissionRate resets all changes to the "commission_rate" field.
+func (m *UserMutation) ResetCommissionRate() {
+	m.commission_rate = nil
+	m.addcommission_rate = nil
+	delete(m.clearedFields, user.FieldCommissionRate)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *UserMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -19764,60 +19964,6 @@ func (m *UserMutation) ResetAssignedSubscriptions() {
 	m.assigned_subscriptions = nil
 	m.clearedassigned_subscriptions = false
 	m.removedassigned_subscriptions = nil
-}
-
-// AddAnnouncementReadIDs adds the "announcement_reads" edge to the AnnouncementRead entity by ids.
-func (m *UserMutation) AddAnnouncementReadIDs(ids ...int64) {
-	if m.announcement_reads == nil {
-		m.announcement_reads = make(map[int64]struct{})
-	}
-	for i := range ids {
-		m.announcement_reads[ids[i]] = struct{}{}
-	}
-}
-
-// ClearAnnouncementReads clears the "announcement_reads" edge to the AnnouncementRead entity.
-func (m *UserMutation) ClearAnnouncementReads() {
-	m.clearedannouncement_reads = true
-}
-
-// AnnouncementReadsCleared reports if the "announcement_reads" edge to the AnnouncementRead entity was cleared.
-func (m *UserMutation) AnnouncementReadsCleared() bool {
-	return m.clearedannouncement_reads
-}
-
-// RemoveAnnouncementReadIDs removes the "announcement_reads" edge to the AnnouncementRead entity by IDs.
-func (m *UserMutation) RemoveAnnouncementReadIDs(ids ...int64) {
-	if m.removedannouncement_reads == nil {
-		m.removedannouncement_reads = make(map[int64]struct{})
-	}
-	for i := range ids {
-		delete(m.announcement_reads, ids[i])
-		m.removedannouncement_reads[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedAnnouncementReads returns the removed IDs of the "announcement_reads" edge to the AnnouncementRead entity.
-func (m *UserMutation) RemovedAnnouncementReadsIDs() (ids []int64) {
-	for id := range m.removedannouncement_reads {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// AnnouncementReadsIDs returns the "announcement_reads" edge IDs in the mutation.
-func (m *UserMutation) AnnouncementReadsIDs() (ids []int64) {
-	for id := range m.announcement_reads {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetAnnouncementReads resets all changes to the "announcement_reads" edge.
-func (m *UserMutation) ResetAnnouncementReads() {
-	m.announcement_reads = nil
-	m.clearedannouncement_reads = false
-	m.removedannouncement_reads = nil
 }
 
 // AddAllowedGroupIDs adds the "allowed_groups" edge to the Group entity by ids.
@@ -20036,6 +20182,168 @@ func (m *UserMutation) ResetPromoCodeUsages() {
 	m.removedpromo_code_usages = nil
 }
 
+// AddReferralRewardsGivenIDs adds the "referral_rewards_given" edge to the ReferralReward entity by ids.
+func (m *UserMutation) AddReferralRewardsGivenIDs(ids ...int64) {
+	if m.referral_rewards_given == nil {
+		m.referral_rewards_given = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.referral_rewards_given[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReferralRewardsGiven clears the "referral_rewards_given" edge to the ReferralReward entity.
+func (m *UserMutation) ClearReferralRewardsGiven() {
+	m.clearedreferral_rewards_given = true
+}
+
+// ReferralRewardsGivenCleared reports if the "referral_rewards_given" edge to the ReferralReward entity was cleared.
+func (m *UserMutation) ReferralRewardsGivenCleared() bool {
+	return m.clearedreferral_rewards_given
+}
+
+// RemoveReferralRewardsGivenIDs removes the "referral_rewards_given" edge to the ReferralReward entity by IDs.
+func (m *UserMutation) RemoveReferralRewardsGivenIDs(ids ...int64) {
+	if m.removedreferral_rewards_given == nil {
+		m.removedreferral_rewards_given = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.referral_rewards_given, ids[i])
+		m.removedreferral_rewards_given[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReferralRewardsGiven returns the removed IDs of the "referral_rewards_given" edge to the ReferralReward entity.
+func (m *UserMutation) RemovedReferralRewardsGivenIDs() (ids []int64) {
+	for id := range m.removedreferral_rewards_given {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReferralRewardsGivenIDs returns the "referral_rewards_given" edge IDs in the mutation.
+func (m *UserMutation) ReferralRewardsGivenIDs() (ids []int64) {
+	for id := range m.referral_rewards_given {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReferralRewardsGiven resets all changes to the "referral_rewards_given" edge.
+func (m *UserMutation) ResetReferralRewardsGiven() {
+	m.referral_rewards_given = nil
+	m.clearedreferral_rewards_given = false
+	m.removedreferral_rewards_given = nil
+}
+
+// AddReferralRewardsReceivedIDs adds the "referral_rewards_received" edge to the ReferralReward entity by ids.
+func (m *UserMutation) AddReferralRewardsReceivedIDs(ids ...int64) {
+	if m.referral_rewards_received == nil {
+		m.referral_rewards_received = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.referral_rewards_received[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReferralRewardsReceived clears the "referral_rewards_received" edge to the ReferralReward entity.
+func (m *UserMutation) ClearReferralRewardsReceived() {
+	m.clearedreferral_rewards_received = true
+}
+
+// ReferralRewardsReceivedCleared reports if the "referral_rewards_received" edge to the ReferralReward entity was cleared.
+func (m *UserMutation) ReferralRewardsReceivedCleared() bool {
+	return m.clearedreferral_rewards_received
+}
+
+// RemoveReferralRewardsReceivedIDs removes the "referral_rewards_received" edge to the ReferralReward entity by IDs.
+func (m *UserMutation) RemoveReferralRewardsReceivedIDs(ids ...int64) {
+	if m.removedreferral_rewards_received == nil {
+		m.removedreferral_rewards_received = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.referral_rewards_received, ids[i])
+		m.removedreferral_rewards_received[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReferralRewardsReceived returns the removed IDs of the "referral_rewards_received" edge to the ReferralReward entity.
+func (m *UserMutation) RemovedReferralRewardsReceivedIDs() (ids []int64) {
+	for id := range m.removedreferral_rewards_received {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReferralRewardsReceivedIDs returns the "referral_rewards_received" edge IDs in the mutation.
+func (m *UserMutation) ReferralRewardsReceivedIDs() (ids []int64) {
+	for id := range m.referral_rewards_received {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReferralRewardsReceived resets all changes to the "referral_rewards_received" edge.
+func (m *UserMutation) ResetReferralRewardsReceived() {
+	m.referral_rewards_received = nil
+	m.clearedreferral_rewards_received = false
+	m.removedreferral_rewards_received = nil
+}
+
+// AddAnnouncementReadIDs adds the "announcement_reads" edge to the AnnouncementRead entity by ids.
+func (m *UserMutation) AddAnnouncementReadIDs(ids ...int64) {
+	if m.announcement_reads == nil {
+		m.announcement_reads = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.announcement_reads[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAnnouncementReads clears the "announcement_reads" edge to the AnnouncementRead entity.
+func (m *UserMutation) ClearAnnouncementReads() {
+	m.clearedannouncement_reads = true
+}
+
+// AnnouncementReadsCleared reports if the "announcement_reads" edge to the AnnouncementRead entity was cleared.
+func (m *UserMutation) AnnouncementReadsCleared() bool {
+	return m.clearedannouncement_reads
+}
+
+// RemoveAnnouncementReadIDs removes the "announcement_reads" edge to the AnnouncementRead entity by IDs.
+func (m *UserMutation) RemoveAnnouncementReadIDs(ids ...int64) {
+	if m.removedannouncement_reads == nil {
+		m.removedannouncement_reads = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.announcement_reads, ids[i])
+		m.removedannouncement_reads[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAnnouncementReads returns the removed IDs of the "announcement_reads" edge to the AnnouncementRead entity.
+func (m *UserMutation) RemovedAnnouncementReadsIDs() (ids []int64) {
+	for id := range m.removedannouncement_reads {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AnnouncementReadsIDs returns the "announcement_reads" edge IDs in the mutation.
+func (m *UserMutation) AnnouncementReadsIDs() (ids []int64) {
+	for id := range m.announcement_reads {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAnnouncementReads resets all changes to the "announcement_reads" edge.
+func (m *UserMutation) ResetAnnouncementReads() {
+	m.announcement_reads = nil
+	m.clearedannouncement_reads = false
+	m.removedannouncement_reads = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -20070,7 +20378,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -20113,6 +20421,15 @@ func (m *UserMutation) Fields() []string {
 	if m.totp_enabled_at != nil {
 		fields = append(fields, user.FieldTotpEnabledAt)
 	}
+	if m.referrer_id != nil {
+		fields = append(fields, user.FieldReferrerID)
+	}
+	if m.referral_code != nil {
+		fields = append(fields, user.FieldReferralCode)
+	}
+	if m.commission_rate != nil {
+		fields = append(fields, user.FieldCommissionRate)
+	}
 	return fields
 }
 
@@ -20149,6 +20466,12 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.TotpEnabled()
 	case user.FieldTotpEnabledAt:
 		return m.TotpEnabledAt()
+	case user.FieldReferrerID:
+		return m.ReferrerID()
+	case user.FieldReferralCode:
+		return m.ReferralCode()
+	case user.FieldCommissionRate:
+		return m.CommissionRate()
 	}
 	return nil, false
 }
@@ -20186,6 +20509,12 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTotpEnabled(ctx)
 	case user.FieldTotpEnabledAt:
 		return m.OldTotpEnabledAt(ctx)
+	case user.FieldReferrerID:
+		return m.OldReferrerID(ctx)
+	case user.FieldReferralCode:
+		return m.OldReferralCode(ctx)
+	case user.FieldCommissionRate:
+		return m.OldCommissionRate(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -20293,6 +20622,27 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTotpEnabledAt(v)
 		return nil
+	case user.FieldReferrerID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferrerID(v)
+		return nil
+	case user.FieldReferralCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferralCode(v)
+		return nil
+	case user.FieldCommissionRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCommissionRate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -20307,6 +20657,12 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addconcurrency != nil {
 		fields = append(fields, user.FieldConcurrency)
 	}
+	if m.addreferrer_id != nil {
+		fields = append(fields, user.FieldReferrerID)
+	}
+	if m.addcommission_rate != nil {
+		fields = append(fields, user.FieldCommissionRate)
+	}
 	return fields
 }
 
@@ -20319,6 +20675,10 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedBalance()
 	case user.FieldConcurrency:
 		return m.AddedConcurrency()
+	case user.FieldReferrerID:
+		return m.AddedReferrerID()
+	case user.FieldCommissionRate:
+		return m.AddedCommissionRate()
 	}
 	return nil, false
 }
@@ -20342,6 +20702,20 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddConcurrency(v)
 		return nil
+	case user.FieldReferrerID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReferrerID(v)
+		return nil
+	case user.FieldCommissionRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCommissionRate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -20358,6 +20732,15 @@ func (m *UserMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(user.FieldTotpEnabledAt) {
 		fields = append(fields, user.FieldTotpEnabledAt)
+	}
+	if m.FieldCleared(user.FieldReferrerID) {
+		fields = append(fields, user.FieldReferrerID)
+	}
+	if m.FieldCleared(user.FieldReferralCode) {
+		fields = append(fields, user.FieldReferralCode)
+	}
+	if m.FieldCleared(user.FieldCommissionRate) {
+		fields = append(fields, user.FieldCommissionRate)
 	}
 	return fields
 }
@@ -20381,6 +20764,15 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldTotpEnabledAt:
 		m.ClearTotpEnabledAt()
+		return nil
+	case user.FieldReferrerID:
+		m.ClearReferrerID()
+		return nil
+	case user.FieldReferralCode:
+		m.ClearReferralCode()
+		return nil
+	case user.FieldCommissionRate:
+		m.ClearCommissionRate()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -20432,13 +20824,22 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldTotpEnabledAt:
 		m.ResetTotpEnabledAt()
 		return nil
+	case user.FieldReferrerID:
+		m.ResetReferrerID()
+		return nil
+	case user.FieldReferralCode:
+		m.ResetReferralCode()
+		return nil
+	case user.FieldCommissionRate:
+		m.ResetCommissionRate()
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 11)
 	if m.api_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -20451,9 +20852,6 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.assigned_subscriptions != nil {
 		edges = append(edges, user.EdgeAssignedSubscriptions)
 	}
-	if m.announcement_reads != nil {
-		edges = append(edges, user.EdgeAnnouncementReads)
-	}
 	if m.allowed_groups != nil {
 		edges = append(edges, user.EdgeAllowedGroups)
 	}
@@ -20465,6 +20863,15 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.promo_code_usages != nil {
 		edges = append(edges, user.EdgePromoCodeUsages)
+	}
+	if m.referral_rewards_given != nil {
+		edges = append(edges, user.EdgeReferralRewardsGiven)
+	}
+	if m.referral_rewards_received != nil {
+		edges = append(edges, user.EdgeReferralRewardsReceived)
+	}
+	if m.announcement_reads != nil {
+		edges = append(edges, user.EdgeAnnouncementReads)
 	}
 	return edges
 }
@@ -20497,12 +20904,6 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeAnnouncementReads:
-		ids := make([]ent.Value, 0, len(m.announcement_reads))
-		for id := range m.announcement_reads {
-			ids = append(ids, id)
-		}
-		return ids
 	case user.EdgeAllowedGroups:
 		ids := make([]ent.Value, 0, len(m.allowed_groups))
 		for id := range m.allowed_groups {
@@ -20527,13 +20928,31 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeReferralRewardsGiven:
+		ids := make([]ent.Value, 0, len(m.referral_rewards_given))
+		for id := range m.referral_rewards_given {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeReferralRewardsReceived:
+		ids := make([]ent.Value, 0, len(m.referral_rewards_received))
+		for id := range m.referral_rewards_received {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeAnnouncementReads:
+		ids := make([]ent.Value, 0, len(m.announcement_reads))
+		for id := range m.announcement_reads {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 11)
 	if m.removedapi_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -20546,9 +20965,6 @@ func (m *UserMutation) RemovedEdges() []string {
 	if m.removedassigned_subscriptions != nil {
 		edges = append(edges, user.EdgeAssignedSubscriptions)
 	}
-	if m.removedannouncement_reads != nil {
-		edges = append(edges, user.EdgeAnnouncementReads)
-	}
 	if m.removedallowed_groups != nil {
 		edges = append(edges, user.EdgeAllowedGroups)
 	}
@@ -20560,6 +20976,15 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedpromo_code_usages != nil {
 		edges = append(edges, user.EdgePromoCodeUsages)
+	}
+	if m.removedreferral_rewards_given != nil {
+		edges = append(edges, user.EdgeReferralRewardsGiven)
+	}
+	if m.removedreferral_rewards_received != nil {
+		edges = append(edges, user.EdgeReferralRewardsReceived)
+	}
+	if m.removedannouncement_reads != nil {
+		edges = append(edges, user.EdgeAnnouncementReads)
 	}
 	return edges
 }
@@ -20592,12 +21017,6 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeAnnouncementReads:
-		ids := make([]ent.Value, 0, len(m.removedannouncement_reads))
-		for id := range m.removedannouncement_reads {
-			ids = append(ids, id)
-		}
-		return ids
 	case user.EdgeAllowedGroups:
 		ids := make([]ent.Value, 0, len(m.removedallowed_groups))
 		for id := range m.removedallowed_groups {
@@ -20622,13 +21041,31 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeReferralRewardsGiven:
+		ids := make([]ent.Value, 0, len(m.removedreferral_rewards_given))
+		for id := range m.removedreferral_rewards_given {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeReferralRewardsReceived:
+		ids := make([]ent.Value, 0, len(m.removedreferral_rewards_received))
+		for id := range m.removedreferral_rewards_received {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeAnnouncementReads:
+		ids := make([]ent.Value, 0, len(m.removedannouncement_reads))
+		for id := range m.removedannouncement_reads {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 9)
+	edges := make([]string, 0, 11)
 	if m.clearedapi_keys {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -20641,9 +21078,6 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedassigned_subscriptions {
 		edges = append(edges, user.EdgeAssignedSubscriptions)
 	}
-	if m.clearedannouncement_reads {
-		edges = append(edges, user.EdgeAnnouncementReads)
-	}
 	if m.clearedallowed_groups {
 		edges = append(edges, user.EdgeAllowedGroups)
 	}
@@ -20655,6 +21089,15 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedpromo_code_usages {
 		edges = append(edges, user.EdgePromoCodeUsages)
+	}
+	if m.clearedreferral_rewards_given {
+		edges = append(edges, user.EdgeReferralRewardsGiven)
+	}
+	if m.clearedreferral_rewards_received {
+		edges = append(edges, user.EdgeReferralRewardsReceived)
+	}
+	if m.clearedannouncement_reads {
+		edges = append(edges, user.EdgeAnnouncementReads)
 	}
 	return edges
 }
@@ -20671,8 +21114,6 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedsubscriptions
 	case user.EdgeAssignedSubscriptions:
 		return m.clearedassigned_subscriptions
-	case user.EdgeAnnouncementReads:
-		return m.clearedannouncement_reads
 	case user.EdgeAllowedGroups:
 		return m.clearedallowed_groups
 	case user.EdgeUsageLogs:
@@ -20681,6 +21122,12 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedattribute_values
 	case user.EdgePromoCodeUsages:
 		return m.clearedpromo_code_usages
+	case user.EdgeReferralRewardsGiven:
+		return m.clearedreferral_rewards_given
+	case user.EdgeReferralRewardsReceived:
+		return m.clearedreferral_rewards_received
+	case user.EdgeAnnouncementReads:
+		return m.clearedannouncement_reads
 	}
 	return false
 }
@@ -20709,9 +21156,6 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeAssignedSubscriptions:
 		m.ResetAssignedSubscriptions()
 		return nil
-	case user.EdgeAnnouncementReads:
-		m.ResetAnnouncementReads()
-		return nil
 	case user.EdgeAllowedGroups:
 		m.ResetAllowedGroups()
 		return nil
@@ -20724,9 +21168,19 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgePromoCodeUsages:
 		m.ResetPromoCodeUsages()
 		return nil
+	case user.EdgeReferralRewardsGiven:
+		m.ResetReferralRewardsGiven()
+		return nil
+	case user.EdgeReferralRewardsReceived:
+		m.ResetReferralRewardsReceived()
+		return nil
+	case user.EdgeAnnouncementReads:
+		m.ResetAnnouncementReads()
+		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
 }
+
 
 // UserAllowedGroupMutation represents an operation that mutates the UserAllowedGroup nodes in the graph.
 type UserAllowedGroupMutation struct {

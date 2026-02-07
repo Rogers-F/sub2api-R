@@ -3021,6 +3021,38 @@ func (c *UserClient) QueryAssignedSubscriptions(_m *User) *UserSubscriptionQuery
 	return query
 }
 
+// QueryReferralRewardsGiven queries the referral_rewards_given edge of a User.
+func (c *UserClient) QueryReferralRewardsGiven(_m *User) *ReferralRewardQuery {
+	query := (&ReferralRewardClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(referralreward.Table, referralreward.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReferralRewardsGivenTable, user.ReferralRewardsGivenColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReferralRewardsReceived queries the referral_rewards_received edge of a User.
+func (c *UserClient) QueryReferralRewardsReceived(_m *User) *ReferralRewardQuery {
+	query := (&ReferralRewardClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(referralreward.Table, referralreward.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReferralRewardsReceivedTable, user.ReferralRewardsReceivedColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAnnouncementReads queries the announcement_reads edge of a User.
 func (c *UserClient) QueryAnnouncementReads(_m *User) *AnnouncementReadQuery {
 	query := (&AnnouncementReadClient{config: c.config}).Query()
