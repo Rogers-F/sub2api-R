@@ -325,28 +325,6 @@ func (_q *UserQuery) QueryReferralRewardsReceived() *ReferralRewardQuery {
 	return query
 }
 
-// QueryAnnouncementReads chains the current query on the "announcement_reads" edge.
-func (_q *UserQuery) QueryAnnouncementReads() *AnnouncementReadQuery {
-	query := (&AnnouncementReadClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(announcementread.Table, announcementread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.AnnouncementReadsTable, user.AnnouncementReadsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryUserAllowedGroups chains the current query on the "user_allowed_groups" edge.
 func (_q *UserQuery) QueryUserAllowedGroups() *UserAllowedGroupQuery {
 	query := (&UserAllowedGroupClient{config: _q.config}).Query()
@@ -700,17 +678,6 @@ func (_q *UserQuery) WithReferralRewardsReceived(opts ...func(*ReferralRewardQue
 	return _q
 }
 
-// WithAnnouncementReads tells the query-builder to eager-load the nodes that are connected to
-// the "announcement_reads" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserQuery) WithAnnouncementReads(opts ...func(*AnnouncementReadQuery)) *UserQuery {
-	query := (&AnnouncementReadClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withAnnouncementReads = query
-	return _q
-}
-
 // WithUserAllowedGroups tells the query-builder to eager-load the nodes that are connected to
 // the "user_allowed_groups" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *UserQuery) WithUserAllowedGroups(opts ...func(*UserAllowedGroupQuery)) *UserQuery {
@@ -812,7 +779,6 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withPromoCodeUsages != nil,
 			_q.withReferralRewardsGiven != nil,
 			_q.withReferralRewardsReceived != nil,
-			_q.withAnnouncementReads != nil,
 			_q.withUserAllowedGroups != nil,
 		}
 	)
@@ -917,13 +883,6 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			func(n *User, e *ReferralReward) {
 				n.Edges.ReferralRewardsReceived = append(n.Edges.ReferralRewardsReceived, e)
 			}); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withAnnouncementReads; query != nil {
-		if err := _q.loadAnnouncementReads(ctx, query, nodes,
-			func(n *User) { n.Edges.AnnouncementReads = []*AnnouncementRead{} },
-			func(n *User, e *AnnouncementRead) { n.Edges.AnnouncementReads = append(n.Edges.AnnouncementReads, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1299,36 +1258,6 @@ func (_q *UserQuery) loadReferralRewardsReceived(ctx context.Context, query *Ref
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "referee_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *UserQuery) loadAnnouncementReads(ctx context.Context, query *AnnouncementReadQuery, nodes []*User, init func(*User), assign func(*User, *AnnouncementRead)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int64]*User)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(announcementread.FieldUserID)
-	}
-	query.Where(predicate.AnnouncementRead(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.AnnouncementReadsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.UserID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

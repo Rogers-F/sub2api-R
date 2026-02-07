@@ -81,8 +81,6 @@ type UserEdges struct {
 	ReferralRewardsGiven []*ReferralReward `json:"referral_rewards_given,omitempty"`
 	// ReferralRewardsReceived holds the value of the referral_rewards_received edge.
 	ReferralRewardsReceived []*ReferralReward `json:"referral_rewards_received,omitempty"`
-	// AnnouncementReads holds the value of the announcement_reads edge.
-	AnnouncementReads []*AnnouncementRead `json:"announcement_reads,omitempty"`
 	// UserAllowedGroups holds the value of the user_allowed_groups edge.
 	UserAllowedGroups []*UserAllowedGroup `json:"user_allowed_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -174,7 +172,7 @@ func (e UserEdges) PromoCodeUsagesOrErr() ([]*PromoCodeUsage, error) {
 // ReferralRewardsGivenOrErr returns the ReferralRewardsGiven value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ReferralRewardsGivenOrErr() ([]*ReferralReward, error) {
-	if e.loadedTypes[8] {
+	if e.loadedTypes[9] {
 		return e.ReferralRewardsGiven, nil
 	}
 	return nil, &NotLoadedError{edge: "referral_rewards_given"}
@@ -183,19 +181,10 @@ func (e UserEdges) ReferralRewardsGivenOrErr() ([]*ReferralReward, error) {
 // ReferralRewardsReceivedOrErr returns the ReferralRewardsReceived value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ReferralRewardsReceivedOrErr() ([]*ReferralReward, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[10] {
 		return e.ReferralRewardsReceived, nil
 	}
 	return nil, &NotLoadedError{edge: "referral_rewards_received"}
-}
-
-// AnnouncementReadsOrErr returns the AnnouncementReads value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserEdges) AnnouncementReadsOrErr() ([]*AnnouncementRead, error) {
-	if e.loadedTypes[10] {
-		return e.AnnouncementReads, nil
-	}
-	return nil, &NotLoadedError{edge: "announcement_reads"}
 }
 
 // UserAllowedGroupsOrErr returns the UserAllowedGroups value or an error if the edge
@@ -417,11 +406,6 @@ func (_m *User) QueryReferralRewardsGiven() *ReferralRewardQuery {
 // QueryReferralRewardsReceived queries the "referral_rewards_received" edge of the User entity.
 func (_m *User) QueryReferralRewardsReceived() *ReferralRewardQuery {
 	return NewUserClient(_m.config).QueryReferralRewardsReceived(_m)
-}
-
-// QueryAnnouncementReads queries the "announcement_reads" edge of the User entity.
-func (_m *User) QueryAnnouncementReads() *AnnouncementReadQuery {
-	return NewUserClient(_m.config).QueryAnnouncementReads(_m)
 }
 
 // QueryUserAllowedGroups queries the "user_allowed_groups" edge of the User entity.

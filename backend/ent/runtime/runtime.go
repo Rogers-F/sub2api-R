@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -594,6 +595,24 @@ func init() {
 	redeemcodeDescValidityDays := redeemcodeFields[9].Descriptor()
 	// redeemcode.DefaultValidityDays holds the default value on creation for the validity_days field.
 	redeemcode.DefaultValidityDays = redeemcodeDescValidityDays.Default.(int)
+	referralrewardFields := schema.ReferralReward{}.Fields()
+	_ = referralrewardFields
+	// referralrewardDescRewardType is the schema descriptor for reward_type field.
+	referralrewardDescRewardType := referralrewardFields[2].Descriptor()
+	// referralreward.RewardTypeValidator is a validator for the "reward_type" field. It is called by the builders before save.
+	referralreward.RewardTypeValidator = referralrewardDescRewardType.Validators[0].(func(string) error)
+	// referralrewardDescSourceType is the schema descriptor for source_type field.
+	referralrewardDescSourceType := referralrewardFields[3].Descriptor()
+	// referralreward.SourceTypeValidator is a validator for the "source_type" field. It is called by the builders before save.
+	referralreward.SourceTypeValidator = referralrewardDescSourceType.Validators[0].(func(string) error)
+	// referralrewardDescSourceAmount is the schema descriptor for source_amount field.
+	referralrewardDescSourceAmount := referralrewardFields[5].Descriptor()
+	// referralreward.DefaultSourceAmount holds the default value on creation for the source_amount field.
+	referralreward.DefaultSourceAmount = referralrewardDescSourceAmount.Default.(float64)
+	// referralrewardDescCreatedAt is the schema descriptor for created_at field.
+	referralrewardDescCreatedAt := referralrewardFields[8].Descriptor()
+	// referralreward.DefaultCreatedAt holds the default value on creation for the created_at field.
+	referralreward.DefaultCreatedAt = referralrewardDescCreatedAt.Default.(func() time.Time)
 	settingFields := schema.Setting{}.Fields()
 	_ = settingFields
 	// settingDescKey is the schema descriptor for key field.

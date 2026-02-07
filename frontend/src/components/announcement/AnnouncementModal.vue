@@ -28,29 +28,13 @@
             {{ announcement.title }}
           </h4>
           <div class="mt-2 text-sm text-gray-600 dark:text-dark-300">
-            <!-- Markdown content -->
             <div
-              v-if="announcement.content_type === 'markdown'"
-              class="prose prose-sm dark:prose-invert max-w-none"
-              v-html="renderMarkdown(announcement.content)"
-            ></div>
-            <!-- HTML content -->
-            <div
-              v-else-if="announcement.content_type === 'html'"
               class="prose prose-sm dark:prose-invert max-w-none"
               v-html="announcement.content"
             ></div>
-            <!-- URL content -->
-            <div v-else-if="announcement.content_type === 'url'" class="mt-2">
-              <iframe
-                :src="announcement.content"
-                class="w-full h-64 rounded border border-gray-200 dark:border-dark-600"
-                sandbox="allow-scripts allow-same-origin"
-              ></iframe>
-            </div>
           </div>
-          <p v-if="announcement.published_at" class="mt-3 text-xs text-gray-400 dark:text-dark-500">
-            {{ formatDate(announcement.published_at) }}
+          <p class="mt-3 text-xs text-gray-400 dark:text-dark-500">
+            {{ formatDate(announcement.created_at) }}
           </p>
         </div>
       </div>
@@ -136,18 +120,6 @@ const handleMarkAllRead = async () => {
 
 const handleClose = () => {
   emit('close')
-}
-
-const renderMarkdown = (content: string): string => {
-  // Simple markdown-like rendering: convert newlines to <br> and basic formatting
-  return content
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    .replace(/\n/g, '<br>')
 }
 
 const formatDate = (dateStr: string): string => {

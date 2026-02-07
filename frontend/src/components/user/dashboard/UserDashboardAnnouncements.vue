@@ -28,19 +28,10 @@
           <div class="mb-2 flex items-center justify-between">
             <h3 class="font-semibold text-gray-900 dark:text-white">{{ announcement.title }}</h3>
             <span class="text-xs text-gray-500 dark:text-gray-400">
-              {{ formatDate(announcement.published_at || announcement.created_at) }}
+              {{ formatDate(announcement.created_at) }}
             </span>
           </div>
-          <!-- Render as iframe if URL -->
-          <iframe
-            v-if="announcement.content_type === 'url'"
-            :src="announcement.content"
-            class="h-48 w-full rounded-lg border-0"
-            allowfullscreen
-          ></iframe>
-          <!-- Render as HTML/Markdown content -->
           <div
-            v-else
             class="prose prose-sm max-w-none text-gray-600 dark:prose-invert dark:text-gray-300"
             v-html="announcement.content"
           ></div>

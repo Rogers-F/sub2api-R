@@ -26,6 +26,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/referralreward"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -65,6 +66,8 @@ type Client struct {
 	Proxy *ProxyClient
 	// RedeemCode is the client for interacting with the RedeemCode builders.
 	RedeemCode *RedeemCodeClient
+	// ReferralReward is the client for interacting with the ReferralReward builders.
+	ReferralReward *ReferralRewardClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -103,6 +106,7 @@ func (c *Client) init() {
 	c.PromoCodeUsage = NewPromoCodeUsageClient(c.config)
 	c.Proxy = NewProxyClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
+	c.ReferralReward = NewReferralRewardClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
@@ -214,6 +218,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
 		Proxy:                   NewProxyClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
+		ReferralReward:          NewReferralRewardClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
@@ -252,6 +257,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
 		Proxy:                   NewProxyClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
+		ReferralReward:          NewReferralRewardClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
@@ -291,7 +297,7 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.ErrorPassthroughRule, c.Group, c.PromoCode, c.PromoCodeUsage, c.Proxy,
-		c.RedeemCode, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
+		c.RedeemCode, c.ReferralReward, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
 		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserSubscription,
 	} {
@@ -305,7 +311,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.ErrorPassthroughRule, c.Group, c.PromoCode, c.PromoCodeUsage, c.Proxy,
-		c.RedeemCode, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
+		c.RedeemCode, c.ReferralReward, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
 		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserSubscription,
 	} {
@@ -338,6 +344,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Proxy.mutate(ctx, m)
 	case *RedeemCodeMutation:
 		return c.RedeemCode.mutate(ctx, m)
+	case *ReferralRewardMutation:
+		return c.ReferralReward.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
@@ -2197,6 +2205,171 @@ func (c *RedeemCodeClient) mutate(ctx context.Context, m *RedeemCodeMutation) (V
 	}
 }
 
+// ReferralRewardClient is a client for the ReferralReward schema.
+type ReferralRewardClient struct {
+	config
+}
+
+// NewReferralRewardClient returns a client for the ReferralReward from the given config.
+func NewReferralRewardClient(c config) *ReferralRewardClient {
+	return &ReferralRewardClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `referralreward.Hooks(f(g(h())))`.
+func (c *ReferralRewardClient) Use(hooks ...Hook) {
+	c.hooks.ReferralReward = append(c.hooks.ReferralReward, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `referralreward.Intercept(f(g(h())))`.
+func (c *ReferralRewardClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ReferralReward = append(c.inters.ReferralReward, interceptors...)
+}
+
+// Create returns a builder for creating a ReferralReward entity.
+func (c *ReferralRewardClient) Create() *ReferralRewardCreate {
+	mutation := newReferralRewardMutation(c.config, OpCreate)
+	return &ReferralRewardCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ReferralReward entities.
+func (c *ReferralRewardClient) CreateBulk(builders ...*ReferralRewardCreate) *ReferralRewardCreateBulk {
+	return &ReferralRewardCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReferralRewardClient) MapCreateBulk(slice any, setFunc func(*ReferralRewardCreate, int)) *ReferralRewardCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReferralRewardCreateBulk{err: fmt.Errorf("calling to ReferralRewardClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReferralRewardCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReferralRewardCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ReferralReward.
+func (c *ReferralRewardClient) Update() *ReferralRewardUpdate {
+	mutation := newReferralRewardMutation(c.config, OpUpdate)
+	return &ReferralRewardUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReferralRewardClient) UpdateOne(_m *ReferralReward) *ReferralRewardUpdateOne {
+	mutation := newReferralRewardMutation(c.config, OpUpdateOne, withReferralReward(_m))
+	return &ReferralRewardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReferralRewardClient) UpdateOneID(id int64) *ReferralRewardUpdateOne {
+	mutation := newReferralRewardMutation(c.config, OpUpdateOne, withReferralRewardID(id))
+	return &ReferralRewardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ReferralReward.
+func (c *ReferralRewardClient) Delete() *ReferralRewardDelete {
+	mutation := newReferralRewardMutation(c.config, OpDelete)
+	return &ReferralRewardDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReferralRewardClient) DeleteOne(_m *ReferralReward) *ReferralRewardDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReferralRewardClient) DeleteOneID(id int64) *ReferralRewardDeleteOne {
+	builder := c.Delete().Where(referralreward.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReferralRewardDeleteOne{builder}
+}
+
+// Query returns a query builder for ReferralReward.
+func (c *ReferralRewardClient) Query() *ReferralRewardQuery {
+	return &ReferralRewardQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReferralReward},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ReferralReward entity by its id.
+func (c *ReferralRewardClient) Get(ctx context.Context, id int64) (*ReferralReward, error) {
+	return c.Query().Where(referralreward.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReferralRewardClient) GetX(ctx context.Context, id int64) *ReferralReward {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryReferrer queries the referrer edge of a ReferralReward.
+func (c *ReferralRewardClient) QueryReferrer(_m *ReferralReward) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(referralreward.Table, referralreward.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, referralreward.ReferrerTable, referralreward.ReferrerColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReferee queries the referee edge of a ReferralReward.
+func (c *ReferralRewardClient) QueryReferee(_m *ReferralReward) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(referralreward.Table, referralreward.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, referralreward.RefereeTable, referralreward.RefereeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ReferralRewardClient) Hooks() []Hook {
+	return c.hooks.ReferralReward
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReferralRewardClient) Interceptors() []Interceptor {
+	return c.inters.ReferralReward
+}
+
+func (c *ReferralRewardClient) mutate(ctx context.Context, m *ReferralRewardMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReferralRewardCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReferralRewardUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReferralRewardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReferralRewardDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ReferralReward mutation op: %q", m.Op())
+	}
+}
+
 // SettingClient is a client for the Setting schema.
 type SettingClient struct {
 	config
@@ -3607,13 +3780,13 @@ type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
 		ErrorPassthroughRule, Group, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
-		Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		ReferralReward, Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
 		ErrorPassthroughRule, Group, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
-		Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		ReferralReward, Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Interceptor
 	}
 )

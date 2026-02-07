@@ -106,7 +106,6 @@ func (User) Edges() []ent.Edge {
 		// 邀请系统相关 edges
 		edge.To("referral_rewards_given", ReferralReward.Type),
 		edge.To("referral_rewards_received", ReferralReward.Type),
-		edge.To("announcement_reads", AnnouncementRead.Type),
 	}
 }
 
