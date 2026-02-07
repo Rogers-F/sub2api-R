@@ -214,6 +214,8 @@ func ProvideAPIKeyAuthCacheInvalidator(apiKeyService *APIKeyService) APIKeyAuthC
 // ProvideAuthServiceWithReferral creates AuthService and injects ReferralService
 func ProvideAuthServiceWithReferral(
 	userRepo UserRepository,
+	redeemRepo RedeemCodeRepository,
+	refreshTokenCache RefreshTokenCache,
 	cfg *config.Config,
 	settingService *SettingService,
 	emailService *EmailService,
@@ -222,7 +224,7 @@ func ProvideAuthServiceWithReferral(
 	promoService *PromoService,
 	referralService *ReferralService,
 ) *AuthService {
-	svc := NewAuthService(userRepo, cfg, settingService, emailService, turnstileService, emailQueueService, promoService)
+	svc := NewAuthService(userRepo, redeemRepo, refreshTokenCache, cfg, settingService, emailService, turnstileService, emailQueueService, promoService)
 	svc.SetReferralService(referralService)
 	return svc
 }

@@ -45,7 +45,7 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		builder.SetIPBlacklist(key.IPBlacklist)
 	}
 	if key.QuotaUSD != nil {
-		builder.SetQuotaUsd(*key.QuotaUSD)
+		builder.SetQuota(*key.QuotaUSD)
 	}
 
 	created, err := builder.Save(ctx)
@@ -116,8 +116,6 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			apikey.FieldStatus,
 			apikey.FieldIPWhitelist,
 			apikey.FieldIPBlacklist,
-			apikey.FieldQuotaUsd,
-			apikey.FieldUsedUsd,
 			apikey.FieldQuota,
 			apikey.FieldQuotaUsed,
 			apikey.FieldExpiresAt,
@@ -205,9 +203,9 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) erro
 
 	// 额度限制字段
 	if key.QuotaUSD != nil {
-		builder.SetQuotaUsd(*key.QuotaUSD)
+		builder.SetQuota(*key.QuotaUSD)
 	} else {
-		builder.ClearQuotaUsd()
+		builder.SetQuota(0)
 	}
 
 	affected, err := builder.Save(ctx)
@@ -431,14 +429,17 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		Status:      m.Status,
 		IPWhitelist: m.IPWhitelist,
 		IPBlacklist: m.IPBlacklist,
-		QuotaUSD:    m.QuotaUsd,
-		UsedUSD:     m.UsedUsd,
+		UsedUSD:     m.QuotaUsed,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 		GroupID:     m.GroupID,
 		Quota:       m.Quota,
 		QuotaUsed:   m.QuotaUsed,
 		ExpiresAt:   m.ExpiresAt,
+	}
+	if m.Quota > 0 {
+		q := m.Quota
+		out.QuotaUSD = &q
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)
@@ -452,7 +453,7 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 // IncrementUsedUSD atomically increments the used_usd field
 func (r *apiKeyRepository) IncrementUsedUSD(ctx context.Context, id int64, delta float64) error {
 	_, err := r.client.APIKey.UpdateOneID(id).
-		AddUsedUsd(delta).
+		AddQuotaUsed(delta).
 		Save(ctx)
 	return err
 }
