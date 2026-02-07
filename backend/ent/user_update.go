@@ -482,21 +482,6 @@ func (_u *UserUpdate) AddReferralRewardsReceived(v ...*ReferralReward) *UserUpda
 	return _u.AddReferralRewardsReceivedIDs(ids...)
 }
 
-// AddAnnouncementReadIDs adds the "announcement_reads" edge to the AnnouncementRead entity by IDs.
-func (_u *UserUpdate) AddAnnouncementReadIDs(ids ...int64) *UserUpdate {
-	_u.mutation.AddAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// AddAnnouncementReads adds the "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdate) AddAnnouncementReads(v ...*AnnouncementRead) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAnnouncementReadIDs(ids...)
-}
-
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -731,27 +716,6 @@ func (_u *UserUpdate) RemoveReferralRewardsReceived(v ...*ReferralReward) *UserU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReferralRewardsReceivedIDs(ids...)
-}
-
-// ClearAnnouncementReads clears all "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdate) ClearAnnouncementReads() *UserUpdate {
-	_u.mutation.ClearAnnouncementReads()
-	return _u
-}
-
-// RemoveAnnouncementReadIDs removes the "announcement_reads" edge to AnnouncementRead entities by IDs.
-func (_u *UserUpdate) RemoveAnnouncementReadIDs(ids ...int64) *UserUpdate {
-	_u.mutation.RemoveAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// RemoveAnnouncementReads removes "announcement_reads" edges to AnnouncementRead entities.
-func (_u *UserUpdate) RemoveAnnouncementReads(v ...*AnnouncementRead) *UserUpdate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAnnouncementReadIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1428,51 +1392,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAnnouncementReadsIDs(); len(nodes) > 0 && !_u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AnnouncementReadsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -1938,21 +1857,6 @@ func (_u *UserUpdateOne) AddReferralRewardsReceived(v ...*ReferralReward) *UserU
 	return _u.AddReferralRewardsReceivedIDs(ids...)
 }
 
-// AddAnnouncementReadIDs adds the "announcement_reads" edge to the AnnouncementRead entity by IDs.
-func (_u *UserUpdateOne) AddAnnouncementReadIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.AddAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// AddAnnouncementReads adds the "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdateOne) AddAnnouncementReads(v ...*AnnouncementRead) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAnnouncementReadIDs(ids...)
-}
-
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -2187,27 +2091,6 @@ func (_u *UserUpdateOne) RemoveReferralRewardsReceived(v ...*ReferralReward) *Us
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReferralRewardsReceivedIDs(ids...)
-}
-
-// ClearAnnouncementReads clears all "announcement_reads" edges to the AnnouncementRead entity.
-func (_u *UserUpdateOne) ClearAnnouncementReads() *UserUpdateOne {
-	_u.mutation.ClearAnnouncementReads()
-	return _u
-}
-
-// RemoveAnnouncementReadIDs removes the "announcement_reads" edge to AnnouncementRead entities by IDs.
-func (_u *UserUpdateOne) RemoveAnnouncementReadIDs(ids ...int64) *UserUpdateOne {
-	_u.mutation.RemoveAnnouncementReadIDs(ids...)
-	return _u
-}
-
-// RemoveAnnouncementReads removes "announcement_reads" edges to AnnouncementRead entities.
-func (_u *UserUpdateOne) RemoveAnnouncementReads(v ...*AnnouncementRead) *UserUpdateOne {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAnnouncementReadIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -2907,51 +2790,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAnnouncementReadsIDs(); len(nodes) > 0 && !_u.mutation.AnnouncementReadsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AnnouncementReadsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AnnouncementReadsTable,
-			Columns: []string{user.AnnouncementReadsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
