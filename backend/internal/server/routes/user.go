@@ -94,8 +94,7 @@ func RegisterUserRoutes(
 			referral.GET("", h.Referral.GetReferralInfo)
 			referral.GET("/rewards", h.Referral.GetReferralRewards)
 		}
-
-		}
+	}
 }
 
 // RegisterReferralSettingsRoutes 注册公开的邀请系统设置路由
