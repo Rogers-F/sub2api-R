@@ -68,7 +68,7 @@ import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { announcementAPI } from '@/api/announcement'
-import type { Announcement } from '@/types'
+import type { UserAnnouncement } from '@/types'
 
 interface Props {
   show: boolean
@@ -86,7 +86,7 @@ const { t } = useI18n()
 
 const loading = ref(true)
 const marking = ref(false)
-const announcements = ref<Announcement[]>([])
+const announcements = ref<UserAnnouncement[]>([])
 
 const loadAnnouncements = async () => {
   loading.value = true
