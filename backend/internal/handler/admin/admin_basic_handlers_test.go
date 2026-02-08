@@ -16,7 +16,7 @@ func setupAdminRouter() (*gin.Engine, *stubAdminService) {
 	router := gin.New()
 	adminSvc := newStubAdminService()
 
-	userHandler := NewUserHandler(adminSvc, nil) // settingService is nil for tests
+	userHandler := NewUserHandler(adminSvc, nil, nil)
 	groupHandler := NewGroupHandler(adminSvc)
 	proxyHandler := NewProxyHandler(adminSvc)
 	redeemHandler := NewRedeemHandler(adminSvc)

@@ -200,7 +200,7 @@ func (s *GeminiMessagesCompatService) tryStickySessionHit(
 
 	// 检查账号是否需要清理粘性会话
 	// Check if sticky session should be cleared
-	if shouldClearStickySession(account) {
+	if shouldClearStickySession(account, requestedModel) {
 		_ = s.cache.DeleteSessionAccountID(ctx, derefGroupID(groupID), cacheKey)
 		return nil
 	}
@@ -230,7 +230,7 @@ func (s *GeminiMessagesCompatService) isAccountUsableForRequest(
 ) bool {
 	// 检查模型调度能力
 	// Check model scheduling capability
-	if !account.IsSchedulableForModel(requestedModel) {
+	if !account.IsSchedulableForModelWithContext(ctx, requestedModel) {
 		return false
 	}
 
@@ -362,7 +362,10 @@ func (s *GeminiMessagesCompatService) isBetterGeminiAccount(candidate, current *
 // isModelSupportedByAccount 根据账户平台检查模型支持
 func (s *GeminiMessagesCompatService) isModelSupportedByAccount(account *Account, requestedModel string) bool {
 	if account.Platform == PlatformAntigravity {
-		return IsAntigravityModelSupported(requestedModel)
+		if strings.TrimSpace(requestedModel) == "" {
+			return true
+		}
+		return mapAntigravityModel(account, requestedModel) != ""
 	}
 	return account.IsModelSupported(requestedModel)
 }
@@ -557,10 +560,7 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 				return nil, "", errors.New("gemini api_key not configured")
 			}
 
-			baseURL := strings.TrimSpace(account.GetCredential("base_url"))
-			if baseURL == "" {
-				baseURL = geminicli.AIStudioBaseURL
-			}
+			baseURL := account.GetGeminiBaseURL(geminicli.AIStudioBaseURL)
 			normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 			if err != nil {
 				return nil, "", err
@@ -637,10 +637,7 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 				return upstreamReq, "x-request-id", nil
 			} else {
 				// Mode 2: AI Studio API with OAuth (like API key mode, but using Bearer token)
-				baseURL := strings.TrimSpace(account.GetCredential("base_url"))
-				if baseURL == "" {
-					baseURL = geminicli.AIStudioBaseURL
-				}
+				baseURL := account.GetGeminiBaseURL(geminicli.AIStudioBaseURL)
 				normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 				if err != nil {
 					return nil, "", err
@@ -1023,10 +1020,7 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 				return nil, "", errors.New("gemini api_key not configured")
 			}
 
-			baseURL := strings.TrimSpace(account.GetCredential("base_url"))
-			if baseURL == "" {
-				baseURL = geminicli.AIStudioBaseURL
-			}
+			baseURL := account.GetGeminiBaseURL(geminicli.AIStudioBaseURL)
 			normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 			if err != nil {
 				return nil, "", err
@@ -1094,10 +1088,7 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 				return upstreamReq, "x-request-id", nil
 			} else {
 				// Mode 2: AI Studio API with OAuth (like API key mode, but using Bearer token)
-				baseURL := strings.TrimSpace(account.GetCredential("base_url"))
-				if baseURL == "" {
-					baseURL = geminicli.AIStudioBaseURL
-				}
+				baseURL := account.GetGeminiBaseURL(geminicli.AIStudioBaseURL)
 				normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 				if err != nil {
 					return nil, "", err
@@ -1496,6 +1487,28 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 
 	if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
 		log.Printf("[Gemini] upstream error %d: %s", upstreamStatus, truncateForLog(body, s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes))
+	}
+
+	if status, errType, errMsg, matched := applyErrorPassthroughRule(
+		c,
+		PlatformGemini,
+		upstreamStatus,
+		body,
+		http.StatusBadGateway,
+		"upstream_error",
+		"Upstream request failed",
+	); matched {
+		c.JSON(status, gin.H{
+			"type":  "error",
+			"error": gin.H{"type": errType, "message": errMsg},
+		})
+		if upstreamMsg == "" {
+			upstreamMsg = errMsg
+		}
+		if upstreamMsg == "" {
+			return fmt.Errorf("upstream error: %d (passthrough rule matched)", upstreamStatus)
+		}
+		return fmt.Errorf("upstream error: %d (passthrough rule matched) message=%s", upstreamStatus, upstreamMsg)
 	}
 
 	var statusCode int
@@ -2395,10 +2408,7 @@ func (s *GeminiMessagesCompatService) ForwardAIStudioGET(ctx context.Context, ac
 		return nil, errors.New("invalid path")
 	}
 
-	baseURL := strings.TrimSpace(account.GetCredential("base_url"))
-	if baseURL == "" {
-		baseURL = geminicli.AIStudioBaseURL
-	}
+	baseURL := account.GetGeminiBaseURL(geminicli.AIStudioBaseURL)
 	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 	if err != nil {
 		return nil, err
@@ -2636,7 +2646,9 @@ func ParseGeminiRateLimitResetTime(body []byte) *int64 {
 					if meta, ok := dm["metadata"].(map[string]any); ok {
 						if v, ok := meta["quotaResetDelay"].(string); ok {
 							if dur, err := time.ParseDuration(v); err == nil {
-								ts := time.Now().Unix() + int64(dur.Seconds())
+								// Use ceil to avoid undercounting fractional seconds (e.g. 10.1s should not become 10s),
+								// which can affect scheduling decisions around thresholds (like 10s).
+								ts := time.Now().Unix() + int64(math.Ceil(dur.Seconds()))
 								return &ts
 							}
 						}
