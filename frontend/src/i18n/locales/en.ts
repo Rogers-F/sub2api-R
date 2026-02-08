@@ -283,7 +283,7 @@ export default {
   nav: {
     userHome: 'Home',
     dashboard: 'Dashboard',
-    announcements: 'Announcements',
+    announcements: 'Announcement Mgmt',
     apiKeys: 'API Keys',
     usage: 'Usage',
     redeem: 'Redeem',

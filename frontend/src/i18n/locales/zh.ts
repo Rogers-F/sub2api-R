@@ -280,7 +280,7 @@ export default {
   nav: {
     userHome: '首页',
     dashboard: '仪表盘',
-    announcements: '公告',
+    announcements: '公告管理',
     apiKeys: 'API 密钥',
     usage: '使用记录',
     redeem: '兑换',
