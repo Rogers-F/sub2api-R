@@ -1,10 +1,10 @@
-import type { Announcement, CreateAnnouncementRequest, UpdateAnnouncementRequest, BasePaginationResponse } from '@/types'
+import type { Announcement, UserAnnouncement, CreateAnnouncementRequest, UpdateAnnouncementRequest, BasePaginationResponse } from '@/types'
 import { apiClient } from './client'
 
 // User-facing announcement API
 export const announcementAPI = {
   // Get unread announcements for current user
-  async getUnreadAnnouncements(): Promise<Announcement[]> {
+  async getUnreadAnnouncements(): Promise<UserAnnouncement[]> {
     const { data } = await apiClient.get('/announcements', {
       params: { unread_only: 1 }
     })

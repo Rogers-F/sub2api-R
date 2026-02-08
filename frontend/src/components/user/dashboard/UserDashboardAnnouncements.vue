@@ -67,15 +67,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { announcementAPI } from '@/api/announcement'
+import { announcementsAPI } from '@/api'
 import Icon from '@/components/icons/Icon.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import type { Announcement } from '@/types'
+import type { UserAnnouncement } from '@/types'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
 
-const announcements = ref<Announcement[]>([])
+const announcements = ref<UserAnnouncement[]>([])
 const loading = ref(true)
 
 // Fallback to home_content
@@ -93,7 +93,7 @@ function formatDate(dateStr: string): string {
 
 onMounted(async () => {
   try {
-    announcements.value = await announcementAPI.getUnreadAnnouncements()
+    announcements.value = await announcementsAPI.list(false)
   } catch (e) {
     console.error('Failed to load announcements:', e)
   } finally {

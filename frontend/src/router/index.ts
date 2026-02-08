@@ -439,8 +439,8 @@ router.beforeEach((to, _from, next) => {
   if (!requiresAuth) {
     // If already authenticated and trying to access login/register, redirect to appropriate dashboard
     if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
-      // Admin users go to admin dashboard, regular users go to user dashboard
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      // Admin users go to admin dashboard, regular users go to user home
+      next(authStore.isAdmin ? '/admin/dashboard' : '/user-home')
       return
     }
     next()
@@ -459,8 +459,8 @@ router.beforeEach((to, _from, next) => {
 
   // Check admin requirement
   if (requiresAdmin && !authStore.isAdmin) {
-    // User is authenticated but not admin, redirect to user dashboard
-    next('/dashboard')
+    // User is authenticated but not admin, redirect to user home
+    next('/user-home')
     return
   }
 
@@ -475,8 +475,8 @@ router.beforeEach((to, _from, next) => {
     ]
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
-      // 简易模式下访问受限页面,重定向到仪表板
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      // 简易模式下访问受限页面,重定向到首页
+      next(authStore.isAdmin ? '/admin/dashboard' : '/user-home')
       return
     }
   }
