@@ -104,7 +104,7 @@ export default {
         'gradient-glass':
           'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
         'mesh-gradient':
-          'radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 50%)'
+          'radial-gradient(at 40% 20%, rgba(100, 116, 139, 0.07) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(20, 184, 166, 0.04) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(100, 116, 139, 0.05) 0px, transparent 50%)'
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

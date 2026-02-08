@@ -9,11 +9,11 @@
       <!-- Account Info Header -->
       <div
         v-if="account"
-        class="flex items-center justify-between rounded-xl border border-primary-200 bg-gradient-to-r from-primary-50 to-primary-100 p-3 dark:border-primary-700/50 dark:from-primary-900/20 dark:to-primary-800/20"
+        class="flex items-center justify-between rounded-xl border border-accent-200 bg-gradient-to-r from-accent-50 to-accent-100 p-3 dark:border-accent-700/50 dark:from-accent-800/30 dark:to-accent-900/20"
       >
         <div class="flex items-center gap-3">
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-600"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-700 to-accent-900"
           >
             <Icon name="chartBar" size="md" class="text-white" />
           </div>

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="selectedIds.length > 0" class="mb-4 flex items-center justify-between p-3 bg-primary-50 rounded-lg dark:bg-primary-900/20">
+  <div v-if="selectedIds.length > 0" class="mb-4 flex items-center justify-between p-3 bg-accent-50 rounded-lg dark:bg-accent-800/30">
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-sm font-medium text-primary-900 dark:text-primary-100">
         {{ t('admin.accounts.bulkActions.selected', { count: selectedIds.length }) }}
@@ -10,7 +10,7 @@
       >
         {{ t('admin.accounts.bulkActions.selectCurrentPage') }}
       </button>
-      <span class="text-gray-300 dark:text-primary-800">•</span>
+      <span class="text-gray-300 dark:text-dark-500">•</span>
       <button
         @click="$emit('clear')"
         class="text-xs font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200"

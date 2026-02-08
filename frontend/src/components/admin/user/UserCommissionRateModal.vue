@@ -3,8 +3,8 @@
     <form v-if="user" id="commission-rate-form" @submit.prevent="handleSubmit" class="space-y-5">
       <!-- User Info -->
       <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100">
-          <span class="text-lg font-medium text-primary-700">{{ user.email.charAt(0).toUpperCase() }}</span>
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-800/30">
+          <span class="text-lg font-medium text-accent-700 dark:text-accent-300">{{ user.email.charAt(0).toUpperCase() }}</span>
         </div>
         <div class="flex-1">
           <p class="font-medium text-gray-900 dark:text-white">{{ user.email }}</p>

@@ -22,13 +22,13 @@
         />
       </div>
       <ProfileInfoCard :user="user" />
-      <div v-if="contactInfo" class="card border-primary-200 bg-primary-50 dark:bg-primary-900/20 p-6">
+      <div v-if="contactInfo" class="card border-accent-200 bg-accent-50/50 dark:border-accent-700/50 dark:bg-accent-800/30 p-6">
         <div class="flex items-center gap-4">
-          <div class="p-3 bg-primary-100 rounded-xl text-primary-600">
+          <div class="p-3 bg-accent-100 rounded-xl text-accent-600 dark:bg-accent-800/50 dark:text-accent-300">
             <Icon name="chat" size="lg" />
           </div>
           <div>
-            <h3 class="font-semibold text-primary-800 dark:text-primary-200">
+            <h3 class="font-semibold text-accent-800 dark:text-accent-200">
               {{ t('common.contactSupport') }}
             </h3>
             <p class="text-sm font-medium">{{ contactInfo }}</p>

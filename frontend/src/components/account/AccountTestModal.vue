@@ -13,9 +13,9 @@
       >
         <div class="flex items-center gap-3">
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-600"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-700 to-accent-900"
           >
-            <Icon name="userCircle" size="md" class="text-white" :stroke-width="2" />
+            <Icon name="play" size="md" class="text-white" :stroke-width="2" />
           </div>
           <div>
             <div class="font-semibold text-gray-900 dark:text-gray-100">{{ account.name }}</div>
@@ -63,25 +63,11 @@
         >
           <!-- Status Line -->
           <div v-if="status === 'idle'" class="flex items-center gap-2 text-gray-500">
-            <Icon name="bolt" size="sm" :stroke-width="2" />
+            <Icon name="play" size="sm" :stroke-width="2" />
             <span>{{ t('admin.accounts.readyToTest') }}</span>
           </div>
           <div v-else-if="status === 'connecting'" class="flex items-center gap-2 text-yellow-400">
-            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
+            <Icon name="refresh" size="sm" class="animate-spin" :stroke-width="2" />
             <span>{{ t('admin.accounts.connectingToApi') }}</span>
           </div>
 
@@ -100,21 +86,14 @@
             v-if="status === 'success'"
             class="mt-3 flex items-center gap-2 border-t border-gray-700 pt-3 text-green-400"
           >
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <Icon name="check" size="sm" :stroke-width="2" />
             <span>{{ t('admin.accounts.testCompleted') }}</span>
           </div>
           <div
             v-else-if="status === 'error'"
             class="mt-3 flex items-center gap-2 border-t border-gray-700 pt-3 text-red-400"
           >
-            <Icon name="xCircle" size="sm" :stroke-width="2" />
+            <Icon name="x" size="sm" :stroke-width="2" />
             <span>{{ errorMessage }}</span>
           </div>
         </div>
@@ -126,7 +105,7 @@
           class="absolute right-2 top-2 rounded-lg bg-gray-800/80 p-1.5 text-gray-400 opacity-0 transition-all hover:bg-gray-700 hover:text-white group-hover:opacity-100"
           :title="t('admin.accounts.copyOutput')"
         >
-          <Icon name="copy" size="sm" :stroke-width="2" />
+          <Icon name="link" size="sm" :stroke-width="2" />
         </button>
       </div>
 
@@ -134,12 +113,12 @@
       <div class="flex items-center justify-between px-1 text-xs text-gray-500 dark:text-gray-400">
         <div class="flex items-center gap-3">
           <span class="flex items-center gap-1">
-            <Icon name="cpu" size="sm" :stroke-width="2" />
+            <Icon name="grid" size="sm" :stroke-width="2" />
             {{ t('admin.accounts.testModel') }}
           </span>
         </div>
         <span class="flex items-center gap-1">
-          <Icon name="chatBubble" size="sm" :stroke-width="2" />
+          <Icon name="chat" size="sm" :stroke-width="2" />
           {{ t('admin.accounts.testPrompt') }}
         </span>
       </div>
@@ -168,54 +147,15 @@
                   : 'bg-primary-500 text-white hover:bg-primary-600'
           ]"
         >
-          <svg
+          <Icon
             v-if="status === 'connecting'"
-            class="h-4 w-4 animate-spin"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <svg
-            v-else-if="status === 'idle'"
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <svg v-else class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
+            name="refresh"
+            size="sm"
+            class="animate-spin"
+            :stroke-width="2"
+          />
+          <Icon v-else-if="status === 'idle'" name="play" size="sm" :stroke-width="2" />
+          <Icon v-else name="refresh" size="sm" :stroke-width="2" />
           <span>
             {{
               status === 'connecting'
@@ -236,7 +176,7 @@ import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
-import Icon from '@/components/icons/Icon.vue'
+import { Icon } from '@/components/icons'
 import { useClipboard } from '@/composables/useClipboard'
 import { adminAPI } from '@/api/admin'
 import type { Account, ClaudeModel } from '@/types'

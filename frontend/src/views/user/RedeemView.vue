@@ -3,19 +3,34 @@
     <div class="mx-auto max-w-2xl space-y-6">
       <!-- Current Balance Card -->
       <div class="card overflow-hidden">
-        <div class="bg-gradient-to-br from-primary-500 to-primary-600 px-6 py-8 text-center">
+        <div
+          class="relative bg-gradient-to-br from-accent-800 via-accent-900 to-dark-950 px-6 py-8 text-center"
+        >
+          <!-- Decorative glow orbs -->
           <div
-            class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm"
-          >
-            <Icon name="creditCard" size="xl" class="text-white" />
+            class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/15 blur-3xl"
+          ></div>
+          <div
+            class="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-primary-400/10 blur-2xl"
+          ></div>
+
+          <div class="relative z-10">
+            <div
+              class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/[0.08] backdrop-blur-sm"
+            >
+              <Icon name="creditCard" size="lg" class="text-primary-400" />
+            </div>
+            <p class="text-sm font-medium tracking-wide text-accent-400">
+              {{ t('redeem.currentBalance') }}
+            </p>
+            <p class="mt-1.5 text-4xl font-bold tabular-nums tracking-tight text-white">
+              ${{ user?.balance?.toFixed(2) || '0.00' }}
+            </p>
+            <p class="mt-2.5 text-sm text-accent-400">
+              {{ t('redeem.concurrency') }}: {{ user?.concurrency || 0 }}
+              {{ t('redeem.requests') }}
+            </p>
           </div>
-          <p class="text-sm font-medium text-primary-100">{{ t('redeem.currentBalance') }}</p>
-          <p class="mt-2 text-4xl font-bold text-white">
-            ${{ user?.balance?.toFixed(2) || '0.00' }}
-          </p>
-          <p class="mt-2 text-sm text-primary-100">
-            {{ t('redeem.concurrency') }}: {{ user?.concurrency || 0 }} {{ t('redeem.requests') }}
-          </p>
         </div>
       </div>
 
@@ -164,7 +179,7 @@
 
       <!-- Information Card -->
       <div
-        class="card border-primary-200 bg-primary-50 dark:border-primary-800/50 dark:bg-primary-900/20"
+        class="card border-accent-200 bg-accent-50/50 dark:border-accent-700/50 dark:bg-accent-800/30"
       >
         <div class="p-6">
           <div class="flex items-start gap-4">

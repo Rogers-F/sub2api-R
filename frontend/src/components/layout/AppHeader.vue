@@ -47,7 +47,7 @@
         <!-- Balance Display -->
         <div
           v-if="user"
-          class="hidden items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-900/20 sm:flex"
+          class="hidden items-center gap-2 rounded-xl bg-accent-50 px-3 py-1.5 dark:bg-accent-800/30 sm:flex"
         >
           <svg
             class="h-4 w-4 text-primary-600 dark:text-primary-400"
@@ -75,7 +75,7 @@
             aria-label="User Menu"
           >
             <div
-              class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-medium text-white shadow-sm"
+              class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-accent-700 to-accent-900 text-sm font-medium text-white shadow-sm"
             >
               {{ userInitials }}
             </div>

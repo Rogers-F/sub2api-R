@@ -5,8 +5,8 @@
       <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
         <!-- Row 1: avatar + email/username/created_at (left) + current balance (right) -->
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
-            <span class="text-lg font-medium text-primary-700 dark:text-primary-300">
+          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-800/30">
+            <span class="text-lg font-medium text-accent-700 dark:text-accent-300">
               {{ user.email.charAt(0).toUpperCase() }}
             </span>
           </div>
