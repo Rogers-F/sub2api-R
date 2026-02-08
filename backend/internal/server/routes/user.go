@@ -95,14 +95,7 @@ func RegisterUserRoutes(
 			referral.GET("/rewards", h.Referral.GetReferralRewards)
 		}
 
-		// 公告
-		announcements := authenticated.Group("/announcements")
-		{
-			announcements.GET("/unread", h.Announcement.GetUnreadAnnouncements)
-			announcements.POST("/:id/read", h.Announcement.MarkAsRead)
-			announcements.POST("/read-all", h.Announcement.MarkAllAsRead)
 		}
-	}
 }
 
 // RegisterReferralSettingsRoutes 注册公开的邀请系统设置路由
