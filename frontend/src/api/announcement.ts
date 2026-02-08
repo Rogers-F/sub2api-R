@@ -5,7 +5,9 @@ import { apiClient } from './client'
 export const announcementAPI = {
   // Get unread announcements for current user
   async getUnreadAnnouncements(): Promise<Announcement[]> {
-    const { data } = await apiClient.get('/announcements/unread')
+    const { data } = await apiClient.get('/announcements', {
+      params: { unread_only: 1 }
+    })
     return data
   },
 
@@ -16,9 +18,7 @@ export const announcementAPI = {
 
   // Mark multiple announcements as read
   async markAllAsRead(announcementIds: number[]): Promise<void> {
-    await apiClient.post('/announcements/read-all', {
-      announcement_ids: announcementIds
-    })
+    await Promise.all(announcementIds.map(id => apiClient.post(`/announcements/${id}/read`)))
   }
 }
 
