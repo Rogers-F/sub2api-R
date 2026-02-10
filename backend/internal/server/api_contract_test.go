@@ -1276,6 +1276,9 @@ func (stubUserSubscriptionRepo) IncrementUsage(ctx context.Context, id int64, co
 func (stubUserSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {
 	return 0, errors.New("not implemented")
 }
+func (stubUserSubscriptionRepo) TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error {
+	return errors.New("not implemented")
+}
 
 type stubApiKeyRepo struct {
 	now time.Time

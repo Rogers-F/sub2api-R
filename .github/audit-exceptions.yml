@@ -14,3 +14,10 @@ exceptions:
     mitigation: "Load only on export; restrict export permissions and data scope"
     expires_on: "2026-04-05"
     owner: "security@your-domain"
+  - package: axios
+    advisory: "GHSA-43fc-jf86-j433"
+    severity: high
+    reason: "Prototype pollution via __proto__ key in mergeConfig; internal API client only, not exposed to user input"
+    mitigation: "Upgrade axios when patch is available; API client only used server-side with controlled inputs"
+    expires_on: "2026-08-10"
+    owner: "security@your-domain"
