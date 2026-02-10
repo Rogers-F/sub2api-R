@@ -58,6 +58,11 @@ type AdjustSubscriptionRequest struct {
 	Days int `json:"days" binding:"required,min=-36500,max=36500"` // negative to shorten, positive to extend
 }
 
+// TransferSubscriptionRequest represents transfer subscription request
+type TransferSubscriptionRequest struct {
+	TargetGroupID int64 `json:"target_group_id" binding:"required"`
+}
+
 // List handles listing all subscriptions with pagination and filters
 // GET /api/v1/admin/subscriptions
 func (h *SubscriptionHandler) List(c *gin.Context) {
@@ -200,6 +205,36 @@ func (h *SubscriptionHandler) Extend(c *gin.Context) {
 	}
 
 	subscription, err := h.subscriptionService.ExtendSubscription(c.Request.Context(), subscriptionID, req.Days)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, dto.UserSubscriptionFromServiceAdmin(subscription))
+}
+
+// Transfer handles transferring a subscription to another group
+// POST /api/v1/admin/subscriptions/:id/transfer
+func (h *SubscriptionHandler) Transfer(c *gin.Context) {
+	subscriptionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+
+	var req TransferSubscriptionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	adminID := getAdminIDFromContext(c)
+
+	subscription, err := h.subscriptionService.TransferSubscription(c.Request.Context(), &service.TransferSubscriptionInput{
+		SubscriptionID: subscriptionID,
+		TargetGroupID:  req.TargetGroupID,
+		TransferredBy:  adminID,
+	})
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

@@ -369,6 +369,15 @@ func (r *userSubscriptionRepository) IncrementUsage(ctx context.Context, id int6
 	return service.ErrSubscriptionNotFound
 }
 
+func (r *userSubscriptionRepository) TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error {
+	client := clientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(subscriptionID).
+		SetGroupID(newGroupID).
+		SetNotes(notes).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrSubscriptionNotFound, service.ErrSubscriptionAlreadyExists)
+}
+
 func (r *userSubscriptionRepository) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {
 	client := clientFromContext(ctx, r.client)
 	n, err := client.UserSubscription.Update().

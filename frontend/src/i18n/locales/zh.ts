@@ -1471,7 +1471,16 @@ export default {
       pleaseSelectUser: '请选择用户',
       pleaseSelectGroup: '请选择分组',
       validityDaysRequired: '请输入有效的天数（至少1天）',
-      revokeConfirm: "确定要撤销 '{user}' 的订阅吗？此操作无法撤销。"
+      revokeConfirm: "确定要撤销 '{user}' 的订阅吗？此操作无法撤销。",
+      transfer: '转移',
+      transferSubscription: '转移订阅',
+      transferring: '转移中...',
+      transferHint: '将订阅转移到另一个分组，保留剩余有效期',
+      currentGroup: '当前分组',
+      targetGroup: '目标分组',
+      selectTargetGroup: '选择目标分组',
+      subscriptionTransferred: '订阅转移成功',
+      failedToTransfer: '转移订阅失败'
     },
 
     // Accounts Management

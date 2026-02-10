@@ -372,6 +372,14 @@
               </button>
               <button
                 v-if="row.status === 'active'"
+                @click="handleTransfer(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
+              >
+                <Icon name="swap" size="sm" />
+                <span class="text-xs">{{ t('admin.subscriptions.transfer') }}</span>
+              </button>
+              <button
+                v-if="row.status === 'active'"
                 @click="handleRevoke(row)"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
               >
@@ -607,6 +615,87 @@
       </template>
     </BaseDialog>
 
+    <!-- Transfer Subscription Modal -->
+    <BaseDialog
+      :show="showTransferModal"
+      :title="t('admin.subscriptions.transferSubscription')"
+      width="normal"
+      @close="closeTransferModal"
+    >
+      <form
+        v-if="transferringSubscription"
+        id="transfer-subscription-form"
+        @submit.prevent="handleTransferSubscription"
+        class="space-y-5"
+      >
+        <div class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            {{ transferringSubscription.user?.email }}
+          </p>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            {{ t('admin.subscriptions.currentGroup') }}:
+            <span class="font-medium text-gray-900 dark:text-white">
+              {{ transferringSubscription.group?.name || '-' }}
+            </span>
+          </p>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            {{ t('admin.subscriptions.columns.expires') }}:
+            <span class="font-medium text-gray-900 dark:text-white">
+              {{ transferringSubscription.expires_at ? formatDateOnly(transferringSubscription.expires_at) : t('admin.subscriptions.noExpiration') }}
+            </span>
+            <span v-if="transferringSubscription.expires_at && getDaysRemaining(transferringSubscription.expires_at) !== null" class="ml-1 text-gray-500">
+              ({{ getDaysRemaining(transferringSubscription.expires_at) }} {{ t('admin.subscriptions.daysRemaining') }})
+            </span>
+          </p>
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.subscriptions.targetGroup') }}</label>
+          <Select
+            v-model="transferForm.target_group_id"
+            :options="transferTargetGroupOptions"
+            :placeholder="t('admin.subscriptions.selectTargetGroup')"
+          >
+            <template #selected="{ option }">
+              <GroupBadge
+                v-if="option"
+                :name="(option as unknown as GroupOption).label"
+                :platform="(option as unknown as GroupOption).platform"
+                :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                :rate-multiplier="(option as unknown as GroupOption).rate"
+              />
+              <span v-else class="text-gray-400">{{ t('admin.subscriptions.selectTargetGroup') }}</span>
+            </template>
+            <template #option="{ option, selected }">
+              <GroupOptionItem
+                :name="(option as unknown as GroupOption).label"
+                :platform="(option as unknown as GroupOption).platform"
+                :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                :rate-multiplier="(option as unknown as GroupOption).rate"
+                :description="(option as unknown as GroupOption).description"
+                :selected="selected"
+              />
+            </template>
+          </Select>
+          <p class="input-hint">{{ t('admin.subscriptions.transferHint') }}</p>
+        </div>
+      </form>
+      <template #footer>
+        <div v-if="transferringSubscription" class="flex justify-end gap-3">
+          <button @click="closeTransferModal" type="button" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="submit"
+            form="transfer-subscription-form"
+            :disabled="submitting"
+            class="btn btn-primary"
+          >
+            {{ submitting ? t('admin.subscriptions.transferring') : t('admin.subscriptions.transfer') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
     <!-- Revoke Confirmation Dialog -->
     <ConfirmDialog
       :show="showRevokeDialog"
@@ -811,10 +900,13 @@ const pagination = reactive({
 
 const showAssignModal = ref(false)
 const showExtendModal = ref(false)
+const showTransferModal = ref(false)
 const showRevokeDialog = ref(false)
 const submitting = ref(false)
 const extendingSubscription = ref<UserSubscription | null>(null)
+const transferringSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
+const transferUserExistingGroupIds = ref<number[]>([])
 
 const assignForm = reactive({
   user_id: null as number | null,
@@ -824,6 +916,10 @@ const assignForm = reactive({
 
 const extendForm = reactive({
   days: 30
+})
+
+const transferForm = reactive({
+  target_group_id: null as number | null
 })
 
 // Group options for filter (all groups)
@@ -845,6 +941,26 @@ const subscriptionGroupOptions = computed(() =>
       rate: g.rate_multiplier
     }))
 )
+
+// Group options for transfer (subscription type, active, exclude current group and user's existing groups)
+const transferTargetGroupOptions = computed(() => {
+  const currentGroupId = transferringSubscription.value?.group_id
+  return groups.value
+    .filter((g) =>
+      g.subscription_type === 'subscription' &&
+      g.status === 'active' &&
+      g.id !== currentGroupId &&
+      !transferUserExistingGroupIds.value.includes(g.id)
+    )
+    .map((g) => ({
+      value: g.id,
+      label: g.name,
+      description: g.description,
+      platform: g.platform,
+      subscriptionType: g.subscription_type,
+      rate: g.rate_multiplier
+    }))
+})
 
 const applyFilters = () => {
   pagination.page = 1
@@ -1070,6 +1186,51 @@ const handleExtend = (subscription: UserSubscription) => {
 const closeExtendModal = () => {
   showExtendModal.value = false
   extendingSubscription.value = null
+}
+
+const handleTransfer = async (subscription: UserSubscription) => {
+  transferringSubscription.value = subscription
+  transferForm.target_group_id = null
+  transferUserExistingGroupIds.value = []
+
+  // Load user's existing subscriptions to exclude their groups
+  try {
+    const response = await adminAPI.subscriptions.listByUser(subscription.user_id, 1, 100)
+    transferUserExistingGroupIds.value = response.items.map(s => s.group_id)
+  } catch (error) {
+    console.error('Error loading user subscriptions:', error)
+  }
+
+  showTransferModal.value = true
+}
+
+const closeTransferModal = () => {
+  showTransferModal.value = false
+  transferringSubscription.value = null
+  transferUserExistingGroupIds.value = []
+}
+
+const handleTransferSubscription = async () => {
+  if (!transferringSubscription.value) return
+  if (!transferForm.target_group_id) {
+    appStore.showError(t('admin.subscriptions.pleaseSelectGroup'))
+    return
+  }
+
+  submitting.value = true
+  try {
+    await adminAPI.subscriptions.transfer(transferringSubscription.value.id, {
+      target_group_id: transferForm.target_group_id
+    })
+    appStore.showSuccess(t('admin.subscriptions.subscriptionTransferred'))
+    closeTransferModal()
+    loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToTransfer'))
+    console.error('Error transferring subscription:', error)
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleExtendSubscription = async () => {

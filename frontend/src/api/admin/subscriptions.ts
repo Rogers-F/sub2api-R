@@ -10,6 +10,7 @@ import type {
   AssignSubscriptionRequest,
   BulkAssignSubscriptionRequest,
   ExtendSubscriptionRequest,
+  TransferSubscriptionRequest,
   PaginatedResponse
 } from '@/types'
 
@@ -111,6 +112,23 @@ export async function extend(
 }
 
 /**
+ * Transfer subscription to another group
+ * @param id - Subscription ID
+ * @param request - Transfer request with target_group_id
+ * @returns Updated subscription
+ */
+export async function transfer(
+  id: number,
+  request: TransferSubscriptionRequest
+): Promise<UserSubscription> {
+  const { data } = await apiClient.post<UserSubscription>(
+    `/admin/subscriptions/${id}/transfer`,
+    request
+  )
+  return data
+}
+
+/**
  * Revoke subscription
  * @param id - Subscription ID
  * @returns Success confirmation
@@ -169,6 +187,7 @@ export const subscriptionsAPI = {
   assign,
   bulkAssign,
   extend,
+  transfer,
   revoke,
   listByGroup,
   listByUser

@@ -28,6 +28,7 @@ var (
 	ErrMonthlyLimitExceeded      = infraerrors.TooManyRequests("MONTHLY_LIMIT_EXCEEDED", "monthly usage limit exceeded")
 	ErrSubscriptionNilInput      = infraerrors.BadRequest("SUBSCRIPTION_NIL_INPUT", "subscription input cannot be nil")
 	ErrAdjustWouldExpire         = infraerrors.BadRequest("ADJUST_WOULD_EXPIRE", "adjustment would result in expired subscription (remaining days must be > 0)")
+	ErrTransferSameGroup         = infraerrors.BadRequest("TRANSFER_SAME_GROUP", "subscription is already in the target group")
 )
 
 // SubscriptionService 订阅服务
@@ -373,6 +374,78 @@ func (s *SubscriptionService) ExtendSubscription(ctx context.Context, subscripti
 	}
 
 	return s.userSubRepo.GetByID(ctx, subscriptionID)
+}
+
+// TransferSubscriptionInput 转移订阅输入
+type TransferSubscriptionInput struct {
+	SubscriptionID int64
+	TargetGroupID  int64
+	TransferredBy  int64
+}
+
+// TransferSubscription 将订阅转移到另一个分组（保留剩余有效期）
+func (s *SubscriptionService) TransferSubscription(ctx context.Context, input *TransferSubscriptionInput) (*UserSubscription, error) {
+	sub, err := s.userSubRepo.GetByID(ctx, input.SubscriptionID)
+	if err != nil {
+		return nil, ErrSubscriptionNotFound
+	}
+
+	// 不能转移到相同分组
+	if sub.GroupID == input.TargetGroupID {
+		return nil, ErrTransferSameGroup
+	}
+
+	// 检查目标分组是否存在且为订阅类型
+	targetGroup, err := s.groupRepo.GetByID(ctx, input.TargetGroupID)
+	if err != nil {
+		return nil, fmt.Errorf("target group not found: %w", err)
+	}
+	if !targetGroup.IsSubscriptionType() {
+		return nil, ErrGroupNotSubscriptionType
+	}
+
+	// 检查用户在目标分组是否已有订阅
+	exists, err := s.userSubRepo.ExistsByUserIDAndGroupID(ctx, sub.UserID, input.TargetGroupID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrSubscriptionAlreadyExists
+	}
+
+	// 构建转移备注
+	oldGroupName := fmt.Sprintf("#%d", sub.GroupID)
+	if sub.Group != nil {
+		oldGroupName = sub.Group.Name
+	}
+	transferNote := fmt.Sprintf("Transferred from group %s to group %s", oldGroupName, targetGroup.Name)
+	if input.TransferredBy > 0 {
+		transferNote += fmt.Sprintf(" (by admin #%d)", input.TransferredBy)
+	}
+	newNotes := sub.Notes
+	if newNotes != "" {
+		newNotes += "\n"
+	}
+	newNotes += transferNote
+
+	// 执行转移
+	oldGroupID := sub.GroupID
+	if err := s.userSubRepo.TransferGroup(ctx, input.SubscriptionID, input.TargetGroupID, newNotes); err != nil {
+		return nil, err
+	}
+
+	// 异步失效新旧分组的计费缓存
+	if s.billingCacheService != nil {
+		userID, targetGroupID := sub.UserID, input.TargetGroupID
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, oldGroupID)
+			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, targetGroupID)
+		}()
+	}
+
+	return s.userSubRepo.GetByID(ctx, input.SubscriptionID)
 }
 
 // GetByID 根据ID获取订阅

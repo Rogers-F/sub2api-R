@@ -368,6 +368,7 @@ func registerSubscriptionRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		subscriptions.POST("/assign", h.Admin.Subscription.Assign)
 		subscriptions.POST("/bulk-assign", h.Admin.Subscription.BulkAssign)
 		subscriptions.POST("/:id/extend", h.Admin.Subscription.Extend)
+		subscriptions.POST("/:id/transfer", h.Admin.Subscription.Transfer)
 		subscriptions.DELETE("/:id", h.Admin.Subscription.Revoke)
 	}
 

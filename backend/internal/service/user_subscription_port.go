@@ -32,4 +32,6 @@ type UserSubscriptionRepository interface {
 	IncrementUsage(ctx context.Context, id int64, costUSD float64) error
 
 	BatchUpdateExpiredStatus(ctx context.Context) (int64, error)
+
+	TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error
 }

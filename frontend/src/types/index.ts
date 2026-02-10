@@ -1106,6 +1106,10 @@ export interface ExtendSubscriptionRequest {
   days: number
 }
 
+export interface TransferSubscriptionRequest {
+  target_group_id: number
+}
+
 // ==================== Query Parameters ====================
 
 export interface UsageQueryParams {

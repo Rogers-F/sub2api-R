@@ -1386,7 +1386,16 @@ export default {
       pleaseSelectGroup: 'Please select a group',
       validityDaysRequired: 'Please enter a valid number of days (at least 1)',
       revokeConfirm:
-        "Are you sure you want to revoke the subscription for '{user}'? This action cannot be undone."
+        "Are you sure you want to revoke the subscription for '{user}'? This action cannot be undone.",
+      transfer: 'Transfer',
+      transferSubscription: 'Transfer Subscription',
+      transferring: 'Transferring...',
+      transferHint: 'Transfer subscription to another group while preserving the remaining validity period',
+      currentGroup: 'Current Group',
+      targetGroup: 'Target Group',
+      selectTargetGroup: 'Select target group',
+      subscriptionTransferred: 'Subscription transferred successfully',
+      failedToTransfer: 'Failed to transfer subscription'
     },
 
     // Accounts
