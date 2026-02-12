@@ -187,9 +187,9 @@ func (s *TokenRefreshService) refreshWithRetry(ctx context.Context, account *Acc
 			if account.Platform == PlatformAntigravity &&
 				account.Status == StatusError &&
 				strings.Contains(account.ErrorMessage, "missing_project_id:") {
-				if clearErr := s.accountRepo.ClearError(ctx, account.ID); clearErr != nil {
+				if recovered, clearErr := s.accountRepo.ClearError(ctx, account.ID); clearErr != nil {
 					log.Printf("[TokenRefresh] Failed to clear error status for account %d: %v", account.ID, clearErr)
-				} else {
+				} else if recovered {
 					log.Printf("[TokenRefresh] Account %d: cleared missing_project_id error", account.ID)
 				}
 			}

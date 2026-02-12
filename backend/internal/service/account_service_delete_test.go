@@ -99,7 +99,7 @@ func (s *accountRepoStub) SetError(ctx context.Context, id int64, errorMsg strin
 	panic("unexpected SetError call")
 }
 
-func (s *accountRepoStub) ClearError(ctx context.Context, id int64) error {
+func (s *accountRepoStub) ClearError(ctx context.Context, id int64) (bool, error) {
 	panic("unexpected ClearError call")
 }
 

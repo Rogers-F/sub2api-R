@@ -201,36 +201,36 @@
 
         <!-- Pricing Cards -->
         <div class="grid gap-6 lg:grid-cols-3">
-          <!-- Claude Opus 4.5 -->
+          <!-- Claude Opus 4.6 -->
           <div class="overflow-hidden rounded-2xl border border-warm-200 bg-white shadow-warm-sm transition-all hover:shadow-warm">
             <div class="border-b border-warm-100 bg-gradient-to-r from-clay-500/10 to-clay-600/5 px-6 py-4">
               <div class="mb-1 flex items-center gap-2">
                 <span class="rounded bg-clay-100 px-2 py-0.5 text-xs font-medium text-clay-600">Anthropic</span>
                 <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{{ t('home.pricing.tags.powerful') }}</span>
               </div>
-              <h3 class="text-xl font-bold text-warm-900">Claude Opus 4.5</h3>
+              <h3 class="text-xl font-bold text-warm-900">Claude Opus 4.6</h3>
               <p class="mt-1 text-sm text-warm-600">{{ t('home.pricing.models.opus.desc') }}</p>
             </div>
             <div class="p-6">
               <div class="mb-4 grid grid-cols-2 gap-4">
                 <div>
                   <div class="text-xs text-warm-500">{{ t('home.pricing.input') }}</div>
-                  <div class="text-2xl font-bold text-warm-900">$15<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
+                  <div class="text-2xl font-bold text-warm-900">$5<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
                 </div>
                 <div>
                   <div class="text-xs text-warm-500">{{ t('home.pricing.output') }}</div>
-                  <div class="text-2xl font-bold text-warm-900">$75<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
+                  <div class="text-2xl font-bold text-warm-900">$25<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
                 </div>
               </div>
               <div class="rounded-lg bg-warm-50 p-3">
                 <div class="mb-2 text-xs font-medium text-warm-600">{{ t('home.pricing.cachePrice') }}</div>
                 <div class="flex justify-between text-sm">
                   <span class="text-warm-600">{{ t('home.pricing.cacheWrite') }}</span>
-                  <span class="font-semibold text-warm-900">$18.75</span>
+                  <span class="font-semibold text-warm-900">$6.25</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-warm-600">{{ t('home.pricing.cacheRead') }}</span>
-                  <span class="font-semibold text-warm-900">$1.50</span>
+                  <span class="font-semibold text-warm-900">$0.50</span>
                 </div>
               </div>
             </div>
@@ -271,25 +271,25 @@
             </div>
           </div>
 
-          <!-- GPT-4.1 -->
+          <!-- GPT-5.2-Codex -->
           <div class="overflow-hidden rounded-2xl border border-warm-200 bg-white shadow-warm-sm transition-all hover:shadow-warm">
             <div class="border-b border-warm-100 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 px-6 py-4">
               <div class="mb-1 flex items-center gap-2">
                 <span class="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">OpenAI</span>
                 <span class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">{{ t('home.pricing.tags.efficient') }}</span>
               </div>
-              <h3 class="text-xl font-bold text-warm-900">GPT-4.1</h3>
+              <h3 class="text-xl font-bold text-warm-900">GPT-5.2 Codex</h3>
               <p class="mt-1 text-sm text-warm-600">{{ t('home.pricing.models.gpt.desc') }}</p>
             </div>
             <div class="p-6">
               <div class="mb-4 grid grid-cols-2 gap-4">
                 <div>
                   <div class="text-xs text-warm-500">{{ t('home.pricing.input') }}</div>
-                  <div class="text-2xl font-bold text-warm-900">$2<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
+                  <div class="text-2xl font-bold text-warm-900">$1.75<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
                 </div>
                 <div>
                   <div class="text-xs text-warm-500">{{ t('home.pricing.output') }}</div>
-                  <div class="text-2xl font-bold text-warm-900">$8<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
+                  <div class="text-2xl font-bold text-warm-900">$14<span class="text-sm font-normal text-warm-500"> / MTok</span></div>
                 </div>
               </div>
               <div class="rounded-lg bg-warm-50 p-3">
@@ -300,7 +300,7 @@
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-warm-600">{{ t('home.pricing.cacheRead') }}</span>
-                  <span class="font-semibold text-warm-900">$0.50</span>
+                  <span class="font-semibold text-warm-900">$0.175</span>
                 </div>
               </div>
             </div>
@@ -519,36 +519,36 @@
           <p class="mx-auto mb-12 max-w-3xl text-center text-gray-400">{{ t('home.pricing.description') }}</p>
 
           <div class="grid gap-6 lg:grid-cols-3">
-            <!-- Claude Opus 4.5 -->
+            <!-- Claude Opus 4.6 -->
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10">
               <div class="border-b border-white/5 bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-6 py-4">
                 <div class="mb-1 flex items-center gap-2">
                   <span class="rounded bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-300">Anthropic</span>
                   <span class="rounded bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">{{ t('home.pricing.tags.powerful') }}</span>
                 </div>
-                <h3 class="text-xl font-bold text-white">Claude Opus 4.5</h3>
+                <h3 class="text-xl font-bold text-white">Claude Opus 4.6</h3>
                 <p class="mt-1 text-sm text-gray-400">{{ t('home.pricing.models.opus.desc') }}</p>
               </div>
               <div class="p-6">
                 <div class="mb-4 grid grid-cols-2 gap-4">
                   <div>
                     <div class="text-xs text-gray-500">{{ t('home.pricing.input') }}</div>
-                    <div class="text-2xl font-bold text-white">$15<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                    <div class="text-2xl font-bold text-white">$5<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
                   </div>
                   <div>
                     <div class="text-xs text-gray-500">{{ t('home.pricing.output') }}</div>
-                    <div class="text-2xl font-bold text-white">$75<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                    <div class="text-2xl font-bold text-white">$25<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
                   </div>
                 </div>
                 <div class="rounded-lg bg-white/5 p-3">
                   <div class="mb-2 text-xs font-medium text-gray-400">{{ t('home.pricing.cachePrice') }}</div>
                   <div class="flex justify-between text-sm">
                     <span class="text-gray-400">{{ t('home.pricing.cacheWrite') }}</span>
-                    <span class="font-semibold text-white">$18.75</span>
+                    <span class="font-semibold text-white">$6.25</span>
                   </div>
                   <div class="flex justify-between text-sm">
                     <span class="text-gray-400">{{ t('home.pricing.cacheRead') }}</span>
-                    <span class="font-semibold text-white">$1.50</span>
+                    <span class="font-semibold text-white">$0.50</span>
                   </div>
                 </div>
               </div>
@@ -589,25 +589,25 @@
               </div>
             </div>
 
-            <!-- GPT-4.1 -->
+            <!-- GPT-5.2-Codex -->
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10">
               <div class="border-b border-white/5 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 px-6 py-4">
                 <div class="mb-1 flex items-center gap-2">
                   <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300">OpenAI</span>
                   <span class="rounded bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-300">{{ t('home.pricing.tags.efficient') }}</span>
                 </div>
-                <h3 class="text-xl font-bold text-white">GPT-4.1</h3>
+                <h3 class="text-xl font-bold text-white">GPT-5.2 Codex</h3>
                 <p class="mt-1 text-sm text-gray-400">{{ t('home.pricing.models.gpt.desc') }}</p>
               </div>
               <div class="p-6">
                 <div class="mb-4 grid grid-cols-2 gap-4">
                   <div>
                     <div class="text-xs text-gray-500">{{ t('home.pricing.input') }}</div>
-                    <div class="text-2xl font-bold text-white">$2<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                    <div class="text-2xl font-bold text-white">$1.75<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
                   </div>
                   <div>
                     <div class="text-xs text-gray-500">{{ t('home.pricing.output') }}</div>
-                    <div class="text-2xl font-bold text-white">$8<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
+                    <div class="text-2xl font-bold text-white">$14<span class="text-sm font-normal text-gray-500"> / MTok</span></div>
                   </div>
                 </div>
                 <div class="rounded-lg bg-white/5 p-3">
@@ -618,7 +618,7 @@
                   </div>
                   <div class="flex justify-between text-sm">
                     <span class="text-gray-400">{{ t('home.pricing.cacheRead') }}</span>
-                    <span class="font-semibold text-white">$0.50</span>
+                    <span class="font-semibold text-white">$0.175</span>
                   </div>
                 </div>
               </div>

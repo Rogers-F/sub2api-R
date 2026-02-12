@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
@@ -151,19 +152,35 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 	}
 
 	// Route to platform-specific test method
-	if account.IsOpenAI() {
-		return s.testOpenAIAccountConnection(c, account, modelID)
+	var testErr error
+	switch {
+	case account.IsOpenAI():
+		testErr = s.testOpenAIAccountConnection(c, account, modelID)
+	case account.IsGemini():
+		testErr = s.testGeminiAccountConnection(c, account, modelID)
+	case account.Platform == PlatformAntigravity:
+		testErr = s.testAntigravityAccountConnection(c, account, modelID)
+	default:
+		testErr = s.testClaudeAccountConnection(c, account, modelID)
 	}
 
-	if account.IsGemini() {
-		return s.testGeminiAccountConnection(c, account, modelID)
+	// Auto-recover: if test succeeded and account was in error status, clear it
+	if testErr == nil && account.Status == StatusError {
+		s.tryAutoRecoverError(accountID)
 	}
 
-	if account.Platform == PlatformAntigravity {
-		return s.testAntigravityAccountConnection(c, account, modelID)
-	}
+	return testErr
+}
 
-	return s.testClaudeAccountConnection(c, account, modelID)
+func (s *AccountTestService) tryAutoRecoverError(accountID int64) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	recovered, err := s.accountRepo.ClearError(ctx, accountID)
+	if err != nil {
+		log.Printf("[AccountTest] auto-recover failed: account=%d err=%v", accountID, err)
+	} else if recovered {
+		log.Printf("[AccountTest] auto-recovered error status: account=%d", accountID)
+	}
 }
 
 // testClaudeAccountConnection tests an Anthropic Claude account's connection

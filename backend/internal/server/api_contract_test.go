@@ -982,8 +982,8 @@ func (s *stubAccountRepo) SetError(ctx context.Context, id int64, errorMsg strin
 	return errors.New("not implemented")
 }
 
-func (s *stubAccountRepo) ClearError(ctx context.Context, id int64) error {
-	return errors.New("not implemented")
+func (s *stubAccountRepo) ClearError(ctx context.Context, id int64) (bool, error) {
+	return false, errors.New("not implemented")
 }
 
 func (s *stubAccountRepo) SetSchedulable(ctx context.Context, id int64, schedulable bool) error {
