@@ -70,7 +70,7 @@ func (c *driveClient) GetStorageQuota(ctx context.Context, accessToken, proxyURL
 			return nil, fmt.Errorf("request cancelled: %w", ctx.Err())
 		}
 
-		resp, err = client.Do(req)
+		resp, err = client.Do(req) // #nosec G704 -- URL is Gemini Drive API endpoint
 		if err != nil {
 			// Network error retry
 			if attempt < maxRetries-1 {
