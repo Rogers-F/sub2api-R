@@ -25,7 +25,7 @@ const DEFAULT_FAVICON = '/logo.png'
  */
 function updateFavicon(logoUrl: string) {
   // Sanitize URL to prevent injection attacks
-  const safeUrl = sanitizeUrl(logoUrl, { allowRelative: true, allowDataUri: true })
+  const safeUrl = sanitizeUrl(logoUrl, { allowRelative: true, allowDataUrl: true })
   const finalUrl = safeUrl || DEFAULT_FAVICON
 
   // Remove ALL existing favicon links to avoid browser inconsistency
