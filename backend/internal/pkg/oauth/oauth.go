@@ -2,14 +2,15 @@
 package oauth
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -33,8 +34,8 @@ const (
 	// Code Verifier character set (RFC 7636 compliant)
 	codeVerifierCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
 
-	// Session TTL
-	SessionTTL = 30 * time.Minute
+	// Session TTL (Redis session store uses this value)
+	SessionTTL = 1 * time.Hour
 )
 
 // OAuthSession stores OAuth flow state
@@ -46,75 +47,20 @@ type OAuthSession struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-// SessionStore manages OAuth sessions in memory
-type SessionStore struct {
-	mu       sync.RWMutex
-	sessions map[string]*OAuthSession
-	stopCh   chan struct{}
+// SessionStore defines the interface for OAuth session storage
+type SessionStore interface {
+	// Set stores a session with the configured TTL
+	Set(ctx context.Context, sessionID string, session *OAuthSession) error
+	// Get retrieves a session; returns ErrSessionNotFound if not found or expired
+	Get(ctx context.Context, sessionID string) (*OAuthSession, error)
+	// Delete removes a session
+	Delete(ctx context.Context, sessionID string) error
+	// Stop performs cleanup (no-op for Redis implementation)
+	Stop()
 }
 
-// NewSessionStore creates a new session store
-func NewSessionStore() *SessionStore {
-	store := &SessionStore{
-		sessions: make(map[string]*OAuthSession),
-		stopCh:   make(chan struct{}),
-	}
-	go store.cleanup()
-	return store
-}
-
-// Stop stops the cleanup goroutine
-func (s *SessionStore) Stop() {
-	close(s.stopCh)
-}
-
-// Set stores a session
-func (s *SessionStore) Set(sessionID string, session *OAuthSession) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.sessions[sessionID] = session
-}
-
-// Get retrieves a session
-func (s *SessionStore) Get(sessionID string) (*OAuthSession, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	session, ok := s.sessions[sessionID]
-	if !ok {
-		return nil, false
-	}
-	if time.Since(session.CreatedAt) > SessionTTL {
-		return nil, false
-	}
-	return session, true
-}
-
-// Delete removes a session
-func (s *SessionStore) Delete(sessionID string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.sessions, sessionID)
-}
-
-// cleanup removes expired sessions periodically
-func (s *SessionStore) cleanup() {
-	ticker := time.NewTicker(5 * time.Minute)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-s.stopCh:
-			return
-		case <-ticker.C:
-			s.mu.Lock()
-			for id, session := range s.sessions {
-				if time.Since(session.CreatedAt) > SessionTTL {
-					delete(s.sessions, id)
-				}
-			}
-			s.mu.Unlock()
-		}
-	}
-}
+// ErrSessionNotFound is returned when the session does not exist or has expired
+var ErrSessionNotFound = errors.New("oauth session not found or expired")
 
 // GenerateRandomBytes generates cryptographically secure random bytes
 func GenerateRandomBytes(n int) ([]byte, error) {
