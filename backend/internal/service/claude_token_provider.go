@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/config"
 )
 
 const (
-	claudeTokenRefreshSkew = 3 * time.Minute
-	claudeTokenCacheSkew   = 5 * time.Minute
-	claudeLockWaitTime     = 200 * time.Millisecond
+	claudeTokenCacheSkew = 5 * time.Minute
+	claudeLockWaitTime   = 200 * time.Millisecond
 )
 
 // ClaudeTokenCache Token 缓存接口（复用 GeminiTokenCache 接口定义）
@@ -20,20 +21,27 @@ type ClaudeTokenCache = GeminiTokenCache
 
 // ClaudeTokenProvider 管理 Claude (Anthropic) OAuth 账户的 access_token
 type ClaudeTokenProvider struct {
-	accountRepo  AccountRepository
-	tokenCache   ClaudeTokenCache
-	oauthService *OAuthService
+	accountRepo   AccountRepository
+	tokenCache    ClaudeTokenCache
+	oauthService  *OAuthService
+	refreshWindow time.Duration // 统一刷新窗口，从配置注入
 }
 
 func NewClaudeTokenProvider(
 	accountRepo AccountRepository,
 	tokenCache ClaudeTokenCache,
 	oauthService *OAuthService,
+	cfg *config.Config,
 ) *ClaudeTokenProvider {
+	refreshWindow := time.Duration(cfg.TokenRefresh.RefreshWindowMinutes) * time.Minute
+	if refreshWindow <= 0 {
+		refreshWindow = 2 * time.Minute
+	}
 	return &ClaudeTokenProvider{
-		accountRepo:  accountRepo,
-		tokenCache:   tokenCache,
-		oauthService: oauthService,
+		accountRepo:   accountRepo,
+		tokenCache:    tokenCache,
+		oauthService:  oauthService,
+		refreshWindow: refreshWindow,
 	}
 }
 
@@ -62,7 +70,7 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 
 	// 2. 如果即将过期则刷新
 	expiresAt := account.GetCredentialAsTime("expires_at")
-	needsRefresh := expiresAt == nil || time.Until(*expiresAt) <= claudeTokenRefreshSkew
+	needsRefresh := expiresAt == nil || time.Until(*expiresAt) <= p.refreshWindow
 	refreshFailed := false
 	if needsRefresh && p.tokenCache != nil {
 		locked, lockErr := p.tokenCache.AcquireRefreshLock(ctx, cacheKey, 30*time.Second)
@@ -80,7 +88,7 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 				account = fresh
 			}
 			expiresAt = account.GetCredentialAsTime("expires_at")
-			if expiresAt == nil || time.Until(*expiresAt) <= claudeTokenRefreshSkew {
+			if expiresAt == nil || time.Until(*expiresAt) <= p.refreshWindow {
 				if p.oauthService == nil {
 					slog.Warn("claude_oauth_service_not_configured", "account_id", account.ID)
 					refreshFailed = true // 无法刷新，标记失败
@@ -133,7 +141,7 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 			expiresAt = account.GetCredentialAsTime("expires_at")
 
 			// 仅在 expires_at 已过期/接近过期时才执行无锁刷新
-			if expiresAt == nil || time.Until(*expiresAt) <= claudeTokenRefreshSkew {
+			if expiresAt == nil || time.Until(*expiresAt) <= p.refreshWindow {
 				if p.oauthService == nil {
 					slog.Warn("claude_oauth_service_not_configured", "account_id", account.ID)
 					refreshFailed = true

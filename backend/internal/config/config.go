@@ -120,8 +120,9 @@ type TokenRefreshConfig struct {
 	Enabled bool `mapstructure:"enabled"`
 	// 检查间隔（分钟）
 	CheckIntervalMinutes int `mapstructure:"check_interval_minutes"`
-	// 提前刷新时间（小时），在token过期前多久开始刷新
-	RefreshBeforeExpiryHours float64 `mapstructure:"refresh_before_expiry_hours"`
+	// 统一刷新窗口（分钟），token过期前多久开始刷新
+	// 后台刷新服务和请求侧刷新共用此窗口，避免双通道不一致导致 refresh_token 竞争
+	RefreshWindowMinutes int `mapstructure:"refresh_window_minutes"`
 	// 最大重试次数
 	MaxRetries int `mapstructure:"max_retries"`
 	// 重试退避基础时间（秒）
@@ -918,10 +919,10 @@ func setDefaults() {
 
 	// TokenRefresh
 	viper.SetDefault("token_refresh.enabled", true)
-	viper.SetDefault("token_refresh.check_interval_minutes", 5)        // 每5分钟检查一次
-	viper.SetDefault("token_refresh.refresh_before_expiry_hours", 0.5) // 提前30分钟刷新（适配Google 1小时token）
-	viper.SetDefault("token_refresh.max_retries", 3)                   // 最多重试3次
-	viper.SetDefault("token_refresh.retry_backoff_seconds", 2)         // 重试退避基础2秒
+	viper.SetDefault("token_refresh.check_interval_minutes", 2) // 每2分钟检查一次（配合2分钟刷新窗口）
+	viper.SetDefault("token_refresh.refresh_window_minutes", 2) // 统一刷新窗口：过期前2分钟刷新（后台+请求侧共用）
+	viper.SetDefault("token_refresh.max_retries", 3)            // 最多重试3次
+	viper.SetDefault("token_refresh.retry_backoff_seconds", 2)  // 重试退避基础2秒
 
 	// Gemini OAuth - configure via environment variables or config file
 	// GEMINI_OAUTH_CLIENT_ID and GEMINI_OAUTH_CLIENT_SECRET

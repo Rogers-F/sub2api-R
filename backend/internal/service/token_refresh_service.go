@@ -18,7 +18,8 @@ type TokenRefreshService struct {
 	refreshers       []TokenRefresher
 	cfg              *config.TokenRefreshConfig
 	cacheInvalidator TokenCacheInvalidator
-	schedulerCache   SchedulerCache // 用于同步更新调度器缓存，解决 token 刷新后缓存不一致问题
+	schedulerCache   SchedulerCache   // 用于同步更新调度器缓存，解决 token 刷新后缓存不一致问题
+	tokenCache       GeminiTokenCache // 用于分布式锁，与请求侧共享同一锁键
 
 	stopCh chan struct{}
 	wg     sync.WaitGroup
@@ -33,6 +34,7 @@ func NewTokenRefreshService(
 	antigravityOAuthService *AntigravityOAuthService,
 	cacheInvalidator TokenCacheInvalidator,
 	schedulerCache SchedulerCache,
+	tokenCache GeminiTokenCache,
 	cfg *config.Config,
 ) *TokenRefreshService {
 	s := &TokenRefreshService{
@@ -40,6 +42,7 @@ func NewTokenRefreshService(
 		cfg:              &cfg.TokenRefresh,
 		cacheInvalidator: cacheInvalidator,
 		schedulerCache:   schedulerCache,
+		tokenCache:       tokenCache,
 		stopCh:           make(chan struct{}),
 	}
 
@@ -64,8 +67,8 @@ func (s *TokenRefreshService) Start() {
 	s.wg.Add(1)
 	go s.refreshLoop()
 
-	log.Printf("[TokenRefresh] Service started (check every %d minutes, refresh %v hours before expiry)",
-		s.cfg.CheckIntervalMinutes, s.cfg.RefreshBeforeExpiryHours)
+	log.Printf("[TokenRefresh] Service started (check every %d minutes, refresh %d minutes before expiry)",
+		s.cfg.CheckIntervalMinutes, s.cfg.RefreshWindowMinutes)
 }
 
 // Stop 停止刷新服务
@@ -105,8 +108,8 @@ func (s *TokenRefreshService) refreshLoop() {
 func (s *TokenRefreshService) processRefresh() {
 	ctx := context.Background()
 
-	// 计算刷新窗口
-	refreshWindow := time.Duration(s.cfg.RefreshBeforeExpiryHours * float64(time.Hour))
+	// 计算刷新窗口（与请求侧共用同一窗口，避免双通道不一致）
+	refreshWindow := time.Duration(s.cfg.RefreshWindowMinutes) * time.Minute
 
 	// 获取所有active状态的账号
 	accounts, err := s.listActiveAccounts(ctx)
@@ -138,8 +141,8 @@ func (s *TokenRefreshService) processRefresh() {
 
 			needsRefresh++
 
-			// 执行刷新
-			if err := s.refreshWithRetry(ctx, account, refresher); err != nil {
+			// 在独立函数中执行加锁刷新，确保 defer 在每个账号处理完后释放锁
+			if err := s.refreshAccountWithLock(ctx, account, refresher, refreshWindow); err != nil {
 				log.Printf("[TokenRefresh] Account %d (%s) failed: %v", account.ID, account.Name, err)
 				failed++
 			} else {
@@ -155,6 +158,34 @@ func (s *TokenRefreshService) processRefresh() {
 	// 始终打印周期日志，便于跟踪服务运行状态
 	log.Printf("[TokenRefresh] Cycle complete: total=%d, oauth=%d, needs_refresh=%d, refreshed=%d, failed=%d",
 		totalAccounts, oauthAccounts, needsRefresh, refreshed, failed)
+}
+
+// refreshAccountWithLock 在分布式锁保护下刷新单个账号的 token
+// 独立函数确保 defer 在每个账号处理完后立即释放锁
+func (s *TokenRefreshService) refreshAccountWithLock(ctx context.Context, account *Account, refresher TokenRefresher, refreshWindow time.Duration) error {
+	if s.tokenCache != nil {
+		cacheKey := TokenCacheKeyForAccount(account)
+		locked, lockErr := s.tokenCache.AcquireRefreshLock(ctx, cacheKey, 30*time.Second)
+		if lockErr != nil {
+			return fmt.Errorf("lock error: %w", lockErr)
+		}
+		if !locked {
+			log.Printf("[TokenRefresh] Account %d: lock held by request-side, skip this cycle", account.ID)
+			return nil
+		}
+		defer func() { _ = s.tokenCache.ReleaseRefreshLock(ctx, cacheKey) }()
+
+		// 拿到锁后重新从 DB 获取最新账号，避免使用过期数据
+		fresh, freshErr := s.accountRepo.GetByID(ctx, account.ID)
+		if freshErr == nil && fresh != nil {
+			account = fresh
+			// 二次检查是否仍需刷新（请求侧可能已刷新）
+			if !refresher.NeedsRefresh(account, refreshWindow) {
+				return nil
+			}
+		}
+	}
+	return s.refreshWithRetry(ctx, account, refresher)
 }
 
 // listActiveAccounts 获取所有active状态的账号
