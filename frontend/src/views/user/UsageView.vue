@@ -113,6 +113,14 @@
 
             <!-- Actions -->
             <div class="ml-auto flex items-center gap-3">
+              <button
+                @click="refreshData"
+                :disabled="refreshing"
+                class="btn btn-secondary"
+                :title="t('common.refresh')"
+              >
+                <Icon name="refresh" size="md" :class="refreshing ? 'animate-spin' : ''" />
+              </button>
               <button @click="resetFilters" class="btn btn-secondary">
                 {{ t('common.reset') }}
               </button>
@@ -485,7 +493,10 @@ const columns = computed<Column[]>(() => [
 const usageLogs = ref<UsageLog[]>([])
 const apiKeys = ref<ApiKey[]>([])
 const loading = ref(false)
+const statsLoading = ref(false)
 const exporting = ref(false)
+
+const refreshing = computed(() => loading.value || statsLoading.value)
 
 const apiKeyOptions = computed(() => {
   return [
@@ -626,6 +637,7 @@ const loadApiKeys = async () => {
 }
 
 const loadUsageStats = async () => {
+  statsLoading.value = true
   try {
     const apiKeyId = filters.value.api_key_id ? Number(filters.value.api_key_id) : undefined
     const stats = await usageAPI.getStatsByDateRange(
@@ -636,13 +648,19 @@ const loadUsageStats = async () => {
     usageStats.value = stats
   } catch (error) {
     console.error('Failed to load usage stats:', error)
+  } finally {
+    statsLoading.value = false
   }
+}
+
+const refreshData = () => {
+  loadUsageLogs()
+  loadUsageStats()
 }
 
 const applyFilters = () => {
   pagination.page = 1
-  loadUsageLogs()
-  loadUsageStats()
+  refreshData()
 }
 
 const resetFilters = () => {
@@ -660,8 +678,7 @@ const resetFilters = () => {
   filters.value.start_date = startDate.value
   filters.value.end_date = endDate.value
   pagination.page = 1
-  loadUsageLogs()
-  loadUsageStats()
+  refreshData()
 }
 
 const handlePageChange = (page: number) => {
@@ -818,7 +835,6 @@ const hideTokenTooltip = () => {
 
 onMounted(() => {
   loadApiKeys()
-  loadUsageLogs()
-  loadUsageStats()
+  refreshData()
 })
 </script>
