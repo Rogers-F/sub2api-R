@@ -414,7 +414,7 @@ func (c *Client) OnboardUser(ctx context.Context, accessToken, tierID string) (s
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("User-Agent", UserAgent)
 
-			resp, err := c.httpClient.Do(req)
+			resp, err := c.httpClient.Do(req) // #nosec G704 -- internal API gateway call, URL from admin-configured antigravity endpoints
 			if err != nil {
 				lastErr = fmt.Errorf("onboardUser 请求失败: %w", err)
 				if shouldFallbackToNextURL(err, 0) && urlIdx < len(availableURLs)-1 {
