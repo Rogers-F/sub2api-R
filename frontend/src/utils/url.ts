@@ -6,7 +6,7 @@
  */
 type SanitizeOptions = {
   allowRelative?: boolean
-  allowDataUri?: boolean
+  allowDataUrl?: boolean
 }
 
 export function sanitizeUrl(value: string, options: SanitizeOptions = {}): string {
@@ -20,9 +20,8 @@ export function sanitizeUrl(value: string, options: SanitizeOptions = {}): strin
     return trimmed
   }
 
-  // Allow data:image/* URIs (for inline images like logos)
-  // Only image MIME types are allowed for security
-  if (options.allowDataUri && trimmed.startsWith('data:image/')) {
+  // 允许 data:image/ 开头的 data URL（仅限图片类型）
+  if (options.allowDataUrl && trimmed.startsWith('data:image/')) {
     return trimmed
   }
 

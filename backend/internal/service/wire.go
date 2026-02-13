@@ -311,4 +311,5 @@ var ProviderSet = wire.NewSet(
 	NewTotpService,
 	NewReferralService,
 	NewErrorPassthroughService,
+	NewDigestSessionStore,
 )

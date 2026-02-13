@@ -75,7 +75,7 @@ func TestHandleSmartRetry_URLLevelRateLimit(t *testing.T) {
 		accessToken: "token",
 		action:      "generateContent",
 		body:        []byte(`{"input":"test"}`),
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -127,7 +127,7 @@ func TestHandleSmartRetry_LongDelay_ReturnsSwitchError(t *testing.T) {
 		body:            []byte(`{"input":"test"}`),
 		accountRepo:     repo,
 		isStickySession: true,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -194,7 +194,7 @@ func TestHandleSmartRetry_ShortDelay_SmartRetrySuccess(t *testing.T) {
 		action:       "generateContent",
 		body:         []byte(`{"input":"test"}`),
 		httpUpstream: upstream,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -269,7 +269,7 @@ func TestHandleSmartRetry_ShortDelay_SmartRetryFailed_ReturnsSwitchError(t *test
 		httpUpstream:    upstream,
 		accountRepo:     repo,
 		isStickySession: false,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -294,8 +294,9 @@ func TestHandleSmartRetry_ShortDelay_SmartRetryFailed_ReturnsSwitchError(t *test
 	require.Len(t, upstream.calls, 1, "should have made one retry call (max attempts)")
 }
 
-// TestHandleSmartRetry_503_ModelCapacityExhausted_ReturnsSwitchError 测试 503 MODEL_CAPACITY_EXHAUSTED 返回 switchError
-func TestHandleSmartRetry_503_ModelCapacityExhausted_ReturnsSwitchError(t *testing.T) {
+// TestHandleSmartRetry_503_ModelCapacityExhausted_RetrySuccess 测试 503 MODEL_CAPACITY_EXHAUSTED 重试成功
+// MODEL_CAPACITY_EXHAUSTED 使用固定 1s 间隔重试，不切换账号
+func TestHandleSmartRetry_503_ModelCapacityExhausted_RetrySuccess(t *testing.T) {
 	repo := &stubAntigravityAccountRepo{}
 	account := &Account{
 		ID:       3,
@@ -304,7 +305,7 @@ func TestHandleSmartRetry_503_ModelCapacityExhausted_ReturnsSwitchError(t *testi
 		Platform: PlatformAntigravity,
 	}
 
-	// 503 + MODEL_CAPACITY_EXHAUSTED + 39s >= 7s 阈值
+	// 503 + MODEL_CAPACITY_EXHAUSTED + 39s（上游 retryDelay 应被忽略，使用固定 1s）
 	respBody := []byte(`{
 		"error": {
 			"code": 503,
@@ -322,6 +323,14 @@ func TestHandleSmartRetry_503_ModelCapacityExhausted_ReturnsSwitchError(t *testi
 		Body:       io.NopCloser(bytes.NewReader(respBody)),
 	}
 
+	// mock: 第 1 次重试返回 200 成功
+	upstream := &mockSmartRetryUpstream{
+		responses: []*http.Response{
+			{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"ok":true}`))},
+		},
+		errors: []error{nil},
+	}
+
 	params := antigravityRetryLoopParams{
 		ctx:             context.Background(),
 		prefix:          "[test]",
@@ -330,8 +339,9 @@ func TestHandleSmartRetry_503_ModelCapacityExhausted_ReturnsSwitchError(t *testi
 		action:          "generateContent",
 		body:            []byte(`{"input":"test"}`),
 		accountRepo:     repo,
+		httpUpstream:    upstream,
 		isStickySession: true,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -343,16 +353,67 @@ func TestHandleSmartRetry_503_ModelCapacityExhausted_ReturnsSwitchError(t *testi
 
 	require.NotNil(t, result)
 	require.Equal(t, smartRetryActionBreakWithResp, result.action)
-	require.Nil(t, result.resp)
+	require.NotNil(t, result.resp, "should return successful response")
+	require.Equal(t, http.StatusOK, result.resp.StatusCode)
 	require.Nil(t, result.err)
-	require.NotNil(t, result.switchError, "should return switchError for 503 model capacity exhausted")
-	require.Equal(t, account.ID, result.switchError.OriginalAccountID)
-	require.Equal(t, "gemini-3-pro-high", result.switchError.RateLimitedModel)
-	require.True(t, result.switchError.IsStickySession)
+	require.Nil(t, result.switchError, "MODEL_CAPACITY_EXHAUSTED should not return switchError")
 
-	// 验证模型限流已设置
-	require.Len(t, repo.modelRateLimitCalls, 1)
-	require.Equal(t, "gemini-3-pro-high", repo.modelRateLimitCalls[0].modelKey)
+	// 不应设置模型限流
+	require.Empty(t, repo.modelRateLimitCalls, "MODEL_CAPACITY_EXHAUSTED should not set model rate limit")
+	require.Len(t, upstream.calls, 1, "should have made one retry call before success")
+}
+
+// TestHandleSmartRetry_503_ModelCapacityExhausted_ContextCancel 测试 MODEL_CAPACITY_EXHAUSTED 上下文取消
+func TestHandleSmartRetry_503_ModelCapacityExhausted_ContextCancel(t *testing.T) {
+	repo := &stubAntigravityAccountRepo{}
+	account := &Account{
+		ID:       3,
+		Name:     "acc-3",
+		Type:     AccountTypeOAuth,
+		Platform: PlatformAntigravity,
+	}
+
+	respBody := []byte(`{
+		"error": {
+			"code": 503,
+			"status": "UNAVAILABLE",
+			"details": [
+				{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "metadata": {"model": "gemini-3-pro-high"}, "reason": "MODEL_CAPACITY_EXHAUSTED"},
+				{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "39s"}
+			]
+		}
+	}`)
+	resp := &http.Response{
+		StatusCode: http.StatusServiceUnavailable,
+		Header:     http.Header{},
+		Body:       io.NopCloser(bytes.NewReader(respBody)),
+	}
+
+	// 立即取消上下文，验证重试循环能正确退出
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	params := antigravityRetryLoopParams{
+		ctx:         ctx,
+		prefix:      "[test]",
+		account:     account,
+		accessToken: "token",
+		action:      "generateContent",
+		body:        []byte(`{"input":"test"}`),
+		accountRepo: repo,
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+			return nil
+		},
+	}
+
+	svc := &AntigravityGatewayService{}
+	result := svc.handleSmartRetry(params, resp, respBody, "https://ag-1.test", 0, []string{"https://ag-1.test"})
+
+	require.NotNil(t, result)
+	require.Equal(t, smartRetryActionBreakWithResp, result.action)
+	require.Error(t, result.err, "should return context error")
+	require.Nil(t, result.switchError, "should not return switchError on context cancel")
+	require.Empty(t, repo.modelRateLimitCalls, "should not set model rate limit on context cancel")
 }
 
 // TestHandleSmartRetry_NonAntigravityAccount_ContinuesDefaultLogic 测试非 Antigravity 平台账号走默认逻辑
@@ -387,7 +448,7 @@ func TestHandleSmartRetry_NonAntigravityAccount_ContinuesDefaultLogic(t *testing
 		accessToken: "token",
 		action:      "generateContent",
 		body:        []byte(`{"input":"test"}`),
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -436,7 +497,7 @@ func TestHandleSmartRetry_NonModelRateLimit_ContinuesDefaultLogic(t *testing.T) 
 		accessToken: "token",
 		action:      "generateContent",
 		body:        []byte(`{"input":"test"}`),
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -487,7 +548,7 @@ func TestHandleSmartRetry_ExactlyAtThreshold_ReturnsSwitchError(t *testing.T) {
 		action:      "generateContent",
 		body:        []byte(`{"input":"test"}`),
 		accountRepo: repo,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -548,7 +609,7 @@ func TestAntigravityRetryLoop_HandleSmartRetry_SwitchError_Propagates(t *testing
 		httpUpstream:    upstream,
 		accountRepo:     repo,
 		isStickySession: true,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	})
@@ -604,7 +665,7 @@ func TestHandleSmartRetry_NetworkError_ExhaustsRetry(t *testing.T) {
 		body:         []byte(`{"input":"test"}`),
 		httpUpstream: upstream,
 		accountRepo:  repo,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -662,7 +723,7 @@ func TestHandleSmartRetry_NoRetryDelay_UsesDefaultRateLimit(t *testing.T) {
 		body:            []byte(`{"input":"test"}`),
 		accountRepo:     repo,
 		isStickySession: true,
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -754,7 +815,7 @@ func TestHandleSmartRetry_ShortDelay_StickySession_FailedRetry_ClearsSession(t *
 		isStickySession: true,
 		groupID:         42,
 		sessionHash:     "sticky-hash-abc",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -842,7 +903,7 @@ func TestHandleSmartRetry_ShortDelay_NonStickySession_FailedRetry_NoDeleteSessio
 		isStickySession: false,
 		groupID:         42,
 		sessionHash:     "", // 非粘性会话，sessionHash 为空
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -918,7 +979,7 @@ func TestHandleSmartRetry_ShortDelay_StickySession_FailedRetry_NilCache_NoPanic(
 		isStickySession: true,
 		groupID:         42,
 		sessionHash:     "sticky-hash-nil-cache",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -983,7 +1044,7 @@ func TestHandleSmartRetry_ShortDelay_StickySession_SuccessRetry_NoDeleteSession(
 		isStickySession: true,
 		groupID:         42,
 		sessionHash:     "sticky-hash-success",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -1043,7 +1104,7 @@ func TestHandleSmartRetry_LongDelay_StickySession_NoDeleteInHandleSmartRetry(t *
 		isStickySession: true,
 		groupID:         42,
 		sessionHash:     "sticky-hash-long-delay",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -1108,7 +1169,7 @@ func TestHandleSmartRetry_ShortDelay_NetworkError_StickySession_ClearsSession(t 
 		isStickySession: true,
 		groupID:         99,
 		sessionHash:     "sticky-net-error",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -1129,20 +1190,20 @@ func TestHandleSmartRetry_ShortDelay_NetworkError_StickySession_ClearsSession(t 
 }
 
 // TestHandleSmartRetry_ShortDelay_503_StickySession_FailedRetry_ClearsSession
-// 503 + 短延迟 + 粘性会话 + 重试失败 → 清除粘性绑定
+// 429 + 短延迟 + 粘性会话 + 重试失败 → 清除粘性绑定
 func TestHandleSmartRetry_ShortDelay_503_StickySession_FailedRetry_ClearsSession(t *testing.T) {
 	failRespBody := `{
 		"error": {
-			"code": 503,
-			"status": "UNAVAILABLE",
+			"code": 429,
+			"status": "RESOURCE_EXHAUSTED",
 			"details": [
-				{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "metadata": {"model": "gemini-3-pro"}, "reason": "MODEL_CAPACITY_EXHAUSTED"},
+				{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "metadata": {"model": "gemini-3-pro"}, "reason": "RATE_LIMIT_EXCEEDED"},
 				{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "0.5s"}
 			]
 		}
 	}`
 	failResp := &http.Response{
-		StatusCode: http.StatusServiceUnavailable,
+		StatusCode: http.StatusTooManyRequests,
 		Header:     http.Header{},
 		Body:       io.NopCloser(strings.NewReader(failRespBody)),
 	}
@@ -1162,16 +1223,16 @@ func TestHandleSmartRetry_ShortDelay_503_StickySession_FailedRetry_ClearsSession
 
 	respBody := []byte(`{
 		"error": {
-			"code": 503,
-			"status": "UNAVAILABLE",
+			"code": 429,
+			"status": "RESOURCE_EXHAUSTED",
 			"details": [
-				{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "metadata": {"model": "gemini-3-pro"}, "reason": "MODEL_CAPACITY_EXHAUSTED"},
+				{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "metadata": {"model": "gemini-3-pro"}, "reason": "RATE_LIMIT_EXCEEDED"},
 				{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "0.5s"}
 			]
 		}
 	}`)
 	resp := &http.Response{
-		StatusCode: http.StatusServiceUnavailable,
+		StatusCode: http.StatusTooManyRequests,
 		Header:     http.Header{},
 		Body:       io.NopCloser(bytes.NewReader(respBody)),
 	}
@@ -1188,7 +1249,7 @@ func TestHandleSmartRetry_ShortDelay_503_StickySession_FailedRetry_ClearsSession
 		isStickySession: true,
 		groupID:         77,
 		sessionHash:     "sticky-503-short",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	}
@@ -1278,7 +1339,7 @@ func TestAntigravityRetryLoop_SmartRetryFailed_StickySession_SwitchErrorPropagat
 		isStickySession: true,
 		groupID:         55,
 		sessionHash:     "sticky-loop-test",
-		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, quotaScope AntigravityQuotaScope, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
+		handleError: func(ctx context.Context, prefix string, account *Account, statusCode int, headers http.Header, body []byte, requestedModel string, groupID int64, sessionHash string, isStickySession bool) *handleModelRateLimitResult {
 			return nil
 		},
 	})
