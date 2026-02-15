@@ -22,6 +22,7 @@ type ClaudeOAuthClient interface {
 	GetAuthorizationCode(ctx context.Context, sessionKey, orgUUID, scope, codeChallenge, state, proxyURL string) (string, error)
 	ExchangeCodeForToken(ctx context.Context, code, codeVerifier, state, proxyURL string, isSetupToken bool) (*oauth.TokenResponse, error)
 	RefreshToken(ctx context.Context, refreshToken, proxyURL string) (*oauth.TokenResponse, error)
+	SendPostOAuthRequests(ctx context.Context, accessToken, accountUUID, proxyURL string)
 }
 
 // OAuthService handles OAuth authentication flows
@@ -266,6 +267,11 @@ func (s *OAuthService) exchangeCodeForToken(ctx context.Context, code, codeVerif
 			tokenInfo.EmailAddress = tokenResp.Account.EmailAddress
 			log.Printf("[OAuth] Got email_address: %s", tokenInfo.EmailAddress)
 		}
+	}
+
+	// Send post-OAuth simulation requests asynchronously (fire-and-forget, independent of request lifecycle)
+	if tokenInfo.AccountUUID != "" {
+		go s.oauthClient.SendPostOAuthRequests(context.Background(), tokenInfo.AccessToken, tokenInfo.AccountUUID, proxyURL)
 	}
 
 	return tokenInfo, nil

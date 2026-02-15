@@ -297,6 +297,7 @@ var ProviderSet = wire.NewSet(
 	ProvideConcurrencyService,
 	ProvideSchedulerSnapshotService,
 	NewIdentityService,
+	NewVersionService,
 	NewCRSSyncService,
 	ProvideUpdateService,
 	ProvideTokenRefreshService,

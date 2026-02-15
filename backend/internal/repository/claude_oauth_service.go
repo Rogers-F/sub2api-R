@@ -17,18 +17,20 @@ import (
 	"github.com/imroc/req/v3"
 )
 
-func NewClaudeOAuthClient() service.ClaudeOAuthClient {
+func NewClaudeOAuthClient(versionService *service.VersionService) service.ClaudeOAuthClient {
 	return &claudeOAuthService{
-		baseURL:       "https://claude.ai",
-		tokenURL:      oauth.TokenURL,
-		clientFactory: createReqClient,
+		baseURL:        "https://claude.ai",
+		tokenURL:       oauth.TokenURL,
+		clientFactory:  createReqClient,
+		versionService: versionService,
 	}
 }
 
 type claudeOAuthService struct {
-	baseURL       string
-	tokenURL      string
-	clientFactory func(proxyURL string) *req.Client
+	baseURL        string
+	tokenURL       string
+	clientFactory  func(proxyURL string) *req.Client
+	versionService *service.VersionService
 }
 
 func (s *claudeOAuthService) GetOrganizationUUID(ctx context.Context, sessionKey, proxyURL string) (string, error) {
@@ -165,6 +167,8 @@ func (s *claudeOAuthService) GetAuthorizationCode(ctx context.Context, sessionKe
 }
 
 func (s *claudeOAuthService) ExchangeCodeForToken(ctx context.Context, code, codeVerifier, state, proxyURL string, isSetupToken bool) (*oauth.TokenResponse, error) {
+	s.sendPreOAuthHelloRequests(ctx, proxyURL)
+
 	client := s.clientFactory(proxyURL)
 
 	// Parse code which may contain state in format "authCode#state"
@@ -229,6 +233,7 @@ func (s *claudeOAuthService) RefreshToken(ctx context.Context, refreshToken, pro
 		"grant_type":    "refresh_token",
 		"refresh_token": refreshToken,
 		"client_id":     oauth.ClientID,
+		"scope":         oauth.ScopeAPI,
 	}
 
 	var tokenResp oauth.TokenResponse
@@ -251,6 +256,91 @@ func (s *claudeOAuthService) RefreshToken(ctx context.Context, refreshToken, pro
 	}
 
 	return &tokenResp, nil
+}
+
+// sendPreOAuthHelloRequests sends hello requests before token exchange to mimic CLI behavior.
+func (s *claudeOAuthService) sendPreOAuthHelloRequests(ctx context.Context, proxyURL string) {
+	if s.versionService == nil {
+		return
+	}
+	cliVersion := s.versionService.GetOrCreateCLIVersion(ctx, "__hello__")
+	userAgent := fmt.Sprintf("claude-cli/%s (external, cli)", cliVersion)
+
+	helloCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	client := s.clientFactory(proxyURL)
+
+	helloURLs := []string{
+		"https://console.anthropic.com/v1/oauth/hello",
+		"https://api.anthropic.com/api/hello",
+	}
+
+	for _, u := range helloURLs {
+		resp, err := client.R().
+			SetContext(helloCtx).
+			SetHeader("Accept", "application/json, text/plain, */*").
+			SetHeader("User-Agent", userAgent).
+			SetHeader("Accept-Encoding", "gzip, compress, deflate, br").
+			Get(u)
+		if err != nil {
+			log.Printf("[OAuth] Pre-hello %s failed: %v", u, err)
+			continue
+		}
+		log.Printf("[OAuth] Pre-hello %s -> %d", u, resp.StatusCode)
+	}
+}
+
+// SendPostOAuthRequests sends simulation requests after token exchange to mimic CLI behavior.
+func (s *claudeOAuthService) SendPostOAuthRequests(ctx context.Context, accessToken, accountUUID, proxyURL string) {
+	if s.versionService == nil {
+		return
+	}
+	cliVersion := s.versionService.GetOrCreateCLIVersion(ctx, accountUUID)
+
+	postCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	client := s.clientFactory(proxyURL)
+
+	type postReq struct {
+		url         string
+		headerStyle string // "axios" or "claude-code"
+		contentType bool
+	}
+
+	requests := []postReq{
+		{"https://api.anthropic.com/api/oauth/profile", "axios", true},
+		{"https://api.anthropic.com/api/oauth/claude_cli/roles", "axios", false},
+		{"https://api.anthropic.com/api/organization/claude_code_first_token_date", "claude-code", false},
+		{"https://api.anthropic.com/api/claude_code/organizations/metrics_enabled", "claude-code", true},
+	}
+
+	for _, r := range requests {
+		req := client.R().
+			SetContext(postCtx).
+			SetHeader("Accept", "application/json, text/plain, */*").
+			SetHeader("Accept-Encoding", "gzip, compress, deflate, br").
+			SetHeader("Authorization", "Bearer "+accessToken)
+
+		if r.headerStyle == "axios" {
+			req.SetHeader("User-Agent", "axios/1.8.4")
+		} else {
+			req.SetHeader("User-Agent", fmt.Sprintf("claude-code/%s", cliVersion))
+			req.SetHeader("anthropic-beta", "oauth-2025-04-20")
+		}
+
+		if r.contentType {
+			req.SetHeader("Content-Type", "application/json")
+		}
+
+		resp, err := req.Get(r.url)
+		if err != nil {
+			log.Printf("[OAuth] Post-OAuth %s failed: %v", r.url, err)
+			continue
+		}
+		log.Printf("[OAuth] Post-OAuth %s -> %d", r.url, resp.StatusCode)
+	}
 }
 
 func createReqClient(proxyURL string) *req.Client {

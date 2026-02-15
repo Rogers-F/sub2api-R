@@ -108,7 +108,9 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	concurrencyService := service.ProvideConcurrencyService(concurrencyCache, accountRepository, configConfig)
 	adminUserHandler := admin.NewUserHandler(adminService, settingService, concurrencyService)
 	groupHandler := admin.NewGroupHandler(adminService)
-	claudeOAuthClient := repository.NewClaudeOAuthClient()
+	versionCache := repository.NewVersionCache(redisClient)
+	versionService := service.NewVersionService(versionCache)
+	claudeOAuthClient := repository.NewClaudeOAuthClient(versionService)
 	oauthSessionStore := repository.NewRedisSessionStore(redisClient)
 	oAuthService := service.NewOAuthService(proxyRepository, claudeOAuthClient, oauthSessionStore)
 	openAIOAuthClient := repository.NewOpenAIOAuthClient()
@@ -154,7 +156,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 		return nil, err
 	}
 	billingService := service.NewBillingService(configConfig, pricingService)
-	identityService := service.NewIdentityService(identityCache)
+	identityService := service.NewIdentityService(identityCache, versionService)
 	deferredService := service.ProvideDeferredService(accountRepository, timingWheelService)
 	claudeTokenProvider := service.NewClaudeTokenProvider(accountRepository, geminiTokenCache, oAuthService, configConfig)
 	digestSessionStore := service.NewDigestSessionStore()
