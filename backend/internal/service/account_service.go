@@ -63,6 +63,7 @@ type AccountRepository interface {
 	UpdateSessionWindow(ctx context.Context, id int64, start, end *time.Time, status string) error
 	UpdateExtra(ctx context.Context, id int64, updates map[string]any) error
 	BulkUpdate(ctx context.Context, ids []int64, updates AccountBulkUpdate) (int64, error)
+	SetOnErrorCallback(fn func(accountID int64))
 }
 
 // AccountBulkUpdate describes the fields that can be updated in a bulk operation.

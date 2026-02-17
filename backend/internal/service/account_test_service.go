@@ -139,6 +139,21 @@ func createTestPayload(modelID string) (map[string]any, error) {
 	}, nil
 }
 
+// createQuietTestPayload creates a minimal non-streaming test payload for Claude API
+func createQuietTestPayload(modelID string) (map[string]any, error) {
+	return map[string]any{
+		"model": modelID,
+		"messages": []map[string]any{
+			{
+				"role":    "user",
+				"content": "hi",
+			},
+		},
+		"max_tokens": 1,
+		"stream":     false,
+	}, nil
+}
+
 // TestAccountConnection tests an account's connection by sending a test request
 // All account types use full Claude Code client characteristics, only auth header differs
 // modelID is optional - if empty, defaults to claude.DefaultTestModel
@@ -183,242 +198,14 @@ func (s *AccountTestService) tryAutoRecoverError(accountID int64) {
 	}
 }
 
-// testClaudeAccountConnection tests an Anthropic Claude account's connection
-func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account *Account, modelID string) error {
-	ctx := c.Request.Context()
-
-	// Determine the model to use
+// buildClaudeTestRequest builds an HTTP request for testing a Claude account.
+// stream controls whether the payload uses streaming mode.
+// Returns the request, proxy URL, resolved model ID, and any error.
+func (s *AccountTestService) buildClaudeTestRequest(ctx context.Context, account *Account, modelID string, stream bool) (*http.Request, string, string, error) {
 	testModelID := modelID
 	if testModelID == "" {
 		testModelID = claude.DefaultTestModel
 	}
-
-	// For API Key accounts with model mapping, map the model
-	if account.Type == "apikey" {
-		mapping := account.GetModelMapping()
-		if len(mapping) > 0 {
-			if mappedModel, exists := mapping[testModelID]; exists {
-				testModelID = mappedModel
-			}
-		}
-	}
-
-	// Determine authentication method and API URL
-	var authToken string
-	var useBearer bool
-	var apiURL string
-
-	if account.IsOAuth() {
-		// OAuth or Setup Token - use Bearer token
-		useBearer = true
-		apiURL = testClaudeAPIURL
-		authToken = account.GetCredential("access_token")
-		if authToken == "" {
-			return s.sendErrorAndEnd(c, "No access token available")
-		}
-	} else if account.Type == "apikey" {
-		// API Key - use x-api-key header
-		useBearer = false
-		authToken = account.GetCredential("api_key")
-		if authToken == "" {
-			return s.sendErrorAndEnd(c, "No API key available")
-		}
-
-		baseURL := account.GetBaseURL()
-		if baseURL == "" {
-			baseURL = "https://api.anthropic.com"
-		}
-		normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
-		if err != nil {
-			return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid base URL: %s", err.Error()))
-		}
-		apiURL = strings.TrimSuffix(normalizedBaseURL, "/") + "/v1/messages"
-	} else {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Unsupported account type: %s", account.Type))
-	}
-
-	// Set SSE headers
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("X-Accel-Buffering", "no")
-	c.Writer.Flush()
-
-	// Create Claude Code style payload (same for all account types)
-	payload, err := createTestPayload(testModelID)
-	if err != nil {
-		return s.sendErrorAndEnd(c, "Failed to create test payload")
-	}
-	payloadBytes, _ := json.Marshal(payload)
-
-	// Send test_start event
-	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
-
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(payloadBytes))
-	if err != nil {
-		return s.sendErrorAndEnd(c, "Failed to create request")
-	}
-
-	// Set common headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("anthropic-version", "2023-06-01")
-
-	// Apply Claude Code client headers
-	for key, value := range claude.DefaultHeaders {
-		req.Header.Set(key, value)
-	}
-
-	// Set authentication header
-	if useBearer {
-		req.Header.Set("anthropic-beta", claude.DefaultBetaHeader)
-		req.Header.Set("Authorization", "Bearer "+authToken)
-	} else {
-		req.Header.Set("anthropic-beta", claude.APIKeyBetaHeader)
-		req.Header.Set("x-api-key", authToken)
-	}
-
-	// Get proxy URL
-	proxyURL := ""
-	if account.ProxyID != nil && account.Proxy != nil {
-		proxyURL = account.Proxy.URL()
-	}
-
-	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
-	}
-
-	// Process SSE stream
-	return s.processClaudeStream(c, resp.Body)
-}
-
-// testOpenAIAccountConnection tests an OpenAI account's connection
-func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account *Account, modelID string) error {
-	ctx := c.Request.Context()
-
-	// Default to openai.DefaultTestModel for OpenAI testing
-	testModelID := modelID
-	if testModelID == "" {
-		testModelID = openai.DefaultTestModel
-	}
-
-	// For API Key accounts with model mapping, map the model
-	if account.Type == "apikey" {
-		mapping := account.GetModelMapping()
-		if len(mapping) > 0 {
-			if mappedModel, exists := mapping[testModelID]; exists {
-				testModelID = mappedModel
-			}
-		}
-	}
-
-	// Determine authentication method and API URL
-	var authToken string
-	var apiURL string
-	var isOAuth bool
-	var chatgptAccountID string
-
-	if account.IsOAuth() {
-		isOAuth = true
-		// OAuth - use Bearer token with ChatGPT internal API
-		authToken = account.GetOpenAIAccessToken()
-		if authToken == "" {
-			return s.sendErrorAndEnd(c, "No access token available")
-		}
-
-		// OAuth uses ChatGPT internal API
-		apiURL = chatgptCodexAPIURL
-		chatgptAccountID = account.GetChatGPTAccountID()
-	} else if account.Type == "apikey" {
-		// API Key - use Platform API
-		authToken = account.GetOpenAIApiKey()
-		if authToken == "" {
-			return s.sendErrorAndEnd(c, "No API key available")
-		}
-
-		baseURL := account.GetOpenAIBaseURL()
-		if baseURL == "" {
-			baseURL = "https://api.openai.com"
-		}
-		normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
-		if err != nil {
-			return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid base URL: %s", err.Error()))
-		}
-		apiURL = strings.TrimSuffix(normalizedBaseURL, "/") + "/responses"
-	} else {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Unsupported account type: %s", account.Type))
-	}
-
-	// Set SSE headers
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("X-Accel-Buffering", "no")
-	c.Writer.Flush()
-
-	// Create OpenAI Responses API payload
-	payload := createOpenAITestPayload(testModelID, isOAuth)
-	payloadBytes, _ := json.Marshal(payload)
-
-	// Send test_start event
-	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
-
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(payloadBytes))
-	if err != nil {
-		return s.sendErrorAndEnd(c, "Failed to create request")
-	}
-
-	// Set common headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+authToken)
-
-	// Set OAuth-specific headers for ChatGPT internal API
-	if isOAuth {
-		req.Host = "chatgpt.com"
-		req.Header.Set("accept", "text/event-stream")
-		if chatgptAccountID != "" {
-			req.Header.Set("chatgpt-account-id", chatgptAccountID)
-		}
-	}
-
-	// Get proxy URL
-	proxyURL := ""
-	if account.ProxyID != nil && account.Proxy != nil {
-		proxyURL = account.Proxy.URL()
-	}
-
-	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
-	}
-
-	// Process SSE stream
-	return s.processOpenAIStream(c, resp.Body)
-}
-
-// testGeminiAccountConnection tests a Gemini account's connection
-func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account *Account, modelID string) error {
-	ctx := c.Request.Context()
-
-	// Determine the model to use
-	testModelID := modelID
-	if testModelID == "" {
-		testModelID = geminicli.DefaultTestModel
-	}
-
-	// For API Key accounts with model mapping, map the model
 	if account.Type == AccountTypeAPIKey {
 		mapping := account.GetModelMapping()
 		if len(mapping) > 0 {
@@ -428,6 +215,81 @@ func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account
 		}
 	}
 
+	var authToken string
+	var useBearer bool
+	var apiURL string
+
+	if account.IsOAuth() {
+		useBearer = true
+		apiURL = testClaudeAPIURL
+		authToken = account.GetCredential("access_token")
+		if authToken == "" {
+			return nil, "", "", fmt.Errorf("no access token available")
+		}
+	} else if account.Type == AccountTypeAPIKey {
+		useBearer = false
+		authToken = account.GetCredential("api_key")
+		if authToken == "" {
+			return nil, "", "", fmt.Errorf("no API key available")
+		}
+		baseURL := account.GetBaseURL()
+		if baseURL == "" {
+			baseURL = "https://api.anthropic.com"
+		}
+		normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+		if err != nil {
+			return nil, "", "", fmt.Errorf("invalid base URL: %s", err.Error())
+		}
+		apiURL = strings.TrimSuffix(normalizedBaseURL, "/") + "/v1/messages"
+	} else {
+		return nil, "", "", fmt.Errorf("unsupported account type: %s", account.Type)
+	}
+
+	var payload map[string]any
+	var err error
+	if stream {
+		payload, err = createTestPayload(testModelID)
+	} else {
+		payload, err = createQuietTestPayload(testModelID)
+	}
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to create test payload")
+	}
+	payloadBytes, _ := json.Marshal(payload)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to create request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("anthropic-version", "2023-06-01")
+	for key, value := range claude.DefaultHeaders {
+		req.Header.Set(key, value)
+	}
+	if useBearer {
+		req.Header.Set("anthropic-beta", claude.DefaultBetaHeader)
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	} else {
+		req.Header.Set("anthropic-beta", claude.APIKeyBetaHeader)
+		req.Header.Set("x-api-key", authToken)
+	}
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	return req, proxyURL, testModelID, nil
+}
+
+// testClaudeAccountConnection tests an Anthropic Claude account's connection
+func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account *Account, modelID string) error {
+	req, proxyURL, resolvedModel, err := s.buildClaudeTestRequest(c.Request.Context(), account, modelID, true)
+	if err != nil {
+		return s.sendErrorAndEnd(c, err.Error())
+	}
+
 	// Set SSE headers
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -435,34 +297,7 @@ func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account
 	c.Writer.Header().Set("X-Accel-Buffering", "no")
 	c.Writer.Flush()
 
-	// Create test payload (Gemini format)
-	payload := createGeminiTestPayload()
-
-	// Build request based on account type
-	var req *http.Request
-	var err error
-
-	switch account.Type {
-	case AccountTypeAPIKey:
-		req, err = s.buildGeminiAPIKeyRequest(ctx, account, testModelID, payload)
-	case AccountTypeOAuth:
-		req, err = s.buildGeminiOAuthRequest(ctx, account, testModelID, payload)
-	default:
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Unsupported account type: %s", account.Type))
-	}
-
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to build request: %s", err.Error()))
-	}
-
-	// Send test_start event
-	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
-
-	// Get proxy and execute request
-	proxyURL := ""
-	if account.ProxyID != nil && account.Proxy != nil {
-		proxyURL = account.Proxy.URL()
-	}
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: resolvedModel})
 
 	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
 	if err != nil {
@@ -475,7 +310,188 @@ func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account
 		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
 	}
 
-	// Process SSE stream
+	return s.processClaudeStream(c, resp.Body)
+}
+
+// buildOpenAITestRequest builds an HTTP request for testing an OpenAI account.
+// stream controls whether the payload uses streaming mode.
+// Returns the request, proxy URL, resolved model ID, and any error.
+func (s *AccountTestService) buildOpenAITestRequest(ctx context.Context, account *Account, modelID string, stream bool) (*http.Request, string, string, error) {
+	testModelID := modelID
+	if testModelID == "" {
+		testModelID = openai.DefaultTestModel
+	}
+	if account.Type == AccountTypeAPIKey {
+		mapping := account.GetModelMapping()
+		if len(mapping) > 0 {
+			if mappedModel, exists := mapping[testModelID]; exists {
+				testModelID = mappedModel
+			}
+		}
+	}
+
+	var authToken string
+	var apiURL string
+	var isOAuth bool
+	var chatgptAccountID string
+
+	if account.IsOAuth() {
+		isOAuth = true
+		authToken = account.GetOpenAIAccessToken()
+		if authToken == "" {
+			return nil, "", "", fmt.Errorf("no access token available")
+		}
+		apiURL = chatgptCodexAPIURL
+		chatgptAccountID = account.GetChatGPTAccountID()
+	} else if account.Type == AccountTypeAPIKey {
+		authToken = account.GetOpenAIApiKey()
+		if authToken == "" {
+			return nil, "", "", fmt.Errorf("no API key available")
+		}
+		baseURL := account.GetOpenAIBaseURL()
+		if baseURL == "" {
+			baseURL = "https://api.openai.com"
+		}
+		normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+		if err != nil {
+			return nil, "", "", fmt.Errorf("invalid base URL: %s", err.Error())
+		}
+		apiURL = strings.TrimSuffix(normalizedBaseURL, "/") + "/responses"
+	} else {
+		return nil, "", "", fmt.Errorf("unsupported account type: %s", account.Type)
+	}
+
+	payload := createOpenAITestPayload(testModelID, isOAuth)
+	if !stream {
+		payload["stream"] = false
+	}
+	payloadBytes, _ := json.Marshal(payload)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to create request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	if isOAuth {
+		req.Host = "chatgpt.com"
+		if stream {
+			req.Header.Set("accept", "text/event-stream")
+		}
+		if chatgptAccountID != "" {
+			req.Header.Set("chatgpt-account-id", chatgptAccountID)
+		}
+	}
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	return req, proxyURL, testModelID, nil
+}
+
+// testOpenAIAccountConnection tests an OpenAI account's connection
+func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account *Account, modelID string) error {
+	req, proxyURL, resolvedModel, err := s.buildOpenAITestRequest(c.Request.Context(), account, modelID, true)
+	if err != nil {
+		return s.sendErrorAndEnd(c, err.Error())
+	}
+
+	// Set SSE headers
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: resolvedModel})
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
+	return s.processOpenAIStream(c, resp.Body)
+}
+
+// buildGeminiTestRequest builds an HTTP request for testing a Gemini account.
+// stream controls the endpoint: streamGenerateContent (SSE) vs generateContent.
+// Returns the request, proxy URL, resolved model ID, and any error.
+func (s *AccountTestService) buildGeminiTestRequest(ctx context.Context, account *Account, modelID string, stream bool) (*http.Request, string, string, error) {
+	testModelID := modelID
+	if testModelID == "" {
+		testModelID = geminicli.DefaultTestModel
+	}
+	if account.Type == AccountTypeAPIKey {
+		mapping := account.GetModelMapping()
+		if len(mapping) > 0 {
+			if mappedModel, exists := mapping[testModelID]; exists {
+				testModelID = mappedModel
+			}
+		}
+	}
+
+	payload := createGeminiTestPayload()
+
+	var req *http.Request
+	var err error
+
+	switch account.Type {
+	case AccountTypeAPIKey:
+		req, err = s.buildGeminiAPIKeyRequest(ctx, account, testModelID, payload, stream)
+	case AccountTypeOAuth:
+		req, err = s.buildGeminiOAuthRequest(ctx, account, testModelID, payload, stream)
+	default:
+		return nil, "", "", fmt.Errorf("unsupported account type: %s", account.Type)
+	}
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	return req, proxyURL, testModelID, nil
+}
+
+// testGeminiAccountConnection tests a Gemini account's connection
+func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account *Account, modelID string) error {
+	req, proxyURL, resolvedModel, err := s.buildGeminiTestRequest(c.Request.Context(), account, modelID, true)
+	if err != nil {
+		return s.sendErrorAndEnd(c, err.Error())
+	}
+
+	// Set SSE headers
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: resolvedModel})
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
 	return s.processGeminiStream(c, resp.Body)
 }
 
@@ -519,8 +535,9 @@ func (s *AccountTestService) testAntigravityAccountConnection(c *gin.Context, ac
 	return nil
 }
 
-// buildGeminiAPIKeyRequest builds request for Gemini API Key accounts
-func (s *AccountTestService) buildGeminiAPIKeyRequest(ctx context.Context, account *Account, modelID string, payload []byte) (*http.Request, error) {
+// buildGeminiAPIKeyRequest builds request for Gemini API Key accounts.
+// stream controls the endpoint: streamGenerateContent (SSE) vs generateContent.
+func (s *AccountTestService) buildGeminiAPIKeyRequest(ctx context.Context, account *Account, modelID string, payload []byte, stream bool) (*http.Request, error) {
 	apiKey := account.GetCredential("api_key")
 	if strings.TrimSpace(apiKey) == "" {
 		return nil, fmt.Errorf("no API key available")
@@ -535,9 +552,14 @@ func (s *AccountTestService) buildGeminiAPIKeyRequest(ctx context.Context, accou
 		return nil, err
 	}
 
-	// Use streamGenerateContent for real-time feedback
-	fullURL := fmt.Sprintf("%s/v1beta/models/%s:streamGenerateContent?alt=sse",
-		strings.TrimRight(normalizedBaseURL, "/"), modelID)
+	var fullURL string
+	if stream {
+		fullURL = fmt.Sprintf("%s/v1beta/models/%s:streamGenerateContent?alt=sse",
+			strings.TrimRight(normalizedBaseURL, "/"), modelID)
+	} else {
+		fullURL = fmt.Sprintf("%s/v1beta/models/%s:generateContent",
+			strings.TrimRight(normalizedBaseURL, "/"), modelID)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", fullURL, bytes.NewReader(payload))
 	if err != nil {
@@ -550,8 +572,9 @@ func (s *AccountTestService) buildGeminiAPIKeyRequest(ctx context.Context, accou
 	return req, nil
 }
 
-// buildGeminiOAuthRequest builds request for Gemini OAuth accounts
-func (s *AccountTestService) buildGeminiOAuthRequest(ctx context.Context, account *Account, modelID string, payload []byte) (*http.Request, error) {
+// buildGeminiOAuthRequest builds request for Gemini OAuth accounts.
+// stream controls the endpoint: streamGenerateContent (SSE) vs generateContent.
+func (s *AccountTestService) buildGeminiOAuthRequest(ctx context.Context, account *Account, modelID string, payload []byte, stream bool) (*http.Request, error) {
 	if s.geminiTokenProvider == nil {
 		return nil, fmt.Errorf("gemini token provider not configured")
 	}
@@ -573,7 +596,12 @@ func (s *AccountTestService) buildGeminiOAuthRequest(ctx context.Context, accoun
 		if err != nil {
 			return nil, err
 		}
-		fullURL := fmt.Sprintf("%s/v1beta/models/%s:streamGenerateContent?alt=sse", strings.TrimRight(normalizedBaseURL, "/"), modelID)
+		var fullURL string
+		if stream {
+			fullURL = fmt.Sprintf("%s/v1beta/models/%s:streamGenerateContent?alt=sse", strings.TrimRight(normalizedBaseURL, "/"), modelID)
+		} else {
+			fullURL = fmt.Sprintf("%s/v1beta/models/%s:generateContent", strings.TrimRight(normalizedBaseURL, "/"), modelID)
+		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullURL, bytes.NewReader(payload))
 		if err != nil {
@@ -585,11 +613,12 @@ func (s *AccountTestService) buildGeminiOAuthRequest(ctx context.Context, accoun
 	}
 
 	// Code Assist mode (with project_id)
-	return s.buildCodeAssistRequest(ctx, accessToken, projectID, modelID, payload)
+	return s.buildCodeAssistRequest(ctx, accessToken, projectID, modelID, payload, stream)
 }
 
-// buildCodeAssistRequest builds request for Google Code Assist API (used by Gemini CLI and Antigravity)
-func (s *AccountTestService) buildCodeAssistRequest(ctx context.Context, accessToken, projectID, modelID string, payload []byte) (*http.Request, error) {
+// buildCodeAssistRequest builds request for Google Code Assist API (used by Gemini CLI and Antigravity).
+// stream controls the endpoint: streamGenerateContent (SSE) vs generateContent.
+func (s *AccountTestService) buildCodeAssistRequest(ctx context.Context, accessToken, projectID, modelID string, payload []byte, stream bool) (*http.Request, error) {
 	var inner map[string]any
 	if err := json.Unmarshal(payload, &inner); err != nil {
 		return nil, err
@@ -606,7 +635,12 @@ func (s *AccountTestService) buildCodeAssistRequest(ctx context.Context, accessT
 	if err != nil {
 		return nil, err
 	}
-	fullURL := fmt.Sprintf("%s/v1internal:streamGenerateContent?alt=sse", normalizedBaseURL)
+	var fullURL string
+	if stream {
+		fullURL = fmt.Sprintf("%s/v1internal:streamGenerateContent?alt=sse", normalizedBaseURL)
+	} else {
+		fullURL = fmt.Sprintf("%s/v1internal:generateContent", normalizedBaseURL)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", fullURL, bytes.NewReader(wrappedBytes))
 	if err != nil {
@@ -845,6 +879,109 @@ func (s *AccountTestService) processOpenAIStream(c *gin.Context, body io.Reader)
 			return s.sendErrorAndEnd(c, errorMsg)
 		}
 	}
+}
+
+// TestAccountConnectionQuiet performs a non-streaming connectivity test.
+// Used by the auto-recovery service. Does not require gin.Context.
+func (s *AccountTestService) TestAccountConnectionQuiet(ctx context.Context, accountID int64) error {
+	account, err := s.accountRepo.GetByID(ctx, accountID)
+	if err != nil {
+		return fmt.Errorf("account not found: %w", err)
+	}
+
+	var testErr error
+	switch {
+	case account.IsOpenAI():
+		testErr = s.testOpenAIQuiet(ctx, account)
+	case account.IsGemini():
+		testErr = s.testGeminiQuiet(ctx, account)
+	case account.Platform == PlatformAntigravity:
+		testErr = s.testAntigravityQuiet(ctx, account)
+	default:
+		testErr = s.testClaudeQuiet(ctx, account)
+	}
+
+	if testErr == nil && account.Status == StatusError {
+		recoverCtx, recoverCancel := context.WithTimeout(ctx, 5*time.Second)
+		defer recoverCancel()
+		recovered, clearErr := s.accountRepo.ClearError(recoverCtx, accountID)
+		if clearErr != nil {
+			return fmt.Errorf("connectivity OK but clear-error failed: %w", clearErr)
+		}
+		if recovered {
+			log.Printf("[AccountTest] auto-recovered error status: account=%d", accountID)
+		}
+	}
+	return testErr
+}
+
+// testClaudeQuiet performs a non-streaming Claude API connectivity test.
+func (s *AccountTestService) testClaudeQuiet(ctx context.Context, account *Account) error {
+	req, proxyURL, _, err := s.buildClaudeTestRequest(ctx, account, "", false)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
+
+// testOpenAIQuiet performs a non-streaming OpenAI API connectivity test.
+func (s *AccountTestService) testOpenAIQuiet(ctx context.Context, account *Account) error {
+	req, proxyURL, _, err := s.buildOpenAITestRequest(ctx, account, "", false)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
+
+// testGeminiQuiet performs a non-streaming Gemini API connectivity test.
+func (s *AccountTestService) testGeminiQuiet(ctx context.Context, account *Account) error {
+	req, proxyURL, _, err := s.buildGeminiTestRequest(ctx, account, "", false)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
+
+// testAntigravityQuiet performs a non-streaming Antigravity connectivity test.
+func (s *AccountTestService) testAntigravityQuiet(ctx context.Context, account *Account) error {
+	if s.antigravityGatewayService == nil {
+		return fmt.Errorf("antigravity gateway service not configured")
+	}
+	_, err := s.antigravityGatewayService.TestConnection(ctx, account, "claude-sonnet-4-5")
+	return err
 }
 
 // sendEvent sends a SSE event to the client

@@ -175,6 +175,7 @@ func (m *mockAccountRepoForPlatform) UpdateExtra(ctx context.Context, id int64, 
 func (m *mockAccountRepoForPlatform) BulkUpdate(ctx context.Context, ids []int64, updates AccountBulkUpdate) (int64, error) {
 	return 0, nil
 }
+func (m *mockAccountRepoForPlatform) SetOnErrorCallback(fn func(accountID int64)) {}
 
 // Verify interface implementation
 var _ AccountRepository = (*mockAccountRepoForPlatform)(nil)

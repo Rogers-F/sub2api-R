@@ -86,6 +86,8 @@ func (s *stubAntigravityAccountRepo) SetModelRateLimit(ctx context.Context, id i
 	return nil
 }
 
+func (s *stubAntigravityAccountRepo) SetOnErrorCallback(fn func(accountID int64)) {}
+
 func TestAntigravityRetryLoop_NoURLFallback_UsesConfiguredBaseURL(t *testing.T) {
 	t.Setenv(antigravityForwardBaseURLEnv, "")
 

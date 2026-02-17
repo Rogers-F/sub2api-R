@@ -187,6 +187,8 @@ func (s *accountRepoStub) BulkUpdate(ctx context.Context, ids []int64, updates A
 	panic("unexpected BulkUpdate call")
 }
 
+func (s *accountRepoStub) SetOnErrorCallback(fn func(accountID int64)) {}
+
 // TestAccountService_Delete_NotFound 测试删除不存在的账号时返回正确的错误。
 // 预期行为：
 //   - ExistsByID 返回 false（账号不存在）

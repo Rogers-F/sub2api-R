@@ -164,6 +164,7 @@ func (m *mockAccountRepoForGemini) UpdateExtra(ctx context.Context, id int64, up
 func (m *mockAccountRepoForGemini) BulkUpdate(ctx context.Context, ids []int64, updates AccountBulkUpdate) (int64, error) {
 	return 0, nil
 }
+func (m *mockAccountRepoForGemini) SetOnErrorCallback(fn func(accountID int64)) {}
 
 // Verify interface implementation
 var _ AccountRepository = (*mockAccountRepoForGemini)(nil)

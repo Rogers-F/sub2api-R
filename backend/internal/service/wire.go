@@ -99,6 +99,19 @@ func ProvideDeferredService(accountRepo AccountRepository, timingWheel *TimingWh
 	return svc
 }
 
+// ProvideAccountAutoRecoveryService creates AccountAutoRecoveryService and
+// wires the SetError callback so that accounts entering error state
+// automatically trigger recovery.
+func ProvideAccountAutoRecoveryService(
+	testService *AccountTestService,
+	accountRepo AccountRepository,
+	timingWheel *TimingWheelService,
+) *AccountAutoRecoveryService {
+	svc := NewAccountAutoRecoveryService(testService, accountRepo, timingWheel)
+	accountRepo.SetOnErrorCallback(svc.TriggerRecovery)
+	return svc
+}
+
 // ProvideConcurrencyService creates ConcurrencyService and starts slot cleanup worker.
 func ProvideConcurrencyService(cache ConcurrencyCache, accountRepo AccountRepository, cfg *config.Config) *ConcurrencyService {
 	svc := NewConcurrencyService(cache)
@@ -307,6 +320,7 @@ var ProviderSet = wire.NewSet(
 	ProvideDashboardAggregationService,
 	ProvideUsageCleanupService,
 	ProvideDeferredService,
+	ProvideAccountAutoRecoveryService,
 	NewAntigravityQuotaFetcher,
 	NewUserAttributeService,
 	NewUsageCache,

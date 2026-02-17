@@ -48,6 +48,7 @@ type accountRepository struct {
 	// Used to proactively sync account snapshot to cache when status changes,
 	// ensuring sticky sessions can promptly detect unavailable accounts.
 	schedulerCache service.SchedulerCache
+	onErrorSet     func(accountID int64) // auto-recovery callback
 }
 
 type tempUnschedSnapshot struct {
@@ -586,7 +587,14 @@ func (r *accountRepository) SetError(ctx context.Context, id int64, errorMsg str
 		log.Printf("[SchedulerOutbox] enqueue set error failed: account=%d err=%v", id, err)
 	}
 	r.syncSchedulerAccountSnapshot(ctx, id)
+	if fn := r.onErrorSet; fn != nil {
+		go fn(id)
+	}
 	return nil
+}
+
+func (r *accountRepository) SetOnErrorCallback(fn func(accountID int64)) {
+	r.onErrorSet = fn
 }
 
 // syncSchedulerAccountSnapshot 在账号状态变更时主动同步快照到调度器缓存。

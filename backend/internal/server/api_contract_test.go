@@ -1071,6 +1071,8 @@ func (s *stubAccountRepo) ListCRSAccountIDs(ctx context.Context) (map[string]int
 	return nil, errors.New("not implemented")
 }
 
+func (s *stubAccountRepo) SetOnErrorCallback(fn func(accountID int64)) {}
+
 type stubProxyRepo struct{}
 
 func (stubProxyRepo) Create(ctx context.Context, proxy *service.Proxy) error {
