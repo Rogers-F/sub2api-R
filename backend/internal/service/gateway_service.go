@@ -60,6 +60,112 @@ type accountWithLoad struct {
 	loadInfo *AccountLoadInfo
 }
 
+// accountFilterStats 记录 Layer 2 过滤统计，用于构建精确的 503 错误信息。
+type accountFilterStats struct {
+	Total             int
+	Excluded          int
+	Unschedulable     int
+	PlatformMismatch  int
+	ModelUnsupported  int
+	ModelRateLimited  int
+	WindowCostLimited int
+}
+
+func (st accountFilterStats) nonZeroSummary() string {
+	parts := []string{fmt.Sprintf("total=%d", st.Total)}
+	if st.Excluded > 0 {
+		parts = append(parts, fmt.Sprintf("excluded=%d", st.Excluded))
+	}
+	if st.Unschedulable > 0 {
+		parts = append(parts, fmt.Sprintf("unschedulable=%d", st.Unschedulable))
+	}
+	if st.PlatformMismatch > 0 {
+		parts = append(parts, fmt.Sprintf("platform_mismatch=%d", st.PlatformMismatch))
+	}
+	if st.ModelUnsupported > 0 {
+		parts = append(parts, fmt.Sprintf("model_unsupported=%d", st.ModelUnsupported))
+	}
+	if st.ModelRateLimited > 0 {
+		parts = append(parts, fmt.Sprintf("model_rate_limited=%d", st.ModelRateLimited))
+	}
+	if st.WindowCostLimited > 0 {
+		parts = append(parts, fmt.Sprintf("window_cost_limited=%d", st.WindowCostLimited))
+	}
+	return strings.Join(parts, ", ")
+}
+
+func newNoAvailableAccountsError(reason string) error {
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		return errors.New("no available accounts")
+	}
+	return fmt.Errorf("no available accounts: %s", reason)
+}
+
+func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string) error {
+	if inGroup {
+		return newNoAvailableAccountsError("no schedulable accounts in this group")
+	}
+	if strings.TrimSpace(platform) != "" {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("no schedulable accounts for platform %s", platform),
+		)
+	}
+	return newNoAvailableAccountsError("no schedulable accounts")
+}
+
+func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilterStats) error {
+	if st.Total <= 0 {
+		return newNoAvailableAccountsError("no candidate accounts after filtering")
+	}
+
+	summary := st.nonZeroSummary()
+
+	if requestedModel != "" && st.ModelUnsupported > 0 && st.ModelUnsupported+st.Excluded == st.Total {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("model %q not supported by any account (%s)", requestedModel, summary),
+		)
+	}
+
+	if requestedModel != "" && st.ModelRateLimited > 0 && st.ModelRateLimited+st.Excluded == st.Total {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("model %q rate-limited on all candidate accounts (%s)", requestedModel, summary),
+		)
+	}
+
+	if st.WindowCostLimited > 0 && st.WindowCostLimited+st.Excluded == st.Total {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("all candidate accounts exceeded window cost limit (%s)", summary),
+		)
+	}
+
+	if st.Unschedulable > 0 && st.Unschedulable+st.Excluded == st.Total {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("all candidate accounts are temporarily unschedulable (%s)", summary),
+		)
+	}
+
+	if st.PlatformMismatch > 0 && st.PlatformMismatch+st.Excluded == st.Total {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("no candidate account matches required platform (%s)", summary),
+		)
+	}
+
+	return newNoAvailableAccountsError(
+		fmt.Sprintf("all candidate accounts filtered out (%s)", summary),
+	)
+}
+
+func buildNoAvailableAccountsSessionLimitError(totalCandidates int, sessionLimited int) error {
+	summary := fmt.Sprintf("total=%d", totalCandidates)
+	if sessionLimited > 0 {
+		summary = fmt.Sprintf("%s, session_limited=%d", summary, sessionLimited)
+	}
+	return newNoAvailableAccountsError(
+		fmt.Sprintf("all candidate accounts reached session limit (%s)", summary),
+	)
+}
+
 var ForceCacheBillingContextKey = forceCacheBillingKeyType{}
 
 // IsForceCacheBilling 检查是否启用强制缓存计费
@@ -1034,7 +1140,7 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		return nil, err
 	}
 	if len(accounts) == 0 {
-		return nil, errors.New("no available accounts")
+		return nil, buildNoAvailableAccountsEmptyPoolError(groupID != nil, platform)
 	}
 
 	isExcluded := func(accountID int64) bool {
@@ -1331,35 +1437,42 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 
 	// ============ Layer 2: 负载感知选择 ============
 	candidates := make([]*Account, 0, len(accounts))
+	filterStats := accountFilterStats{Total: len(accounts)}
 	for i := range accounts {
 		acc := &accounts[i]
 		if isExcluded(acc.ID) {
+			filterStats.Excluded++
 			continue
 		}
 		// Scheduler snapshots can be temporarily stale (bucket rebuild is throttled);
 		// re-check schedulability here so recently rate-limited/overloaded accounts
 		// are not selected again before the bucket is rebuilt.
 		if !acc.IsSchedulable() {
+			filterStats.Unschedulable++
 			continue
 		}
 		if !s.isAccountAllowedForPlatform(acc, platform, useMixed) {
+			filterStats.PlatformMismatch++
 			continue
 		}
 		if requestedModel != "" && !s.isModelSupportedByAccountWithContext(ctx, acc, requestedModel) {
+			filterStats.ModelUnsupported++
 			continue
 		}
 		if !acc.IsSchedulableForModelWithContext(ctx, requestedModel) {
+			filterStats.ModelRateLimited++
 			continue
 		}
 		// 窗口费用检查（非粘性会话路径）
 		if !s.isAccountSchedulableForWindowCost(ctx, acc, false) {
+			filterStats.WindowCostLimited++
 			continue
 		}
 		candidates = append(candidates, acc)
 	}
 
 	if len(candidates) == 0 {
-		return nil, errors.New("no available accounts")
+		return nil, buildNoAvailableAccountsFilterError(requestedModel, filterStats)
 	}
 
 	accountLoads := make([]AccountWithConcurrency, 0, len(candidates))
@@ -1433,9 +1546,11 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 
 	// ============ Layer 3: 兜底排队 ============
 	s.sortCandidatesForFallback(candidates, preferOAuth, cfg.FallbackSelectionMode)
+	sessionLimited := 0
 	for _, acc := range candidates {
 		// 会话数量限制检查（等待计划也需要占用会话配额）
 		if !s.checkAndRegisterSession(ctx, acc, sessionHash) {
+			sessionLimited++
 			continue // 会话限制已满，尝试下一个账号
 		}
 		return &AccountSelectionResult{
@@ -1448,7 +1563,7 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 			},
 		}, nil
 	}
-	return nil, errors.New("no available accounts")
+	return nil, buildNoAvailableAccountsSessionLimitError(len(candidates), sessionLimited)
 }
 
 func (s *GatewayService) tryAcquireByLegacyOrder(ctx context.Context, candidates []*Account, groupID *int64, sessionHash string, preferOAuth bool) (*AccountSelectionResult, bool) {

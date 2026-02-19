@@ -487,7 +487,7 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 		return nil, err
 	}
 	if len(accounts) == 0 {
-		return nil, errors.New("no available accounts")
+		return nil, buildNoAvailableAccountsEmptyPoolError(groupID != nil, "openai")
 	}
 
 	isExcluded := func(accountID int64) bool {
@@ -539,25 +539,29 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 
 	// ============ Layer 2: Load-aware selection ============
 	candidates := make([]*Account, 0, len(accounts))
+	filterStats := accountFilterStats{Total: len(accounts)}
 	for i := range accounts {
 		acc := &accounts[i]
 		if isExcluded(acc.ID) {
+			filterStats.Excluded++
 			continue
 		}
 		// Scheduler snapshots can be temporarily stale (bucket rebuild is throttled);
 		// re-check schedulability here so recently rate-limited/overloaded accounts
 		// are not selected again before the bucket is rebuilt.
 		if !acc.IsSchedulable() {
+			filterStats.Unschedulable++
 			continue
 		}
 		if requestedModel != "" && !acc.IsModelSupported(requestedModel) {
+			filterStats.ModelUnsupported++
 			continue
 		}
 		candidates = append(candidates, acc)
 	}
 
 	if len(candidates) == 0 {
-		return nil, errors.New("no available accounts")
+		return nil, buildNoAvailableAccountsFilterError(requestedModel, filterStats)
 	}
 
 	accountLoads := make([]AccountWithConcurrency, 0, len(candidates))
@@ -652,7 +656,9 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 		}, nil
 	}
 
-	return nil, errors.New("no available accounts")
+	return nil, newNoAvailableAccountsError(
+		fmt.Sprintf("all candidate accounts are busy (total=%d)", len(candidates)),
+	)
 }
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64) ([]Account, error) {
