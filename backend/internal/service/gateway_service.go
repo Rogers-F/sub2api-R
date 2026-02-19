@@ -2628,6 +2628,8 @@ func (s *GatewayService) shouldFailoverUpstreamError(statusCode int) bool {
 	switch statusCode {
 	case 401, 403, 429, 529:
 		return true
+	case 404:
+		return false
 	default:
 		return statusCode >= 500
 	}
@@ -3945,8 +3947,9 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 	var statusCode int
 
 	switch resp.StatusCode {
-	case 400:
-		c.Data(http.StatusBadRequest, "application/json", body)
+	case 400, 404:
+		// Transparently pass through the upstream response body as-is.
+		c.Data(resp.StatusCode, "application/json", body)
 		summary := upstreamMsg
 		if summary == "" {
 			summary = truncateForLog(body, 512)

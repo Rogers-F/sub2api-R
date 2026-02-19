@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 )
 
 type Account struct {
@@ -382,39 +383,24 @@ func (a *Account) GetModelMapping() map[string]string {
 	return nil
 }
 
-// IsModelSupported 检查模型是否在 model_mapping 中（支持通配符）
-// 如果未配置 mapping，返回 true（允许所有模型）
+// IsModelSupported 检查模型是否在 model_mapping 中（支持通配符）。
+// 如果未配置 mapping，返回 true（允许所有模型）。
+// Anthropic 平台会自动尝试 NormalizeModelID fallback（短别名→完整名）。
 func (a *Account) IsModelSupported(requestedModel string) bool {
 	mapping := a.GetModelMapping()
 	if len(mapping) == 0 {
 		return true // 无映射 = 允许所有
 	}
-	// 精确匹配
-	if _, exists := mapping[requestedModel]; exists {
-		return true
-	}
-	// 通配符匹配
-	for pattern := range mapping {
-		if matchWildcard(pattern, requestedModel) {
-			return true
-		}
-	}
-	return false
+	_, matched := a.resolveModelMapping(requestedModel)
+	return matched
 }
 
-// GetMappedModel 获取映射后的模型名（支持通配符，最长优先匹配）
-// 如果未配置 mapping，返回原始模型名
+// GetMappedModel 获取映射后的模型名（支持通配符，最长优先匹配）。
+// 如果未配置 mapping，返回原始模型名。
+// Anthropic 平台会自动尝试 NormalizeModelID fallback（短别名→完整名）。
 func (a *Account) GetMappedModel(requestedModel string) string {
-	mapping := a.GetModelMapping()
-	if len(mapping) == 0 {
-		return requestedModel
-	}
-	// 精确匹配优先
-	if mappedModel, exists := mapping[requestedModel]; exists {
-		return mappedModel
-	}
-	// 通配符匹配（最长优先）
-	return matchWildcardMapping(mapping, requestedModel)
+	mapped, _ := a.resolveModelMapping(requestedModel)
+	return mapped
 }
 
 func (a *Account) GetBaseURL() string {
@@ -472,26 +458,16 @@ func (a *Account) GetClaudeUserID() string {
 	return ""
 }
 
-// matchAntigravityWildcard 通配符匹配（仅支持末尾 *）
-// 用于 model_mapping 的通配符匹配
-func matchAntigravityWildcard(pattern, str string) bool {
+// matchWildcard 通配符匹配（仅支持末尾 *）
+func matchWildcard(pattern, str string) bool {
 	if strings.HasSuffix(pattern, "*") {
-		prefix := pattern[:len(pattern)-1]
-		return strings.HasPrefix(str, prefix)
+		return strings.HasPrefix(str, pattern[:len(pattern)-1])
 	}
 	return pattern == str
 }
 
-// matchWildcard 通用通配符匹配（仅支持末尾 *）
-// 复用 Antigravity 的通配符逻辑，供其他平台使用
-func matchWildcard(pattern, str string) bool {
-	return matchAntigravityWildcard(pattern, str)
-}
-
-// matchWildcardMapping 通配符映射匹配（最长优先）
-// 如果没有匹配，返回原始字符串
-func matchWildcardMapping(mapping map[string]string, requestedModel string) string {
-	// 收集所有匹配的 pattern，按长度降序排序（最长优先）
+// matchWildcardMappingWithFlag 通配符映射匹配（最长优先），同时返回是否命中。
+func matchWildcardMappingWithFlag(mapping map[string]string, requestedModel string) (string, bool) {
 	type patternMatch struct {
 		pattern string
 		target  string
@@ -505,10 +481,9 @@ func matchWildcardMapping(mapping map[string]string, requestedModel string) stri
 	}
 
 	if len(matches) == 0 {
-		return requestedModel // 无匹配，返回原始模型名
+		return requestedModel, false
 	}
 
-	// 按 pattern 长度降序排序
 	sort.Slice(matches, func(i, j int) bool {
 		if len(matches[i].pattern) != len(matches[j].pattern) {
 			return len(matches[i].pattern) > len(matches[j].pattern)
@@ -516,7 +491,37 @@ func matchWildcardMapping(mapping map[string]string, requestedModel string) stri
 		return matches[i].pattern < matches[j].pattern
 	})
 
-	return matches[0].target
+	return matches[0].target, true
+}
+
+// resolveModelMapping 二阶段模型映射：原名优先匹配，Anthropic 平台失败时用 NormalizeModelID 做 fallback。
+// 返回 mapped=映射结果，matched=是否命中映射。
+func (a *Account) resolveModelMapping(requestedModel string) (mapped string, matched bool) {
+	mapping := a.GetModelMapping()
+	if len(mapping) == 0 {
+		return requestedModel, false
+	}
+	// 阶段 1：原名精确匹配
+	if target, exists := mapping[requestedModel]; exists {
+		return target, true
+	}
+	// 阶段 1：原名通配符匹配
+	if target, ok := matchWildcardMappingWithFlag(mapping, requestedModel); ok {
+		return target, true
+	}
+	// 阶段 2：仅 Anthropic 平台做 NormalizeModelID fallback
+	if a.Platform == domain.PlatformAnthropic {
+		normalized := claude.NormalizeModelID(requestedModel)
+		if normalized != requestedModel {
+			if target, exists := mapping[normalized]; exists {
+				return target, true
+			}
+			if target, ok := matchWildcardMappingWithFlag(mapping, normalized); ok {
+				return target, true
+			}
+		}
+	}
+	return requestedModel, false
 }
 
 func (a *Account) IsCustomErrorCodesEnabled() bool {

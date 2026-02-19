@@ -115,9 +115,9 @@ func TestMatchWildcardMapping(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := matchWildcardMapping(tt.mapping, tt.requestedModel)
+			result, _ := matchWildcardMappingWithFlag(tt.mapping, tt.requestedModel)
 			if result != tt.expected {
-				t.Errorf("matchWildcardMapping(%v, %q) = %q, want %q", tt.mapping, tt.requestedModel, result, tt.expected)
+				t.Errorf("matchWildcardMappingWithFlag(%v, %q) = %q, want %q", tt.mapping, tt.requestedModel, result, tt.expected)
 			}
 		})
 	}
