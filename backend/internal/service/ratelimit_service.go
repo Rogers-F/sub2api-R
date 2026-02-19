@@ -366,9 +366,48 @@ func (s *RateLimitService) handleCustomErrorCode(ctx context.Context, account *A
 	slog.Warn("account_disabled_custom_error", "account_id", account.ID, "status_code", statusCode, "error", errorMsg)
 }
 
+// isAnthropicLongContext429 检测 Anthropic 的 "Extra usage required" 429 响应。
+// 这是请求级别的拒绝（上下文超出免费额度），而非账号级别的频率限制。
+// 不应触发账号冷却或 failover。
+func isAnthropicLongContext429(account *Account, statusCode int, responseBody []byte) bool {
+	if statusCode != 429 || account == nil || account.Platform != PlatformAnthropic {
+		return false
+	}
+	msg := strings.ToLower(extractUpstreamErrorMessage(responseBody))
+	return strings.Contains(msg, "extra usage is required")
+}
+
+// isAnthropicConcurrencyLimit429 检测 Anthropic 的并发限制 429 响应。
+// 这是请求级别的拒绝（并发槽位已满），短暂等待或换账号即可恢复，不应冻结账号。
+func isAnthropicConcurrencyLimit429(account *Account, statusCode int, responseBody []byte) bool {
+	if statusCode != 429 || account == nil || account.Platform != PlatformAnthropic {
+		return false
+	}
+	msg := strings.ToLower(extractUpstreamErrorMessage(responseBody))
+	return strings.Contains(msg, "concurrency limit")
+}
+
 // handle429 处理429限流错误
 // 解析响应头获取重置时间，标记账号为限流状态
 func (s *RateLimitService) handle429(ctx context.Context, account *Account, headers http.Header, responseBody []byte) {
+	// 请求级别的 429（如长上下文超出免费额度）：不标记账号限流。
+	if isAnthropicLongContext429(account, 429, responseBody) {
+		slog.Info("429_request_level_skip_ratelimit",
+			"account_id", account.ID,
+			"platform", account.Platform,
+			"reason", "long_context_extra_usage")
+		return
+	}
+
+	// 并发限制 429：不冻结账号，允许 failover 换账号重试。
+	if isAnthropicConcurrencyLimit429(account, 429, responseBody) {
+		slog.Info("429_request_level_skip_ratelimit",
+			"account_id", account.ID,
+			"platform", account.Platform,
+			"reason", "concurrency_limit")
+		return
+	}
+
 	// 1. OpenAI 平台：优先尝试解析 x-codex-* 响应头（用于 rate_limit_exceeded）
 	if account.Platform == PlatformOpenAI {
 		if resetAt := s.calculateOpenAI429ResetTime(headers); resetAt != nil {

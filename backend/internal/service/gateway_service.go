@@ -3333,6 +3333,11 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 			_ = resp.Body.Close()
 			resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
+			// 请求级别 429（如长上下文超出免费额度）：跳过 failover，直接返回用户友好提示
+			if isAnthropicLongContext429(account, resp.StatusCode, respBody) {
+				return s.handleAnthropicLongContext429(ctx, c, account, resp.Header, respBody)
+			}
+
 			// 调试日志：打印重试耗尽后的错误响应
 			log.Printf("[Forward] Upstream error (retry exhausted, failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
 				account.ID, account.Name, resp.StatusCode, resp.Header.Get("x-request-id"), truncateString(string(respBody), 1000))
@@ -3363,6 +3368,11 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
+
+		// 请求级别 429（如长上下文超出免费额度）：跳过 failover，直接返回用户友好提示
+		if isAnthropicLongContext429(account, resp.StatusCode, respBody) {
+			return s.handleAnthropicLongContext429(ctx, c, account, resp.Header, respBody)
+		}
 
 		// 调试日志：打印上游错误响应
 		log.Printf("[Forward] Upstream error (failover): Account=%d(%s) Status=%d RequestID=%s Body=%s",
@@ -3967,6 +3977,26 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 		errType = "upstream_error"
 		errMsg = "Upstream access forbidden, please contact administrator"
 	case 429:
+		// 请求级别 429 安全兜底：正常流程已在 failover 前拦截，此处防止遗漏。
+		// HandleUpstreamError 已在上方调用，handle429 内部对此场景会 early-return，重复调用无副作用。
+		if isAnthropicLongContext429(account, resp.StatusCode, body) {
+			return s.handleAnthropicLongContext429(ctx, c, account, resp.Header, body)
+		}
+		// 并发限制 429 兜底：正常流程走 failover，failover 全部失败后可能到这里。
+		if isAnthropicConcurrencyLimit429(account, resp.StatusCode, body) {
+			friendlyMsg := "并发请求过多，请稍后重试"
+			if upstreamMsg != "" {
+				friendlyMsg += " (" + upstreamMsg + ")"
+			}
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"type": "error",
+				"error": gin.H{
+					"type":    "rate_limit_error",
+					"message": friendlyMsg,
+				},
+			})
+			return nil, fmt.Errorf("upstream error: 429 (concurrency-limit) message=%s", upstreamMsg)
+		}
 		statusCode = http.StatusTooManyRequests
 		errType = "rate_limit_error"
 		errMsg = "Upstream rate limit exceeded, please retry later"
@@ -3997,6 +4027,37 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 		return nil, fmt.Errorf("upstream error: %d", resp.StatusCode)
 	}
 	return nil, fmt.Errorf("upstream error: %d message=%s", resp.StatusCode, upstreamMsg)
+}
+
+// handleAnthropicLongContext429 处理 Anthropic 请求级别 429（长上下文超出免费额度）。
+// 跳过 failover，不标记账号限流，返回用户友好的中文提示。
+func (s *GatewayService) handleAnthropicLongContext429(ctx context.Context, c *gin.Context, account *Account, headers http.Header, body []byte) (*ForwardResult, error) {
+	upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(body)))
+
+	// 调用 HandleUpstreamError 处理账号状态（handle429 内部会跳过 SetRateLimited）
+	if s.rateLimitService != nil {
+		s.rateLimitService.HandleUpstreamError(ctx, account, 429, headers, body)
+	}
+
+	slog.Info("429_request_level_passthrough",
+		"account_id", account.ID,
+		"account_name", account.Name,
+		"platform", account.Platform)
+
+	friendlyMsg := "当前max订阅不支持超过200k的请求"
+	if upstreamMsg != "" {
+		friendlyMsg += " (" + upstreamMsg + ")"
+	}
+
+	c.JSON(http.StatusTooManyRequests, gin.H{
+		"type": "error",
+		"error": gin.H{
+			"type":    "rate_limit_error",
+			"message": friendlyMsg,
+		},
+	})
+
+	return nil, fmt.Errorf("upstream error: 429 (request-level) message=%s", upstreamMsg)
 }
 
 func (s *GatewayService) handleRetryExhaustedSideEffects(ctx context.Context, resp *http.Response, account *Account) {
