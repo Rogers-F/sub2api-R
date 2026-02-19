@@ -246,9 +246,13 @@ type GatewayConfig struct {
 	// 超过此时间未使用的客户端会被标记为可回收
 	// 建议值：根据用户访问频率设置，一般 10-30 分钟
 	ClientIdleTTLSeconds int `mapstructure:"client_idle_ttl_seconds"`
-	// ConcurrencySlotTTLMinutes: 并发槽位过期时间（分钟）
+	// ConcurrencySlotTTLMinutes: 账号并发槽位过期时间（分钟）
 	// 应大于最长 LLM 请求时间，防止请求完成前槽位过期
 	ConcurrencySlotTTLMinutes int `mapstructure:"concurrency_slot_ttl_minutes"`
+	// UserConcurrencySlotTTLMinutes: 用户并发槽位过期时间（分钟）
+	// 独立于账号 TTL，可设置更短值以减少 ghost entry 锁定窗口
+	// 默认 10 分钟（账号默认 30 分钟）
+	UserConcurrencySlotTTLMinutes int `mapstructure:"user_concurrency_slot_ttl_minutes"`
 	// SessionIdleTimeoutMinutes: 会话空闲超时时间（分钟），默认 5 分钟
 	// 用于 Anthropic OAuth/SetupToken 账号的会话数量限制功能
 	// 空闲超过此时间的会话将被自动释放
@@ -893,7 +897,8 @@ func setDefaults() {
 	viper.SetDefault("gateway.idle_conn_timeout_seconds", 90) // 空闲连接超时（秒）
 	viper.SetDefault("gateway.max_upstream_clients", 5000)
 	viper.SetDefault("gateway.client_idle_ttl_seconds", 900)
-	viper.SetDefault("gateway.concurrency_slot_ttl_minutes", 30) // 并发槽位过期时间（支持超长请求）
+	viper.SetDefault("gateway.concurrency_slot_ttl_minutes", 30)      // 账号并发槽位过期时间（支持超长请求）
+	viper.SetDefault("gateway.user_concurrency_slot_ttl_minutes", 10) // 用户并发槽位过期时间（缩短 ghost entry 锁定窗口）
 	viper.SetDefault("gateway.stream_data_interval_timeout", 180)
 	viper.SetDefault("gateway.stream_keepalive_interval", 10)
 	viper.SetDefault("gateway.max_line_size", 40*1024*1024)
@@ -1194,6 +1199,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Gateway.ConcurrencySlotTTLMinutes <= 0 {
 		return fmt.Errorf("gateway.concurrency_slot_ttl_minutes must be positive")
+	}
+	if c.Gateway.UserConcurrencySlotTTLMinutes <= 0 {
+		return fmt.Errorf("gateway.user_concurrency_slot_ttl_minutes must be positive")
 	}
 	if c.Gateway.StreamDataIntervalTimeout < 0 {
 		return fmt.Errorf("gateway.stream_data_interval_timeout must be non-negative")

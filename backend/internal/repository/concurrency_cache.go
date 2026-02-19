@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/redis/go-redis/v9"
@@ -255,25 +257,36 @@ var (
 )
 
 type concurrencyCache struct {
-	rdb                 *redis.Client
-	slotTTLSeconds      int // 槽位过期时间（秒）
-	waitQueueTTLSeconds int // 等待队列过期时间（秒）
+	rdb                    *redis.Client
+	accountSlotTTLSeconds  int // 账号槽位过期时间（秒）
+	userSlotTTLSeconds     int // 用户槽位过期时间（秒）
+	waitQueueTTLSeconds    int // 等待队列过期时间（秒）
 }
 
 // NewConcurrencyCache 创建并发控制缓存
-// slotTTLMinutes: 槽位过期时间（分钟），0 或负数使用默认值 15 分钟
-// waitQueueTTLSeconds: 等待队列过期时间（秒），0 或负数使用 slot TTL
-func NewConcurrencyCache(rdb *redis.Client, slotTTLMinutes int, waitQueueTTLSeconds int) service.ConcurrencyCache {
-	if slotTTLMinutes <= 0 {
-		slotTTLMinutes = defaultSlotTTLMinutes
+// accountSlotTTLMinutes: 账号槽位过期时间（分钟），0 或负数使用默认值 15 分钟
+// userSlotTTLMinutes: 用户槽位过期时间（分钟），0 或负数回退到 accountSlotTTLMinutes
+// waitQueueTTLSeconds: 等待队列过期时间（秒），0 或负数使用较大的 slot TTL
+func NewConcurrencyCache(rdb *redis.Client, accountSlotTTLMinutes int, userSlotTTLMinutes int, waitQueueTTLSeconds int) service.ConcurrencyCache {
+	if accountSlotTTLMinutes <= 0 {
+		accountSlotTTLMinutes = defaultSlotTTLMinutes
 	}
+	if userSlotTTLMinutes <= 0 {
+		userSlotTTLMinutes = accountSlotTTLMinutes
+	}
+	accountTTLSec := accountSlotTTLMinutes * 60
+	userTTLSec := userSlotTTLMinutes * 60
 	if waitQueueTTLSeconds <= 0 {
-		waitQueueTTLSeconds = slotTTLMinutes * 60
+		waitQueueTTLSeconds = accountTTLSec
+		if userTTLSec > waitQueueTTLSeconds {
+			waitQueueTTLSeconds = userTTLSec
+		}
 	}
 	return &concurrencyCache{
-		rdb:                 rdb,
-		slotTTLSeconds:      slotTTLMinutes * 60,
-		waitQueueTTLSeconds: waitQueueTTLSeconds,
+		rdb:                   rdb,
+		accountSlotTTLSeconds: accountTTLSec,
+		userSlotTTLSeconds:    userTTLSec,
+		waitQueueTTLSeconds:   waitQueueTTLSeconds,
 	}
 }
 
@@ -299,7 +312,7 @@ func accountWaitKey(accountID int64) string {
 func (c *concurrencyCache) AcquireAccountSlot(ctx context.Context, accountID int64, maxConcurrency int, requestID string) (bool, error) {
 	key := accountSlotKey(accountID)
 	// 时间戳在 Lua 脚本内使用 Redis TIME 命令获取，确保多实例时钟一致
-	result, err := acquireScript.Run(ctx, c.rdb, []string{key}, maxConcurrency, c.slotTTLSeconds, requestID).Int()
+	result, err := acquireScript.Run(ctx, c.rdb, []string{key}, maxConcurrency, c.accountSlotTTLSeconds, requestID).Int()
 	if err != nil {
 		return false, err
 	}
@@ -314,7 +327,7 @@ func (c *concurrencyCache) ReleaseAccountSlot(ctx context.Context, accountID int
 func (c *concurrencyCache) GetAccountConcurrency(ctx context.Context, accountID int64) (int, error) {
 	key := accountSlotKey(accountID)
 	// 时间戳在 Lua 脚本内使用 Redis TIME 命令获取
-	result, err := getCountScript.Run(ctx, c.rdb, []string{key}, c.slotTTLSeconds).Int()
+	result, err := getCountScript.Run(ctx, c.rdb, []string{key}, c.accountSlotTTLSeconds).Int()
 	if err != nil {
 		return 0, err
 	}
@@ -326,7 +339,7 @@ func (c *concurrencyCache) GetAccountConcurrency(ctx context.Context, accountID 
 func (c *concurrencyCache) AcquireUserSlot(ctx context.Context, userID int64, maxConcurrency int, requestID string) (bool, error) {
 	key := userSlotKey(userID)
 	// 时间戳在 Lua 脚本内使用 Redis TIME 命令获取，确保多实例时钟一致
-	result, err := acquireScript.Run(ctx, c.rdb, []string{key}, maxConcurrency, c.slotTTLSeconds, requestID).Int()
+	result, err := acquireScript.Run(ctx, c.rdb, []string{key}, maxConcurrency, c.userSlotTTLSeconds, requestID).Int()
 	if err != nil {
 		return false, err
 	}
@@ -341,7 +354,7 @@ func (c *concurrencyCache) ReleaseUserSlot(ctx context.Context, userID int64, re
 func (c *concurrencyCache) GetUserConcurrency(ctx context.Context, userID int64) (int, error) {
 	key := userSlotKey(userID)
 	// 时间戳在 Lua 脚本内使用 Redis TIME 命令获取
-	result, err := getCountScript.Run(ctx, c.rdb, []string{key}, c.slotTTLSeconds).Int()
+	result, err := getCountScript.Run(ctx, c.rdb, []string{key}, c.userSlotTTLSeconds).Int()
 	if err != nil {
 		return 0, err
 	}
@@ -399,7 +412,7 @@ func (c *concurrencyCache) GetAccountsLoadBatch(ctx context.Context, accounts []
 		return map[int64]*service.AccountLoadInfo{}, nil
 	}
 
-	args := []any{c.slotTTLSeconds}
+	args := []any{c.accountSlotTTLSeconds}
 	for _, acc := range accounts {
 		args = append(args, acc.ID, acc.MaxConcurrency)
 	}
@@ -436,7 +449,7 @@ func (c *concurrencyCache) GetUsersLoadBatch(ctx context.Context, users []servic
 		return map[int64]*service.UserLoadInfo{}, nil
 	}
 
-	args := []any{c.slotTTLSeconds}
+	args := []any{c.userSlotTTLSeconds}
 	for _, u := range users {
 		args = append(args, u.ID, u.MaxConcurrency)
 	}
@@ -470,6 +483,34 @@ func (c *concurrencyCache) GetUsersLoadBatch(ctx context.Context, users []servic
 
 func (c *concurrencyCache) CleanupExpiredAccountSlots(ctx context.Context, accountID int64) error {
 	key := accountSlotKey(accountID)
-	_, err := cleanupExpiredSlotsScript.Run(ctx, c.rdb, []string{key}, c.slotTTLSeconds).Result()
+	_, err := cleanupExpiredSlotsScript.Run(ctx, c.rdb, []string{key}, c.accountSlotTTLSeconds).Result()
 	return err
+}
+
+// ScanAndCleanupExpiredUserSlots 扫描所有 concurrency:user:* 键并清理过期条目。
+// 使用 SCAN 遍历避免阻塞 Redis，每个键独立超时。
+func (c *concurrencyCache) ScanAndCleanupExpiredUserSlots(ctx context.Context) (int, error) {
+	var totalCleaned int
+	var cursor uint64
+	for {
+		keys, nextCursor, err := c.rdb.Scan(ctx, cursor, userSlotKeyPrefix+"*", 100).Result()
+		if err != nil {
+			return totalCleaned, err
+		}
+		for _, key := range keys {
+			cleanCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			cleaned, err := cleanupExpiredSlotsScript.Run(cleanCtx, c.rdb, []string{key}, c.userSlotTTLSeconds).Int()
+			cancel()
+			if err != nil {
+				slog.Warn("user_slot_cleanup_error", "key", key, "error", err)
+				continue
+			}
+			totalCleaned += cleaned
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return totalCleaned, nil
 }

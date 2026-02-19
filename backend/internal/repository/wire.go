@@ -22,7 +22,7 @@ func ProvideConcurrencyCache(rdb *redis.Client, cfg *config.Config) service.Conc
 	if waitTTLSeconds <= 0 {
 		waitTTLSeconds = cfg.Gateway.ConcurrencySlotTTLMinutes * 60
 	}
-	return NewConcurrencyCache(rdb, cfg.Gateway.ConcurrencySlotTTLMinutes, waitTTLSeconds)
+	return NewConcurrencyCache(rdb, cfg.Gateway.ConcurrencySlotTTLMinutes, cfg.Gateway.UserConcurrencySlotTTLMinutes, waitTTLSeconds)
 }
 
 // ProvideGitHubReleaseClient 创建 GitHub Release 客户端

@@ -112,11 +112,12 @@ func ProvideAccountAutoRecoveryService(
 	return svc
 }
 
-// ProvideConcurrencyService creates ConcurrencyService and starts slot cleanup worker.
+// ProvideConcurrencyService creates ConcurrencyService and starts slot cleanup workers.
 func ProvideConcurrencyService(cache ConcurrencyCache, accountRepo AccountRepository, cfg *config.Config) *ConcurrencyService {
 	svc := NewConcurrencyService(cache)
 	if cfg != nil {
 		svc.StartSlotCleanupWorker(accountRepo, cfg.Gateway.Scheduling.SlotCleanupInterval)
+		svc.StartUserSlotCleanupWorker(cfg.Gateway.Scheduling.SlotCleanupInterval)
 	}
 	return svc
 }

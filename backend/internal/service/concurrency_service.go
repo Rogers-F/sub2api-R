@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"log/slog"
 	"time"
 )
 
@@ -39,6 +40,10 @@ type ConcurrencyCache interface {
 
 	// 清理过期槽位（后台任务）
 	CleanupExpiredAccountSlots(ctx context.Context, accountID int64) error
+
+	// ScanAndCleanupExpiredUserSlots 扫描所有用户槽位键并清理过期条目。
+	// 返回本次清理的过期条目总数。
+	ScanAndCleanupExpiredUserSlots(ctx context.Context) (int, error)
 }
 
 // generateRequestID generates a unique request ID for concurrency slot tracking
@@ -97,6 +102,40 @@ type UserLoadInfo struct {
 	LoadRate           int // 0-100+ (percent)
 }
 
+// 并发槽位释放重试参数
+const (
+	releaseMaxAttempts   = 3                     // 1 次初始 + 2 次重试
+	releaseRetryDelay    = 200 * time.Millisecond // 重试间隔
+	releaseAttemptTimeout = 1500 * time.Millisecond // 单次超时
+)
+
+// releaseSlotWithRetry 带重试的槽位释放。
+// 避免 Redis 瞬时抖动导致 ZREM 失败产生 ghost entry。
+func (s *ConcurrencyService) releaseSlotWithRetry(
+	slotType string, ownerID int64, requestID string,
+	release func(context.Context) error,
+) {
+	var lastErr error
+	for attempt := 1; attempt <= releaseMaxAttempts; attempt++ {
+		attemptCtx, cancel := context.WithTimeout(context.Background(), releaseAttemptTimeout)
+		err := release(attemptCtx)
+		cancel()
+		if err == nil {
+			return
+		}
+		lastErr = err
+		if attempt < releaseMaxAttempts {
+			slog.Warn("concurrency_slot_release_retry",
+				"slot_type", slotType, "owner_id", ownerID, "request_id", requestID,
+				"attempt", attempt, "max_attempts", releaseMaxAttempts, "error", err)
+			time.Sleep(releaseRetryDelay)
+		}
+	}
+	slog.Error("concurrency_slot_release_failed",
+		"slot_type", slotType, "owner_id", ownerID, "request_id", requestID,
+		"attempts", releaseMaxAttempts, "error", lastErr)
+}
+
 // AcquireAccountSlot attempts to acquire a concurrency slot for an account.
 // If the account is at max concurrency, it waits until a slot is available or timeout.
 // Returns a release function that MUST be called when the request completes.
@@ -121,11 +160,9 @@ func (s *ConcurrencyService) AcquireAccountSlot(ctx context.Context, accountID i
 		return &AcquireResult{
 			Acquired: true,
 			ReleaseFunc: func() {
-				bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
-				if err := s.cache.ReleaseAccountSlot(bgCtx, accountID, requestID); err != nil {
-					log.Printf("Warning: failed to release account slot for %d (req=%s): %v", accountID, requestID, err)
-				}
+				s.releaseSlotWithRetry("account", accountID, requestID, func(ctx context.Context) error {
+					return s.cache.ReleaseAccountSlot(ctx, accountID, requestID)
+				})
 			},
 		}, nil
 	}
@@ -160,11 +197,9 @@ func (s *ConcurrencyService) AcquireUserSlot(ctx context.Context, userID int64, 
 		return &AcquireResult{
 			Acquired: true,
 			ReleaseFunc: func() {
-				bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
-				if err := s.cache.ReleaseUserSlot(bgCtx, userID, requestID); err != nil {
-					log.Printf("Warning: failed to release user slot for %d (req=%s): %v", userID, requestID, err)
-				}
+				s.releaseSlotWithRetry("user", userID, requestID, func(ctx context.Context) error {
+					return s.cache.ReleaseUserSlot(ctx, userID, requestID)
+				})
 			},
 		}, nil
 	}
@@ -303,6 +338,36 @@ func (s *ConcurrencyService) StartSlotCleanupWorker(accountRepo AccountRepositor
 			if err != nil {
 				log.Printf("Warning: cleanup expired slots failed for account %d: %v", account.ID, err)
 			}
+		}
+	}
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		runCleanup()
+		for range ticker.C {
+			runCleanup()
+		}
+	}()
+}
+
+// StartUserSlotCleanupWorker starts a background cleanup worker for expired user slots.
+// Uses SCAN to discover user slot keys and ZREMRANGEBYSCORE to remove expired entries.
+func (s *ConcurrencyService) StartUserSlotCleanupWorker(interval time.Duration) {
+	if s == nil || s.cache == nil || interval <= 0 {
+		return
+	}
+
+	runCleanup := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		cleaned, err := s.cache.ScanAndCleanupExpiredUserSlots(ctx)
+		if err != nil {
+			slog.Warn("user_slot_cleanup_worker_error", "error", err)
+		}
+		if cleaned > 0 {
+			slog.Info("user_slot_cleanup_done", "cleaned", cleaned)
 		}
 	}
 
