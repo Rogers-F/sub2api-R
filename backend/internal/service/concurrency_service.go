@@ -104,8 +104,8 @@ type UserLoadInfo struct {
 
 // 并发槽位释放重试参数
 const (
-	releaseMaxAttempts   = 3                     // 1 次初始 + 2 次重试
-	releaseRetryDelay    = 200 * time.Millisecond // 重试间隔
+	releaseMaxAttempts    = 3                       // 1 次初始 + 2 次重试
+	releaseRetryDelay     = 200 * time.Millisecond  // 重试间隔
 	releaseAttemptTimeout = 1500 * time.Millisecond // 单次超时
 )
 

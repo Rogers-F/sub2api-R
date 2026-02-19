@@ -257,10 +257,10 @@ var (
 )
 
 type concurrencyCache struct {
-	rdb                    *redis.Client
-	accountSlotTTLSeconds  int // 账号槽位过期时间（秒）
-	userSlotTTLSeconds     int // 用户槽位过期时间（秒）
-	waitQueueTTLSeconds    int // 等待队列过期时间（秒）
+	rdb                   *redis.Client
+	accountSlotTTLSeconds int // 账号槽位过期时间（秒）
+	userSlotTTLSeconds    int // 用户槽位过期时间（秒）
+	waitQueueTTLSeconds   int // 等待队列过期时间（秒）
 }
 
 // NewConcurrencyCache 创建并发控制缓存
