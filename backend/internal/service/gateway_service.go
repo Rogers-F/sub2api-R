@@ -69,6 +69,23 @@ type accountFilterStats struct {
 	ModelUnsupported  int
 	ModelRateLimited  int
 	WindowCostLimited int
+
+	// Unschedulable 子原因
+	RateLimited       int
+	Overloaded        int
+	TempUnschedulable int
+
+	// 限流窗口类型细分
+	RateLimited5h    int
+	RateLimited7d    int
+	RateLimitedOther int
+
+	// 最早恢复时间
+	EarliestRateLimitReset      *time.Time
+	EarliestModelRateLimitReset *time.Time
+	EarliestOverloadUntil       *time.Time
+	EarliestTempUntil           *time.Time
+	TempUnschedReason           string
 }
 
 func (st accountFilterStats) nonZeroSummary() string {
@@ -78,6 +95,15 @@ func (st accountFilterStats) nonZeroSummary() string {
 	}
 	if st.Unschedulable > 0 {
 		parts = append(parts, fmt.Sprintf("unschedulable=%d", st.Unschedulable))
+	}
+	if st.RateLimited > 0 {
+		parts = append(parts, fmt.Sprintf("rate_limited=%d", st.RateLimited))
+	}
+	if st.Overloaded > 0 {
+		parts = append(parts, fmt.Sprintf("overloaded=%d", st.Overloaded))
+	}
+	if st.TempUnschedulable > 0 {
+		parts = append(parts, fmt.Sprintf("temp_unschedulable=%d", st.TempUnschedulable))
 	}
 	if st.PlatformMismatch > 0 {
 		parts = append(parts, fmt.Sprintf("platform_mismatch=%d", st.PlatformMismatch))
@@ -102,7 +128,38 @@ func newNoAvailableAccountsError(reason string) error {
 	return fmt.Errorf("no available accounts: %s", reason)
 }
 
-func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string) error {
+func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string, diagStats *accountFilterStats) error {
+	if diagStats != nil && diagStats.Total > 0 {
+		n := diagStats.Total
+		// 全部限流
+		if diagStats.RateLimited == n {
+			return newNoAvailableAccountsError(
+				fmt.Sprintf("all %d accounts are rate-limited (%s, %s)",
+					n, dominantRateLimitWindow(diagStats), formatRecoveryHint(diagStats.EarliestRateLimitReset)),
+			)
+		}
+		// 全部过载
+		if diagStats.Overloaded == n {
+			return newNoAvailableAccountsError(
+				fmt.Sprintf("all %d accounts are overloaded (%s)", n, formatRecoveryHint(diagStats.EarliestOverloadUntil)),
+			)
+		}
+		// 全部临时不可调度
+		if diagStats.TempUnschedulable == n {
+			msg := fmt.Sprintf("all %d accounts are temporarily unschedulable (%s)", n, formatRecoveryHint(diagStats.EarliestTempUntil))
+			if r := diagStats.TempUnschedReason; r != "" {
+				msg += fmt.Sprintf(", reason: %s", r)
+			}
+			return newNoAvailableAccountsError(msg)
+		}
+		// 全部不可调度（混合原因）
+		if diagStats.Unschedulable == n {
+			return newNoAvailableAccountsError(
+				fmt.Sprintf("all %d accounts are unschedulable (%s)", n, diagStats.nonZeroSummary()),
+			)
+		}
+	}
+
 	if inGroup {
 		return newNoAvailableAccountsError("no schedulable accounts in this group")
 	}
@@ -119,40 +176,70 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 		return newNoAvailableAccountsError("no candidate accounts after filtering")
 	}
 
-	summary := st.nonZeroSummary()
+	effective := st.Total - st.Excluded
 
-	if requestedModel != "" && st.ModelUnsupported > 0 && st.ModelUnsupported+st.Excluded == st.Total {
+	// 模型不支持
+	if requestedModel != "" && st.ModelUnsupported > 0 && st.ModelUnsupported == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("model %q not supported by any account (%s)", requestedModel, summary),
+			fmt.Sprintf("model %q is not supported by any of the %d candidate accounts", requestedModel, effective),
 		)
 	}
 
-	if requestedModel != "" && st.ModelRateLimited > 0 && st.ModelRateLimited+st.Excluded == st.Total {
+	// 模型级限流
+	if requestedModel != "" && st.ModelRateLimited > 0 && st.ModelRateLimited == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("model %q rate-limited on all candidate accounts (%s)", requestedModel, summary),
+			fmt.Sprintf("all %d candidate accounts are model-rate-limited for %q (%s)",
+				effective, requestedModel, formatRecoveryHint(st.EarliestModelRateLimitReset)),
 		)
 	}
 
-	if st.WindowCostLimited > 0 && st.WindowCostLimited+st.Excluded == st.Total {
+	// 账号级限流
+	if st.RateLimited > 0 && st.RateLimited == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("all candidate accounts exceeded window cost limit (%s)", summary),
+			fmt.Sprintf("all %d candidate accounts are rate-limited (%s, %s)",
+				effective, dominantRateLimitWindow(&st), formatRecoveryHint(st.EarliestRateLimitReset)),
 		)
 	}
 
-	if st.Unschedulable > 0 && st.Unschedulable+st.Excluded == st.Total {
+	// 过载
+	if st.Overloaded > 0 && st.Overloaded == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("all candidate accounts are temporarily unschedulable (%s)", summary),
+			fmt.Sprintf("all %d candidate accounts are overloaded (%s)", effective, formatRecoveryHint(st.EarliestOverloadUntil)),
 		)
 	}
 
-	if st.PlatformMismatch > 0 && st.PlatformMismatch+st.Excluded == st.Total {
+	// 临时不可调度
+	if st.TempUnschedulable > 0 && st.TempUnschedulable == effective {
+		msg := fmt.Sprintf("all %d candidate accounts are temporarily unschedulable (%s)", effective, formatRecoveryHint(st.EarliestTempUntil))
+		if r := st.TempUnschedReason; r != "" {
+			msg += fmt.Sprintf(", reason: %s", r)
+		}
+		return newNoAvailableAccountsError(msg)
+	}
+
+	// 窗口费用超限
+	if st.WindowCostLimited > 0 && st.WindowCostLimited == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("no candidate account matches required platform (%s)", summary),
+			fmt.Sprintf("all %d candidate accounts exceeded window cost limit", effective),
+		)
+	}
+
+	// 平台不匹配
+	if st.PlatformMismatch > 0 && st.PlatformMismatch == effective {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("no candidate account matches required platform (%s)", st.nonZeroSummary()),
+		)
+	}
+
+	// 全部不可调度（混合原因）
+	if st.Unschedulable > 0 && st.Unschedulable == effective {
+		return newNoAvailableAccountsError(
+			fmt.Sprintf("all %d candidate accounts are unschedulable (%s)", effective, st.nonZeroSummary()),
 		)
 	}
 
 	return newNoAvailableAccountsError(
-		fmt.Sprintf("all candidate accounts filtered out (%s)", summary),
+		fmt.Sprintf("all candidate accounts filtered out (%s)", st.nonZeroSummary()),
 	)
 }
 
@@ -1140,7 +1227,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		return nil, err
 	}
 	if len(accounts) == 0 {
-		return nil, buildNoAvailableAccountsEmptyPoolError(groupID != nil, platform)
+		diagStats := s.diagnoseEmptyPool(ctx, groupID, platform)
+		return nil, buildNoAvailableAccountsEmptyPoolError(groupID != nil, platform, diagStats)
 	}
 
 	isExcluded := func(accountID int64) bool {
@@ -1449,6 +1537,7 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		// are not selected again before the bucket is rebuilt.
 		if !acc.IsSchedulable() {
 			filterStats.Unschedulable++
+			classifyUnschedulableAccount(acc, &filterStats)
 			continue
 		}
 		if !s.isAccountAllowedForPlatform(acc, platform, useMixed) {
@@ -1461,6 +1550,12 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		}
 		if !acc.IsSchedulableForModelWithContext(ctx, requestedModel) {
 			filterStats.ModelRateLimited++
+			if requestedModel != "" {
+				if remain := acc.GetModelRateLimitRemainingTimeWithContext(ctx, requestedModel); remain > 0 {
+					resetAt := time.Now().Add(remain)
+					recordEarliestTime(&filterStats.EarliestModelRateLimitReset, resetAt)
+				}
+			}
 			continue
 		}
 		// 窗口费用检查（非粘性会话路径）
@@ -1731,6 +1826,25 @@ func (s *GatewayService) resolvePlatform(ctx context.Context, groupID *int64, gr
 		return group.Platform, false, nil
 	}
 	return PlatformAnthropic, false, nil
+}
+
+// diagnoseEmptyPool 在 listSchedulableAccounts 返回空时，查询活跃账号做诊断分类。
+func (s *GatewayService) diagnoseEmptyPool(ctx context.Context, groupID *int64, platform string) *accountFilterStats {
+	var allAccounts []Account
+	var err error
+	if groupID != nil {
+		allAccounts, err = s.accountRepo.ListByGroup(ctx, *groupID)
+	} else {
+		allAccounts, err = s.accountRepo.ListByPlatform(ctx, platform)
+	}
+	if err != nil || len(allAccounts) == 0 {
+		return nil
+	}
+	st := collectEmptyPoolDiagnostics(allAccounts, platform)
+	if st.Total == 0 {
+		return nil
+	}
+	return &st
 }
 
 func (s *GatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64, platform string, hasForcePlatform bool) ([]Account, bool, error) {

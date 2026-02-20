@@ -487,7 +487,8 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 		return nil, err
 	}
 	if len(accounts) == 0 {
-		return nil, buildNoAvailableAccountsEmptyPoolError(groupID != nil, "openai")
+		diagStats := s.diagnoseEmptyPoolOpenAI(ctx, groupID)
+		return nil, buildNoAvailableAccountsEmptyPoolError(groupID != nil, "openai", diagStats)
 	}
 
 	isExcluded := func(accountID int64) bool {
@@ -551,6 +552,7 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 		// are not selected again before the bucket is rebuilt.
 		if !acc.IsSchedulable() {
 			filterStats.Unschedulable++
+			classifyUnschedulableAccount(acc, &filterStats)
 			continue
 		}
 		if requestedModel != "" && !acc.IsModelSupported(requestedModel) {
@@ -659,6 +661,25 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 	return nil, newNoAvailableAccountsError(
 		fmt.Sprintf("all candidate accounts are busy (total=%d)", len(candidates)),
 	)
+}
+
+// diagnoseEmptyPoolOpenAI 在 OpenAI listSchedulableAccounts 返回空时做诊断查询。
+func (s *OpenAIGatewayService) diagnoseEmptyPoolOpenAI(ctx context.Context, groupID *int64) *accountFilterStats {
+	var allAccounts []Account
+	var err error
+	if groupID != nil {
+		allAccounts, err = s.accountRepo.ListByGroup(ctx, *groupID)
+	} else {
+		allAccounts, err = s.accountRepo.ListByPlatform(ctx, PlatformOpenAI)
+	}
+	if err != nil || len(allAccounts) == 0 {
+		return nil
+	}
+	st := collectEmptyPoolDiagnostics(allAccounts, PlatformOpenAI)
+	if st.Total == 0 {
+		return nil
+	}
+	return &st
 }
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64) ([]Account, error) {
