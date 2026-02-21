@@ -59,8 +59,13 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 	// 1. 先尝试缓存
 	if p.tokenCache != nil {
 		if token, err := p.tokenCache.GetAccessToken(ctx, cacheKey); err == nil && strings.TrimSpace(token) != "" {
-			slog.Debug("claude_token_cache_hit", "account_id", account.ID)
-			return token, nil
+			// 防御：账号 expires_at 已过期时不信任缓存，进入刷新流程
+			if ea := account.GetCredentialAsTime("expires_at"); ea != nil && time.Until(*ea) <= 0 {
+				slog.Debug("claude_token_cache_hit_but_expired", "account_id", account.ID)
+			} else {
+				slog.Debug("claude_token_cache_hit", "account_id", account.ID)
+				return token, nil
+			}
 		} else if err != nil {
 			slog.Warn("claude_token_cache_get_failed", "account_id", account.ID, "error", err)
 		}
@@ -78,6 +83,9 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 			defer func() { _ = p.tokenCache.ReleaseRefreshLock(ctx, cacheKey) }()
 
 			// 拿到锁后再次检查缓存（另一个 worker 可能已刷新）
+			// 注意：此处故意不做 expires_at 过期检查——account 对象可能持有旧的 expires_at，
+			// 而缓存中的 token 可能已被其他 worker 刷新为有效值。下方会从 DB 重新获取最新
+			// account 后再判断是否需要刷新。
 			if token, err := p.tokenCache.GetAccessToken(ctx, cacheKey); err == nil && strings.TrimSpace(token) != "" {
 				return token, nil
 			}

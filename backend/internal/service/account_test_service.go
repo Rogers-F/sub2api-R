@@ -47,6 +47,7 @@ type TestEvent struct {
 type AccountTestService struct {
 	accountRepo               AccountRepository
 	geminiTokenProvider       *GeminiTokenProvider
+	claudeTokenProvider       *ClaudeTokenProvider
 	antigravityGatewayService *AntigravityGatewayService
 	httpUpstream              HTTPUpstream
 	cfg                       *config.Config
@@ -56,6 +57,7 @@ type AccountTestService struct {
 func NewAccountTestService(
 	accountRepo AccountRepository,
 	geminiTokenProvider *GeminiTokenProvider,
+	claudeTokenProvider *ClaudeTokenProvider,
 	antigravityGatewayService *AntigravityGatewayService,
 	httpUpstream HTTPUpstream,
 	cfg *config.Config,
@@ -63,6 +65,7 @@ func NewAccountTestService(
 	return &AccountTestService{
 		accountRepo:               accountRepo,
 		geminiTokenProvider:       geminiTokenProvider,
+		claudeTokenProvider:       claudeTokenProvider,
 		antigravityGatewayService: antigravityGatewayService,
 		httpUpstream:              httpUpstream,
 		cfg:                       cfg,
@@ -222,7 +225,16 @@ func (s *AccountTestService) buildClaudeTestRequest(ctx context.Context, account
 	if account.IsOAuth() {
 		useBearer = true
 		apiURL = testClaudeAPIURL
-		authToken = account.GetCredential("access_token")
+		// OAuth 账号优先通过 ClaudeTokenProvider 获取 token（自动检查过期 + 刷新）
+		if s.claudeTokenProvider != nil && account.Type == AccountTypeOAuth {
+			var tokenErr error
+			authToken, tokenErr = s.claudeTokenProvider.GetAccessToken(ctx, account)
+			if tokenErr != nil {
+				return nil, "", "", fmt.Errorf("token provider failed: %w", tokenErr)
+			}
+		} else {
+			authToken = account.GetCredential("access_token")
+		}
 		if authToken == "" {
 			return nil, "", "", fmt.Errorf("no access token available")
 		}
