@@ -81,6 +81,7 @@ func TestSimpleModeBypassesQuotaCheck(t *testing.T) {
 			UserID:           user.ID,
 			GroupID:          group.ID,
 			Status:           service.SubscriptionStatusActive,
+			StartsAt:         now,
 			ExpiresAt:        now.Add(24 * time.Hour),
 			DailyWindowStart: &now,
 			DailyUsageUSD:    10,
