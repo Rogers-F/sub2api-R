@@ -378,6 +378,27 @@ func (r *userSubscriptionRepository) TransferGroup(ctx context.Context, subscrip
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, service.ErrSubscriptionAlreadyExists)
 }
 
+func (r *userSubscriptionRepository) UpdateStartsAt(ctx context.Context, subscriptionID int64, newStartsAt time.Time) error {
+	client := clientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(subscriptionID).
+		SetStartsAt(newStartsAt).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
+func (r *userSubscriptionRepository) ResetAllWindows(ctx context.Context, subscriptionID int64) error {
+	client := clientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(subscriptionID).
+		ClearDailyWindowStart().
+		ClearWeeklyWindowStart().
+		ClearMonthlyWindowStart().
+		SetDailyUsageUsd(0).
+		SetWeeklyUsageUsd(0).
+		SetMonthlyUsageUsd(0).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
 func (r *userSubscriptionRepository) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {
 	client := clientFromContext(ctx, r.client)
 	n, err := client.UserSubscription.Update().

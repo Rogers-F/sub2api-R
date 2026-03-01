@@ -1194,6 +1194,8 @@ export default {
       },
       rateAndAccounts: '{rate}x rate · {count} accounts',
       accountsCount: '{count} accounts',
+      groupAccounts: 'Accounts in Group "{name}"',
+      noAccountsInGroup: 'No accounts in this group',
       form: {
         name: 'Name',
         description: 'Description',

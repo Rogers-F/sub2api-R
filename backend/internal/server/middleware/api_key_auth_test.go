@@ -437,3 +437,11 @@ func (r *stubUserSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context)
 func (r *stubUserSubscriptionRepo) TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error {
 	return errors.New("not implemented")
 }
+
+func (r *stubUserSubscriptionRepo) UpdateStartsAt(ctx context.Context, subscriptionID int64, newStartsAt time.Time) error {
+	return nil
+}
+
+func (r *stubUserSubscriptionRepo) ResetAllWindows(ctx context.Context, subscriptionID int64) error {
+	return nil
+}

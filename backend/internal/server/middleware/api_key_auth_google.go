@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -83,8 +84,9 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 				abortWithGoogleError(c, 403, err.Error())
 				return
 			}
-			_ = subscriptionService.CheckAndActivateWindow(c.Request.Context(), subscription)
-			_ = subscriptionService.CheckAndResetWindows(c.Request.Context(), subscription)
+			if err := subscriptionService.EnsureWindows(c.Request.Context(), subscription); err != nil {
+				log.Printf("Failed to ensure subscription windows: %v", err)
+			}
 			if err := subscriptionService.CheckUsageLimits(c.Request.Context(), subscription, apiKey.Group, 0); err != nil {
 				abortWithGoogleError(c, 429, err.Error())
 				return

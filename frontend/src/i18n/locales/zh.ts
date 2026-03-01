@@ -1308,6 +1308,8 @@ export default {
       public: '公开',
       rateAndAccounts: '{rate}x 费率 · {count} 个账号',
       accountsCount: '{count} 个账号',
+      groupAccounts: '分组「{name}」的供应账号',
+      noAccountsInGroup: '该分组下暂无账号',
       enterGroupName: '请输入分组名称',
       optionalDescription: '可选描述',
       platformHint: '选择此分组关联的平台',

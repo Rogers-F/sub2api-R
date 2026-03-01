@@ -158,11 +158,20 @@
             </span>
           </template>
 
-          <template #cell-account_count="{ value }">
+          <template #cell-account_count="{ value, row }">
+            <button
+              v-if="value"
+              type="button"
+              class="inline-flex items-center rounded bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50"
+              @click="openAccountsModal(row)"
+            >
+              {{ t('admin.groups.accountsCount', { count: value }) }}
+            </button>
             <span
+              v-else
               class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800 dark:bg-dark-600 dark:text-gray-300"
             >
-              {{ t('admin.groups.accountsCount', { count: value || 0 }) }}
+              {{ t('admin.groups.accountsCount', { count: 0 }) }}
             </span>
           </template>
 
@@ -1549,6 +1558,59 @@
         </div>
       </template>
     </BaseDialog>
+
+    <!-- Group Accounts Modal -->
+    <BaseDialog
+      :show="showAccountsModal"
+      :title="t('admin.groups.groupAccounts', { name: accountsModalGroupName })"
+      width="wide"
+      @close="showAccountsModal = false"
+    >
+        <div v-if="accountsModalLoading" class="flex items-center justify-center py-8">
+          <svg class="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <div v-else-if="accountsModalAccounts.length === 0" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          {{ t('admin.groups.noAccountsInGroup') }}
+        </div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-dark-600 dark:text-gray-400">
+              <tr>
+                <th class="px-3 py-2">#</th>
+                <th class="px-3 py-2">{{ t('admin.accounts.columns.name') }}</th>
+                <th class="px-3 py-2">{{ t('admin.accounts.columns.platform') }}</th>
+                <th class="px-3 py-2">{{ t('admin.accounts.columns.status') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(account, idx) in accountsModalAccounts"
+                :key="account.id"
+                class="border-b border-gray-100 dark:border-dark-700"
+              >
+                <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ idx + 1 }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ account.name }}</td>
+                <td class="px-3 py-2">
+                  <PlatformIcon :platform="account.platform" size="sm" />
+                </td>
+                <td class="px-3 py-2">
+                  <span :class="['badge', accountStatusBadgeClass(account.status)]">
+                    {{ t('admin.accounts.status.' + account.status) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      <template #footer>
+        <button type="button" class="btn btn-secondary" @click="showAccountsModal = false">
+          {{ t('common.close') }}
+        </button>
+      </template>
+    </BaseDialog>
   </AppLayout>
 </template>
 
@@ -1558,7 +1620,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useOnboardingStore } from '@/stores/onboarding'
 import { adminAPI } from '@/api/admin'
-import type { AdminGroup, GroupPlatform, SubscriptionType } from '@/types'
+import type { Account, AdminGroup, GroupPlatform, SubscriptionType } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -2236,6 +2298,33 @@ const saveSortOrder = async () => {
     console.error('Error updating sort order:', error)
   } finally {
     sortSubmitting.value = false
+  }
+}
+
+// Group accounts modal
+const accountStatusBadgeClass = (status: string): string => {
+  if (status === 'active') return 'badge-success'
+  if (status === 'error') return 'badge-danger'
+  return 'badge-gray'
+}
+
+const showAccountsModal = ref(false)
+const accountsModalGroupName = ref('')
+const accountsModalLoading = ref(false)
+const accountsModalAccounts = ref<Account[]>([])
+
+const openAccountsModal = async (group: AdminGroup) => {
+  accountsModalGroupName.value = group.name
+  showAccountsModal.value = true
+  accountsModalLoading.value = true
+  accountsModalAccounts.value = []
+  try {
+    const res = await adminAPI.accounts.list(1, 100, { group: String(group.id) })
+    accountsModalAccounts.value = res.items
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.groups.failedToLoad'))
+  } finally {
+    accountsModalLoading.value = false
   }
 }
 

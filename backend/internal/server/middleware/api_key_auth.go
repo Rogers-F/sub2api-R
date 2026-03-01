@@ -151,14 +151,9 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				return
 			}
 
-			// 激活滑动窗口（首次使用时）
-			if err := subscriptionService.CheckAndActivateWindow(c.Request.Context(), subscription); err != nil {
-				log.Printf("Failed to activate subscription windows: %v", err)
-			}
-
-			// 检查并重置过期窗口
-			if err := subscriptionService.CheckAndResetWindows(c.Request.Context(), subscription); err != nil {
-				log.Printf("Failed to reset subscription windows: %v", err)
+			// 确保窗口锚定到订阅起始时间（首次激活 + 过期重置）
+			if err := subscriptionService.EnsureWindows(c.Request.Context(), subscription); err != nil {
+				log.Printf("Failed to ensure subscription windows: %v", err)
 			}
 
 			// 预检查用量限制（使用0作为额外费用进行预检查）
