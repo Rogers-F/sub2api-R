@@ -95,6 +95,23 @@ func (s *UserSubscription) MonthlyResetTime() *time.Time {
 	return &t
 }
 
+// ShouldAllowWindowReset 仅当订阅剩余时间 >= 窗口时长时才允许重置
+func (s *UserSubscription) ShouldAllowWindowReset(windowDuration time.Duration) bool {
+	return time.Until(s.ExpiresAt) >= windowDuration
+}
+
+func (s *UserSubscription) CanResetDailyWindow() bool {
+	return s.NeedsDailyReset() && s.ShouldAllowWindowReset(24*time.Hour)
+}
+
+func (s *UserSubscription) CanResetWeeklyWindow() bool {
+	return s.NeedsWeeklyReset() && s.ShouldAllowWindowReset(7*24*time.Hour)
+}
+
+func (s *UserSubscription) CanResetMonthlyWindow() bool {
+	return s.NeedsMonthlyReset() && s.ShouldAllowWindowReset(30*24*time.Hour)
+}
+
 func (s *UserSubscription) CheckDailyLimit(group *Group, additionalCost float64) bool {
 	if !group.HasDailyLimit() {
 		return true
