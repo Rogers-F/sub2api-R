@@ -1,31 +1,6 @@
 package service
 
-import (
-	"math"
-	"time"
-)
-
-const (
-	DailyWindowSize   = 24 * time.Hour
-	WeeklyWindowSize  = 7 * 24 * time.Hour
-	MonthlyWindowSize = 30 * 24 * time.Hour
-)
-
-// WindowStart calculates the current tumbling window start anchored to the subscription's StartsAt.
-// Formula: anchor + floor((now - anchor) / windowSize) * windowSize
-func WindowStart(anchor, now time.Time, windowSize time.Duration) time.Time {
-	elapsed := now.Sub(anchor)
-	if elapsed < 0 {
-		return anchor
-	}
-	periods := math.Floor(float64(elapsed) / float64(windowSize))
-	return anchor.Add(time.Duration(periods) * windowSize)
-}
-
-// WindowEnd returns the end of the current tumbling window.
-func WindowEnd(anchor, now time.Time, windowSize time.Duration) time.Time {
-	return WindowStart(anchor, now, windowSize).Add(windowSize)
-}
+import "time"
 
 type UserSubscription struct {
 	ID      int64
@@ -71,35 +46,36 @@ func (s *UserSubscription) DaysRemaining() int {
 	return int(time.Until(s.ExpiresAt).Hours() / 24)
 }
 
-// NeedsDailyReset reports whether the stored daily window start differs from
-// the correct anchored window start (or is nil, meaning first activation).
+func (s *UserSubscription) IsWindowActivated() bool {
+	return s.DailyWindowStart != nil || s.WeeklyWindowStart != nil || s.MonthlyWindowStart != nil
+}
+
 func (s *UserSubscription) NeedsDailyReset() bool {
-	now := time.Now()
-	correct := WindowStart(s.StartsAt, now, DailyWindowSize)
-	return s.DailyWindowStart == nil || !s.DailyWindowStart.Equal(correct)
+	if s.DailyWindowStart == nil {
+		return false
+	}
+	return time.Since(*s.DailyWindowStart) >= 24*time.Hour
 }
 
-// NeedsWeeklyReset reports whether the stored weekly window start differs from
-// the correct anchored window start (or is nil).
 func (s *UserSubscription) NeedsWeeklyReset() bool {
-	now := time.Now()
-	correct := WindowStart(s.StartsAt, now, WeeklyWindowSize)
-	return s.WeeklyWindowStart == nil || !s.WeeklyWindowStart.Equal(correct)
+	if s.WeeklyWindowStart == nil {
+		return false
+	}
+	return time.Since(*s.WeeklyWindowStart) >= 7*24*time.Hour
 }
 
-// NeedsMonthlyReset reports whether the stored monthly window start differs from
-// the correct anchored window start (or is nil).
 func (s *UserSubscription) NeedsMonthlyReset() bool {
-	now := time.Now()
-	correct := WindowStart(s.StartsAt, now, MonthlyWindowSize)
-	return s.MonthlyWindowStart == nil || !s.MonthlyWindowStart.Equal(correct)
+	if s.MonthlyWindowStart == nil {
+		return false
+	}
+	return time.Since(*s.MonthlyWindowStart) >= 30*24*time.Hour
 }
 
 func (s *UserSubscription) DailyResetTime() *time.Time {
 	if s.DailyWindowStart == nil {
 		return nil
 	}
-	t := WindowEnd(s.StartsAt, time.Now(), DailyWindowSize)
+	t := s.DailyWindowStart.Add(24 * time.Hour)
 	return &t
 }
 
@@ -107,7 +83,7 @@ func (s *UserSubscription) WeeklyResetTime() *time.Time {
 	if s.WeeklyWindowStart == nil {
 		return nil
 	}
-	t := WindowEnd(s.StartsAt, time.Now(), WeeklyWindowSize)
+	t := s.WeeklyWindowStart.Add(7 * 24 * time.Hour)
 	return &t
 }
 
@@ -115,7 +91,7 @@ func (s *UserSubscription) MonthlyResetTime() *time.Time {
 	if s.MonthlyWindowStart == nil {
 		return nil
 	}
-	t := WindowEnd(s.StartsAt, time.Now(), MonthlyWindowSize)
+	t := s.MonthlyWindowStart.Add(30 * 24 * time.Hour)
 	return &t
 }
 

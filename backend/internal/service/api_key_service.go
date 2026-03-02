@@ -230,10 +230,6 @@ func (s *APIKeyService) canUserBindGroup(ctx context.Context, user *User, group 
 		_, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, user.ID, group.ID)
 		return err == nil // 有有效订阅则允许
 	}
-	// 管理员可绑定任意标准分组（含专属分组）
-	if user.IsAdmin() {
-		return true
-	}
 	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)
 }
@@ -629,10 +625,6 @@ func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subsc
 	// 订阅类型分组：需要有效订阅
 	if group.IsSubscriptionType() {
 		return subscribedGroupIDs[group.ID]
-	}
-	// 管理员可绑定任意标准分组（含专属分组）
-	if user.IsAdmin() {
-		return true
 	}
 	// 标准类型分组：使用原有逻辑
 	return user.CanBindGroup(group.ID, group.IsExclusive)

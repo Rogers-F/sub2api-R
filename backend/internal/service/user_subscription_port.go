@@ -31,9 +31,6 @@ type UserSubscriptionRepository interface {
 	ResetMonthlyUsage(ctx context.Context, id int64, newWindowStart time.Time) error
 	IncrementUsage(ctx context.Context, id int64, costUSD float64) error
 
-	UpdateStartsAt(ctx context.Context, subscriptionID int64, newStartsAt time.Time) error
-	ResetAllWindows(ctx context.Context, subscriptionID int64) error
-
 	BatchUpdateExpiredStatus(ctx context.Context) (int64, error)
 
 	TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error
