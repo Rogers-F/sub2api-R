@@ -69,11 +69,11 @@ const (
 
 // Window reset status constants
 const (
-	WindowResetStatusNoLimit            = "no_limit"
-	WindowResetStatusAwaitingFirstUse   = "awaiting_first_use"
-	WindowResetStatusActive             = "active"
-	WindowResetStatusActiveFinalWindow  = "active_final_window"
-	WindowResetStatusExpiredWillReset   = "expired_will_reset"
+	WindowResetStatusNoLimit             = "no_limit"
+	WindowResetStatusAwaitingFirstUse    = "awaiting_first_use"
+	WindowResetStatusActive              = "active"
+	WindowResetStatusActiveFinalWindow   = "active_final_window"
+	WindowResetStatusExpiredWillReset    = "expired_will_reset"
 	WindowResetStatusExpiredSubscription = "expired_subscription"
 )
 
