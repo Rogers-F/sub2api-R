@@ -337,6 +337,12 @@ type Setting struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// WindowResetStatus describes the reset status of a usage window for frontend display.
+type WindowResetStatus struct {
+	Status  string     `json:"status"`
+	ResetAt *time.Time `json:"reset_at,omitempty"`
+}
+
 type UserSubscription struct {
 	ID      int64 `json:"id"`
 	UserID  int64 `json:"user_id"`
@@ -353,6 +359,10 @@ type UserSubscription struct {
 	DailyUsageUSD   float64 `json:"daily_usage_usd"`
 	WeeklyUsageUSD  float64 `json:"weekly_usage_usd"`
 	MonthlyUsageUSD float64 `json:"monthly_usage_usd"`
+
+	DailyResetStatus   *WindowResetStatus `json:"daily_reset_status,omitempty"`
+	WeeklyResetStatus  *WindowResetStatus `json:"weekly_reset_status,omitempty"`
+	MonthlyResetStatus *WindowResetStatus `json:"monthly_reset_status,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

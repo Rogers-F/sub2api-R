@@ -496,6 +496,16 @@ func UserSubscriptionFromServiceAdmin(sub *service.UserSubscription) *AdminUserS
 	}
 }
 
+func windowResetStatusFromService(info service.WindowResetInfo) *WindowResetStatus {
+	if info.Status == "" || info.Status == service.WindowResetStatusNoLimit {
+		return nil
+	}
+	return &WindowResetStatus{
+		Status:  info.Status,
+		ResetAt: info.ResetAt,
+	}
+}
+
 func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscription {
 	return UserSubscription{
 		ID:                 sub.ID,
@@ -510,6 +520,9 @@ func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscrip
 		DailyUsageUSD:      sub.DailyUsageUSD,
 		WeeklyUsageUSD:     sub.WeeklyUsageUSD,
 		MonthlyUsageUSD:    sub.MonthlyUsageUSD,
+		DailyResetStatus:   windowResetStatusFromService(sub.DailyResetInfo),
+		WeeklyResetStatus:  windowResetStatusFromService(sub.WeeklyResetInfo),
+		MonthlyResetStatus: windowResetStatusFromService(sub.MonthlyResetInfo),
 		CreatedAt:          sub.CreatedAt,
 		UpdatedAt:          sub.UpdatedAt,
 		User:               UserFromServiceShallow(sub.User),

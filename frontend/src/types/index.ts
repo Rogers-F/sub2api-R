@@ -1043,6 +1043,21 @@ export interface ChangePasswordRequest {
   new_password: string
 }
 
+// ==================== Window Reset Status Types ====================
+
+export type WindowResetStatusEnum =
+  | 'no_limit'
+  | 'awaiting_first_use'
+  | 'active'
+  | 'active_final_window'
+  | 'expired_will_reset'
+  | 'expired_subscription'
+
+export interface WindowResetStatus {
+  status: WindowResetStatusEnum
+  reset_at?: string
+}
+
 // ==================== User Subscription Types ====================
 
 export interface UserSubscription {
@@ -1056,6 +1071,9 @@ export interface UserSubscription {
   daily_window_start: string | null
   weekly_window_start: string | null
   monthly_window_start: string | null
+  daily_reset_status?: WindowResetStatus
+  weekly_reset_status?: WindowResetStatus
+  monthly_reset_status?: WindowResetStatus
   created_at: string
   updated_at: string
   expires_at: string | null

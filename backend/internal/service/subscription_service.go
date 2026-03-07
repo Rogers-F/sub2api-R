@@ -186,7 +186,11 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 
 		// 返回更新后的订阅
 		sub, err := s.userSubRepo.GetByID(ctx, existingSub.ID)
-		return sub, true, err // true 表示是续期
+		if err != nil {
+			return nil, false, err
+		}
+		computeSingleWindowResetStatuses(sub)
+		return sub, true, nil // true 表示是续期
 	}
 
 	// 没有订阅，创建新订阅
@@ -245,7 +249,12 @@ func (s *SubscriptionService) createSubscription(ctx context.Context, input *Ass
 	}
 
 	// 重新获取完整订阅信息（包含关联）
-	return s.userSubRepo.GetByID(ctx, sub.ID)
+	created, err := s.userSubRepo.GetByID(ctx, sub.ID)
+	if err != nil {
+		return nil, err
+	}
+	computeSingleWindowResetStatuses(created)
+	return created, nil
 }
 
 // BulkAssignSubscriptionInput 批量分配订阅输入
@@ -387,7 +396,12 @@ func (s *SubscriptionService) ExtendSubscription(ctx context.Context, subscripti
 		}()
 	}
 
-	return s.userSubRepo.GetByID(ctx, subscriptionID)
+	extended, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	computeSingleWindowResetStatuses(extended)
+	return extended, nil
 }
 
 // TransferSubscriptionInput 转移订阅输入
@@ -459,12 +473,22 @@ func (s *SubscriptionService) TransferSubscription(ctx context.Context, input *T
 		}()
 	}
 
-	return s.userSubRepo.GetByID(ctx, input.SubscriptionID)
+	transferred, err := s.userSubRepo.GetByID(ctx, input.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	computeSingleWindowResetStatuses(transferred)
+	return transferred, nil
 }
 
 // GetByID 根据ID获取订阅
 func (s *SubscriptionService) GetByID(ctx context.Context, id int64) (*UserSubscription, error) {
-	return s.userSubRepo.GetByID(ctx, id)
+	sub, err := s.userSubRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	computeSingleWindowResetStatuses(sub)
+	return sub, nil
 }
 
 // GetActiveSubscription 获取用户对特定分组的有效订阅
@@ -482,6 +506,7 @@ func (s *SubscriptionService) ListUserSubscriptions(ctx context.Context, userID 
 	if err != nil {
 		return nil, err
 	}
+	computeWindowResetStatuses(subs)
 	normalizeExpiredWindows(subs)
 	normalizeSubscriptionStatus(subs)
 	return subs, nil
@@ -493,6 +518,7 @@ func (s *SubscriptionService) ListActiveUserSubscriptions(ctx context.Context, u
 	if err != nil {
 		return nil, err
 	}
+	computeWindowResetStatuses(subs)
 	normalizeExpiredWindows(subs)
 	return subs, nil
 }
@@ -504,6 +530,7 @@ func (s *SubscriptionService) ListGroupSubscriptions(ctx context.Context, groupI
 	if err != nil {
 		return nil, nil, err
 	}
+	computeWindowResetStatuses(subs)
 	normalizeExpiredWindows(subs)
 	normalizeSubscriptionStatus(subs)
 	return subs, pag, nil
@@ -516,9 +543,32 @@ func (s *SubscriptionService) List(ctx context.Context, page, pageSize int, user
 	if err != nil {
 		return nil, nil, err
 	}
+	computeWindowResetStatuses(subs)
 	normalizeExpiredWindows(subs)
 	normalizeSubscriptionStatus(subs)
 	return subs, pag, nil
+}
+
+// computeSingleWindowResetStatuses computes the reset status for a single subscription's usage windows.
+func computeSingleWindowResetStatuses(sub *UserSubscription) {
+	if sub == nil {
+		return
+	}
+	now := time.Now()
+	hasDaily := sub.Group != nil && sub.Group.HasDailyLimit()
+	hasWeekly := sub.Group != nil && sub.Group.HasWeeklyLimit()
+	hasMonthly := sub.Group != nil && sub.Group.HasMonthlyLimit()
+
+	sub.DailyResetInfo = sub.ComputeWindowResetStatus(now, hasDaily, sub.DailyWindowStart, 24*time.Hour)
+	sub.WeeklyResetInfo = sub.ComputeWindowResetStatus(now, hasWeekly, sub.WeeklyWindowStart, 7*24*time.Hour)
+	sub.MonthlyResetInfo = sub.ComputeWindowResetStatus(now, hasMonthly, sub.MonthlyWindowStart, 30*24*time.Hour)
+}
+
+// computeWindowResetStatuses computes the reset status for each usage window BEFORE normalizeExpiredWindows clears data.
+func computeWindowResetStatuses(subs []UserSubscription) {
+	for i := range subs {
+		computeSingleWindowResetStatuses(&subs[i])
+	}
 }
 
 // normalizeExpiredWindows 将已过期窗口的数据清零（仅影响返回数据，不影响数据库）

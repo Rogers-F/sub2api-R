@@ -113,14 +113,11 @@
                 ></div>
               </div>
               <p
-                v-if="subscription.daily_window_start"
+                v-if="formatWindowStatus(subscription.daily_reset_status)"
                 class="text-xs text-gray-500 dark:text-dark-400"
+                :class="getResetStatusClass(subscription.daily_reset_status)"
               >
-                {{
-                  t('userSubscriptions.resetIn', {
-                    time: formatResetTime(subscription.daily_window_start, 24)
-                  })
-                }}
+                {{ formatWindowStatus(subscription.daily_reset_status) }}
               </p>
             </div>
 
@@ -154,14 +151,11 @@
                 ></div>
               </div>
               <p
-                v-if="subscription.weekly_window_start"
+                v-if="formatWindowStatus(subscription.weekly_reset_status)"
                 class="text-xs text-gray-500 dark:text-dark-400"
+                :class="getResetStatusClass(subscription.weekly_reset_status)"
               >
-                {{
-                  t('userSubscriptions.resetIn', {
-                    time: formatResetTime(subscription.weekly_window_start, 168)
-                  })
-                }}
+                {{ formatWindowStatus(subscription.weekly_reset_status) }}
               </p>
             </div>
 
@@ -195,14 +189,11 @@
                 ></div>
               </div>
               <p
-                v-if="subscription.monthly_window_start"
+                v-if="formatWindowStatus(subscription.monthly_reset_status)"
                 class="text-xs text-gray-500 dark:text-dark-400"
+                :class="getResetStatusClass(subscription.monthly_reset_status)"
               >
-                {{
-                  t('userSubscriptions.resetIn', {
-                    time: formatResetTime(subscription.monthly_window_start, 720)
-                  })
-                }}
+                {{ formatWindowStatus(subscription.monthly_reset_status) }}
               </p>
             </div>
 
@@ -243,9 +234,11 @@ import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateOnly } from '@/utils/format'
+import { useWindowResetStatus } from '@/composables/useWindowResetStatus'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const { formatWindowStatus, getResetStatusClass } = useWindowResetStatus('userSubscriptions.resetStatus')
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
@@ -308,32 +301,6 @@ function getExpirationClass(expiresAt: string): string {
   if (days <= 3) return 'text-red-600 dark:text-red-400'
   if (days <= 7) return 'text-orange-600 dark:text-orange-400'
   return 'text-gray-700 dark:text-gray-300'
-}
-
-function formatResetTime(windowStart: string | null, windowHours: number): string {
-  if (!windowStart) return t('userSubscriptions.windowNotActive')
-
-  const start = new Date(windowStart)
-  const end = new Date(start.getTime() + windowHours * 60 * 60 * 1000)
-  const now = new Date()
-  const diff = end.getTime() - now.getTime()
-
-  if (diff <= 0) return t('userSubscriptions.windowNotActive')
-
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-  if (hours > 24) {
-    const days = Math.floor(hours / 24)
-    const remainingHours = hours % 24
-    return `${days}d ${remainingHours}h`
-  }
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  }
-
-  return `${minutes}m`
 }
 
 onMounted(() => {

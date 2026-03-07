@@ -1336,6 +1336,13 @@ export default {
       resetInMinutes: 'Resets in {minutes}m',
       resetInHoursMinutes: 'Resets in {hours}h {minutes}m',
       resetInDaysHours: 'Resets in {days}d {hours}h',
+      resetStatus: {
+        awaitingFirstUse: 'Awaiting first use',
+        active: 'Resets in {time}',
+        activeFinalWindow: 'Exceeds subscription period, cannot reset',
+        expiredWillReset: 'Resetting soon',
+        expiredSubscription: 'Subscription expired'
+      },
       daysRemaining: 'days remaining',
       remainingDays: 'Remaining days',
       noExpiration: 'No expiration',
@@ -3665,7 +3672,14 @@ export default {
     expiresOn: 'Expires on {date}',
     resetIn: 'Resets in {time}',
     windowNotActive: 'Awaiting first use',
-    usageOf: '{used} of {limit}'
+    usageOf: '{used} of {limit}',
+    resetStatus: {
+      awaitingFirstUse: 'Awaiting first use',
+      active: 'Resets in {time}',
+      activeFinalWindow: 'Exceeds subscription period, cannot reset',
+      expiredWillReset: 'Resetting soon',
+      expiredSubscription: 'Subscription expired'
+    }
   },
 
   // Onboarding Tour
