@@ -111,11 +111,11 @@ func (s *UserSubscription) ShouldAllowWindowReset(windowDuration time.Duration) 
 }
 
 func (s *UserSubscription) CanResetDailyWindow() bool {
-	return s.NeedsDailyReset() && s.ShouldAllowWindowReset(24*time.Hour)
+	return s.NeedsDailyReset()
 }
 
 func (s *UserSubscription) CanResetWeeklyWindow() bool {
-	return s.NeedsWeeklyReset() && s.ShouldAllowWindowReset(7*24*time.Hour)
+	return s.NeedsWeeklyReset()
 }
 
 func (s *UserSubscription) CanResetMonthlyWindow() bool {
@@ -151,11 +151,14 @@ func (s *UserSubscription) CheckAllLimits(group *Group, additionalCost float64) 
 }
 
 // ComputeWindowResetStatus determines the reset status for a single usage window.
+// alwaysReset: when true (daily/weekly), the window always resets when expired regardless of remaining subscription time.
+// When false (monthly), the window only resets if the subscription has enough remaining time for a full window.
 func (s *UserSubscription) ComputeWindowResetStatus(
 	now time.Time,
 	hasLimit bool,
 	windowStart *time.Time,
 	windowDuration time.Duration,
+	alwaysReset bool,
 ) WindowResetInfo {
 	if !hasLimit {
 		return WindowResetInfo{Status: WindowResetStatusNoLimit}
@@ -169,17 +172,16 @@ func (s *UserSubscription) ComputeWindowResetStatus(
 	windowEnd := windowStart.Add(windowDuration)
 
 	if now.Before(windowEnd) {
-		// Window is still active — check if after it ends, subscription has enough time for another window
-		if s.ExpiresAt.Sub(windowEnd) < windowDuration {
-			t := s.ExpiresAt
+		if !alwaysReset && s.ExpiresAt.Sub(windowEnd) < windowDuration {
+			t := windowEnd
 			return WindowResetInfo{Status: WindowResetStatusActiveFinalWindow, ResetAt: &t}
 		}
 		return WindowResetInfo{Status: WindowResetStatusActive, ResetAt: &windowEnd}
 	}
-	// Window expired — check if subscription has enough remaining time to reset
-	if s.ExpiresAt.Sub(now) >= windowDuration {
+	// Window expired
+	if alwaysReset || s.ExpiresAt.Sub(now) >= windowDuration {
 		return WindowResetInfo{Status: WindowResetStatusExpiredWillReset}
 	}
-	t := s.ExpiresAt
+	t := windowEnd
 	return WindowResetInfo{Status: WindowResetStatusActiveFinalWindow, ResetAt: &t}
 }

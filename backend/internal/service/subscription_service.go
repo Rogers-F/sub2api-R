@@ -559,9 +559,9 @@ func computeSingleWindowResetStatuses(sub *UserSubscription) {
 	hasWeekly := sub.Group != nil && sub.Group.HasWeeklyLimit()
 	hasMonthly := sub.Group != nil && sub.Group.HasMonthlyLimit()
 
-	sub.DailyResetInfo = sub.ComputeWindowResetStatus(now, hasDaily, sub.DailyWindowStart, 24*time.Hour)
-	sub.WeeklyResetInfo = sub.ComputeWindowResetStatus(now, hasWeekly, sub.WeeklyWindowStart, 7*24*time.Hour)
-	sub.MonthlyResetInfo = sub.ComputeWindowResetStatus(now, hasMonthly, sub.MonthlyWindowStart, 30*24*time.Hour)
+	sub.DailyResetInfo = sub.ComputeWindowResetStatus(now, hasDaily, sub.DailyWindowStart, 24*time.Hour, true)
+	sub.WeeklyResetInfo = sub.ComputeWindowResetStatus(now, hasWeekly, sub.WeeklyWindowStart, 7*24*time.Hour, true)
+	sub.MonthlyResetInfo = sub.ComputeWindowResetStatus(now, hasMonthly, sub.MonthlyWindowStart, 30*24*time.Hour, false)
 }
 
 // computeWindowResetStatuses computes the reset status for each usage window BEFORE normalizeExpiredWindows clears data.
@@ -578,16 +578,16 @@ func normalizeExpiredWindows(subs []UserSubscription) {
 		sub := &subs[i]
 		expired := sub.IsExpired()
 
-		// 对每个窗口：若已过期且可重置（或订阅本身已过期），清零显示数据
-		// 活跃订阅 + 窗口已过期 + 剩余时间不足 → 保留当前用量（最终窗口）
-		if sub.NeedsDailyReset() && (expired || sub.ShouldAllowWindowReset(24*time.Hour)) {
+		// 日/周窗口：到期即重置，无条件清零显示数据
+		if sub.NeedsDailyReset() {
 			sub.DailyWindowStart = nil
 			sub.DailyUsageUSD = 0
 		}
-		if sub.NeedsWeeklyReset() && (expired || sub.ShouldAllowWindowReset(7*24*time.Hour)) {
+		if sub.NeedsWeeklyReset() {
 			sub.WeeklyWindowStart = nil
 			sub.WeeklyUsageUSD = 0
 		}
+		// 月窗口：仅当订阅已过期或剩余时间足够时才清零（月额度是硬顶）
 		if sub.NeedsMonthlyReset() && (expired || sub.ShouldAllowWindowReset(30*24*time.Hour)) {
 			sub.MonthlyWindowStart = nil
 			sub.MonthlyUsageUSD = 0

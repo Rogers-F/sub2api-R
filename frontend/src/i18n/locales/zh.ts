@@ -1426,6 +1426,7 @@ export default {
         awaitingFirstUse: '等待首次使用',
         active: '{time} 后重置',
         activeFinalWindow: '超出订阅期限，无法重置',
+        resetTimeAt: '重置时间: {time}（已过）',
         expiredWillReset: '即将重置',
         expiredSubscription: '订阅已过期'
       },
@@ -3838,7 +3839,7 @@ export default {
     daily: '每日',
     weekly: '每周',
     monthly: '每月',
-    daysRemaining: '剩余 {days} 天',
+    daysRemaining: '剩余 {days}',
     expiresOn: '{date} 到期',
     resetIn: '{time} 后重置',
     windowNotActive: '等待首次使用',
@@ -3847,6 +3848,7 @@ export default {
       awaitingFirstUse: '等待首次使用',
       active: '{time} 后重置',
       activeFinalWindow: '超出订阅期限，无法重置',
+      resetTimeAt: '重置时间: {time}（已过）',
       expiredWillReset: '即将重置',
       expiredSubscription: '订阅已过期'
     }

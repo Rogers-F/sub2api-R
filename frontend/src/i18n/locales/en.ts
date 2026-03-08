@@ -1340,6 +1340,7 @@ export default {
         awaitingFirstUse: 'Awaiting first use',
         active: 'Resets in {time}',
         activeFinalWindow: 'Exceeds subscription period, cannot reset',
+        resetTimeAt: 'Reset time: {time} (past)',
         expiredWillReset: 'Resetting soon',
         expiredSubscription: 'Subscription expired'
       },
@@ -3668,7 +3669,7 @@ export default {
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly',
-    daysRemaining: '{days} days remaining',
+    daysRemaining: '{days} remaining',
     expiresOn: 'Expires on {date}',
     resetIn: 'Resets in {time}',
     windowNotActive: 'Awaiting first use',
@@ -3677,6 +3678,7 @@ export default {
       awaitingFirstUse: 'Awaiting first use',
       active: 'Resets in {time}',
       activeFinalWindow: 'Exceeds subscription period, cannot reset',
+      resetTimeAt: 'Reset time: {time} (past)',
       expiredWillReset: 'Resetting soon',
       expiredSubscription: 'Subscription expired'
     }

@@ -215,7 +215,7 @@
                     ${{ row.group?.daily_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="reset-info" v-if="formatWindowStatus(row.daily_reset_status)" :class="getResetStatusClass(row.daily_reset_status)">
+                <div class="reset-info whitespace-pre-line" v-if="formatWindowStatus(row.daily_reset_status)" :class="getResetStatusClass(row.daily_reset_status)">
                   <svg
                     class="h-3 w-3"
                     fill="none"
@@ -252,7 +252,7 @@
                     ${{ row.group?.weekly_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="reset-info" v-if="formatWindowStatus(row.weekly_reset_status)" :class="getResetStatusClass(row.weekly_reset_status)">
+                <div class="reset-info whitespace-pre-line" v-if="formatWindowStatus(row.weekly_reset_status)" :class="getResetStatusClass(row.weekly_reset_status)">
                   <svg
                     class="h-3 w-3"
                     fill="none"
@@ -289,7 +289,7 @@
                     ${{ row.group?.monthly_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="reset-info" v-if="formatWindowStatus(row.monthly_reset_status)" :class="getResetStatusClass(row.monthly_reset_status)">
+                <div class="reset-info whitespace-pre-line" v-if="formatWindowStatus(row.monthly_reset_status)" :class="getResetStatusClass(row.monthly_reset_status)">
                   <svg
                     class="h-3 w-3"
                     fill="none"

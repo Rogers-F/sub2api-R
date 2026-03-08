@@ -114,7 +114,7 @@
               </div>
               <p
                 v-if="formatWindowStatus(subscription.daily_reset_status)"
-                class="text-xs text-gray-500 dark:text-dark-400"
+                class="text-xs text-gray-500 dark:text-dark-400 whitespace-pre-line"
                 :class="getResetStatusClass(subscription.daily_reset_status)"
               >
                 {{ formatWindowStatus(subscription.daily_reset_status) }}
@@ -152,7 +152,7 @@
               </div>
               <p
                 v-if="formatWindowStatus(subscription.weekly_reset_status)"
-                class="text-xs text-gray-500 dark:text-dark-400"
+                class="text-xs text-gray-500 dark:text-dark-400 whitespace-pre-line"
                 :class="getResetStatusClass(subscription.weekly_reset_status)"
               >
                 {{ formatWindowStatus(subscription.weekly_reset_status) }}
@@ -190,7 +190,7 @@
               </div>
               <p
                 v-if="formatWindowStatus(subscription.monthly_reset_status)"
-                class="text-xs text-gray-500 dark:text-dark-400"
+                class="text-xs text-gray-500 dark:text-dark-400 whitespace-pre-line"
                 :class="getResetStatusClass(subscription.monthly_reset_status)"
               >
                 {{ formatWindowStatus(subscription.monthly_reset_status) }}
@@ -273,33 +273,42 @@ function formatExpirationDate(expiresAt: string): string {
   const now = new Date()
   const expires = new Date(expiresAt)
   const diff = expires.getTime() - now.getTime()
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
 
-  if (days < 0) {
+  if (diff < 0) {
     return t('userSubscriptions.status.expired')
   }
 
-  const dateStr = formatDateOnly(expires)
+  const month = expires.getMonth() + 1
+  const day = expires.getDate()
+  const hours = String(expires.getHours()).padStart(2, '0')
+  const minutes = String(expires.getMinutes()).padStart(2, '0')
+  const dateStr = `${expires.getFullYear()}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')} ${hours}:${minutes}`
 
-  if (days === 0) {
-    return `${dateStr} (Today)`
-  }
-  if (days === 1) {
-    return `${dateStr} (Tomorrow)`
+  const totalMinutes = Math.floor(diff / (1000 * 60))
+  const d = Math.floor(totalMinutes / (60 * 24))
+  const h = Math.floor((totalMinutes % (60 * 24)) / 60)
+  const m = totalMinutes % 60
+
+  let remaining: string
+  if (d > 0) {
+    remaining = `${d}d ${h}h`
+  } else if (h > 0) {
+    remaining = `${h}h ${m}m`
+  } else {
+    remaining = `${m}m`
   }
 
-  return t('userSubscriptions.daysRemaining', { days }) + ` (${dateStr})`
+  return `${t('userSubscriptions.daysRemaining', { days: remaining })} (${dateStr})`
 }
 
 function getExpirationClass(expiresAt: string): string {
   const now = new Date()
   const expires = new Date(expiresAt)
-  const diff = expires.getTime() - now.getTime()
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  const diffHours = (expires.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-  if (days <= 0) return 'text-red-600 dark:text-red-400 font-medium'
-  if (days <= 3) return 'text-red-600 dark:text-red-400'
-  if (days <= 7) return 'text-orange-600 dark:text-orange-400'
+  if (diffHours <= 0) return 'text-red-600 dark:text-red-400 font-medium'
+  if (diffHours <= 72) return 'text-red-600 dark:text-red-400'
+  if (diffHours <= 168) return 'text-orange-600 dark:text-orange-400'
   return 'text-gray-700 dark:text-gray-300'
 }
 

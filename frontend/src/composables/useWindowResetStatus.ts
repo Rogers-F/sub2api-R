@@ -24,6 +24,16 @@ export function useWindowResetStatus(keyPrefix: string) {
     return `${minutes}m`
   }
 
+  function formatDateTime(dateStr: string): string {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    const month = d.getMonth() + 1
+    const day = d.getDate()
+    const hours = String(d.getHours()).padStart(2, '0')
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    return `${month}/${day} ${hours}:${minutes}`
+  }
+
   function formatWindowStatus(rs?: WindowResetStatus): string | null {
     if (!rs) return null
     switch (rs.status) {
@@ -32,8 +42,16 @@ export function useWindowResetStatus(keyPrefix: string) {
       case 'active':
         if (!rs.reset_at) return null
         return t(`${keyPrefix}.active`, { time: formatCountdown(rs.reset_at) })
-      case 'active_final_window':
-        return t(`${keyPrefix}.activeFinalWindow`)
+      case 'active_final_window': {
+        const reason = t(`${keyPrefix}.activeFinalWindow`)
+        if (!rs.reset_at) return reason
+        const resetEnd = new Date(rs.reset_at)
+        const now = new Date()
+        const resetTimeStr = resetEnd.getTime() > now.getTime()
+          ? t(`${keyPrefix}.active`, { time: formatCountdown(rs.reset_at) })
+          : t(`${keyPrefix}.resetTimeAt`, { time: formatDateTime(rs.reset_at) })
+        return `${resetTimeStr}\n${reason}`
+      }
       case 'expired_will_reset':
         return t(`${keyPrefix}.expiredWillReset`)
       case 'expired_subscription':
