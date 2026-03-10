@@ -52,7 +52,7 @@ type AccountRepository interface {
 	ListSchedulableByPlatforms(ctx context.Context, platforms []string) ([]Account, error)
 	ListSchedulableByGroupIDAndPlatforms(ctx context.Context, groupID int64, platforms []string) ([]Account, error)
 
-	SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error
+	SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error
 	SetModelRateLimit(ctx context.Context, id int64, scope string, resetAt time.Time) error
 	SetOverloaded(ctx context.Context, id int64, until time.Time) error
 	SetTempUnschedulable(ctx context.Context, id int64, until time.Time, reason string) error

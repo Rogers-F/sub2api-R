@@ -600,6 +600,8 @@ export interface Account {
   schedulable: boolean
   rate_limited_at: string | null
   rate_limit_reset_at: string | null
+  rate_limit_window_type?: string | null
+  rate_limit_detail?: string | null
   overload_until: string | null
   temp_unschedulable_until: string | null
   temp_unschedulable_reason: string | null

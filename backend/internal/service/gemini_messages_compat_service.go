@@ -2733,13 +2733,13 @@ func (s *GeminiMessagesCompatService) handleGeminiUpstreamError(ctx context.Cont
 				log.Printf("[Gemini 429] Account %d rate limited, fallback to 5min", account.ID)
 			}
 		}
-		_ = s.accountRepo.SetRateLimited(ctx, account.ID, ra)
+		_ = s.accountRepo.SetRateLimited(ctx, account.ID, ra, "", truncateForLog(body, 2048))
 		return
 	}
 
 	// 使用解析到的重置时间
 	resetTime := time.Unix(*resetAt, 0)
-	_ = s.accountRepo.SetRateLimited(ctx, account.ID, resetTime)
+	_ = s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", truncateForLog(body, 2048))
 	log.Printf("[Gemini 429] Account %d rate limited until %v (oauth_type=%s, tier=%s)",
 		account.ID, resetTime, oauthType, tierID)
 }

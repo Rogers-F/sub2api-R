@@ -1022,7 +1022,7 @@ func (s *stubAccountRepo) ListSchedulableByGroupIDAndPlatforms(ctx context.Conte
 	return nil, errors.New("not implemented")
 }
 
-func (s *stubAccountRepo) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
+func (s *stubAccountRepo) SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error {
 	return errors.New("not implemented")
 }
 

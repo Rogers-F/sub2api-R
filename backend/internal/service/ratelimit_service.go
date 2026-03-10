@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -387,6 +388,50 @@ func isAnthropicConcurrencyLimit429(account *Account, statusCode int, responseBo
 	return strings.Contains(msg, "concurrency limit")
 }
 
+// buildOpenAI429Detail extracts window type and detail from OpenAI 429 headers.
+func buildOpenAI429Detail(headers http.Header) (windowType, detail string) {
+	snapshot := ParseCodexRateLimitHeaders(headers)
+	if snapshot == nil {
+		return "", ""
+	}
+	normalized := snapshot.Normalize()
+	if normalized == nil {
+		return "", ""
+	}
+
+	is7dExhausted := normalized.Used7dPercent != nil && *normalized.Used7dPercent >= 100
+	is5hExhausted := normalized.Used5hPercent != nil && *normalized.Used5hPercent >= 100
+
+	switch {
+	case is7dExhausted:
+		return "7d", fmt.Sprintf("7d exhausted (used=%.0f%%)", *normalized.Used7dPercent)
+	case is5hExhausted:
+		return "5h", fmt.Sprintf("5h exhausted (used=%.0f%%)", *normalized.Used5hPercent)
+	default:
+		return "", "openai codex headers (neither window exhausted)"
+	}
+}
+
+// buildAnthropic429Detail extracts window type and detail from Anthropic 429 headers.
+func buildAnthropic429Detail(headers http.Header) (windowType, detail string) {
+	is5hExceeded := isAnthropicWindowExceeded(headers, "5h")
+	is7dExceeded := isAnthropicWindowExceeded(headers, "7d")
+
+	util5h := headers.Get("anthropic-ratelimit-unified-5h-utilization")
+	util7d := headers.Get("anthropic-ratelimit-unified-7d-utilization")
+
+	switch {
+	case is5hExceeded && is7dExceeded:
+		return "7d", fmt.Sprintf("both exceeded (5h-util=%s, 7d-util=%s)", util5h, util7d)
+	case is7dExceeded:
+		return "7d", fmt.Sprintf("7d exceeded (util=%s)", util7d)
+	case is5hExceeded:
+		return "5h", fmt.Sprintf("5h exceeded (util=%s)", util5h)
+	default:
+		return "", fmt.Sprintf("anthropic per-window (5h-util=%s, 7d-util=%s)", util5h, util7d)
+	}
+}
+
 // handle429 处理429限流错误
 // 解析响应头获取重置时间，标记账号为限流状态
 func (s *RateLimitService) handle429(ctx context.Context, account *Account, headers http.Header, responseBody []byte) {
@@ -411,7 +456,8 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	// 1. OpenAI 平台：优先尝试解析 x-codex-* 响应头（用于 rate_limit_exceeded）
 	if account.Platform == PlatformOpenAI {
 		if resetAt := s.calculateOpenAI429ResetTime(headers); resetAt != nil {
-			if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt); err != nil {
+			wt, dt := buildOpenAI429Detail(headers)
+			if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt, wt, dt); err != nil {
 				slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 				return
 			}
@@ -422,7 +468,8 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 2. Anthropic 平台：尝试解析 per-window 头（5h / 7d），选择实际触发的窗口
 	if result := calculateAnthropic429ResetTime(headers); result != nil {
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, result.resetAt); err != nil {
+		wt, dt := buildAnthropic429Detail(headers)
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, result.resetAt, wt, dt); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 			return
 		}
@@ -446,12 +493,13 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 4. 如果响应头没有，尝试从响应体解析（OpenAI usage_limit_reached, Gemini）
 	if resetTimestamp == "" {
+		bodyDetail := truncateForLog(responseBody, 2048)
 		switch account.Platform {
 		case PlatformOpenAI:
 			// 尝试解析 OpenAI 的 usage_limit_reached 错误
 			if resetAt := parseOpenAIRateLimitResetTime(responseBody); resetAt != nil {
 				resetTime := time.Unix(*resetAt, 0)
-				if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime); err != nil {
+				if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", bodyDetail); err != nil {
 					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 					return
 				}
@@ -462,7 +510,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 			// 尝试解析 Gemini 格式（用于其他平台）
 			if resetAt := ParseGeminiRateLimitResetTime(responseBody); resetAt != nil {
 				resetTime := time.Unix(*resetAt, 0)
-				if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime); err != nil {
+				if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", bodyDetail); err != nil {
 					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 					return
 				}
@@ -474,7 +522,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		// 没有重置时间，使用默认5分钟
 		resetAt := time.Now().Add(5 * time.Minute)
 		slog.Warn("rate_limit_no_reset_time", "account_id", account.ID, "platform", account.Platform, "using_default", "5m")
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt); err != nil {
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", bodyDetail); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
@@ -485,7 +533,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	if err != nil {
 		slog.Warn("rate_limit_reset_parse_failed", "reset_timestamp", resetTimestamp, "error", err)
 		resetAt := time.Now().Add(5 * time.Minute)
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt); err != nil {
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", fmt.Sprintf("parse failed (raw=%s)", resetTimestamp)); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
@@ -494,7 +542,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	resetAt := time.Unix(ts, 0)
 
 	// 标记限流状态
-	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt); err != nil {
+	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", fmt.Sprintf("anthropic unified reset (ts=%d)", ts)); err != nil {
 		slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		return
 	}

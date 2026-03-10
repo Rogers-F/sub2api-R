@@ -50,6 +50,8 @@ func dominantRateLimitWindow(st *accountFilterStats) string {
 		return "5h window"
 	case st.RateLimited7d == st.RateLimited:
 		return "7d window"
+	case st.RateLimited5h == 0 && st.RateLimited7d == 0:
+		return "unknown window"
 	default:
 		return "mixed windows"
 	}
@@ -113,13 +115,30 @@ func classifyUnschedulableAccount(acc *Account, st *accountFilterStats) {
 	case acc.IsRateLimited():
 		st.RateLimited++
 		recordEarliestTimePtr(&st.EarliestRateLimitReset, acc.RateLimitResetAt)
-		switch inferRateLimitWindowType(acc.RateLimitedAt, acc.RateLimitResetAt) {
-		case "5h window":
+
+		// Use stored window type; fall back to inference for old data
+		wt := acc.RateLimitWindowType
+		if wt == "" {
+			inferred := inferRateLimitWindowType(acc.RateLimitedAt, acc.RateLimitResetAt)
+			if strings.HasPrefix(inferred, "5h") {
+				wt = "5h"
+			} else if strings.HasPrefix(inferred, "7d") {
+				wt = "7d"
+			}
+		}
+		switch wt {
+		case "5h":
 			st.RateLimited5h++
-		case "7d window":
+		case "7d":
 			st.RateLimited7d++
 		default:
 			st.RateLimitedOther++
+		}
+
+		// Track detail of earliest-recovery account
+		if acc.RateLimitResetAt != nil && st.EarliestRateLimitReset != nil &&
+			acc.RateLimitResetAt.Equal(*st.EarliestRateLimitReset) {
+			st.EarliestRateLimitDetail = acc.RateLimitDetail
 		}
 	case acc.IsOverloaded():
 		st.Overloaded++

@@ -384,7 +384,7 @@ func (s *AccountRepoSuite) TestListSchedulableByGroupID_TimeBoundaries_And_Statu
 
 	rateLimited := mustCreateAccount(s.T(), s.client, &service.Account{Name: "rl", Schedulable: true})
 	mustBindAccountToGroup(s.T(), s.client, rateLimited.ID, group.ID, 1)
-	s.Require().NoError(s.repo.SetRateLimited(s.ctx, rateLimited.ID, now.Add(10*time.Minute)), "SetRateLimited")
+	s.Require().NoError(s.repo.SetRateLimited(s.ctx, rateLimited.ID, now.Add(10*time.Minute), "", ""), "SetRateLimited")
 
 	s.Require().NoError(s.repo.SetError(s.ctx, overloaded.ID, "boom"), "SetError")
 
@@ -476,20 +476,22 @@ func (s *AccountRepoSuite) TestSetRateLimited() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{Name: "acc-rl"})
 	resetAt := time.Date(2025, 6, 15, 14, 0, 0, 0, time.UTC)
 
-	s.Require().NoError(s.repo.SetRateLimited(s.ctx, account.ID, resetAt))
+	s.Require().NoError(s.repo.SetRateLimited(s.ctx, account.ID, resetAt, "5h", "test detail"))
 
 	got, err := s.repo.GetByID(s.ctx, account.ID)
 	s.Require().NoError(err)
 	s.Require().NotNil(got.RateLimitedAt)
 	s.Require().NotNil(got.RateLimitResetAt)
 	s.Require().WithinDuration(resetAt, *got.RateLimitResetAt, time.Second)
+	s.Require().Equal("5h", got.RateLimitWindowType, "window type should be stored")
+	s.Require().Equal("test detail", got.RateLimitDetail, "detail should be stored")
 }
 
 func (s *AccountRepoSuite) TestClearRateLimit() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{Name: "acc-clear"})
 	until := time.Now().Add(1 * time.Hour)
 	s.Require().NoError(s.repo.SetOverloaded(s.ctx, account.ID, until))
-	s.Require().NoError(s.repo.SetRateLimited(s.ctx, account.ID, until))
+	s.Require().NoError(s.repo.SetRateLimited(s.ctx, account.ID, until, "7d", "test clear"))
 
 	s.Require().NoError(s.repo.ClearRateLimit(s.ctx, account.ID))
 
@@ -498,6 +500,8 @@ func (s *AccountRepoSuite) TestClearRateLimit() {
 	s.Require().Nil(got.RateLimitedAt)
 	s.Require().Nil(got.RateLimitResetAt)
 	s.Require().Nil(got.OverloadUntil)
+	s.Require().Empty(got.RateLimitWindowType, "window type should be cleared")
+	s.Require().Empty(got.RateLimitDetail, "detail should be cleared")
 }
 
 // --- UpdateLastUsed ---

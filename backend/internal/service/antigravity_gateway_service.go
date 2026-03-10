@@ -2661,7 +2661,7 @@ func (s *AntigravityGatewayService) handleUpstreamError(
 		ra := s.resolveResetTime(resetAt, defaultDur)
 		log.Printf("%s status=429 rate_limited account=%d reset_at=%v reset_in=%v (fallback)",
 			prefix, account.ID, ra.Format("15:04:05"), time.Until(ra).Truncate(time.Second))
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, ra); err != nil {
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, ra, "", "antigravity 429 fallback"); err != nil {
 			log.Printf("%s status=429 rate_limit_set_failed account=%d error=%v", prefix, account.ID, err)
 		}
 		return nil

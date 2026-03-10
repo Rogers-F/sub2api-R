@@ -373,7 +373,7 @@ func (r *geminiErrorPolicyRepo) SetError(_ context.Context, _ int64, _ string) e
 	return nil
 }
 
-func (r *geminiErrorPolicyRepo) SetRateLimited(_ context.Context, _ int64, _ time.Time) error {
+func (r *geminiErrorPolicyRepo) SetRateLimited(_ context.Context, _ int64, _ time.Time, _ string, _ string) error {
 	r.setRateLimitedCalls++
 	return nil
 }

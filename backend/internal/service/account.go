@@ -36,9 +36,11 @@ type Account struct {
 
 	Schedulable bool
 
-	RateLimitedAt    *time.Time
-	RateLimitResetAt *time.Time
-	OverloadUntil    *time.Time
+	RateLimitedAt       *time.Time
+	RateLimitResetAt    *time.Time
+	RateLimitWindowType string // "5h", "7d", or "" for unknown
+	RateLimitDetail     string // upstream 429 response body or brief summary
+	OverloadUntil       *time.Time
 
 	TempUnschedulableUntil  *time.Time
 	TempUnschedulableReason string

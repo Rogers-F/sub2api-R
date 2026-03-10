@@ -54,6 +54,9 @@ type accountRepository struct {
 type tempUnschedSnapshot struct {
 	until  *time.Time
 	reason string
+
+	rateLimitWindowType string
+	rateLimitDetail     string
 }
 
 // NewAccountRepository 创建账户仓储实例。
@@ -224,6 +227,8 @@ func (r *accountRepository) GetByIDs(ctx context.Context, ids []int64) ([]*servi
 		if snap, ok := tempUnschedMap[entAcc.ID]; ok {
 			out.TempUnschedulableUntil = snap.until
 			out.TempUnschedulableReason = snap.reason
+			out.RateLimitWindowType = snap.rateLimitWindowType
+			out.RateLimitDetail = snap.rateLimitDetail
 		}
 		outByID[entAcc.ID] = out
 	}
@@ -839,13 +844,22 @@ func (r *accountRepository) ListSchedulableByGroupIDAndPlatforms(ctx context.Con
 	})
 }
 
-func (r *accountRepository) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
+func (r *accountRepository) SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error {
 	now := time.Now()
-	_, err := r.client.Account.Update().
-		Where(dbaccount.IDEQ(id)).
-		SetRateLimitedAt(now).
-		SetRateLimitResetAt(resetAt).
-		Save(ctx)
+	if len(detail) > 2048 {
+		detail = detail[:2048]
+	}
+	var wtVal, dtVal interface{}
+	if windowType != "" {
+		wtVal = windowType
+	}
+	if detail != "" {
+		dtVal = detail
+	}
+	_, err := r.sql.ExecContext(ctx, `
+		UPDATE accounts SET rate_limited_at=$1, rate_limit_reset_at=$2,
+			rate_limit_window_type=$3, rate_limit_detail=$4, updated_at=NOW()
+		WHERE id=$5 AND deleted_at IS NULL`, now, resetAt, wtVal, dtVal, id)
 	if err != nil {
 		return err
 	}
@@ -955,12 +969,11 @@ func (r *accountRepository) ClearTempUnschedulable(ctx context.Context, id int64
 }
 
 func (r *accountRepository) ClearRateLimit(ctx context.Context, id int64) error {
-	_, err := r.client.Account.Update().
-		Where(dbaccount.IDEQ(id)).
-		ClearRateLimitedAt().
-		ClearRateLimitResetAt().
-		ClearOverloadUntil().
-		Save(ctx)
+	_, err := r.sql.ExecContext(ctx, `
+		UPDATE accounts SET rate_limited_at=NULL, rate_limit_reset_at=NULL,
+			rate_limit_window_type=NULL, rate_limit_detail=NULL,
+			overload_until=NULL, updated_at=NOW()
+		WHERE id=$1 AND deleted_at IS NULL`, id)
 	if err != nil {
 		return err
 	}
@@ -1344,6 +1357,8 @@ func (r *accountRepository) accountsToService(ctx context.Context, accounts []*d
 		if snap, ok := tempUnschedMap[acc.ID]; ok {
 			out.TempUnschedulableUntil = snap.until
 			out.TempUnschedulableReason = snap.reason
+			out.RateLimitWindowType = snap.rateLimitWindowType
+			out.RateLimitDetail = snap.rateLimitDetail
 		}
 		outAccounts = append(outAccounts, *out)
 	}
@@ -1376,7 +1391,8 @@ func (r *accountRepository) loadTempUnschedStates(ctx context.Context, accountID
 	}
 
 	rows, err := r.sql.QueryContext(ctx, `
-		SELECT id, temp_unschedulable_until, temp_unschedulable_reason
+		SELECT id, temp_unschedulable_until, temp_unschedulable_reason,
+			rate_limit_window_type, rate_limit_detail
 		FROM accounts
 		WHERE id = ANY($1)
 	`, pq.Array(accountIDs))
@@ -1388,8 +1404,8 @@ func (r *accountRepository) loadTempUnschedStates(ctx context.Context, accountID
 	for rows.Next() {
 		var id int64
 		var until sql.NullTime
-		var reason sql.NullString
-		if err := rows.Scan(&id, &until, &reason); err != nil {
+		var reason, rlWindowType, rlDetail sql.NullString
+		if err := rows.Scan(&id, &until, &reason, &rlWindowType, &rlDetail); err != nil {
 			return nil, err
 		}
 		var untilPtr *time.Time
@@ -1397,11 +1413,17 @@ func (r *accountRepository) loadTempUnschedStates(ctx context.Context, accountID
 			tmp := until.Time
 			untilPtr = &tmp
 		}
+		snap := tempUnschedSnapshot{until: untilPtr}
 		if reason.Valid {
-			out[id] = tempUnschedSnapshot{until: untilPtr, reason: reason.String}
-		} else {
-			out[id] = tempUnschedSnapshot{until: untilPtr, reason: ""}
+			snap.reason = reason.String
 		}
+		if rlWindowType.Valid {
+			snap.rateLimitWindowType = rlWindowType.String
+		}
+		if rlDetail.Valid {
+			snap.rateLimitDetail = rlDetail.String
+		}
+		out[id] = snap
 	}
 
 	if err := rows.Err(); err != nil {

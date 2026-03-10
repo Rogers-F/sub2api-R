@@ -76,7 +76,7 @@ type stubAntigravityAccountRepo struct {
 	modelRateLimitCalls []modelRateLimitCall
 }
 
-func (s *stubAntigravityAccountRepo) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
+func (s *stubAntigravityAccountRepo) SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error {
 	s.rateCalls = append(s.rateCalls, rateLimitCall{accountID: id, resetAt: resetAt})
 	return nil
 }

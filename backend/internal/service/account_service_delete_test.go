@@ -143,7 +143,7 @@ func (s *accountRepoStub) ListSchedulableByGroupIDAndPlatforms(ctx context.Conte
 	panic("unexpected ListSchedulableByGroupIDAndPlatforms call")
 }
 
-func (s *accountRepoStub) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
+func (s *accountRepoStub) SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error {
 	panic("unexpected SetRateLimited call")
 }
 

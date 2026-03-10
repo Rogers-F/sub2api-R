@@ -82,6 +82,7 @@ type accountFilterStats struct {
 
 	// 最早恢复时间
 	EarliestRateLimitReset      *time.Time
+	EarliestRateLimitDetail     string
 	EarliestModelRateLimitReset *time.Time
 	EarliestOverloadUntil       *time.Time
 	EarliestTempUntil           *time.Time
@@ -133,10 +134,15 @@ func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string, diagS
 		n := diagStats.Total
 		// 全部限流
 		if diagStats.RateLimited == n {
-			return newNoAvailableAccountsError(
-				fmt.Sprintf("all %d accounts are rate-limited (%s, %s)",
-					n, dominantRateLimitWindow(diagStats), formatRecoveryHint(diagStats.EarliestRateLimitReset)),
-			)
+			msg := fmt.Sprintf("all %d accounts are rate-limited (%s, %s)",
+				n, dominantRateLimitWindow(diagStats), formatRecoveryHint(diagStats.EarliestRateLimitReset))
+			if d := diagStats.EarliestRateLimitDetail; d != "" {
+				if len(d) > 512 {
+					d = d[:509] + "..."
+				}
+				msg += fmt.Sprintf(", upstream: %s", d)
+			}
+			return newNoAvailableAccountsError(msg)
 		}
 		// 全部过载
 		if diagStats.Overloaded == n {
@@ -195,10 +201,15 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 
 	// 账号级限流
 	if st.RateLimited > 0 && st.RateLimited == effective {
-		return newNoAvailableAccountsError(
-			fmt.Sprintf("all %d candidate accounts are rate-limited (%s, %s)",
-				effective, dominantRateLimitWindow(&st), formatRecoveryHint(st.EarliestRateLimitReset)),
-		)
+		msg := fmt.Sprintf("all %d candidate accounts are rate-limited (%s, %s)",
+			effective, dominantRateLimitWindow(&st), formatRecoveryHint(st.EarliestRateLimitReset))
+		if d := st.EarliestRateLimitDetail; d != "" {
+			if len(d) > 512 {
+				d = d[:509] + "..."
+			}
+			msg += fmt.Sprintf(", upstream: %s", d)
+		}
+		return newNoAvailableAccountsError(msg)
 	}
 
 	// 过载
