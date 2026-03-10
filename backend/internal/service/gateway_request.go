@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -63,6 +64,13 @@ func ParseGatewayRequest(body []byte, protocol string) (*ParsedRequest, error) {
 			return nil, fmt.Errorf("invalid model field type")
 		}
 		parsed.Model = model
+
+		// Apply deprecated model aliases before anything else sees the model name
+		if alias, ok := domain.DeprecatedModelAliases[model]; ok {
+			log.Printf("Deprecated model alias: %s -> %s", model, alias)
+			parsed.Model = alias
+			parsed.Body = replaceModelField(body, alias)
+		}
 	}
 	if rawStream, exists := req["stream"]; exists {
 		stream, ok := rawStream.(bool)
@@ -155,6 +163,25 @@ func parseIntegralNumber(raw any) (int, bool) {
 	default:
 		return 0, false
 	}
+}
+
+// replaceModelField replaces the "model" field value in a JSON request body,
+// preserving all other fields as raw JSON to avoid formatting/precision changes.
+func replaceModelField(body []byte, newModel string) []byte {
+	var req map[string]json.RawMessage
+	if err := json.Unmarshal(body, &req); err != nil {
+		return body
+	}
+	modelBytes, err := json.Marshal(newModel)
+	if err != nil {
+		return body
+	}
+	req["model"] = json.RawMessage(modelBytes)
+	newBody, err := json.Marshal(req)
+	if err != nil {
+		return body
+	}
+	return newBody
 }
 
 // FilterThinkingBlocks removes thinking blocks from request body

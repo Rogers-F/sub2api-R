@@ -98,6 +98,12 @@ func (h *GatewayHandler) GeminiV1BetaGetModel(c *gin.Context) {
 		return
 	}
 
+	// Apply deprecated model aliases
+	if alias, ok := domain.DeprecatedModelAliases[modelName]; ok {
+		log.Printf("Deprecated model alias: %s -> %s", modelName, alias)
+		modelName = alias
+	}
+
 	// 强制 antigravity 模式：返回 antigravity 模型信息
 	if forcePlatform == service.PlatformAntigravity {
 		c.JSON(http.StatusOK, antigravity.FallbackGeminiModel(modelName))
@@ -156,6 +162,12 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	if err != nil {
 		googleError(c, http.StatusNotFound, err.Error())
 		return
+	}
+
+	// Apply deprecated model aliases
+	if alias, ok := domain.DeprecatedModelAliases[modelName]; ok {
+		log.Printf("Deprecated model alias: %s -> %s", modelName, alias)
+		modelName = alias
 	}
 
 	stream := action == "streamGenerateContent"

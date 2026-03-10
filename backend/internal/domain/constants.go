@@ -65,6 +65,18 @@ const (
 	SubscriptionStatusSuspended = "suspended"
 )
 
+// DeprecatedModelAliases maps retired model IDs to their current replacements.
+// Applied at the gateway request parsing layer before account selection,
+// so all downstream code (routing, forwarding, billing) sees the canonical model name.
+var DeprecatedModelAliases = map[string]string{
+	"claude-3-5-haiku-20241022":  "claude-haiku-4-5-20251001",
+	"claude-3-5-sonnet-20241022": "claude-sonnet-4-5-20250929",
+	"claude-3-5-sonnet-20240620": "claude-sonnet-4-5-20250929",
+	"claude-3-opus-20240229":     "claude-opus-4-5-20251101",
+	"claude-3-sonnet-20240229":   "claude-sonnet-4-5-20250929",
+	"claude-3-haiku-20240307":    "claude-haiku-4-5-20251001",
+}
+
 // DefaultAntigravityModelMapping 是 Antigravity 平台的默认模型映射
 // 当账号未配置 model_mapping 时使用此默认值
 // 与前端 useModelWhitelist.ts 中的 antigravityDefaultMappings 保持一致

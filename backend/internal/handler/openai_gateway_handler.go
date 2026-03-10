@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -101,6 +102,16 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 	// Extract model and stream
 	reqModel, _ := reqBody["model"].(string)
 	reqStream, _ := reqBody["stream"].(bool)
+
+	// Apply deprecated model aliases
+	if alias, ok := domain.DeprecatedModelAliases[reqModel]; ok {
+		log.Printf("Deprecated model alias: %s -> %s", reqModel, alias)
+		reqModel = alias
+		reqBody["model"] = alias
+		if newBody, err := json.Marshal(reqBody); err == nil {
+			body = newBody
+		}
+	}
 
 	// 验证 model 必填
 	if reqModel == "" {
