@@ -849,7 +849,7 @@ func (r *accountRepository) SetRateLimited(ctx context.Context, id int64, resetA
 	if len(detail) > 2048 {
 		detail = detail[:2048]
 	}
-	var wtVal, dtVal interface{}
+	var wtVal, dtVal any
 	if windowType != "" {
 		wtVal = windowType
 	}
