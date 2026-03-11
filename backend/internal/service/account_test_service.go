@@ -48,6 +48,7 @@ type AccountTestService struct {
 	accountRepo               AccountRepository
 	geminiTokenProvider       *GeminiTokenProvider
 	claudeTokenProvider       *ClaudeTokenProvider
+	openAITokenProvider       *OpenAITokenProvider
 	antigravityGatewayService *AntigravityGatewayService
 	httpUpstream              HTTPUpstream
 	cfg                       *config.Config
@@ -58,6 +59,7 @@ func NewAccountTestService(
 	accountRepo AccountRepository,
 	geminiTokenProvider *GeminiTokenProvider,
 	claudeTokenProvider *ClaudeTokenProvider,
+	openAITokenProvider *OpenAITokenProvider,
 	antigravityGatewayService *AntigravityGatewayService,
 	httpUpstream HTTPUpstream,
 	cfg *config.Config,
@@ -66,6 +68,7 @@ func NewAccountTestService(
 		accountRepo:               accountRepo,
 		geminiTokenProvider:       geminiTokenProvider,
 		claudeTokenProvider:       claudeTokenProvider,
+		openAITokenProvider:       openAITokenProvider,
 		antigravityGatewayService: antigravityGatewayService,
 		httpUpstream:              httpUpstream,
 		cfg:                       cfg,
@@ -349,7 +352,15 @@ func (s *AccountTestService) buildOpenAITestRequest(ctx context.Context, account
 
 	if account.IsOAuth() {
 		isOAuth = true
-		authToken = account.GetOpenAIAccessToken()
+		if s.openAITokenProvider != nil && account.Type == AccountTypeOAuth {
+			var tokenErr error
+			authToken, tokenErr = s.openAITokenProvider.GetAccessToken(ctx, account)
+			if tokenErr != nil {
+				return nil, "", "", fmt.Errorf("token provider failed: %w", tokenErr)
+			}
+		} else {
+			authToken = account.GetOpenAIAccessToken()
+		}
 		if authToken == "" {
 			return nil, "", "", fmt.Errorf("no access token available")
 		}

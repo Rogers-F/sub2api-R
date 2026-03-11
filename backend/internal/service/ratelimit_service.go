@@ -124,6 +124,8 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		}
 		// 其他 400 错误（如参数问题）不处理，不禁用账号
 	case 401:
+		oauthExpired401 := account.Type == AccountTypeOAuth && isOAuthTokenExpired401(account, statusCode, responseBody)
+
 		// 对所有 OAuth 账号在 401 错误时调用缓存失效并强制下次刷新
 		if account.Type == AccountTypeOAuth {
 			// 1. 失效缓存
@@ -143,6 +145,13 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 				slog.Info("oauth_401_force_refresh_set", "account_id", account.ID, "platform", account.Platform)
 			}
 		}
+
+		if oauthExpired401 {
+			slog.Info("oauth_expired_401_detected", "account_id", account.ID, "platform", account.Platform)
+			shouldDisable = false
+			break
+		}
+
 		msg := "Authentication failed (401): invalid or expired credentials"
 		if upstreamMsg != "" {
 			msg = "Authentication failed (401): " + upstreamMsg

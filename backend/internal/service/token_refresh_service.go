@@ -125,6 +125,9 @@ func (s *TokenRefreshService) processRefresh() {
 
 	for i := range accounts {
 		account := &accounts[i]
+		if !shouldUseBackgroundTokenRefresh(account) {
+			continue
+		}
 
 		// 遍历所有刷新器，找到能处理此账号的
 		for _, refresher := range s.refreshers {
@@ -158,6 +161,20 @@ func (s *TokenRefreshService) processRefresh() {
 	// 始终打印周期日志，便于跟踪服务运行状态
 	log.Printf("[TokenRefresh] Cycle complete: total=%d, oauth=%d, needs_refresh=%d, refreshed=%d, failed=%d",
 		totalAccounts, oauthAccounts, needsRefresh, refreshed, failed)
+}
+
+func shouldUseBackgroundTokenRefresh(account *Account) bool {
+	if account == nil || account.Type != AccountTypeOAuth {
+		return false
+	}
+
+	switch account.Platform {
+	case PlatformAnthropic, PlatformOpenAI:
+		// 对齐 88code：Claude/OpenAI 走请求前按需刷新，不走后台定时刷新。
+		return false
+	default:
+		return true
+	}
 }
 
 // refreshAccountWithLock 在分布式锁保护下刷新单个账号的 token

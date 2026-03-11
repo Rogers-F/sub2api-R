@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	openAITokenRefreshSkew = 3 * time.Minute
+	openAITokenRefreshSkew = time.Minute
 	openAITokenCacheSkew   = 5 * time.Minute
 	openAILockWaitTime     = 200 * time.Millisecond
 )

@@ -17,12 +17,20 @@ type rateLimitAccountRepoStub struct {
 	mockAccountRepoForGemini
 	setErrorCalls int
 	tempCalls     int
+	updateCalls   int
 	lastErrorMsg  string
+	lastAccount   *Account
 }
 
 func (r *rateLimitAccountRepoStub) SetError(ctx context.Context, id int64, errorMsg string) error {
 	r.setErrorCalls++
 	r.lastErrorMsg = errorMsg
+	return nil
+}
+
+func (r *rateLimitAccountRepoStub) Update(ctx context.Context, account *Account) error {
+	r.updateCalls++
+	r.lastAccount = account
 	return nil
 }
 
@@ -41,13 +49,13 @@ func (r *tokenCacheInvalidatorRecorder) InvalidateToken(ctx context.Context, acc
 	return r.err
 }
 
-func TestRateLimitService_HandleUpstreamError_OAuth401MarksError(t *testing.T) {
+func TestRateLimitService_HandleUpstreamError_OAuth401PermanentMarksError(t *testing.T) {
 	tests := []struct {
 		name     string
 		platform string
 	}{
-		{name: "gemini", platform: PlatformGemini},
-		{name: "antigravity", platform: PlatformAntigravity},
+		{name: "openai", platform: PlatformOpenAI},
+		{name: "anthropic", platform: PlatformAnthropic},
 	}
 
 	for _, tt := range tests {
@@ -73,18 +81,43 @@ func TestRateLimitService_HandleUpstreamError_OAuth401MarksError(t *testing.T) {
 				},
 			}
 
-			shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte("unauthorized"))
+			shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte(`{"error":{"message":"token revoked"}}`))
 
 			require.True(t, shouldDisable)
 			require.Equal(t, 1, repo.setErrorCalls)
 			require.Equal(t, 0, repo.tempCalls)
-			require.Contains(t, repo.lastErrorMsg, "Authentication failed (401)")
+			require.Equal(t, 1, repo.updateCalls)
+			require.Contains(t, repo.lastErrorMsg, "token revoked")
 			require.Len(t, invalidator.accounts, 1)
 		})
 	}
 }
 
-func TestRateLimitService_HandleUpstreamError_OAuth401InvalidatorError(t *testing.T) {
+func TestRateLimitService_HandleUpstreamError_OAuth401ExpiredDoesNotDisable(t *testing.T) {
+	repo := &rateLimitAccountRepoStub{}
+	invalidator := &tokenCacheInvalidatorRecorder{}
+	service := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
+	service.SetTokenCacheInvalidator(invalidator)
+	account := &Account{
+		ID:       103,
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeOAuth,
+		Credentials: map[string]any{
+			"refresh_token": "refresh-token",
+		},
+	}
+
+	shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte(`{"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired. Please obtain a new token or refresh your existing token."}}`))
+
+	require.False(t, shouldDisable)
+	require.Equal(t, 0, repo.setErrorCalls)
+	require.Equal(t, 1, repo.updateCalls)
+	require.NotNil(t, repo.lastAccount)
+	require.NotEmpty(t, repo.lastAccount.GetCredential("expires_at"))
+	require.Len(t, invalidator.accounts, 1)
+}
+
+func TestRateLimitService_HandleUpstreamError_OAuth401PermanentInvalidatorError(t *testing.T) {
 	repo := &rateLimitAccountRepoStub{}
 	invalidator := &tokenCacheInvalidatorRecorder{err: errors.New("boom")}
 	service := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
@@ -95,10 +128,11 @@ func TestRateLimitService_HandleUpstreamError_OAuth401InvalidatorError(t *testin
 		Type:     AccountTypeOAuth,
 	}
 
-	shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte("unauthorized"))
+	shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte(`{"error":{"message":"token revoked"}}`))
 
 	require.True(t, shouldDisable)
 	require.Equal(t, 1, repo.setErrorCalls)
+	require.Equal(t, 1, repo.updateCalls)
 	require.Len(t, invalidator.accounts, 1)
 }
 

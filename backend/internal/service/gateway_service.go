@@ -2863,6 +2863,59 @@ func (s *GatewayService) shouldRetryUpstreamError(account *Account, statusCode i
 	return !account.ShouldHandleErrorCode(statusCode)
 }
 
+func (s *GatewayService) prepareAnthropicOAuthRetry(ctx context.Context, account *Account, statusCode int, responseBody []byte) (string, string, error) {
+	if account == nil || statusCode != http.StatusUnauthorized || account.Platform != PlatformAnthropic || account.Type != AccountTypeOAuth {
+		return "", "", nil
+	}
+	if !isOAuthTokenExpired401(account, statusCode, responseBody) {
+		return "", "", nil
+	}
+	if s.claudeTokenProvider == nil {
+		return "", "", nil
+	}
+	if s.claudeTokenProvider.oauthService == nil {
+		return "", "", nil
+	}
+
+	if account.Credentials == nil {
+		account.Credentials = make(map[string]any)
+	}
+
+	if s.claudeTokenProvider.tokenCache != nil {
+		if err := s.claudeTokenProvider.tokenCache.DeleteAccessToken(ctx, ClaudeTokenCacheKey(account)); err != nil {
+			log.Printf("Account %d: failed to invalidate Claude token cache before retry: %v", account.ID, err)
+		}
+	}
+
+	tokenInfo, err := s.claudeTokenProvider.oauthService.RefreshAccountToken(ctx, account)
+	if err != nil {
+		return "", "", err
+	}
+
+	newCredentials := make(map[string]any, len(account.Credentials)+5)
+	for k, v := range account.Credentials {
+		newCredentials[k] = v
+	}
+	newCredentials["access_token"] = tokenInfo.AccessToken
+	newCredentials["token_type"] = tokenInfo.TokenType
+	newCredentials["expires_in"] = strconv.FormatInt(tokenInfo.ExpiresIn, 10)
+	newCredentials["expires_at"] = strconv.FormatInt(tokenInfo.ExpiresAt, 10)
+	if tokenInfo.RefreshToken != "" {
+		newCredentials["refresh_token"] = tokenInfo.RefreshToken
+	}
+	if tokenInfo.Scope != "" {
+		newCredentials["scope"] = tokenInfo.Scope
+	}
+	account.Credentials = newCredentials
+	if s.claudeTokenProvider.accountRepo != nil {
+		if err := s.claudeTokenProvider.accountRepo.Update(ctx, account); err != nil {
+			log.Printf("Account %d: failed to persist refreshed Claude OAuth token before retry: %v", account.ID, err)
+		}
+	}
+
+	return tokenInfo.AccessToken, "oauth", nil
+}
+
 // shouldFailoverUpstreamError determines whether an upstream error should trigger account failover.
 func (s *GatewayService) shouldFailoverUpstreamError(statusCode int) bool {
 	switch statusCode {
@@ -3342,6 +3395,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	// 重试循环
 	var resp *http.Response
 	retryStart := time.Now()
+	anthropicOAuthExpiredRetryUsed := false
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		// 构建上游请求（每次重试需要重新构建，因为请求体需要重新读取）
 		// Capture upstream request body for ops retry of this attempt.
@@ -3503,6 +3557,41 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 				}
 				// 不是thinking签名错误，恢复响应体
 				resp.Body = io.NopCloser(bytes.NewReader(respBody))
+			}
+		}
+
+		if !anthropicOAuthExpiredRetryUsed &&
+			resp.StatusCode == http.StatusUnauthorized &&
+			account.Platform == PlatformAnthropic &&
+			account.Type == AccountTypeOAuth {
+			respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+			_ = resp.Body.Close()
+			resp.Body = io.NopCloser(bytes.NewReader(respBody))
+
+			if isOAuthTokenExpired401(account, resp.StatusCode, respBody) {
+				appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+					Platform:           account.Platform,
+					AccountID:          account.ID,
+					AccountName:        account.Name,
+					UpstreamStatusCode: resp.StatusCode,
+					UpstreamRequestID:  resp.Header.Get("x-request-id"),
+					Kind:               "retry",
+					Message:            extractUpstreamErrorMessage(respBody),
+					Detail: func() string {
+						if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
+							return truncateString(string(respBody), s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes)
+						}
+						return ""
+					}(),
+				})
+				if retryToken, retryTokenType, retryTokenErr := s.prepareAnthropicOAuthRetry(ctx, account, resp.StatusCode, respBody); retryTokenErr != nil {
+					log.Printf("Account %d: failed to refresh Claude OAuth token after expired 401: %v", account.ID, retryTokenErr)
+				} else if retryToken != "" {
+					anthropicOAuthExpiredRetryUsed = true
+					token = retryToken
+					tokenType = retryTokenType
+					continue
+				}
 			}
 		}
 
@@ -5339,6 +5428,27 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 				if err != nil {
 					s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
 					return err
+				}
+			}
+		}
+	}
+
+	if resp.StatusCode == http.StatusUnauthorized &&
+		account.Platform == PlatformAnthropic &&
+		account.Type == AccountTypeOAuth &&
+		isOAuthTokenExpired401(account, resp.StatusCode, respBody) {
+		if retryToken, retryTokenType, retryTokenErr := s.prepareAnthropicOAuthRetry(ctx, account, resp.StatusCode, respBody); retryTokenErr == nil && retryToken != "" {
+			retryReq, buildErr := s.buildCountTokensRequest(ctx, c, account, body, retryToken, retryTokenType, reqModel, shouldMimicClaudeCode)
+			if buildErr == nil {
+				retryResp, retryErr := s.httpUpstream.DoWithTLS(retryReq, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+				if retryErr == nil {
+					resp = retryResp
+					respBody, err = io.ReadAll(resp.Body)
+					_ = resp.Body.Close()
+					if err != nil {
+						s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
+						return err
+					}
 				}
 			}
 		}

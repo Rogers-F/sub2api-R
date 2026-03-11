@@ -773,6 +773,52 @@ func (s *OpenAIGatewayService) handleFailoverSideEffects(ctx context.Context, re
 	s.rateLimitService.HandleUpstreamError(ctx, account, resp.StatusCode, resp.Header, body)
 }
 
+func (s *OpenAIGatewayService) prepareOpenAIOAuthRetry(ctx context.Context, account *Account, statusCode int, responseBody []byte) (string, string, error) {
+	if account == nil || statusCode != http.StatusUnauthorized || !account.IsOpenAIOAuth() {
+		return "", "", nil
+	}
+	if !isOAuthTokenExpired401(account, statusCode, responseBody) {
+		return "", "", nil
+	}
+	if s.openAITokenProvider == nil || s.openAITokenProvider.openAIOAuthService == nil {
+		return "", "", nil
+	}
+
+	if s.openAITokenProvider.tokenCache != nil {
+		if err := s.openAITokenProvider.tokenCache.DeleteAccessToken(ctx, OpenAITokenCacheKey(account)); err != nil {
+			log.Printf("Account %d: failed to invalidate OpenAI token cache before retry: %v", account.ID, err)
+		}
+	}
+
+	tokenInfo, err := s.openAITokenProvider.openAIOAuthService.RefreshAccountToken(ctx, account)
+	if err != nil {
+		return "", "", err
+	}
+
+	if account.Credentials == nil {
+		account.Credentials = make(map[string]any)
+	}
+	newCredentials := s.openAITokenProvider.openAIOAuthService.BuildAccountCredentials(tokenInfo)
+	for k, v := range account.Credentials {
+		if _, exists := newCredentials[k]; !exists {
+			newCredentials[k] = v
+		}
+	}
+	account.Credentials = newCredentials
+
+	repo := s.accountRepo
+	if s.openAITokenProvider.accountRepo != nil {
+		repo = s.openAITokenProvider.accountRepo
+	}
+	if repo != nil {
+		if err := repo.Update(ctx, account); err != nil {
+			log.Printf("Account %d: failed to persist refreshed OpenAI OAuth token before retry: %v", account.ID, err)
+		}
+	}
+
+	return tokenInfo.AccessToken, "oauth", nil
+}
+
 // Forward forwards request to OpenAI API
 func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (*OpenAIForwardResult, error) {
 	startTime := time.Now()
@@ -940,6 +986,50 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		return nil, fmt.Errorf("upstream request failed: %s", safeErr)
 	}
 	defer func() { _ = resp.Body.Close() }()
+
+	openAIOAuthExpiredRetryUsed := false
+	if !openAIOAuthExpiredRetryUsed &&
+		resp.StatusCode == http.StatusUnauthorized &&
+		account.IsOpenAIOAuth() {
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+		_ = resp.Body.Close()
+		resp.Body = io.NopCloser(bytes.NewReader(respBody))
+
+		if isOAuthTokenExpired401(account, resp.StatusCode, respBody) {
+			appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+				Platform:           account.Platform,
+				AccountID:          account.ID,
+				AccountName:        account.Name,
+				UpstreamStatusCode: resp.StatusCode,
+				UpstreamRequestID:  resp.Header.Get("x-request-id"),
+				Kind:               "retry",
+				Message:            extractUpstreamErrorMessage(respBody),
+				Detail: func() string {
+					if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
+						maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes
+						if maxBytes <= 0 {
+							maxBytes = 2048
+						}
+						return truncateString(string(respBody), maxBytes)
+					}
+					return ""
+				}(),
+			})
+			if retryToken, _, retryTokenErr := s.prepareOpenAIOAuthRetry(ctx, account, resp.StatusCode, respBody); retryTokenErr != nil {
+				log.Printf("Account %d: failed to refresh OpenAI OAuth token after expired 401: %v", account.ID, retryTokenErr)
+			} else if retryToken != "" {
+				openAIOAuthExpiredRetryUsed = true
+				retryReq, buildErr := s.buildUpstreamRequest(ctx, c, account, body, retryToken, reqStream, promptCacheKey, isCodexCLI)
+				if buildErr != nil {
+					log.Printf("Account %d: failed to rebuild OpenAI request after expired 401: %v", account.ID, buildErr)
+				} else if retryResp, retryErr := s.httpUpstream.Do(retryReq, proxyURL, account.ID, account.Concurrency); retryErr != nil {
+					log.Printf("Account %d: OpenAI retry request failed after expired 401: %v", account.ID, retryErr)
+				} else {
+					resp = retryResp
+				}
+			}
+		}
+	}
 
 	// Handle error response
 	if resp.StatusCode >= 400 {
