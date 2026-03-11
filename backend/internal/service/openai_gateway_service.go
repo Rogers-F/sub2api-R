@@ -987,9 +987,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	openAIOAuthExpiredRetryUsed := false
-	if !openAIOAuthExpiredRetryUsed &&
-		resp.StatusCode == http.StatusUnauthorized &&
+	if resp.StatusCode == http.StatusUnauthorized &&
 		account.IsOpenAIOAuth() {
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 		_ = resp.Body.Close()
@@ -1018,7 +1016,6 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			if retryToken, _, retryTokenErr := s.prepareOpenAIOAuthRetry(ctx, account, resp.StatusCode, respBody); retryTokenErr != nil {
 				log.Printf("Account %d: failed to refresh OpenAI OAuth token after expired 401: %v", account.ID, retryTokenErr)
 			} else if retryToken != "" {
-				openAIOAuthExpiredRetryUsed = true
 				retryReq, buildErr := s.buildUpstreamRequest(ctx, c, account, body, retryToken, reqStream, promptCacheKey, isCodexCLI)
 				if buildErr != nil {
 					log.Printf("Account %d: failed to rebuild OpenAI request after expired 401: %v", account.ID, buildErr)
