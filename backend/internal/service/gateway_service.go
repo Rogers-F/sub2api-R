@@ -129,19 +129,25 @@ func newNoAvailableAccountsError(reason string) error {
 	return fmt.Errorf("no available accounts: %s", reason)
 }
 
+func appendRateLimitDiagnosticDetail(msg string, windowSummary string, detail string) string {
+	if windowSummary != "unknown window" {
+		return msg
+	}
+	if summary := summarizeRateLimitDetailForUser(detail); summary != "" {
+		return msg + fmt.Sprintf(", upstream: %s", summary)
+	}
+	return msg
+}
+
 func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string, diagStats *accountFilterStats) error {
 	if diagStats != nil && diagStats.Total > 0 {
 		n := diagStats.Total
 		// 全部限流
 		if diagStats.RateLimited == n {
+			windowSummary := dominantRateLimitWindow(diagStats)
 			msg := fmt.Sprintf("all %d accounts are rate-limited (%s, %s)",
-				n, dominantRateLimitWindow(diagStats), formatRecoveryHint(diagStats.EarliestRateLimitReset))
-			if d := diagStats.EarliestRateLimitDetail; d != "" {
-				if len(d) > 512 {
-					d = d[:509] + "..."
-				}
-				msg += fmt.Sprintf(", upstream: %s", d)
-			}
+				n, windowSummary, formatRecoveryHint(diagStats.EarliestRateLimitReset))
+			msg = appendRateLimitDiagnosticDetail(msg, windowSummary, diagStats.EarliestRateLimitDetail)
 			return newNoAvailableAccountsError(msg)
 		}
 		// 全部过载
@@ -201,14 +207,10 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 
 	// 账号级限流
 	if st.RateLimited > 0 && st.RateLimited == effective {
+		windowSummary := dominantRateLimitWindow(&st)
 		msg := fmt.Sprintf("all %d candidate accounts are rate-limited (%s, %s)",
-			effective, dominantRateLimitWindow(&st), formatRecoveryHint(st.EarliestRateLimitReset))
-		if d := st.EarliestRateLimitDetail; d != "" {
-			if len(d) > 512 {
-				d = d[:509] + "..."
-			}
-			msg += fmt.Sprintf(", upstream: %s", d)
-		}
+			effective, windowSummary, formatRecoveryHint(st.EarliestRateLimitReset))
+		msg = appendRateLimitDiagnosticDetail(msg, windowSummary, st.EarliestRateLimitDetail)
 		return newNoAvailableAccountsError(msg)
 	}
 

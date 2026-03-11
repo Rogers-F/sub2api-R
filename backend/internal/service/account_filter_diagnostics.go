@@ -2,15 +2,28 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
 
 const (
-	rateLimit5hBase      = 5 * time.Hour
-	rateLimit7dBase      = 7 * 24 * time.Hour
-	rateLimit5hTolerance = 20 * time.Minute
-	rateLimit7dTolerance = 6 * time.Hour
+	rateLimit5hBase       = 5 * time.Hour
+	rateLimit7dBase       = 7 * 24 * time.Hour
+	rateLimit5hTolerance  = 20 * time.Minute
+	rateLimit7dTolerance  = 6 * time.Hour
+	rateLimitDetailMaxLen = 160
+)
+
+var (
+	rateLimitDetailWhitespaceRegex     = regexp.MustCompile(`\s+`)
+	rateLimitDetailBearerRegex         = regexp.MustCompile(`(?i)\bBearer\s+[A-Za-z0-9._\-+/=]+\b`)
+	rateLimitDetailSecretFieldRegex    = regexp.MustCompile(`(?i)\b(authorization|access_token|refresh_token|id_token|api[_-]?key|token)\b\s*[:=]\s*("[^"]*"|'[^']*'|Bearer\s+[^\s,;]+|[^\s,;]+)`)
+	rateLimitDetailRequestIDFieldRegex = regexp.MustCompile(`(?i)\b(x-request-id|request[ _-]?id)\b\s*[:=]\s*("[^"]*"|'[^']*'|[A-Za-z0-9._:-]+)`)
+	rateLimitDetailReqIDRegex          = regexp.MustCompile(`\breq_[A-Za-z0-9]+\b`)
+	rateLimitDetailUUIDRegex           = regexp.MustCompile(`(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b`)
+	rateLimitDetailEmailRegex          = regexp.MustCompile(`(?i)\b[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}\b`)
+	rateLimitDetailURLRegex            = regexp.MustCompile(`(?i)\bhttps?://[^\s"'<>]+`)
 )
 
 // inferRateLimitWindowType 根据 RateLimitedAt 和 RateLimitResetAt 推断限流窗口类型。
@@ -94,6 +107,45 @@ func compactDuration(d time.Duration) string {
 	}
 }
 
+func summarizeRateLimitDetailForUser(detail string) string {
+	detail = strings.TrimSpace(detail)
+	if detail == "" {
+		return ""
+	}
+
+	if msg := strings.TrimSpace(extractUpstreamErrorMessage([]byte(detail))); msg != "" {
+		detail = msg
+	}
+	detail = sanitizeUpstreamErrorMessage(detail)
+	detail = strings.ReplaceAll(detail, "\\n", " ")
+	detail = strings.ReplaceAll(detail, "\\r", " ")
+	detail = strings.ReplaceAll(detail, "\n", " ")
+	detail = strings.ReplaceAll(detail, "\r", " ")
+	detail = redactRateLimitDetail(detail)
+	detail = rateLimitDetailWhitespaceRegex.ReplaceAllString(detail, " ")
+	detail = strings.Trim(detail, " \t,;")
+	if detail == "" {
+		return ""
+	}
+
+	runes := []rune(detail)
+	if len(runes) <= rateLimitDetailMaxLen {
+		return detail
+	}
+	return strings.TrimSpace(string(runes[:rateLimitDetailMaxLen-3])) + "..."
+}
+
+func redactRateLimitDetail(detail string) string {
+	detail = rateLimitDetailBearerRegex.ReplaceAllString(detail, "Bearer [redacted-token]")
+	detail = rateLimitDetailSecretFieldRegex.ReplaceAllString(detail, `$1=[redacted]`)
+	detail = rateLimitDetailRequestIDFieldRegex.ReplaceAllString(detail, `$1=[redacted-request-id]`)
+	detail = rateLimitDetailReqIDRegex.ReplaceAllString(detail, "[redacted-request-id]")
+	detail = rateLimitDetailUUIDRegex.ReplaceAllString(detail, "[redacted-id]")
+	detail = rateLimitDetailEmailRegex.ReplaceAllString(detail, "[redacted-email]")
+	detail = rateLimitDetailURLRegex.ReplaceAllString(detail, "[redacted-url]")
+	return detail
+}
+
 func recordEarliestTime(dst **time.Time, candidate time.Time) {
 	if *dst == nil || candidate.Before(**dst) {
 		v := candidate
@@ -138,7 +190,9 @@ func classifyUnschedulableAccount(acc *Account, st *accountFilterStats) {
 		// Track detail of earliest-recovery account
 		if acc.RateLimitResetAt != nil && st.EarliestRateLimitReset != nil &&
 			acc.RateLimitResetAt.Equal(*st.EarliestRateLimitReset) {
-			st.EarliestRateLimitDetail = acc.RateLimitDetail
+			if detail := strings.TrimSpace(acc.RateLimitDetail); detail != "" || st.EarliestRateLimitDetail == "" {
+				st.EarliestRateLimitDetail = detail
+			}
 		}
 	case acc.IsOverloaded():
 		st.Overloaded++

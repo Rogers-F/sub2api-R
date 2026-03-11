@@ -441,6 +441,57 @@ func buildAnthropic429Detail(headers http.Header) (windowType, detail string) {
 	}
 }
 
+func appendUniqueRateLimitDetail(parts []string, part string) []string {
+	part = strings.TrimSpace(part)
+	if part == "" {
+		return parts
+	}
+	for _, existing := range parts {
+		if strings.EqualFold(existing, part) {
+			return parts
+		}
+	}
+	return append(parts, part)
+}
+
+func buildRateLimitBodyDetail(responseBody []byte, maxBytes int) string {
+	if len(responseBody) == 0 {
+		return ""
+	}
+	if msg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody)); msg != "" {
+		msg = sanitizeUpstreamErrorMessage(msg)
+		return truncateForLog([]byte(msg), maxBytes)
+	}
+	return strings.TrimSpace(truncateForLog(responseBody, maxBytes))
+}
+
+func buildAnthropic429BodyDetail(responseBody []byte) string {
+	if len(responseBody) == 0 {
+		return ""
+	}
+	msg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
+	if msg == "" {
+		return ""
+	}
+	msg = sanitizeUpstreamErrorMessage(msg)
+	msg = strings.Join(strings.Fields(msg), " ")
+	return truncateString(msg, 384)
+}
+
+func buildAnthropic429StoredDetail(responseBody []byte, parts ...string) string {
+	detailParts := make([]string, 0, len(parts)+1)
+	for _, part := range parts {
+		detailParts = appendUniqueRateLimitDetail(detailParts, part)
+	}
+	if bodyDetail := buildAnthropic429BodyDetail(responseBody); bodyDetail != "" {
+		detailParts = appendUniqueRateLimitDetail(detailParts, bodyDetail)
+	}
+	if len(detailParts) == 0 {
+		return "anthropic 429"
+	}
+	return truncateString(strings.Join(detailParts, "; "), 512)
+}
+
 // handle429 处理429限流错误
 // 解析响应头获取重置时间，标记账号为限流状态
 func (s *RateLimitService) handle429(ctx context.Context, account *Account, headers http.Header, responseBody []byte) {
@@ -477,8 +528,9 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 2. Anthropic 平台：尝试解析 per-window 头（5h / 7d），选择实际触发的窗口
 	if result := calculateAnthropic429ResetTime(headers); result != nil {
-		wt, dt := buildAnthropic429Detail(headers)
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, result.resetAt, wt, dt); err != nil {
+		_, headerDetail := buildAnthropic429Detail(headers)
+		detail := buildAnthropic429StoredDetail(responseBody, headerDetail)
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, result.resetAt, result.windowType, detail); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 			return
 		}
@@ -493,7 +545,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 			slog.Warn("rate_limit_update_session_window_failed", "account_id", account.ID, "error", err)
 		}
 
-		slog.Info("anthropic_account_rate_limited", "account_id", account.ID, "reset_at", result.resetAt, "reset_in", time.Until(result.resetAt).Truncate(time.Second))
+		slog.Info("anthropic_account_rate_limited", "account_id", account.ID, "window_type", result.windowType, "reset_at", result.resetAt, "reset_in", time.Until(result.resetAt).Truncate(time.Second))
 		return
 	}
 
@@ -503,6 +555,9 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	// 4. 如果响应头没有，尝试从响应体解析（OpenAI usage_limit_reached, Gemini）
 	if resetTimestamp == "" {
 		bodyDetail := truncateForLog(responseBody, 2048)
+		if account.Platform == PlatformAnthropic {
+			bodyDetail = buildAnthropic429StoredDetail(responseBody, "anthropic 429 without reset hint")
+		}
 		switch account.Platform {
 		case PlatformOpenAI:
 			// 尝试解析 OpenAI 的 usage_limit_reached 错误
@@ -542,7 +597,8 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	if err != nil {
 		slog.Warn("rate_limit_reset_parse_failed", "reset_timestamp", resetTimestamp, "error", err)
 		resetAt := time.Now().Add(5 * time.Minute)
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", fmt.Sprintf("parse failed (raw=%s)", resetTimestamp)); err != nil {
+		detail := buildAnthropic429StoredDetail(responseBody, fmt.Sprintf("anthropic unified reset parse failed (raw=%s)", truncateString(resetTimestamp, 64)))
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", detail); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
@@ -551,7 +607,8 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	resetAt := time.Unix(ts, 0)
 
 	// 标记限流状态
-	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", fmt.Sprintf("anthropic unified reset (ts=%d)", ts)); err != nil {
+	detail := buildAnthropic429StoredDetail(responseBody, fmt.Sprintf("anthropic unified reset (ts=%d)", ts))
+	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", detail); err != nil {
 		slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		return
 	}
@@ -618,6 +675,7 @@ func (s *RateLimitService) calculateOpenAI429ResetTime(headers http.Header) *tim
 type anthropic429Result struct {
 	resetAt       time.Time  // The correct reset time to use for SetRateLimited
 	fiveHourReset *time.Time // 5h window reset timestamp (for session window calculation), nil if not available
+	windowType    string     // Final chosen window type ("5h"/"7d"), empty only when no window can be inferred
 }
 
 // calculateAnthropic429ResetTime parses Anthropic's per-window rate-limit headers
@@ -661,26 +719,37 @@ func calculateAnthropic429ResetTime(headers http.Header) *anthropic429Result {
 
 	// Select the correct reset time based on which window(s) are exceeded.
 	var chosen *time.Time
+	chosenWindowType := ""
 	switch {
 	case is5hExceeded && is7dExceeded:
 		// Both exceeded → prefer 7d (longer cooldown), fall back to 5h
 		chosen = reset7d
+		chosenWindowType = "7d"
 		if chosen == nil {
 			chosen = reset5h
+			chosenWindowType = "5h"
 		}
 	case is5hExceeded:
 		chosen = reset5h
+		chosenWindowType = "5h"
 	case is7dExceeded:
 		chosen = reset7d
+		chosenWindowType = "7d"
 	default:
 		// Neither flag clearly exceeded — pick the sooner reset as best guess
 		chosen = pickSooner(reset5h, reset7d)
+		switch chosen {
+		case reset5h:
+			chosenWindowType = "5h"
+		case reset7d:
+			chosenWindowType = "7d"
+		}
 	}
 
 	if chosen == nil {
 		return nil
 	}
-	return &anthropic429Result{resetAt: *chosen, fiveHourReset: reset5h}
+	return &anthropic429Result{resetAt: *chosen, fiveHourReset: reset5h, windowType: chosenWindowType}
 }
 
 // isAnthropicWindowExceeded checks whether a given Anthropic rate-limit window
