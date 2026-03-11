@@ -454,17 +454,6 @@ func appendUniqueRateLimitDetail(parts []string, part string) []string {
 	return append(parts, part)
 }
 
-func buildRateLimitBodyDetail(responseBody []byte, maxBytes int) string {
-	if len(responseBody) == 0 {
-		return ""
-	}
-	if msg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody)); msg != "" {
-		msg = sanitizeUpstreamErrorMessage(msg)
-		return truncateForLog([]byte(msg), maxBytes)
-	}
-	return strings.TrimSpace(truncateForLog(responseBody, maxBytes))
-}
-
 func buildAnthropic429BodyDetail(responseBody []byte) string {
 	if len(responseBody) == 0 {
 		return ""
