@@ -21,8 +21,8 @@ func TestBuildNoAvailableAccountsEmptyPoolError_KnownWindowOmitsUpstreamDetail(t
 	err := buildNoAvailableAccountsEmptyPoolError(false, PlatformAnthropic, diag)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "5h window")
-	require.NotContains(t, err.Error(), "upstream:")
+	require.Contains(t, err.Error(), "5小时窗口")
+	require.NotContains(t, err.Error(), "上游：")
 }
 
 func TestBuildNoAvailableAccountsFilterError_UnknownWindowIncludesSanitizedDetail(t *testing.T) {
@@ -38,8 +38,8 @@ func TestBuildNoAvailableAccountsFilterError_UnknownWindowIncludesSanitizedDetai
 	err := buildNoAvailableAccountsFilterError("", st)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "unknown window")
-	require.Contains(t, err.Error(), "upstream: weekly limit exceeded")
+	require.Contains(t, err.Error(), "未知窗口")
+	require.Contains(t, err.Error(), "上游：weekly limit exceeded")
 	require.NotContains(t, err.Error(), "req_abc123")
 	require.NotContains(t, err.Error(), "super-secret")
 	require.NotContains(t, err.Error(), "ops@example.com")

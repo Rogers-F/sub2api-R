@@ -250,7 +250,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), apiKey.GroupID, sessionKey, reqModel, failedAccountIDs, "") // Gemini 不使用会话限制
 			if err != nil {
 				if len(failedAccountIDs) == 0 {
-					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "No available accounts: "+err.Error(), streamStarted)
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "无可用账号："+err.Error(), streamStarted)
 					return
 				}
 				// Antigravity 单账号退避重试：分组内没有其他可用账号时，
@@ -296,7 +296,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			accountReleaseFunc := selection.ReleaseFunc
 			if !selection.Acquired {
 				if selection.WaitPlan == nil {
-					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "No available accounts", streamStarted)
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "无可用账号", streamStarted)
 					return
 				}
 				accountWaitCounted := false
@@ -455,7 +455,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), currentAPIKey.GroupID, sessionKey, reqModel, failedAccountIDs, parsedReq.MetadataUserID)
 			if err != nil {
 				if len(failedAccountIDs) == 0 {
-					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "No available accounts: "+err.Error(), streamStarted)
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "无可用账号："+err.Error(), streamStarted)
 					return
 				}
 				// Antigravity 单账号退避重试：分组内没有其他可用账号时，
@@ -501,7 +501,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			accountReleaseFunc := selection.ReleaseFunc
 			if !selection.Acquired {
 				if selection.WaitPlan == nil {
-					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "No available accounts", streamStarted)
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "无可用账号", streamStarted)
 					return
 				}
 				accountWaitCounted := false
@@ -982,6 +982,11 @@ func (h *GatewayHandler) handleFailoverExhausted(c *gin.Context, failoverErr *se
 
 	// 使用默认的错误映射
 	status, errType, errMsg := h.mapUpstreamError(statusCode)
+	if len(responseBody) > 0 {
+		if upstreamMsg := service.ExtractUpstreamErrorMessage(responseBody); upstreamMsg != "" {
+			errMsg = errMsg + "：" + upstreamMsg
+		}
+	}
 	h.handleStreamingAwareError(c, status, errType, errMsg, streamStarted)
 }
 
@@ -994,19 +999,19 @@ func (h *GatewayHandler) handleFailoverExhaustedSimple(c *gin.Context, statusCod
 func (h *GatewayHandler) mapUpstreamError(statusCode int) (int, string, string) {
 	switch statusCode {
 	case 401:
-		return http.StatusBadGateway, "upstream_error", "Upstream authentication failed, please contact administrator"
+		return http.StatusBadGateway, "upstream_error", "上游认证失败，请联系管理员"
 	case 403:
-		return http.StatusBadGateway, "upstream_error", "Upstream access forbidden, please contact administrator"
+		return http.StatusBadGateway, "upstream_error", "上游访问被拒绝，请联系管理员"
 	case 404:
-		return http.StatusNotFound, "not_found_error", "Upstream resource not found"
+		return http.StatusNotFound, "not_found_error", "上游资源未找到"
 	case 429:
-		return http.StatusTooManyRequests, "rate_limit_error", "Upstream rate limit exceeded, please retry later"
+		return http.StatusTooManyRequests, "rate_limit_error", "上游触发限流，请稍后重试"
 	case 529:
-		return http.StatusServiceUnavailable, "overloaded_error", "Upstream service overloaded, please retry later"
+		return http.StatusServiceUnavailable, "overloaded_error", "上游服务过载，请稍后重试"
 	case 500, 502, 503, 504:
-		return http.StatusBadGateway, "upstream_error", "Upstream service temporarily unavailable"
+		return http.StatusBadGateway, "upstream_error", "上游服务暂时不可用"
 	default:
-		return http.StatusBadGateway, "upstream_error", "Upstream request failed"
+		return http.StatusBadGateway, "upstream_error", "上游请求失败"
 	}
 }
 
@@ -1129,7 +1134,7 @@ func (h *GatewayHandler) CountTokens(c *gin.Context) {
 	// 选择支持该模型的账号
 	account, err := h.gatewayService.SelectAccountForModel(c.Request.Context(), apiKey.GroupID, sessionHash, parsedReq.Model)
 	if err != nil {
-		h.errorResponse(c, http.StatusServiceUnavailable, "api_error", "No available accounts: "+err.Error())
+		h.errorResponse(c, http.StatusServiceUnavailable, "api_error", "无可用账号："+err.Error())
 		return
 	}
 	setOpsSelectedAccount(c, account.ID)

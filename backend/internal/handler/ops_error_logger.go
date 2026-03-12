@@ -873,7 +873,7 @@ func classifyOpsPhase(errType, message, code string) string {
 	case "upstream_error", "overloaded_error":
 		return "upstream"
 	case "api_error":
-		if strings.Contains(msg, "no available accounts") {
+		if strings.Contains(msg, "无可用") || strings.Contains(msg, "no available accounts") {
 			return "routing"
 		}
 		return "internal"
@@ -1020,7 +1020,8 @@ func shouldSkipOpsErrorLog(ctx context.Context, ops *service.OpsService, message
 
 	// Check if "no available accounts" errors should be ignored
 	if settings.IgnoreNoAvailableAccounts {
-		if strings.Contains(msgLower, "no available accounts") || strings.Contains(bodyLower, "no available accounts") {
+		if strings.Contains(msgLower, "no available accounts") || strings.Contains(bodyLower, "no available accounts") ||
+			strings.Contains(message, "无可用") || strings.Contains(body, "无可用") {
 			return true
 		}
 	}

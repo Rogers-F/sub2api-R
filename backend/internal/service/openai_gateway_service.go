@@ -283,7 +283,7 @@ func (s *OpenAIGatewayService) SelectAccountForModelWithExclusions(ctx context.C
 	// Get schedulable OpenAI accounts
 	accounts, err := s.listSchedulableAccounts(ctx, groupID)
 	if err != nil {
-		return nil, fmt.Errorf("query accounts failed: %w", err)
+		return nil, fmt.Errorf("查询账号失败：%w", err)
 	}
 
 	// 3. 按优先级 + LRU 选择最佳账号
@@ -292,9 +292,9 @@ func (s *OpenAIGatewayService) SelectAccountForModelWithExclusions(ctx context.C
 
 	if selected == nil {
 		if requestedModel != "" {
-			return nil, fmt.Errorf("no available OpenAI accounts supporting model: %s", requestedModel)
+			return nil, fmt.Errorf("无支持模型 %s 的可用 OpenAI 账号", requestedModel)
 		}
-		return nil, errors.New("no available OpenAI accounts")
+		return nil, errors.New("无可用 OpenAI 账号")
 	}
 
 	// 4. 设置粘性会话绑定
@@ -653,7 +653,7 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 	}
 
 	return nil, newNoAvailableAccountsError(
-		fmt.Sprintf("all candidate accounts are busy (total=%d)", len(candidates)),
+		fmt.Sprintf("全部候选账号繁忙（总数=%d）", len(candidates)),
 	)
 }
 
@@ -691,7 +691,7 @@ func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, grou
 		accounts, err = s.accountRepo.ListSchedulableByPlatform(ctx, PlatformOpenAI)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("query accounts failed: %w", err)
+		return nil, fmt.Errorf("查询账号失败：%w", err)
 	}
 	return accounts, nil
 }
@@ -974,7 +974,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		c.JSON(http.StatusBadGateway, gin.H{
 			"error": gin.H{
 				"type":    "upstream_error",
-				"message": "Upstream request failed",
+				"message": "上游请求失败",
 			},
 		})
 		return nil, fmt.Errorf("upstream request failed: %s", safeErr)
@@ -1205,7 +1205,7 @@ func (s *OpenAIGatewayService) handleErrorResponse(ctx context.Context, resp *ht
 		body,
 		http.StatusBadGateway,
 		"upstream_error",
-		"Upstream request failed",
+		"上游请求失败",
 	); matched {
 		c.JSON(status, gin.H{
 			"error": gin.H{
@@ -1237,7 +1237,7 @@ func (s *OpenAIGatewayService) handleErrorResponse(ctx context.Context, resp *ht
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"type":    "upstream_error",
-				"message": "Upstream gateway error",
+				"message": "上游网关错误",
 			},
 		})
 		if upstreamMsg == "" {
@@ -1277,23 +1277,23 @@ func (s *OpenAIGatewayService) handleErrorResponse(ctx context.Context, resp *ht
 	case 401:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream authentication failed, please contact administrator"
+		errMsg = "上游认证失败，请联系管理员"
 	case 402:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream payment required: insufficient balance or billing issue"
+		errMsg = "上游付款要求：余额不足或计费问题"
 	case 403:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream access forbidden, please contact administrator"
+		errMsg = "上游访问被拒绝，请联系管理员"
 	case 429:
 		statusCode = http.StatusTooManyRequests
 		errType = "rate_limit_error"
-		errMsg = "Upstream rate limit exceeded, please retry later"
+		errMsg = "上游触发限流，请稍后重试"
 	default:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream request failed"
+		errMsg = "上游请求失败"
 	}
 
 	c.JSON(statusCode, gin.H{

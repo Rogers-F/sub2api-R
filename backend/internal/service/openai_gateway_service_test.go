@@ -389,7 +389,7 @@ func TestOpenAISelectAccountForModelWithExclusions_NoModelSupport(t *testing.T) 
 	if acc != nil {
 		t.Fatalf("expected nil account for unsupported model")
 	}
-	if !strings.Contains(err.Error(), "supporting model") {
+	if !strings.Contains(err.Error(), "无支持模型") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -627,7 +627,7 @@ func TestOpenAISelectAccountForModelWithExclusions_NoAccounts(t *testing.T) {
 	if acc != nil {
 		t.Fatalf("expected nil account")
 	}
-	if !strings.Contains(err.Error(), "no available OpenAI accounts") {
+	if !strings.Contains(err.Error(), "无可用 OpenAI 账号") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

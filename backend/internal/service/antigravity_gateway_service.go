@@ -1372,7 +1372,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 				ForceCacheBilling: switchErr.IsStickySession,
 			}
 		}
-		return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "Upstream request failed after retries")
+		return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "重试耗尽，上游请求失败")
 	}
 	resp := result.resp
 	defer func() { _ = resp.Body.Close() }()
@@ -2044,7 +2044,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 				ForceCacheBilling: switchErr.IsStickySession,
 			}
 		}
-		return nil, s.writeGoogleError(c, http.StatusBadGateway, "Upstream request failed after retries")
+		return nil, s.writeGoogleError(c, http.StatusBadGateway, "重试耗尽，上游请求失败")
 	}
 	resp := result.resp
 	defer func() {
@@ -3336,27 +3336,27 @@ func (s *AntigravityGatewayService) writeMappedClaudeError(c *gin.Context, accou
 	case 400:
 		statusCode = http.StatusBadRequest
 		errType = "invalid_request_error"
-		errMsg = getPassthroughOrDefault(upstreamMsg, "Invalid request")
+		errMsg = getPassthroughOrDefault(upstreamMsg, "无效请求")
 	case 401:
 		statusCode = http.StatusBadGateway
 		errType = "authentication_error"
-		errMsg = "Upstream authentication failed"
+		errMsg = "上游认证失败"
 	case 403:
 		statusCode = http.StatusBadGateway
 		errType = "permission_error"
-		errMsg = "Upstream access forbidden"
+		errMsg = "上游访问被拒绝"
 	case 429:
 		statusCode = http.StatusTooManyRequests
 		errType = "rate_limit_error"
-		errMsg = "Upstream rate limit exceeded"
+		errMsg = "上游触发限流"
 	case 529:
 		statusCode = http.StatusServiceUnavailable
 		errType = "overloaded_error"
-		errMsg = "Upstream service overloaded"
+		errMsg = "上游服务过载"
 	default:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream request failed"
+		errMsg = "上游请求失败"
 	}
 
 	c.JSON(statusCode, gin.H{

@@ -61,7 +61,7 @@ func (h *GatewayHandler) GeminiV1BetaListModels(c *gin.Context) {
 			c.JSON(http.StatusOK, gemini.FallbackModelsList())
 			return
 		}
-		googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts: "+err.Error())
+		googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+err.Error())
 		return
 	}
 
@@ -119,7 +119,7 @@ func (h *GatewayHandler) GeminiV1BetaGetModel(c *gin.Context) {
 			c.JSON(http.StatusOK, gemini.FallbackModel(modelName))
 			return
 		}
-		googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts: "+err.Error())
+		googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+err.Error())
 		return
 	}
 
@@ -350,7 +350,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), apiKey.GroupID, sessionKey, modelName, failedAccountIDs, "") // Gemini 不使用会话限制
 		if err != nil {
 			if len(failedAccountIDs) == 0 {
-				googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts: "+err.Error())
+				googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+err.Error())
 				return
 			}
 			// Antigravity 单账号退避重试：分组内没有其他可用账号时，
@@ -394,7 +394,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		accountReleaseFunc := selection.ReleaseFunc
 		if !selection.Acquired {
 			if selection.WaitPlan == nil {
-				googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts")
+				googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号")
 				return
 			}
 			accountWaitCounted := false
@@ -544,7 +544,7 @@ func parseGeminiModelAction(rest string) (model string, action string, err error
 
 func (h *GatewayHandler) handleGeminiFailoverExhausted(c *gin.Context, failoverErr *service.UpstreamFailoverError) {
 	if failoverErr == nil {
-		googleError(c, http.StatusBadGateway, "Upstream request failed")
+		googleError(c, http.StatusBadGateway, "上游请求失败")
 		return
 	}
 
@@ -577,23 +577,28 @@ func (h *GatewayHandler) handleGeminiFailoverExhausted(c *gin.Context, failoverE
 
 	// 使用默认的错误映射
 	status, message := mapGeminiUpstreamError(statusCode)
+	if len(responseBody) > 0 {
+		if upstreamMsg := service.ExtractUpstreamErrorMessage(responseBody); upstreamMsg != "" {
+			message = message + "：" + upstreamMsg
+		}
+	}
 	googleError(c, status, message)
 }
 
 func mapGeminiUpstreamError(statusCode int) (int, string) {
 	switch statusCode {
 	case 401:
-		return http.StatusBadGateway, "Upstream authentication failed, please contact administrator"
+		return http.StatusBadGateway, "上游认证失败，请联系管理员"
 	case 403:
-		return http.StatusBadGateway, "Upstream access forbidden, please contact administrator"
+		return http.StatusBadGateway, "上游访问被拒绝，请联系管理员"
 	case 429:
-		return http.StatusTooManyRequests, "Upstream rate limit exceeded, please retry later"
+		return http.StatusTooManyRequests, "上游触发限流，请稍后重试"
 	case 529:
-		return http.StatusServiceUnavailable, "Upstream service overloaded, please retry later"
+		return http.StatusServiceUnavailable, "上游服务过载，请稍后重试"
 	case 500, 502, 503, 504:
-		return http.StatusBadGateway, "Upstream service temporarily unavailable"
+		return http.StatusBadGateway, "上游服务暂时不可用"
 	default:
-		return http.StatusBadGateway, "Upstream request failed"
+		return http.StatusBadGateway, "上游请求失败"
 	}
 }
 

@@ -90,33 +90,33 @@ type accountFilterStats struct {
 }
 
 func (st accountFilterStats) nonZeroSummary() string {
-	parts := []string{fmt.Sprintf("total=%d", st.Total)}
+	parts := []string{fmt.Sprintf("总数=%d", st.Total)}
 	if st.Excluded > 0 {
-		parts = append(parts, fmt.Sprintf("excluded=%d", st.Excluded))
+		parts = append(parts, fmt.Sprintf("已排除=%d", st.Excluded))
 	}
 	if st.Unschedulable > 0 {
-		parts = append(parts, fmt.Sprintf("unschedulable=%d", st.Unschedulable))
+		parts = append(parts, fmt.Sprintf("不可调度=%d", st.Unschedulable))
 	}
 	if st.RateLimited > 0 {
-		parts = append(parts, fmt.Sprintf("rate_limited=%d", st.RateLimited))
+		parts = append(parts, fmt.Sprintf("限流=%d", st.RateLimited))
 	}
 	if st.Overloaded > 0 {
-		parts = append(parts, fmt.Sprintf("overloaded=%d", st.Overloaded))
+		parts = append(parts, fmt.Sprintf("过载=%d", st.Overloaded))
 	}
 	if st.TempUnschedulable > 0 {
-		parts = append(parts, fmt.Sprintf("temp_unschedulable=%d", st.TempUnschedulable))
+		parts = append(parts, fmt.Sprintf("临时不可调度=%d", st.TempUnschedulable))
 	}
 	if st.PlatformMismatch > 0 {
-		parts = append(parts, fmt.Sprintf("platform_mismatch=%d", st.PlatformMismatch))
+		parts = append(parts, fmt.Sprintf("平台不匹配=%d", st.PlatformMismatch))
 	}
 	if st.ModelUnsupported > 0 {
-		parts = append(parts, fmt.Sprintf("model_unsupported=%d", st.ModelUnsupported))
+		parts = append(parts, fmt.Sprintf("模型不支持=%d", st.ModelUnsupported))
 	}
 	if st.ModelRateLimited > 0 {
-		parts = append(parts, fmt.Sprintf("model_rate_limited=%d", st.ModelRateLimited))
+		parts = append(parts, fmt.Sprintf("模型限流=%d", st.ModelRateLimited))
 	}
 	if st.WindowCostLimited > 0 {
-		parts = append(parts, fmt.Sprintf("window_cost_limited=%d", st.WindowCostLimited))
+		parts = append(parts, fmt.Sprintf("窗口费用超限=%d", st.WindowCostLimited))
 	}
 	return strings.Join(parts, ", ")
 }
@@ -124,17 +124,17 @@ func (st accountFilterStats) nonZeroSummary() string {
 func newNoAvailableAccountsError(reason string) error {
 	reason = strings.TrimSpace(reason)
 	if reason == "" {
-		return errors.New("no available accounts")
+		return errors.New("无可用账号")
 	}
-	return fmt.Errorf("no available accounts: %s", reason)
+	return errors.New(reason)
 }
 
 func appendRateLimitDiagnosticDetail(msg string, windowSummary string, detail string) string {
-	if windowSummary != "unknown window" {
+	if windowSummary != "未知窗口" {
 		return msg
 	}
 	if summary := summarizeRateLimitDetailForUser(detail); summary != "" {
-		return msg + fmt.Sprintf(", upstream: %s", summary)
+		return msg + fmt.Sprintf("，上游：%s", summary)
 	}
 	return msg
 }
@@ -145,7 +145,7 @@ func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string, diagS
 		// 全部限流
 		if diagStats.RateLimited == n {
 			windowSummary := dominantRateLimitWindow(diagStats)
-			msg := fmt.Sprintf("all %d accounts are rate-limited (%s, %s)",
+			msg := fmt.Sprintf("全部 %d 个账号已被限流（%s，%s）",
 				n, windowSummary, formatRecoveryHint(diagStats.EarliestRateLimitReset))
 			msg = appendRateLimitDiagnosticDetail(msg, windowSummary, diagStats.EarliestRateLimitDetail)
 			return newNoAvailableAccountsError(msg)
@@ -153,39 +153,39 @@ func buildNoAvailableAccountsEmptyPoolError(inGroup bool, platform string, diagS
 		// 全部过载
 		if diagStats.Overloaded == n {
 			return newNoAvailableAccountsError(
-				fmt.Sprintf("all %d accounts are overloaded (%s)", n, formatRecoveryHint(diagStats.EarliestOverloadUntil)),
+				fmt.Sprintf("全部 %d 个账号过载（%s）", n, formatRecoveryHint(diagStats.EarliestOverloadUntil)),
 			)
 		}
 		// 全部临时不可调度
 		if diagStats.TempUnschedulable == n {
-			msg := fmt.Sprintf("all %d accounts are temporarily unschedulable (%s)", n, formatRecoveryHint(diagStats.EarliestTempUntil))
+			msg := fmt.Sprintf("全部 %d 个账号暂时不可调度（%s）", n, formatRecoveryHint(diagStats.EarliestTempUntil))
 			if r := diagStats.TempUnschedReason; r != "" {
-				msg += fmt.Sprintf(", reason: %s", r)
+				msg += fmt.Sprintf("，原因：%s", r)
 			}
 			return newNoAvailableAccountsError(msg)
 		}
 		// 全部不可调度（混合原因）
 		if diagStats.Unschedulable == n {
 			return newNoAvailableAccountsError(
-				fmt.Sprintf("all %d accounts are unschedulable (%s)", n, diagStats.nonZeroSummary()),
+				fmt.Sprintf("全部 %d 个账号不可调度（%s）", n, diagStats.nonZeroSummary()),
 			)
 		}
 	}
 
 	if inGroup {
-		return newNoAvailableAccountsError("no schedulable accounts in this group")
+		return newNoAvailableAccountsError("该分组无可调度账号")
 	}
 	if strings.TrimSpace(platform) != "" {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("no schedulable accounts for platform %s", platform),
+			fmt.Sprintf("平台 %s 无可调度账号", platform),
 		)
 	}
-	return newNoAvailableAccountsError("no schedulable accounts")
+	return newNoAvailableAccountsError("无可调度账号")
 }
 
 func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilterStats) error {
 	if st.Total <= 0 {
-		return newNoAvailableAccountsError("no candidate accounts after filtering")
+		return newNoAvailableAccountsError("筛选后无候选账号")
 	}
 
 	effective := st.Total - st.Excluded
@@ -193,14 +193,14 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 	// 模型不支持
 	if requestedModel != "" && st.ModelUnsupported > 0 && st.ModelUnsupported == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("model %q is not supported by any of the %d candidate accounts", requestedModel, effective),
+			fmt.Sprintf("模型 %q 不被任何 %d 个候选账号支持", requestedModel, effective),
 		)
 	}
 
 	// 模型级限流
 	if requestedModel != "" && st.ModelRateLimited > 0 && st.ModelRateLimited == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("all %d candidate accounts are model-rate-limited for %q (%s)",
+			fmt.Sprintf("全部 %d 个候选账号对模型 %q 已被限流（%s）",
 				effective, requestedModel, formatRecoveryHint(st.EarliestModelRateLimitReset)),
 		)
 	}
@@ -208,7 +208,7 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 	// 账号级限流
 	if st.RateLimited > 0 && st.RateLimited == effective {
 		windowSummary := dominantRateLimitWindow(&st)
-		msg := fmt.Sprintf("all %d candidate accounts are rate-limited (%s, %s)",
+		msg := fmt.Sprintf("全部 %d 个候选账号已被限流（%s，%s）",
 			effective, windowSummary, formatRecoveryHint(st.EarliestRateLimitReset))
 		msg = appendRateLimitDiagnosticDetail(msg, windowSummary, st.EarliestRateLimitDetail)
 		return newNoAvailableAccountsError(msg)
@@ -217,15 +217,15 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 	// 过载
 	if st.Overloaded > 0 && st.Overloaded == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("all %d candidate accounts are overloaded (%s)", effective, formatRecoveryHint(st.EarliestOverloadUntil)),
+			fmt.Sprintf("全部 %d 个候选账号过载（%s）", effective, formatRecoveryHint(st.EarliestOverloadUntil)),
 		)
 	}
 
 	// 临时不可调度
 	if st.TempUnschedulable > 0 && st.TempUnschedulable == effective {
-		msg := fmt.Sprintf("all %d candidate accounts are temporarily unschedulable (%s)", effective, formatRecoveryHint(st.EarliestTempUntil))
+		msg := fmt.Sprintf("全部 %d 个候选账号暂时不可调度（%s）", effective, formatRecoveryHint(st.EarliestTempUntil))
 		if r := st.TempUnschedReason; r != "" {
-			msg += fmt.Sprintf(", reason: %s", r)
+			msg += fmt.Sprintf("，原因：%s", r)
 		}
 		return newNoAvailableAccountsError(msg)
 	}
@@ -233,36 +233,36 @@ func buildNoAvailableAccountsFilterError(requestedModel string, st accountFilter
 	// 窗口费用超限
 	if st.WindowCostLimited > 0 && st.WindowCostLimited == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("all %d candidate accounts exceeded window cost limit", effective),
+			fmt.Sprintf("全部 %d 个候选账号超出窗口费用限制", effective),
 		)
 	}
 
 	// 平台不匹配
 	if st.PlatformMismatch > 0 && st.PlatformMismatch == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("no candidate account matches required platform (%s)", st.nonZeroSummary()),
+			fmt.Sprintf("无候选账号匹配所需平台（%s）", st.nonZeroSummary()),
 		)
 	}
 
 	// 全部不可调度（混合原因）
 	if st.Unschedulable > 0 && st.Unschedulable == effective {
 		return newNoAvailableAccountsError(
-			fmt.Sprintf("all %d candidate accounts are unschedulable (%s)", effective, st.nonZeroSummary()),
+			fmt.Sprintf("全部 %d 个候选账号不可调度（%s）", effective, st.nonZeroSummary()),
 		)
 	}
 
 	return newNoAvailableAccountsError(
-		fmt.Sprintf("all candidate accounts filtered out (%s)", st.nonZeroSummary()),
+		fmt.Sprintf("全部候选账号已被过滤（%s）", st.nonZeroSummary()),
 	)
 }
 
 func buildNoAvailableAccountsSessionLimitError(totalCandidates int, sessionLimited int) error {
-	summary := fmt.Sprintf("total=%d", totalCandidates)
+	summary := fmt.Sprintf("总数=%d", totalCandidates)
 	if sessionLimited > 0 {
-		summary = fmt.Sprintf("%s, session_limited=%d", summary, sessionLimited)
+		summary = fmt.Sprintf("%s，会话限制=%d", summary, sessionLimited)
 	}
 	return newNoAvailableAccountsError(
-		fmt.Sprintf("all candidate accounts reached session limit (%s)", summary),
+		fmt.Sprintf("全部候选账号已达会话限制（%s）", summary),
 	)
 }
 
@@ -456,7 +456,7 @@ var systemBlockFilterPrefixes = []string{
 }
 
 // ErrClaudeCodeOnly 表示分组仅允许 Claude Code 客户端访问
-var ErrClaudeCodeOnly = errors.New("this group only allows Claude Code clients")
+var ErrClaudeCodeOnly = errors.New("该分组仅允许 Claude Code 客户端访问")
 
 // allowedHeaders 白名单headers（参考CRS项目）
 var allowedHeaders = map[string]bool{
@@ -1731,7 +1731,7 @@ func (s *GatewayService) resolveGroupByID(ctx context.Context, groupID int64) (*
 	}
 	group, err := s.groupRepo.GetByIDLite(ctx, groupID)
 	if err != nil {
-		return nil, fmt.Errorf("get group failed: %w", err)
+		return nil, fmt.Errorf("获取分组失败：%w", err)
 	}
 	return group, nil
 }
@@ -1775,7 +1775,7 @@ func (s *GatewayService) resolveGatewayGroup(ctx context.Context, groupID *int64
 	visited := map[int64]struct{}{}
 	for {
 		if _, seen := visited[currentID]; seen {
-			return nil, nil, fmt.Errorf("fallback group cycle detected")
+			return nil, nil, fmt.Errorf("回退分组循环检测")
 		}
 		visited[currentID] = struct{}{}
 
@@ -2382,7 +2382,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 		var err error
 		accounts, _, err = s.listSchedulableAccounts(ctx, groupID, platform, hasForcePlatform)
 		if err != nil {
-			return nil, fmt.Errorf("query accounts failed: %w", err)
+			return nil, fmt.Errorf("查询账号失败：%w", err)
 		}
 		accountsLoaded = true
 
@@ -2480,7 +2480,7 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 		var err error
 		accounts, _, err = s.listSchedulableAccounts(ctx, groupID, platform, hasForcePlatform)
 		if err != nil {
-			return nil, fmt.Errorf("query accounts failed: %w", err)
+			return nil, fmt.Errorf("查询账号失败：%w", err)
 		}
 	}
 
@@ -2528,9 +2528,9 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 
 	if selected == nil {
 		if requestedModel != "" {
-			return nil, fmt.Errorf("no available accounts supporting model: %s", requestedModel)
+			return nil, fmt.Errorf("无支持模型 %s 的可用账号", requestedModel)
 		}
-		return nil, errors.New("no available accounts")
+		return nil, errors.New("无可用账号")
 	}
 
 	// 4. 建立粘性绑定
@@ -2587,7 +2587,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 		var err error
 		accounts, _, err = s.listSchedulableAccounts(ctx, groupID, nativePlatform, false)
 		if err != nil {
-			return nil, fmt.Errorf("query accounts failed: %w", err)
+			return nil, fmt.Errorf("查询账号失败：%w", err)
 		}
 		accountsLoaded = true
 
@@ -2687,7 +2687,7 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 		var err error
 		accounts, _, err = s.listSchedulableAccounts(ctx, groupID, nativePlatform, false)
 		if err != nil {
-			return nil, fmt.Errorf("query accounts failed: %w", err)
+			return nil, fmt.Errorf("查询账号失败：%w", err)
 		}
 	}
 
@@ -2739,9 +2739,9 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 
 	if selected == nil {
 		if requestedModel != "" {
-			return nil, fmt.Errorf("no available accounts supporting model: %s", requestedModel)
+			return nil, fmt.Errorf("无支持模型 %s 的可用账号", requestedModel)
 		}
-		return nil, errors.New("no available accounts")
+		return nil, errors.New("无可用账号")
 	}
 
 	// 4. 建立粘性绑定
@@ -3422,7 +3422,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 				"type": "error",
 				"error": gin.H{
 					"type":    "upstream_error",
-					"message": "Upstream request failed",
+					"message": "上游请求失败",
 				},
 			})
 			return nil, fmt.Errorf("upstream request failed: %s", safeErr)
@@ -4274,7 +4274,7 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 		body,
 		http.StatusBadGateway,
 		"upstream_error",
-		"Upstream request failed",
+		"上游请求失败",
 	); matched {
 		c.JSON(status, gin.H{
 			"type": "error",
@@ -4313,11 +4313,11 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 	case 401:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream authentication failed, please contact administrator"
+		errMsg = "上游认证失败，请联系管理员"
 	case 403:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream access forbidden, please contact administrator"
+		errMsg = "上游访问被拒绝，请联系管理员"
 	case 429:
 		// 请求级别 429 安全兜底：正常流程已在 failover 前拦截，此处防止遗漏。
 		// HandleUpstreamError 已在上方调用，handle429 内部对此场景会 early-return，重复调用无副作用。
@@ -4341,19 +4341,19 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 		}
 		statusCode = http.StatusTooManyRequests
 		errType = "rate_limit_error"
-		errMsg = "Upstream rate limit exceeded, please retry later"
+		errMsg = "上游触发限流，请稍后重试"
 	case 529:
 		statusCode = http.StatusServiceUnavailable
 		errType = "overloaded_error"
-		errMsg = "Upstream service overloaded, please retry later"
+		errMsg = "上游服务过载，请稍后重试"
 	case 500, 502, 503, 504:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream service temporarily unavailable"
+		errMsg = "上游服务暂时不可用"
 	default:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "Upstream request failed"
+		errMsg = "上游请求失败"
 	}
 
 	// 返回自定义错误响应
@@ -4484,7 +4484,7 @@ func (s *GatewayService) handleRetryExhaustedError(ctx context.Context, resp *ht
 		respBody,
 		http.StatusBadGateway,
 		"upstream_error",
-		"Upstream request failed after retries",
+		"重试耗尽，上游请求失败",
 	); matched {
 		c.JSON(status, gin.H{
 			"type": "error",
@@ -4509,7 +4509,7 @@ func (s *GatewayService) handleRetryExhaustedError(ctx context.Context, resp *ht
 		"type": "error",
 		"error": gin.H{
 			"type":    "upstream_error",
-			"message": "Upstream request failed after retries",
+			"message": "重试耗尽，上游请求失败",
 		},
 	})
 
@@ -5365,14 +5365,14 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 	// 获取凭证
 	token, tokenType, err := s.GetAccessToken(ctx, account)
 	if err != nil {
-		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to get access token")
+		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "获取访问令牌失败")
 		return err
 	}
 
 	// 构建上游请求
 	upstreamReq, err := s.buildCountTokensRequest(ctx, c, account, body, token, tokenType, reqModel, shouldMimicClaudeCode)
 	if err != nil {
-		s.countTokensError(c, http.StatusInternalServerError, "api_error", "Failed to build request")
+		s.countTokensError(c, http.StatusInternalServerError, "api_error", "构建请求失败")
 		return err
 	}
 
@@ -5386,7 +5386,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 	resp, err := s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
 	if err != nil {
 		setOpsUpstreamError(c, 0, sanitizeUpstreamErrorMessage(err.Error()), "")
-		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Request failed")
+		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "请求失败")
 		return fmt.Errorf("upstream request failed: %w", err)
 	}
 
@@ -5394,7 +5394,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 	respBody, err := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	if err != nil {
-		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
+		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "读取响应失败")
 		return err
 	}
 
@@ -5411,7 +5411,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 				respBody, err = io.ReadAll(resp.Body)
 				_ = resp.Body.Close()
 				if err != nil {
-					s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
+					s.countTokensError(c, http.StatusBadGateway, "upstream_error", "读取响应失败")
 					return err
 				}
 			}
@@ -5431,7 +5431,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 					respBody, err = io.ReadAll(resp.Body)
 					_ = resp.Body.Close()
 					if err != nil {
-						s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
+						s.countTokensError(c, http.StatusBadGateway, "upstream_error", "读取响应失败")
 						return err
 					}
 				}
@@ -5469,12 +5469,12 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 		}
 
 		// 返回简化的错误响应
-		errMsg := "Upstream request failed"
+		errMsg := "上游请求失败"
 		switch resp.StatusCode {
 		case 429:
-			errMsg = "Rate limit exceeded"
+			errMsg = "触发限流"
 		case 529:
-			errMsg = "Service overloaded"
+			errMsg = "服务过载"
 		}
 		s.countTokensError(c, resp.StatusCode, "upstream_error", errMsg)
 		if upstreamMsg == "" {

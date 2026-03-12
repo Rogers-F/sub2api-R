@@ -29,19 +29,19 @@ var (
 // inferRateLimitWindowType 根据 RateLimitedAt 和 RateLimitResetAt 推断限流窗口类型。
 func inferRateLimitWindowType(rateLimitedAt, rateLimitResetAt *time.Time) string {
 	if rateLimitedAt == nil || rateLimitResetAt == nil {
-		return "unknown window"
+		return "未知窗口"
 	}
 	if !rateLimitResetAt.After(*rateLimitedAt) {
-		return "unknown window"
+		return "未知窗口"
 	}
 	d := rateLimitResetAt.Sub(*rateLimitedAt)
 	switch {
 	case durationWithin(d, rateLimit5hBase, rateLimit5hTolerance):
-		return "5h window"
+		return "5小时窗口"
 	case durationWithin(d, rateLimit7dBase, rateLimit7dTolerance):
-		return "7d window"
+		return "7天窗口"
 	default:
-		return "unknown window"
+		return "未知窗口"
 	}
 }
 
@@ -56,31 +56,31 @@ func durationWithin(actual, target, tolerance time.Duration) bool {
 // dominantRateLimitWindow 返回统计中占主导的限流窗口类型描述。
 func dominantRateLimitWindow(st *accountFilterStats) string {
 	if st == nil || st.RateLimited <= 0 {
-		return "unknown window"
+		return "未知窗口"
 	}
 	switch {
 	case st.RateLimited5h == st.RateLimited:
-		return "5h window"
+		return "5小时窗口"
 	case st.RateLimited7d == st.RateLimited:
-		return "7d window"
+		return "7天窗口"
 	case st.RateLimited5h == 0 && st.RateLimited7d == 0:
-		return "unknown window"
+		return "未知窗口"
 	default:
-		return "mixed windows"
+		return "混合窗口"
 	}
 }
 
 // formatRecoveryHint 格式化恢复时间提示。
 func formatRecoveryHint(resetAt *time.Time) string {
 	if resetAt == nil {
-		return "recovery time unknown"
+		return "恢复时间未知"
 	}
 	at := resetAt.UTC().Format(time.RFC3339)
 	d := time.Until(*resetAt)
 	if d < 0 {
 		d = 0
 	}
-	return fmt.Sprintf("earliest recovery at %s, in %s", at, compactDuration(d))
+	return fmt.Sprintf("最早恢复于 %s，约 %s 后", at, compactDuration(d))
 }
 
 // compactDuration 将 Duration 格式化为紧凑的人类可读形式。

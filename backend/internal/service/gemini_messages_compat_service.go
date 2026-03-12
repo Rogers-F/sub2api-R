@@ -106,13 +106,13 @@ func (s *GeminiMessagesCompatService) SelectAccountForModelWithExclusions(ctx co
 	// Query schedulable accounts (force platform mode: try group first, fallback to all)
 	accounts, err := s.listSchedulableAccountsOnce(ctx, groupID, platform, hasForcePlatform)
 	if err != nil {
-		return nil, fmt.Errorf("query accounts failed: %w", err)
+		return nil, fmt.Errorf("查询账号失败：%w", err)
 	}
 	// 强制平台模式下，分组中找不到账户时回退查询全部
 	if len(accounts) == 0 && groupID != nil && hasForcePlatform {
 		accounts, err = s.listSchedulableAccountsOnce(ctx, nil, platform, hasForcePlatform)
 		if err != nil {
-			return nil, fmt.Errorf("query accounts failed: %w", err)
+			return nil, fmt.Errorf("查询账号失败：%w", err)
 		}
 	}
 
@@ -122,9 +122,9 @@ func (s *GeminiMessagesCompatService) SelectAccountForModelWithExclusions(ctx co
 
 	if selected == nil {
 		if requestedModel != "" {
-			return nil, fmt.Errorf("no available Gemini accounts supporting model: %s", requestedModel)
+			return nil, fmt.Errorf("无支持模型 %s 的可用 Gemini 账号", requestedModel)
 		}
-		return nil, errors.New("no available Gemini accounts")
+		return nil, errors.New("无可用 Gemini 账号")
 	}
 
 	// 5. 设置粘性会话绑定
@@ -439,10 +439,10 @@ func (s *GeminiMessagesCompatService) HasAntigravityAccounts(ctx context.Context
 func (s *GeminiMessagesCompatService) SelectAccountForAIStudioEndpoints(ctx context.Context, groupID *int64) (*Account, error) {
 	accounts, err := s.listSchedulableAccountsOnce(ctx, groupID, PlatformGemini, true)
 	if err != nil {
-		return nil, fmt.Errorf("query accounts failed: %w", err)
+		return nil, fmt.Errorf("查询账号失败：%w", err)
 	}
 	if len(accounts) == 0 {
-		return nil, errors.New("no available Gemini accounts")
+		return nil, errors.New("无可用 Gemini 账号")
 	}
 
 	rank := func(a *Account) int {
@@ -507,7 +507,7 @@ func (s *GeminiMessagesCompatService) SelectAccountForAIStudioEndpoints(ctx cont
 	}
 
 	if selected == nil {
-		return nil, errors.New("no available Gemini accounts")
+		return nil, errors.New("无可用 Gemini 账号")
 	}
 	return selected, nil
 }
@@ -702,7 +702,7 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 				continue
 			}
 			setOpsUpstreamError(c, 0, safeErr, "")
-			return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "Upstream request failed after retries: "+safeErr)
+			return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "重试耗尽，上游请求失败："+safeErr)
 		}
 
 		// Special-case: signature/thought_signature validation errors are not transient, but may be fixed by
@@ -1013,13 +1013,13 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 	startTime := time.Now()
 
 	if strings.TrimSpace(originalModel) == "" {
-		return nil, s.writeGoogleError(c, http.StatusBadRequest, "Missing model in URL")
+		return nil, s.writeGoogleError(c, http.StatusBadRequest, "URL 中缺少模型")
 	}
 	if strings.TrimSpace(action) == "" {
-		return nil, s.writeGoogleError(c, http.StatusBadRequest, "Missing action in URL")
+		return nil, s.writeGoogleError(c, http.StatusBadRequest, "URL 中缺少操作")
 	}
 	if len(body) == 0 {
-		return nil, s.writeGoogleError(c, http.StatusBadRequest, "Request body is empty")
+		return nil, s.writeGoogleError(c, http.StatusBadRequest, "请求体为空")
 	}
 
 	// 过滤掉 parts 为空的消息（Gemini API 不接受空 parts）
@@ -1212,7 +1212,7 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 				}, nil
 			}
 			setOpsUpstreamError(c, 0, safeErr, "")
-			return nil, s.writeGoogleError(c, http.StatusBadGateway, "Upstream request failed after retries: "+safeErr)
+			return nil, s.writeGoogleError(c, http.StatusBadGateway, "重试耗尽，上游请求失败："+safeErr)
 		}
 
 		// 错误策略优先：匹配则跳过重试直接处理。
@@ -1611,7 +1611,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 		body,
 		http.StatusBadGateway,
 		"upstream_error",
-		"Upstream request failed",
+		"上游请求失败",
 	); matched {
 		c.JSON(status, gin.H{
 			"type":  "error",
@@ -1648,7 +1648,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "invalid_request_error"
 		}
 		if errMsg == "" {
-			errMsg = "Invalid request"
+			errMsg = "无效请求"
 		}
 	case 401:
 		if statusCode == 0 {
@@ -1658,7 +1658,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "authentication_error"
 		}
 		if errMsg == "" {
-			errMsg = "Upstream authentication failed, please contact administrator"
+			errMsg = "上游认证失败，请联系管理员"
 		}
 	case 403:
 		if statusCode == 0 {
@@ -1668,7 +1668,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "permission_error"
 		}
 		if errMsg == "" {
-			errMsg = "Upstream access forbidden, please contact administrator"
+			errMsg = "上游访问被拒绝，请联系管理员"
 		}
 	case 404:
 		if statusCode == 0 {
@@ -1678,7 +1678,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "not_found_error"
 		}
 		if errMsg == "" {
-			errMsg = "Resource not found"
+			errMsg = "上游资源未找到"
 		}
 	case 429:
 		if statusCode == 0 {
@@ -1688,7 +1688,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "rate_limit_error"
 		}
 		if errMsg == "" {
-			errMsg = "Upstream rate limit exceeded, please retry later"
+			errMsg = "上游触发限流，请稍后重试"
 		}
 	case 529:
 		if statusCode == 0 {
@@ -1698,7 +1698,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "overloaded_error"
 		}
 		if errMsg == "" {
-			errMsg = "Upstream service overloaded, please retry later"
+			errMsg = "上游服务过载，请稍后重试"
 		}
 	case 500, 502, 503, 504:
 		if statusCode == 0 {
@@ -1715,7 +1715,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			}
 		}
 		if errMsg == "" {
-			errMsg = "Upstream service temporarily unavailable"
+			errMsg = "上游服务暂时不可用"
 		}
 	default:
 		if statusCode == 0 {
@@ -1725,7 +1725,7 @@ func (s *GeminiMessagesCompatService) writeGeminiMappedError(c *gin.Context, acc
 			errType = "upstream_error"
 		}
 		if errMsg == "" {
-			errMsg = "Upstream request failed"
+			errMsg = "上游请求失败"
 		}
 	}
 
