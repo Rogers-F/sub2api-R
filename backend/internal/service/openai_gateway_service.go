@@ -1940,17 +1940,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		if shouldBill && cost.ActualCost > 0 {
 			_ = s.userRepo.DeductBalance(ctx, user.ID, cost.ActualCost)
 			s.billingCacheService.QueueDeductBalance(user.ID, cost.ActualCost)
-
-			// 累加 API Key 已用额度（仅当设置了额度限制时）
-			if apiKey.HasQuota() {
-				if err := s.apiKeyRepo.IncrementUsedUSD(ctx, apiKey.ID, cost.ActualCost); err != nil {
-					log.Printf("Failed to increment API key used_usd: %v", err)
-				}
-				// 失效认证缓存以更新额度信息
-				if s.apiKeyCacheInvalidator != nil {
-					s.apiKeyCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
-				}
-			}
 		}
 	}
 
