@@ -603,25 +603,25 @@ func (s *GatewayService) TempUnscheduleRetryableError(ctx context.Context, accou
 
 // GatewayService handles API gateway operations
 type GatewayService struct {
-	accountRepo            AccountRepository
-	groupRepo              GroupRepository
-	usageLogRepo           UsageLogRepository
-	userRepo               UserRepository
-	userSubRepo            UserSubscriptionRepository
-	userGroupRateRepo      UserGroupRateRepository
-	cache                  GatewayCache
-	digestStore            *DigestSessionStore
-	cfg                    *config.Config
-	schedulerSnapshot      *SchedulerSnapshotService
-	billingService         *BillingService
-	rateLimitService       *RateLimitService
-	billingCacheService    *BillingCacheService
-	identityService        *IdentityService
-	httpUpstream           HTTPUpstream
-	deferredService        *DeferredService
-	concurrencyService     *ConcurrencyService
-	claudeTokenProvider    *ClaudeTokenProvider
-	sessionLimitCache      SessionLimitCache          // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
+	accountRepo         AccountRepository
+	groupRepo           GroupRepository
+	usageLogRepo        UsageLogRepository
+	userRepo            UserRepository
+	userSubRepo         UserSubscriptionRepository
+	userGroupRateRepo   UserGroupRateRepository
+	cache               GatewayCache
+	digestStore         *DigestSessionStore
+	cfg                 *config.Config
+	schedulerSnapshot   *SchedulerSnapshotService
+	billingService      *BillingService
+	rateLimitService    *RateLimitService
+	billingCacheService *BillingCacheService
+	identityService     *IdentityService
+	httpUpstream        HTTPUpstream
+	deferredService     *DeferredService
+	concurrencyService  *ConcurrencyService
+	claudeTokenProvider *ClaudeTokenProvider
+	sessionLimitCache   SessionLimitCache // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
 }
 
 // NewGatewayService creates a new GatewayService
@@ -647,25 +647,25 @@ func NewGatewayService(
 	digestStore *DigestSessionStore,
 ) *GatewayService {
 	return &GatewayService{
-		accountRepo:            accountRepo,
-		groupRepo:              groupRepo,
-		usageLogRepo:           usageLogRepo,
-		userRepo:               userRepo,
-		userSubRepo:            userSubRepo,
-		userGroupRateRepo:      userGroupRateRepo,
-		cache:                  cache,
-		digestStore:            digestStore,
-		cfg:                    cfg,
-		schedulerSnapshot:      schedulerSnapshot,
-		concurrencyService:     concurrencyService,
-		billingService:         billingService,
-		rateLimitService:       rateLimitService,
-		billingCacheService:    billingCacheService,
-		identityService:        identityService,
-		httpUpstream:           httpUpstream,
-		deferredService:        deferredService,
-		claudeTokenProvider:    claudeTokenProvider,
-		sessionLimitCache:      sessionLimitCache,
+		accountRepo:         accountRepo,
+		groupRepo:           groupRepo,
+		usageLogRepo:        usageLogRepo,
+		userRepo:            userRepo,
+		userSubRepo:         userSubRepo,
+		userGroupRateRepo:   userGroupRateRepo,
+		cache:               cache,
+		digestStore:         digestStore,
+		cfg:                 cfg,
+		schedulerSnapshot:   schedulerSnapshot,
+		concurrencyService:  concurrencyService,
+		billingService:      billingService,
+		rateLimitService:    rateLimitService,
+		billingCacheService: billingCacheService,
+		identityService:     identityService,
+		httpUpstream:        httpUpstream,
+		deferredService:     deferredService,
+		claudeTokenProvider: claudeTokenProvider,
+		sessionLimitCache:   sessionLimitCache,
 	}
 }
 

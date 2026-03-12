@@ -169,21 +169,21 @@ type OpenAIForwardResult struct {
 
 // OpenAIGatewayService handles OpenAI API gateway operations
 type OpenAIGatewayService struct {
-	accountRepo            AccountRepository
-	usageLogRepo           UsageLogRepository
-	userRepo               UserRepository
-	userSubRepo            UserSubscriptionRepository
-	cache                  GatewayCache
-	cfg                    *config.Config
-	schedulerSnapshot      *SchedulerSnapshotService
-	concurrencyService     *ConcurrencyService
-	billingService         *BillingService
-	rateLimitService       *RateLimitService
-	billingCacheService    *BillingCacheService
-	httpUpstream           HTTPUpstream
-	deferredService        *DeferredService
-	openAITokenProvider    *OpenAITokenProvider
-	toolCorrector          *CodexToolCorrector
+	accountRepo         AccountRepository
+	usageLogRepo        UsageLogRepository
+	userRepo            UserRepository
+	userSubRepo         UserSubscriptionRepository
+	cache               GatewayCache
+	cfg                 *config.Config
+	schedulerSnapshot   *SchedulerSnapshotService
+	concurrencyService  *ConcurrencyService
+	billingService      *BillingService
+	rateLimitService    *RateLimitService
+	billingCacheService *BillingCacheService
+	httpUpstream        HTTPUpstream
+	deferredService     *DeferredService
+	openAITokenProvider *OpenAITokenProvider
+	toolCorrector       *CodexToolCorrector
 }
 
 // NewOpenAIGatewayService creates a new OpenAIGatewayService
@@ -204,21 +204,21 @@ func NewOpenAIGatewayService(
 	openAITokenProvider *OpenAITokenProvider,
 ) *OpenAIGatewayService {
 	return &OpenAIGatewayService{
-		accountRepo:            accountRepo,
-		usageLogRepo:           usageLogRepo,
-		userRepo:               userRepo,
-		userSubRepo:            userSubRepo,
-		cache:                  cache,
-		cfg:                    cfg,
-		schedulerSnapshot:      schedulerSnapshot,
-		concurrencyService:     concurrencyService,
-		billingService:         billingService,
-		rateLimitService:       rateLimitService,
-		billingCacheService:    billingCacheService,
-		httpUpstream:           httpUpstream,
-		deferredService:        deferredService,
-		openAITokenProvider:    openAITokenProvider,
-		toolCorrector:          NewCodexToolCorrector(),
+		accountRepo:         accountRepo,
+		usageLogRepo:        usageLogRepo,
+		userRepo:            userRepo,
+		userSubRepo:         userSubRepo,
+		cache:               cache,
+		cfg:                 cfg,
+		schedulerSnapshot:   schedulerSnapshot,
+		concurrencyService:  concurrencyService,
+		billingService:      billingService,
+		rateLimitService:    rateLimitService,
+		billingCacheService: billingCacheService,
+		httpUpstream:        httpUpstream,
+		deferredService:     deferredService,
+		openAITokenProvider: openAITokenProvider,
+		toolCorrector:       NewCodexToolCorrector(),
 	}
 }
 
