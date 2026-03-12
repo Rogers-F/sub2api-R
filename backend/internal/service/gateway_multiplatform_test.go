@@ -422,7 +422,7 @@ func TestGatewayService_SelectAccountForModelWithPlatform_NoAvailableAccounts(t 
 	acc, err := svc.selectAccountForModelWithPlatform(ctx, nil, "", "claude-3-5-sonnet-20241022", nil, PlatformAnthropic)
 	require.Error(t, err)
 	require.Nil(t, acc)
-	require.Contains(t, err.Error(), "无可用")
+	require.Contains(t, err.Error(), "可用账号")
 }
 
 // TestGatewayService_SelectAccountForModelWithPlatform_AllExcluded 测试所有账户被排除
@@ -860,7 +860,7 @@ func TestGatewayService_SelectAccountForModelWithPlatform_NoModelSupport(t *test
 	acc, err := svc.selectAccountForModelWithPlatform(ctx, nil, "", "claude-3-5-sonnet-20241022", nil, PlatformAnthropic)
 	require.Error(t, err)
 	require.Nil(t, acc)
-	require.Contains(t, err.Error(), "supporting model")
+	require.Contains(t, err.Error(), "无支持模型")
 }
 
 func TestGatewayService_SelectAccountForModelWithPlatform_GeminiPreferOAuth(t *testing.T) {
@@ -1637,7 +1637,7 @@ func TestGatewayService_selectAccountWithMixedScheduling(t *testing.T) {
 		acc, err := svc.selectAccountWithMixedScheduling(ctx, nil, "", "claude-3-5-sonnet-20241022", nil, PlatformAnthropic)
 		require.Error(t, err)
 		require.Nil(t, acc)
-		require.Contains(t, err.Error(), "无可用")
+		require.Contains(t, err.Error(), "可用账号")
 	})
 
 	t.Run("混合调度-不支持模型返回错误", func(t *testing.T) {
@@ -1669,7 +1669,7 @@ func TestGatewayService_selectAccountWithMixedScheduling(t *testing.T) {
 		acc, err := svc.selectAccountWithMixedScheduling(ctx, nil, "", "claude-3-5-sonnet-20241022", nil, PlatformAnthropic)
 		require.Error(t, err)
 		require.Nil(t, acc)
-		require.Contains(t, err.Error(), "supporting model")
+		require.Contains(t, err.Error(), "无支持模型")
 	})
 
 	t.Run("混合调度-优先未使用账号", func(t *testing.T) {
@@ -2185,7 +2185,7 @@ func TestGatewayService_SelectAccountWithLoadAwareness(t *testing.T) {
 		result, err := svc.SelectAccountWithLoadAwareness(ctx, nil, "", "claude-3-5-sonnet-20241022", nil, "")
 		require.Error(t, err)
 		require.Nil(t, result)
-		require.Contains(t, err.Error(), "无可用")
+		require.Contains(t, err.Error(), "可用账号")
 	})
 
 	t.Run("过滤不可调度账号-限流账号被跳过", func(t *testing.T) {
@@ -3186,5 +3186,5 @@ func TestGatewayService_ResolveGatewayGroup_DetectsFallbackCycle(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, gotGroup)
 	require.Nil(t, gotID)
-	require.Contains(t, err.Error(), "fallback group cycle")
+	require.Contains(t, err.Error(), "回退分组循环")
 }

@@ -329,7 +329,7 @@ func TestAdminService_ValidateFallbackGroup_DetectsCycle(t *testing.T) {
 
 	err := svc.validateFallbackGroup(context.Background(), groupID, fallbackID)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "fallback group cycle")
+	require.Contains(t, err.Error(), "回退分组循环")
 }
 
 type groupRepoStubForFallbackCycle struct {

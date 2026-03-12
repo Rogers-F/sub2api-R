@@ -462,7 +462,7 @@ func TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_NoAvail
 	acc, err := svc.SelectAccountForModelWithExclusions(ctx, nil, "", "gemini-2.5-flash", nil)
 	require.Error(t, err)
 	require.Nil(t, acc)
-	require.Contains(t, err.Error(), "no available")
+	require.Contains(t, err.Error(), "可用")
 }
 
 // TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_StickySession 测试粘性会话
@@ -659,7 +659,7 @@ func TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_NoModel
 	acc, err := svc.SelectAccountForModelWithExclusions(ctx, nil, "", "gemini-2.5-flash", nil)
 	require.Error(t, err)
 	require.Nil(t, acc)
-	require.Contains(t, err.Error(), "supporting model")
+	require.Contains(t, err.Error(), "无支持模型")
 }
 
 func TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_StickyMixedScheduling(t *testing.T) {
@@ -769,7 +769,7 @@ func TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_ListErr
 	acc, err := svc.SelectAccountForModelWithExclusions(ctx, nil, "", "gemini-2.5-flash", nil)
 	require.Error(t, err)
 	require.Nil(t, acc)
-	require.Contains(t, err.Error(), "query accounts failed")
+	require.Contains(t, err.Error(), "查询账号失败")
 }
 
 func TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_PreferOAuth(t *testing.T) {

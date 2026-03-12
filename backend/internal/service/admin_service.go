@@ -768,11 +768,11 @@ func (s *adminServiceImpl) validateFallbackGroup(ctx context.Context, currentGro
 	nextID := fallbackGroupID
 	for {
 		if _, seen := visited[nextID]; seen {
-			return fmt.Errorf("fallback group cycle detected")
+			return fmt.Errorf("回退分组循环检测")
 		}
 		visited[nextID] = struct{}{}
 		if currentGroupID > 0 && nextID == currentGroupID {
-			return fmt.Errorf("fallback group cycle detected")
+			return fmt.Errorf("回退分组循环检测")
 		}
 
 		// 检查降级分组是否存在
