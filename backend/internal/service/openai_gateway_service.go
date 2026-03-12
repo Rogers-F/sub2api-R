@@ -173,7 +173,6 @@ type OpenAIGatewayService struct {
 	usageLogRepo           UsageLogRepository
 	userRepo               UserRepository
 	userSubRepo            UserSubscriptionRepository
-	apiKeyRepo             APIKeyRepository
 	cache                  GatewayCache
 	cfg                    *config.Config
 	schedulerSnapshot      *SchedulerSnapshotService
@@ -185,7 +184,6 @@ type OpenAIGatewayService struct {
 	deferredService        *DeferredService
 	openAITokenProvider    *OpenAITokenProvider
 	toolCorrector          *CodexToolCorrector
-	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator
 }
 
 // NewOpenAIGatewayService creates a new OpenAIGatewayService
@@ -194,7 +192,6 @@ func NewOpenAIGatewayService(
 	usageLogRepo UsageLogRepository,
 	userRepo UserRepository,
 	userSubRepo UserSubscriptionRepository,
-	apiKeyRepo APIKeyRepository,
 	cache GatewayCache,
 	cfg *config.Config,
 	schedulerSnapshot *SchedulerSnapshotService,
@@ -205,14 +202,12 @@ func NewOpenAIGatewayService(
 	httpUpstream HTTPUpstream,
 	deferredService *DeferredService,
 	openAITokenProvider *OpenAITokenProvider,
-	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator,
 ) *OpenAIGatewayService {
 	return &OpenAIGatewayService{
 		accountRepo:            accountRepo,
 		usageLogRepo:           usageLogRepo,
 		userRepo:               userRepo,
 		userSubRepo:            userSubRepo,
-		apiKeyRepo:             apiKeyRepo,
 		cache:                  cache,
 		cfg:                    cfg,
 		schedulerSnapshot:      schedulerSnapshot,
@@ -224,7 +219,6 @@ func NewOpenAIGatewayService(
 		deferredService:        deferredService,
 		openAITokenProvider:    openAITokenProvider,
 		toolCorrector:          NewCodexToolCorrector(),
-		apiKeyCacheInvalidator: apiKeyCacheInvalidator,
 	}
 }
 

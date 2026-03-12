@@ -608,7 +608,6 @@ type GatewayService struct {
 	usageLogRepo           UsageLogRepository
 	userRepo               UserRepository
 	userSubRepo            UserSubscriptionRepository
-	apiKeyRepo             APIKeyRepository
 	userGroupRateRepo      UserGroupRateRepository
 	cache                  GatewayCache
 	digestStore            *DigestSessionStore
@@ -623,7 +622,6 @@ type GatewayService struct {
 	concurrencyService     *ConcurrencyService
 	claudeTokenProvider    *ClaudeTokenProvider
 	sessionLimitCache      SessionLimitCache          // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
-	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator // API Key 认证缓存失效器
 }
 
 // NewGatewayService creates a new GatewayService
@@ -633,7 +631,6 @@ func NewGatewayService(
 	usageLogRepo UsageLogRepository,
 	userRepo UserRepository,
 	userSubRepo UserSubscriptionRepository,
-	apiKeyRepo APIKeyRepository,
 	userGroupRateRepo UserGroupRateRepository,
 	cache GatewayCache,
 	cfg *config.Config,
@@ -647,7 +644,6 @@ func NewGatewayService(
 	deferredService *DeferredService,
 	claudeTokenProvider *ClaudeTokenProvider,
 	sessionLimitCache SessionLimitCache,
-	apiKeyCacheInvalidator APIKeyAuthCacheInvalidator,
 	digestStore *DigestSessionStore,
 ) *GatewayService {
 	return &GatewayService{
@@ -656,7 +652,6 @@ func NewGatewayService(
 		usageLogRepo:           usageLogRepo,
 		userRepo:               userRepo,
 		userSubRepo:            userSubRepo,
-		apiKeyRepo:             apiKeyRepo,
 		userGroupRateRepo:      userGroupRateRepo,
 		cache:                  cache,
 		digestStore:            digestStore,
@@ -671,7 +666,6 @@ func NewGatewayService(
 		deferredService:        deferredService,
 		claudeTokenProvider:    claudeTokenProvider,
 		sessionLimitCache:      sessionLimitCache,
-		apiKeyCacheInvalidator: apiKeyCacheInvalidator,
 	}
 }
 
