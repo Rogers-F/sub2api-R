@@ -232,7 +232,11 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 				h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error", "无可用账号："+err.Error(), streamStarted)
 				return
 			}
-			if lastFailoverErr != nil {
+			var noAccErr *service.NoAvailableAccountsError
+			if errors.As(err, &noAccErr) {
+				h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error",
+					"无可用账号："+noAccErr.Message, streamStarted)
+			} else if lastFailoverErr != nil {
 				h.handleFailoverExhausted(c, lastFailoverErr, streamStarted)
 			} else {
 				h.handleFailoverExhaustedSimple(c, 502, streamStarted)
@@ -302,6 +306,11 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			if errors.As(err, &failoverErr) {
 				failedAccountIDs[account.ID] = struct{}{}
 				lastFailoverErr = failoverErr
+				// 终态错误：上游明确表示无可用账号，立即停止 failover
+				if failoverErr.Terminal {
+					h.handleFailoverExhausted(c, failoverErr, streamStarted)
+					return
+				}
 				if switchCount >= maxAccountSwitches {
 					h.handleFailoverExhausted(c, failoverErr, streamStarted)
 					return

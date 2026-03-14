@@ -121,12 +121,21 @@ func (st accountFilterStats) nonZeroSummary() string {
 	return strings.Join(parts, ", ")
 }
 
+// NoAvailableAccountsError 表示无可用账号，携带诊断信息供 handler 直接返回给用户
+type NoAvailableAccountsError struct {
+	Message string
+}
+
+func (e *NoAvailableAccountsError) Error() string {
+	return e.Message
+}
+
 func newNoAvailableAccountsError(reason string) error {
 	reason = strings.TrimSpace(reason)
 	if reason == "" {
-		return errors.New("无可用账号")
+		return &NoAvailableAccountsError{Message: "无可用账号"}
 	}
-	return errors.New(reason)
+	return &NoAvailableAccountsError{Message: reason}
 }
 
 func appendRateLimitDiagnosticDetail(msg string, windowSummary string, detail string) string {
@@ -580,6 +589,7 @@ type UpstreamFailoverError struct {
 	ResponseBody           []byte // 上游响应体，用于错误透传规则匹配
 	ForceCacheBilling      bool   // Antigravity 粘性会话切换时设为 true
 	RetryableOnSameAccount bool   // 临时性错误（如 Google 间歇性 400、空响应），应在同一账号上重试 N 次再切换
+	Terminal               bool   // 终态错误：上游明确表示无可用账号，不应继续 failover
 }
 
 func (e *UpstreamFailoverError) Error() string {
@@ -3683,7 +3693,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 					return ""
 				}(),
 			})
-			return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody}
+			return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody, Terminal: isTerminalUpstreamBody(respBody)}
 		}
 		return s.handleRetryExhaustedError(ctx, resp, c, account)
 	}
@@ -3718,7 +3728,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 				return ""
 			}(),
 		})
-		return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody}
+		return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody, Terminal: isTerminalUpstreamBody(respBody)}
 	}
 	if resp.StatusCode >= 400 {
 		// 可选：对部分 400 触发 failover（默认关闭以保持语义）
@@ -3763,7 +3773,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 					log.Printf("Account %d: 400 error, attempting failover", account.ID)
 				}
 				s.handleFailoverSideEffects(ctx, resp, account)
-				return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody}
+				return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: respBody, Terminal: isTerminalUpstreamBody(respBody)}
 			}
 		}
 		return s.handleErrorResponse(ctx, resp, c, account)
@@ -4201,6 +4211,25 @@ func extractUpstreamErrorMessage(body []byte) string {
 	return gjson.GetBytes(body, "message").String()
 }
 
+// isTerminalUpstreamBody 判断上游响应体是否表示终态错误（不应继续 failover）。
+// 适用于级联部署：上游 sub2api 返回 "无可用账号" 时，本地无需继续切账号。
+func isTerminalUpstreamBody(body []byte) bool {
+	if len(body) == 0 {
+		return false
+	}
+	msg := strings.ToLower(extractUpstreamErrorMessage(body))
+	if msg == "" {
+		// 兜底：检查原始 body（上游可能返回纯文本）
+		msg = strings.ToLower(strings.TrimSpace(string(body)))
+	}
+	return strings.Contains(msg, "no available accounts") ||
+		strings.Contains(msg, "无可用账号") ||
+		strings.Contains(msg, "无可用 gemini 账号") ||
+		strings.Contains(msg, "无可用 openai 账号") ||
+		strings.Contains(msg, "all accounts rate-limited") ||
+		strings.Contains(msg, "全部候选账号")
+}
+
 func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Response, c *gin.Context, account *Account) (*ForwardResult, error) {
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 
@@ -4251,7 +4280,7 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 		shouldDisable = s.rateLimitService.HandleUpstreamError(ctx, account, resp.StatusCode, resp.Header, body)
 	}
 	if shouldDisable {
-		return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: body}
+		return nil, &UpstreamFailoverError{StatusCode: resp.StatusCode, ResponseBody: body, Terminal: isTerminalUpstreamBody(body)}
 	}
 
 	// 记录上游错误响应体摘要便于排障（可选：由配置控制；不回显到客户端）

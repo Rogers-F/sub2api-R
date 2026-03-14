@@ -266,7 +266,11 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						continue
 					}
 				}
-				if lastFailoverErr != nil {
+				var noAccErr *service.NoAvailableAccountsError
+				if errors.As(err, &noAccErr) {
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error",
+						"无可用账号："+noAccErr.Message, streamStarted)
+				} else if lastFailoverErr != nil {
 					h.handleFailoverExhausted(c, lastFailoverErr, service.PlatformGemini, streamStarted)
 				} else {
 					h.handleFailoverExhaustedSimple(c, 502, streamStarted)
@@ -363,6 +367,12 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 					lastFailoverErr = failoverErr
 					if needForceCacheBilling(hasBoundSession, failoverErr) {
 						forceCacheBilling = true
+					}
+
+					// 终态错误：上游明确表示无可用账号，立即停止 failover
+					if failoverErr.Terminal {
+						h.handleFailoverExhausted(c, failoverErr, service.PlatformGemini, streamStarted)
+						return
 					}
 
 					// 同账号重试：对 RetryableOnSameAccount 的临时性错误，先在同一账号上重试
@@ -471,7 +481,11 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 						continue
 					}
 				}
-				if lastFailoverErr != nil {
+				var noAccErr *service.NoAvailableAccountsError
+				if errors.As(err, &noAccErr) {
+					h.handleStreamingAwareError(c, http.StatusServiceUnavailable, "api_error",
+						"无可用账号："+noAccErr.Message, streamStarted)
+				} else if lastFailoverErr != nil {
 					h.handleFailoverExhausted(c, lastFailoverErr, platform, streamStarted)
 				} else {
 					h.handleFailoverExhaustedSimple(c, 502, streamStarted)
@@ -601,6 +615,12 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 					lastFailoverErr = failoverErr
 					if needForceCacheBilling(hasBoundSession, failoverErr) {
 						forceCacheBilling = true
+					}
+
+					// 终态错误：上游明确表示无可用账号，立即停止 failover
+					if failoverErr.Terminal {
+						h.handleFailoverExhausted(c, failoverErr, account.Platform, streamStarted)
+						return
 					}
 
 					// 同账号重试：对 RetryableOnSameAccount 的临时性错误，先在同一账号上重试

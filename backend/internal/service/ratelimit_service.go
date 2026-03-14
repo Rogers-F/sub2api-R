@@ -24,8 +24,14 @@ type RateLimitService struct {
 	timeoutCounterCache   TimeoutCounterCache
 	settingService        *SettingService
 	tokenCacheInvalidator TokenCacheInvalidator
+	schedulerSnapshot     SchedulerSnapshotUpdater
 	usageCacheMu          sync.RWMutex
 	usageCache            map[int64]*geminiUsageCacheEntry
+}
+
+// SchedulerSnapshotUpdater 用于将账号状态即时同步到调度缓存
+type SchedulerSnapshotUpdater interface {
+	UpdateAccountInCache(ctx context.Context, account *Account) error
 }
 
 type geminiUsageCacheEntry struct {
@@ -61,6 +67,44 @@ func (s *RateLimitService) SetSettingService(settingService *SettingService) {
 // SetTokenCacheInvalidator 设置 token 缓存清理器（可选依赖）
 func (s *RateLimitService) SetTokenCacheInvalidator(invalidator TokenCacheInvalidator) {
 	s.tokenCacheInvalidator = invalidator
+}
+
+// SetSchedulerSnapshotService 设置调度快照服务（可选依赖），用于限流后即时同步缓存
+func (s *RateLimitService) SetSchedulerSnapshotService(svc SchedulerSnapshotUpdater) {
+	s.schedulerSnapshot = svc
+}
+
+// setRateLimitedAndSync 标记限流并立即同步到调度缓存，避免下一个请求选中刚被限流的账号。
+// 注意：会修改 account 对象的 RateLimitedAt/RateLimitResetAt/RateLimitWindowType 字段。
+func (s *RateLimitService) setRateLimitedAndSync(ctx context.Context, account *Account, resetAt time.Time, windowType, detail string) error {
+	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, windowType, detail); err != nil {
+		return err
+	}
+	now := time.Now()
+	account.RateLimitedAt = &now
+	account.RateLimitResetAt = &resetAt
+	account.RateLimitWindowType = windowType
+	if s.schedulerSnapshot != nil {
+		if err := s.schedulerSnapshot.UpdateAccountInCache(ctx, account); err != nil {
+			slog.Warn("ratelimit_snapshot_sync_failed", "account_id", account.ID, "error", err)
+		}
+	}
+	return nil
+}
+
+// setOverloadedAndSync 标记过载并立即同步到调度缓存。
+// 注意：会修改 account 对象的 OverloadUntil 字段。
+func (s *RateLimitService) setOverloadedAndSync(ctx context.Context, account *Account, until time.Time) error {
+	if err := s.accountRepo.SetOverloaded(ctx, account.ID, until); err != nil {
+		return err
+	}
+	account.OverloadUntil = &until
+	if s.schedulerSnapshot != nil {
+		if err := s.schedulerSnapshot.UpdateAccountInCache(ctx, account); err != nil {
+			slog.Warn("ratelimit_snapshot_sync_failed", "account_id", account.ID, "error", err)
+		}
+	}
+	return nil
 }
 
 // ErrorPolicyResult 表示错误策略检查的结果
@@ -506,7 +550,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	if account.Platform == PlatformOpenAI {
 		if resetAt := s.calculateOpenAI429ResetTime(headers); resetAt != nil {
 			wt, dt := buildOpenAI429Detail(headers)
-			if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt, wt, dt); err != nil {
+			if err := s.setRateLimitedAndSync(ctx, account, *resetAt, wt, dt); err != nil {
 				slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 				return
 			}
@@ -519,7 +563,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	if result := calculateAnthropic429ResetTime(headers); result != nil {
 		_, headerDetail := buildAnthropic429Detail(headers)
 		detail := buildAnthropic429StoredDetail(responseBody, headerDetail)
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, result.resetAt, result.windowType, detail); err != nil {
+		if err := s.setRateLimitedAndSync(ctx, account, result.resetAt, result.windowType, detail); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 			return
 		}
@@ -552,7 +596,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 			// 尝试解析 OpenAI 的 usage_limit_reached 错误
 			if resetAt := parseOpenAIRateLimitResetTime(responseBody); resetAt != nil {
 				resetTime := time.Unix(*resetAt, 0)
-				if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", bodyDetail); err != nil {
+				if err := s.setRateLimitedAndSync(ctx, account, resetTime, "", bodyDetail); err != nil {
 					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 					return
 				}
@@ -563,7 +607,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 			// 尝试解析 Gemini 格式（用于其他平台）
 			if resetAt := ParseGeminiRateLimitResetTime(responseBody); resetAt != nil {
 				resetTime := time.Unix(*resetAt, 0)
-				if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", bodyDetail); err != nil {
+				if err := s.setRateLimitedAndSync(ctx, account, resetTime, "", bodyDetail); err != nil {
 					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 					return
 				}
@@ -575,7 +619,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		// 没有重置时间，使用默认5分钟
 		resetAt := time.Now().Add(5 * time.Minute)
 		slog.Warn("rate_limit_no_reset_time", "account_id", account.ID, "platform", account.Platform, "using_default", "5m")
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", bodyDetail); err != nil {
+		if err := s.setRateLimitedAndSync(ctx, account, resetAt, "", bodyDetail); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
@@ -587,7 +631,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		slog.Warn("rate_limit_reset_parse_failed", "reset_timestamp", resetTimestamp, "error", err)
 		resetAt := time.Now().Add(5 * time.Minute)
 		detail := buildAnthropic429StoredDetail(responseBody, fmt.Sprintf("anthropic unified reset parse failed (raw=%s)", truncateString(resetTimestamp, 64)))
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", detail); err != nil {
+		if err := s.setRateLimitedAndSync(ctx, account, resetAt, "", detail); err != nil {
 			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
@@ -597,7 +641,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 标记限流状态
 	detail := buildAnthropic429StoredDetail(responseBody, fmt.Sprintf("anthropic unified reset (ts=%d)", ts))
-	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt, "", detail); err != nil {
+	if err := s.setRateLimitedAndSync(ctx, account, resetAt, "", detail); err != nil {
 		slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		return
 	}
@@ -841,7 +885,7 @@ func (s *RateLimitService) handle529(ctx context.Context, account *Account) {
 	}
 
 	until := time.Now().Add(time.Duration(cooldownMinutes) * time.Minute)
-	if err := s.accountRepo.SetOverloaded(ctx, account.ID, until); err != nil {
+	if err := s.setOverloadedAndSync(ctx, account, until); err != nil {
 		slog.Warn("overload_set_failed", "account_id", account.ID, "error", err)
 		return
 	}

@@ -366,7 +366,12 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 					continue
 				}
 			}
-			h.handleGeminiFailoverExhausted(c, lastFailoverErr)
+			var noAccErr *service.NoAvailableAccountsError
+			if errors.As(err, &noAccErr) {
+				googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+noAccErr.Message)
+			} else {
+				h.handleGeminiFailoverExhausted(c, lastFailoverErr)
+			}
 			return
 		}
 		account := selection.Account
@@ -458,6 +463,11 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 				failedAccountIDs[account.ID] = struct{}{}
 				if needForceCacheBilling(hasBoundSession, failoverErr) {
 					forceCacheBilling = true
+				}
+				// 终态错误：上游明确表示无可用账号，立即停止 failover
+				if failoverErr.Terminal {
+					h.handleGeminiFailoverExhausted(c, failoverErr)
+					return
 				}
 				if switchCount >= maxAccountSwitches {
 					lastFailoverErr = failoverErr
