@@ -24,8 +24,8 @@ type ClaudeTokenProvider struct {
 	accountRepo       AccountRepository
 	tokenCache        ClaudeTokenCache
 	oauthService      *OAuthService
-	refreshWindow     time.Duration              // 统一刷新窗口，从配置注入
-	schedulerSnapshot SchedulerSnapshotUpdater   // 刷新后同步调度器快照，避免后续请求拿到旧 credentials
+	refreshWindow     time.Duration            // 统一刷新窗口，从配置注入
+	schedulerSnapshot SchedulerSnapshotUpdater // 刷新后同步调度器快照，避免后续请求拿到旧 credentials
 }
 
 // SetSchedulerSnapshotService 设置调度器快照服务（setter 注入，避免循环依赖）
