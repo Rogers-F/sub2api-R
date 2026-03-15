@@ -21,10 +21,16 @@ type ClaudeTokenCache = GeminiTokenCache
 
 // ClaudeTokenProvider 管理 Claude (Anthropic) OAuth 账户的 access_token
 type ClaudeTokenProvider struct {
-	accountRepo   AccountRepository
-	tokenCache    ClaudeTokenCache
-	oauthService  *OAuthService
-	refreshWindow time.Duration // 统一刷新窗口，从配置注入
+	accountRepo       AccountRepository
+	tokenCache        ClaudeTokenCache
+	oauthService      *OAuthService
+	refreshWindow     time.Duration              // 统一刷新窗口，从配置注入
+	schedulerSnapshot SchedulerSnapshotUpdater   // 刷新后同步调度器快照，避免后续请求拿到旧 credentials
+}
+
+// SetSchedulerSnapshotService 设置调度器快照服务（setter 注入，避免循环依赖）
+func (p *ClaudeTokenProvider) SetSchedulerSnapshotService(svc SchedulerSnapshotUpdater) {
+	p.schedulerSnapshot = svc
 }
 
 func NewClaudeTokenProvider(
@@ -126,6 +132,11 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 						if updateErr := p.accountRepo.Update(ctx, account); updateErr != nil {
 							slog.Error("claude_token_provider_update_failed", "account_id", account.ID, "error", updateErr)
 						}
+						if p.schedulerSnapshot != nil {
+							if syncErr := p.schedulerSnapshot.UpdateAccountInCache(ctx, account); syncErr != nil {
+								slog.Warn("claude_token_snapshot_sync_failed", "account_id", account.ID, "error", syncErr)
+							}
+						}
 						expiresAt = account.GetCredentialAsTime("expires_at")
 					}
 				}
@@ -177,6 +188,11 @@ func (p *ClaudeTokenProvider) GetAccessToken(ctx context.Context, account *Accou
 						account.Credentials = newCredentials
 						if updateErr := p.accountRepo.Update(ctx, account); updateErr != nil {
 							slog.Error("claude_token_provider_update_failed", "account_id", account.ID, "error", updateErr)
+						}
+						if p.schedulerSnapshot != nil {
+							if syncErr := p.schedulerSnapshot.UpdateAccountInCache(ctx, account); syncErr != nil {
+								slog.Warn("claude_token_snapshot_sync_failed", "account_id", account.ID, "error", syncErr)
+							}
 						}
 						expiresAt = account.GetCredentialAsTime("expires_at")
 					}

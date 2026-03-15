@@ -2879,47 +2879,41 @@ func (s *GatewayService) prepareAnthropicOAuthRetry(ctx context.Context, account
 	if s.claudeTokenProvider == nil {
 		return "", "", nil
 	}
-	if s.claudeTokenProvider.oauthService == nil {
-		return "", "", nil
-	}
 
-	if account.Credentials == nil {
-		account.Credentials = make(map[string]any)
-	}
-
+	// 1. 清除 token 缓存，强制走刷新路径
+	cacheKey := ClaudeTokenCacheKey(account)
 	if s.claudeTokenProvider.tokenCache != nil {
-		if err := s.claudeTokenProvider.tokenCache.DeleteAccessToken(ctx, ClaudeTokenCacheKey(account)); err != nil {
-			log.Printf("Account %d: failed to invalidate Claude token cache before retry: %v", account.ID, err)
+		if err := s.claudeTokenProvider.tokenCache.DeleteAccessToken(ctx, cacheKey); err != nil {
+			slog.Warn("claude_token_cache_invalidate_failed", "account_id", account.ID, "error", err)
 		}
 	}
 
-	tokenInfo, err := s.claudeTokenProvider.oauthService.RefreshAccountToken(ctx, account)
+	// 2. 从 DB 重新加载最新账号（可能已被其他请求刷新）
+	if s.claudeTokenProvider.accountRepo != nil {
+		if fresh, err := s.claudeTokenProvider.accountRepo.GetByID(ctx, account.ID); err == nil && fresh != nil {
+			account = fresh
+		}
+	}
+
+	// 3. 强制 expires_at 为过去时间并持久化到 DB
+	//    必须写 DB，因为 provider 拿锁后会重新 GetByID，本地修改会被覆盖
+	if account.Credentials == nil {
+		account.Credentials = make(map[string]any)
+	}
+	account.Credentials["expires_at"] = "0"
+	if s.claudeTokenProvider.accountRepo != nil {
+		if err := s.claudeTokenProvider.accountRepo.Update(ctx, account); err != nil {
+			slog.Warn("oauth_retry_force_expire_persist_failed", "account_id", account.ID, "error", err)
+		}
+	}
+
+	// 4. 委托给 ClaudeTokenProvider（有分布式锁 + DB 回源 + 缓存更新 + snapshot 同步）
+	newToken, err := s.claudeTokenProvider.GetAccessToken(ctx, account)
 	if err != nil {
 		return "", "", err
 	}
 
-	newCredentials := make(map[string]any, len(account.Credentials)+5)
-	for k, v := range account.Credentials {
-		newCredentials[k] = v
-	}
-	newCredentials["access_token"] = tokenInfo.AccessToken
-	newCredentials["token_type"] = tokenInfo.TokenType
-	newCredentials["expires_in"] = strconv.FormatInt(tokenInfo.ExpiresIn, 10)
-	newCredentials["expires_at"] = strconv.FormatInt(tokenInfo.ExpiresAt, 10)
-	if tokenInfo.RefreshToken != "" {
-		newCredentials["refresh_token"] = tokenInfo.RefreshToken
-	}
-	if tokenInfo.Scope != "" {
-		newCredentials["scope"] = tokenInfo.Scope
-	}
-	account.Credentials = newCredentials
-	if s.claudeTokenProvider.accountRepo != nil {
-		if err := s.claudeTokenProvider.accountRepo.Update(ctx, account); err != nil {
-			log.Printf("Account %d: failed to persist refreshed Claude OAuth token before retry: %v", account.ID, err)
-		}
-	}
-
-	return tokenInfo.AccessToken, "oauth", nil
+	return newToken, "oauth", nil
 }
 
 // shouldFailoverUpstreamError determines whether an upstream error should trigger account failover.

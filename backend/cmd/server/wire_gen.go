@@ -139,6 +139,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	antigravityTokenProvider := service.NewAntigravityTokenProvider(accountRepository, geminiTokenCache, antigravityOAuthService)
 	antigravityGatewayService := service.NewAntigravityGatewayService(accountRepository, gatewayCache, schedulerSnapshotService, antigravityTokenProvider, rateLimitService, httpUpstream, settingService)
 	claudeTokenProvider := service.NewClaudeTokenProvider(accountRepository, geminiTokenCache, oAuthService, configConfig)
+	claudeTokenProvider.SetSchedulerSnapshotService(schedulerSnapshotService)
 	openAITokenProvider := service.NewOpenAITokenProvider(accountRepository, geminiTokenCache, openAIOAuthService)
 	accountTestService := service.NewAccountTestService(accountRepository, geminiTokenProvider, claudeTokenProvider, openAITokenProvider, antigravityGatewayService, httpUpstream, configConfig)
 	accountAutoRecoveryService := service.ProvideAccountAutoRecoveryService(accountTestService, accountRepository, timingWheelService)

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"sort"
@@ -774,43 +775,44 @@ func (s *OpenAIGatewayService) prepareOpenAIOAuthRetry(ctx context.Context, acco
 	if !isOAuthTokenExpired401(account, statusCode, responseBody) {
 		return "", "", nil
 	}
-	if s.openAITokenProvider == nil || s.openAITokenProvider.openAIOAuthService == nil {
+	if s.openAITokenProvider == nil {
 		return "", "", nil
 	}
 
+	// 1. 清除 token 缓存，强制走刷新路径
+	cacheKey := OpenAITokenCacheKey(account)
 	if s.openAITokenProvider.tokenCache != nil {
-		if err := s.openAITokenProvider.tokenCache.DeleteAccessToken(ctx, OpenAITokenCacheKey(account)); err != nil {
-			log.Printf("Account %d: failed to invalidate OpenAI token cache before retry: %v", account.ID, err)
+		if err := s.openAITokenProvider.tokenCache.DeleteAccessToken(ctx, cacheKey); err != nil {
+			slog.Warn("openai_token_cache_invalidate_failed", "account_id", account.ID, "error", err)
 		}
 	}
 
-	tokenInfo, err := s.openAITokenProvider.openAIOAuthService.RefreshAccountToken(ctx, account)
+	// 2. 从 DB 重新加载最新账号（可能已被其他请求刷新）
+	if s.openAITokenProvider.accountRepo != nil {
+		if fresh, err := s.openAITokenProvider.accountRepo.GetByID(ctx, account.ID); err == nil && fresh != nil {
+			account = fresh
+		}
+	}
+
+	// 3. 强制 expires_at 为过去时间并持久化到 DB
+	//    必须写 DB，因为 provider 拿锁后会重新 GetByID，本地修改会被覆盖
+	if account.Credentials == nil {
+		account.Credentials = make(map[string]any)
+	}
+	account.Credentials["expires_at"] = "0"
+	if s.openAITokenProvider.accountRepo != nil {
+		if err := s.openAITokenProvider.accountRepo.Update(ctx, account); err != nil {
+			slog.Warn("oauth_retry_force_expire_persist_failed", "account_id", account.ID, "error", err)
+		}
+	}
+
+	// 4. 委托给 OpenAITokenProvider（有分布式锁 + DB 回源 + 缓存更新）
+	newToken, err := s.openAITokenProvider.GetAccessToken(ctx, account)
 	if err != nil {
 		return "", "", err
 	}
 
-	if account.Credentials == nil {
-		account.Credentials = make(map[string]any)
-	}
-	newCredentials := s.openAITokenProvider.openAIOAuthService.BuildAccountCredentials(tokenInfo)
-	for k, v := range account.Credentials {
-		if _, exists := newCredentials[k]; !exists {
-			newCredentials[k] = v
-		}
-	}
-	account.Credentials = newCredentials
-
-	repo := s.accountRepo
-	if s.openAITokenProvider.accountRepo != nil {
-		repo = s.openAITokenProvider.accountRepo
-	}
-	if repo != nil {
-		if err := repo.Update(ctx, account); err != nil {
-			log.Printf("Account %d: failed to persist refreshed OpenAI OAuth token before retry: %v", account.ID, err)
-		}
-	}
-
-	return tokenInfo.AccessToken, "oauth", nil
+	return newToken, "oauth", nil
 }
 
 // Forward forwards request to OpenAI API

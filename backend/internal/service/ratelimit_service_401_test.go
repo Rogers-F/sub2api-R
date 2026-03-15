@@ -49,7 +49,7 @@ func (r *tokenCacheInvalidatorRecorder) InvalidateToken(ctx context.Context, acc
 	return r.err
 }
 
-func TestRateLimitService_HandleUpstreamError_OAuth401PermanentMarksError(t *testing.T) {
+func TestRateLimitService_HandleUpstreamError_OAuth401NeverDisables(t *testing.T) {
 	tests := []struct {
 		name     string
 		platform string
@@ -81,13 +81,13 @@ func TestRateLimitService_HandleUpstreamError_OAuth401PermanentMarksError(t *tes
 				},
 			}
 
+			// OAuth 账号的 401（即使不含 "expired" 关键词）也不应禁用
 			shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte(`{"error":{"message":"token revoked"}}`))
 
-			require.True(t, shouldDisable)
-			require.Equal(t, 1, repo.setErrorCalls)
+			require.False(t, shouldDisable)
+			require.Equal(t, 0, repo.setErrorCalls)
 			require.Equal(t, 0, repo.tempCalls)
 			require.Equal(t, 1, repo.updateCalls)
-			require.Contains(t, repo.lastErrorMsg, "token revoked")
 			require.Len(t, invalidator.accounts, 1)
 		})
 	}
@@ -117,7 +117,7 @@ func TestRateLimitService_HandleUpstreamError_OAuth401ExpiredDoesNotDisable(t *t
 	require.Len(t, invalidator.accounts, 1)
 }
 
-func TestRateLimitService_HandleUpstreamError_OAuth401PermanentInvalidatorError(t *testing.T) {
+func TestRateLimitService_HandleUpstreamError_OAuth401InvalidatorErrorStillNoDisable(t *testing.T) {
 	repo := &rateLimitAccountRepoStub{}
 	invalidator := &tokenCacheInvalidatorRecorder{err: errors.New("boom")}
 	service := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
@@ -128,10 +128,11 @@ func TestRateLimitService_HandleUpstreamError_OAuth401PermanentInvalidatorError(
 		Type:     AccountTypeOAuth,
 	}
 
+	// OAuth 账号即使 cache invalidation 失败也不应禁用
 	shouldDisable := service.HandleUpstreamError(context.Background(), account, 401, http.Header{}, []byte(`{"error":{"message":"token revoked"}}`))
 
-	require.True(t, shouldDisable)
-	require.Equal(t, 1, repo.setErrorCalls)
+	require.False(t, shouldDisable)
+	require.Equal(t, 0, repo.setErrorCalls)
 	require.Equal(t, 1, repo.updateCalls)
 	require.Len(t, invalidator.accounts, 1)
 }
