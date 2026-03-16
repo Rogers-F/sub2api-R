@@ -405,6 +405,8 @@ func (s *RateLimitService) handleAuthError(ctx context.Context, account *Account
 	}
 	key := "account_disabled_auth_error"
 	switch statusCode {
+	case 400:
+		key = "account_disabled_org_disabled"
 	case 402:
 		key = "account_disabled_payment_required"
 	case 403:

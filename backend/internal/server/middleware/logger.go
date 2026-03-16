@@ -18,7 +18,7 @@ func Logger() gin.HandlerFunc {
 		requestID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
 
 		attrs := []any{
-			"request_id", requestID,
+			"client_request_id", requestID,
 			"status", c.Writer.Status(),
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
