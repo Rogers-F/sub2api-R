@@ -75,7 +75,9 @@ func (p *OpenAITokenProvider) GetAccessToken(ctx context.Context, account *Accou
 
 			// 从数据库获取最新账户信息
 			fresh, err := p.accountRepo.GetByID(ctx, account.ID)
-			if err == nil && fresh != nil {
+			if err != nil {
+				slog.Warn("openai_token_db_reload_failed", "account_id", account.ID, "error", err)
+			} else if fresh != nil {
 				account = fresh
 			}
 			expiresAt = account.GetCredentialAsTime("expires_at")
@@ -87,7 +89,7 @@ func (p *OpenAITokenProvider) GetAccessToken(ctx context.Context, account *Accou
 					tokenInfo, err := p.openAIOAuthService.RefreshAccountToken(ctx, account)
 					if err != nil {
 						// 刷新失败时记录警告，但不立即返回错误，尝试使用现有 token
-						slog.Warn("openai_token_refresh_failed", "account_id", account.ID, "error", err)
+						slog.Warn("openai_token_refresh_failed", "account_id", account.ID, "platform", account.Platform, "account_type", account.Type, "error", err)
 						refreshFailed = true // 刷新失败，标记以使用短 TTL
 					} else {
 						newCredentials := p.openAIOAuthService.BuildAccountCredentials(tokenInfo)
@@ -116,7 +118,9 @@ func (p *OpenAITokenProvider) GetAccessToken(ctx context.Context, account *Accou
 			// 从数据库获取最新账户信息
 			if p.accountRepo != nil {
 				fresh, err := p.accountRepo.GetByID(ctx, account.ID)
-				if err == nil && fresh != nil {
+				if err != nil {
+					slog.Warn("openai_token_db_reload_failed", "account_id", account.ID, "error", err)
+				} else if fresh != nil {
 					account = fresh
 				}
 			}
@@ -130,7 +134,7 @@ func (p *OpenAITokenProvider) GetAccessToken(ctx context.Context, account *Accou
 				} else {
 					tokenInfo, err := p.openAIOAuthService.RefreshAccountToken(ctx, account)
 					if err != nil {
-						slog.Warn("openai_token_refresh_failed_degraded", "account_id", account.ID, "error", err)
+						slog.Warn("openai_token_refresh_failed_degraded", "account_id", account.ID, "platform", account.Platform, "account_type", account.Type, "error", err)
 						refreshFailed = true
 					} else {
 						newCredentials := p.openAIOAuthService.BuildAccountCredentials(tokenInfo)

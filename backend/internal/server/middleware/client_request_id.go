@@ -24,6 +24,7 @@ func ClientRequestID() gin.HandlerFunc {
 		}
 
 		id := uuid.New().String()
+		c.Header("X-Client-Request-ID", id)
 		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxkey.ClientRequestID, id))
 		c.Next()
 	}

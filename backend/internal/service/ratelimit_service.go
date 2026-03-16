@@ -163,7 +163,7 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		// 只有当错误信息包含 "organization has been disabled" 时才禁用
 		if strings.Contains(strings.ToLower(upstreamMsg), "organization has been disabled") {
 			msg := "Organization disabled (400): " + upstreamMsg
-			s.handleAuthError(ctx, account, msg)
+			s.handleAuthError(ctx, account, 400, msg)
 			shouldDisable = true
 		}
 		// 其他 400 错误（如参数问题）不处理，不禁用账号
@@ -193,7 +193,7 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		if upstreamMsg != "" {
 			msg = "Authentication failed (401): " + upstreamMsg
 		}
-		s.handleAuthError(ctx, account, msg)
+		s.handleAuthError(ctx, account, 401, msg)
 		shouldDisable = true
 	case 402:
 		// 支付要求：余额不足或计费问题，停止调度
@@ -201,7 +201,7 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		if upstreamMsg != "" {
 			msg = "Payment required (402): " + upstreamMsg
 		}
-		s.handleAuthError(ctx, account, msg)
+		s.handleAuthError(ctx, account, 402, msg)
 		shouldDisable = true
 	case 403:
 		// 禁止访问：停止调度，记录错误
@@ -209,7 +209,7 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		if upstreamMsg != "" {
 			msg = "Access forbidden (403): " + upstreamMsg
 		}
-		s.handleAuthError(ctx, account, msg)
+		s.handleAuthError(ctx, account, 403, msg)
 		shouldDisable = true
 	case 429:
 		s.handle429(ctx, account, headers, responseBody)
@@ -394,23 +394,35 @@ func (s *RateLimitService) GeminiCooldown(ctx context.Context, account *Account)
 	return s.geminiQuotaService.CooldownForAccount(ctx, account)
 }
 
-// handleAuthError 处理认证类错误(401/403)，停止账号调度
-func (s *RateLimitService) handleAuthError(ctx context.Context, account *Account, errorMsg string) {
+// handleAuthError 处理认证/权限/支付类错误，停止账号调度
+// statusCode 用于区分不同错误类型的 log key
+func (s *RateLimitService) handleAuthError(ctx context.Context, account *Account, statusCode int, errorMsg string) {
 	if err := s.accountRepo.SetError(ctx, account.ID, errorMsg); err != nil {
-		slog.Warn("account_set_error_failed", "account_id", account.ID, "error", err)
+		slog.Error("account_set_error_failed",
+			"account_id", account.ID, "platform", account.Platform,
+			"status_code", statusCode, "error", err)
 		return
 	}
-	slog.Warn("account_disabled_auth_error", "account_id", account.ID, "error", errorMsg)
+	key := "account_disabled_auth_error"
+	switch statusCode {
+	case 402:
+		key = "account_disabled_payment_required"
+	case 403:
+		key = "account_disabled_permission_error"
+	}
+	slog.Warn(key,
+		"account_id", account.ID, "platform", account.Platform,
+		"status_code", statusCode, "error", errorMsg)
 }
 
 // handleCustomErrorCode 处理自定义错误码，停止账号调度
 func (s *RateLimitService) handleCustomErrorCode(ctx context.Context, account *Account, statusCode int, errorMsg string) {
 	msg := "Custom error code " + strconv.Itoa(statusCode) + ": " + errorMsg
 	if err := s.accountRepo.SetError(ctx, account.ID, msg); err != nil {
-		slog.Warn("account_set_error_failed", "account_id", account.ID, "status_code", statusCode, "error", err)
+		slog.Error("account_set_error_failed", "account_id", account.ID, "platform", account.Platform, "status_code", statusCode, "error", err)
 		return
 	}
-	slog.Warn("account_disabled_custom_error", "account_id", account.ID, "status_code", statusCode, "error", errorMsg)
+	slog.Warn("account_disabled_custom_error", "account_id", account.ID, "platform", account.Platform, "status_code", statusCode, "error", errorMsg)
 }
 
 // isAnthropicLongContext429 检测 Anthropic 的 "Extra usage required" 429 响应。
@@ -544,7 +556,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		if resetAt := s.calculateOpenAI429ResetTime(headers); resetAt != nil {
 			wt, dt := buildOpenAI429Detail(headers)
 			if err := s.setRateLimitedAndSync(ctx, account, *resetAt, wt, dt); err != nil {
-				slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+				slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 				return
 			}
 			slog.Info("openai_account_rate_limited", "account_id", account.ID, "reset_at", *resetAt)
@@ -557,7 +569,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		_, headerDetail := buildAnthropic429Detail(headers)
 		detail := buildAnthropic429StoredDetail(responseBody, headerDetail)
 		if err := s.setRateLimitedAndSync(ctx, account, result.resetAt, result.windowType, detail); err != nil {
-			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+			slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 			return
 		}
 
@@ -590,7 +602,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 			if resetAt := parseOpenAIRateLimitResetTime(responseBody); resetAt != nil {
 				resetTime := time.Unix(*resetAt, 0)
 				if err := s.setRateLimitedAndSync(ctx, account, resetTime, "", bodyDetail); err != nil {
-					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+					slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 					return
 				}
 				slog.Info("account_rate_limited", "account_id", account.ID, "platform", account.Platform, "reset_at", resetTime, "reset_in", time.Until(resetTime).Truncate(time.Second))
@@ -601,7 +613,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 			if resetAt := ParseGeminiRateLimitResetTime(responseBody); resetAt != nil {
 				resetTime := time.Unix(*resetAt, 0)
 				if err := s.setRateLimitedAndSync(ctx, account, resetTime, "", bodyDetail); err != nil {
-					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+					slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 					return
 				}
 				slog.Info("account_rate_limited", "account_id", account.ID, "platform", account.Platform, "reset_at", resetTime, "reset_in", time.Until(resetTime).Truncate(time.Second))
@@ -613,7 +625,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		resetAt := time.Now().Add(5 * time.Minute)
 		slog.Warn("rate_limit_no_reset_time", "account_id", account.ID, "platform", account.Platform, "using_default", "5m")
 		if err := s.setRateLimitedAndSync(ctx, account, resetAt, "", bodyDetail); err != nil {
-			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+			slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
 	}
@@ -625,7 +637,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 		resetAt := time.Now().Add(5 * time.Minute)
 		detail := buildAnthropic429StoredDetail(responseBody, fmt.Sprintf("anthropic unified reset parse failed (raw=%s)", truncateString(resetTimestamp, 64)))
 		if err := s.setRateLimitedAndSync(ctx, account, resetAt, "", detail); err != nil {
-			slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+			slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		}
 		return
 	}
@@ -635,7 +647,7 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 	// 标记限流状态
 	detail := buildAnthropic429StoredDetail(responseBody, fmt.Sprintf("anthropic unified reset (ts=%d)", ts))
 	if err := s.setRateLimitedAndSync(ctx, account, resetAt, "", detail); err != nil {
-		slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+		slog.Error("rate_limit_set_failed", "account_id", account.ID, "error", err)
 		return
 	}
 

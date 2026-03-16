@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -973,6 +974,13 @@ func sleepAntigravitySingleAccountBackoff(ctx context.Context, retryCount int) b
 }
 
 func (h *GatewayHandler) handleFailoverExhausted(c *gin.Context, failoverErr *service.UpstreamFailoverError, platform string, streamStarted bool) {
+	requestID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
+	slog.Warn("failover_exhausted",
+		"request_id", requestID,
+		"platform", platform,
+		"last_status", failoverErr.StatusCode,
+		"terminal", failoverErr.Terminal)
+
 	statusCode := failoverErr.StatusCode
 	responseBody := failoverErr.ResponseBody
 

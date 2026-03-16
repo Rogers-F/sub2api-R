@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -557,6 +558,13 @@ func (h *GatewayHandler) handleGeminiFailoverExhausted(c *gin.Context, failoverE
 		googleError(c, http.StatusBadGateway, "上游请求失败")
 		return
 	}
+
+	requestID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
+	slog.Warn("failover_exhausted",
+		"request_id", requestID,
+		"platform", "gemini",
+		"last_status", failoverErr.StatusCode,
+		"terminal", failoverErr.Terminal)
 
 	statusCode := failoverErr.StatusCode
 	responseBody := failoverErr.ResponseBody

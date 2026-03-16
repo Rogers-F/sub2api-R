@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"math"
 	mathrand "math/rand"
 	"net/http"
@@ -2733,13 +2734,17 @@ func (s *GeminiMessagesCompatService) handleGeminiUpstreamError(ctx context.Cont
 				log.Printf("[Gemini 429] Account %d rate limited, fallback to 5min", account.ID)
 			}
 		}
-		_ = s.accountRepo.SetRateLimited(ctx, account.ID, ra, "", truncateForLog(body, 2048))
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, ra, "", truncateForLog(body, 2048)); err != nil {
+			slog.Error("gemini_set_rate_limited_failed", "account_id", account.ID, "error", err)
+		}
 		return
 	}
 
 	// 使用解析到的重置时间
 	resetTime := time.Unix(*resetAt, 0)
-	_ = s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", truncateForLog(body, 2048))
+	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetTime, "", truncateForLog(body, 2048)); err != nil {
+		slog.Error("gemini_set_rate_limited_failed", "account_id", account.ID, "error", err)
+	}
 	log.Printf("[Gemini 429] Account %d rate limited until %v (oauth_type=%s, tier=%s)",
 		account.ID, resetTime, oauthType, tierID)
 }

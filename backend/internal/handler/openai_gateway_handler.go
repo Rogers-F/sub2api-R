@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -356,6 +358,13 @@ func (h *OpenAIGatewayHandler) handleConcurrencyError(c *gin.Context, err error,
 }
 
 func (h *OpenAIGatewayHandler) handleFailoverExhausted(c *gin.Context, failoverErr *service.UpstreamFailoverError, streamStarted bool) {
+	requestID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
+	slog.Warn("failover_exhausted",
+		"request_id", requestID,
+		"platform", "openai",
+		"last_status", failoverErr.StatusCode,
+		"terminal", failoverErr.Terminal)
+
 	statusCode := failoverErr.StatusCode
 	responseBody := failoverErr.ResponseBody
 

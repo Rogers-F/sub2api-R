@@ -1,56 +1,33 @@
 package middleware
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/gin-gonic/gin"
 )
 
 // Logger 请求日志中间件
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 开始时间
 		startTime := time.Now()
-
-		// 处理请求
 		c.Next()
+		latency := time.Since(startTime)
 
-		// 结束时间
-		endTime := time.Now()
+		requestID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
 
-		// 执行时间
-		latency := endTime.Sub(startTime)
-
-		// 请求方法
-		method := c.Request.Method
-
-		// 请求路径
-		path := c.Request.URL.Path
-
-		// 状态码
-		statusCode := c.Writer.Status()
-
-		// 客户端IP
-		clientIP := c.ClientIP()
-
-		// 协议版本
-		protocol := c.Request.Proto
-
-		// 日志格式: [时间] 状态码 | 延迟 | IP | 协议 | 方法 路径
-		log.Printf("[GIN] %v | %3d | %13v | %15s | %-6s | %-7s %s",
-			endTime.Format("2006/01/02 - 15:04:05"),
-			statusCode,
-			latency,
-			clientIP,
-			protocol,
-			method,
-			path,
-		)
-
-		// 如果有错误，额外记录错误信息
-		if len(c.Errors) > 0 {
-			log.Printf("[GIN] Errors: %v", c.Errors.String())
+		attrs := []any{
+			"request_id", requestID,
+			"status", c.Writer.Status(),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"latency_ms", latency.Milliseconds(),
+			"client_ip", c.ClientIP(),
 		}
+		if len(c.Errors) > 0 {
+			attrs = append(attrs, "error_count", len(c.Errors), "errors", c.Errors.String())
+		}
+		slog.Info("http_request", attrs...)
 	}
 }
