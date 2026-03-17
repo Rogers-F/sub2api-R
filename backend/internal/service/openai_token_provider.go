@@ -88,9 +88,17 @@ func (p *OpenAITokenProvider) GetAccessToken(ctx context.Context, account *Accou
 				} else {
 					tokenInfo, err := p.openAIOAuthService.RefreshAccountToken(ctx, account)
 					if err != nil {
-						// 刷新失败时记录警告，但不立即返回错误，尝试使用现有 token
 						slog.Warn("openai_token_refresh_failed", "account_id", account.ID, "platform", account.Platform, "account_type", account.Type, "error", err)
-						refreshFailed = true // 刷新失败，标记以使用短 TTL
+						if isNonRetryableRefreshError(err) && p.accountRepo != nil {
+							errMsg := "Token refresh permanently failed: " + err.Error()
+							if setErr := p.accountRepo.SetError(ctx, account.ID, errMsg); setErr != nil {
+								slog.Error("openai_token_set_error_failed", "account_id", account.ID, "error", setErr)
+							} else {
+								slog.Warn("openai_token_permanently_failed", "account_id", account.ID, "error", err)
+							}
+							return "", errors.New(errMsg)
+						}
+						refreshFailed = true
 					} else {
 						newCredentials := p.openAIOAuthService.BuildAccountCredentials(tokenInfo)
 						for k, v := range account.Credentials {
@@ -135,6 +143,15 @@ func (p *OpenAITokenProvider) GetAccessToken(ctx context.Context, account *Accou
 					tokenInfo, err := p.openAIOAuthService.RefreshAccountToken(ctx, account)
 					if err != nil {
 						slog.Warn("openai_token_refresh_failed_degraded", "account_id", account.ID, "platform", account.Platform, "account_type", account.Type, "error", err)
+						if isNonRetryableRefreshError(err) && p.accountRepo != nil {
+							errMsg := "Token refresh permanently failed: " + err.Error()
+							if setErr := p.accountRepo.SetError(ctx, account.ID, errMsg); setErr != nil {
+								slog.Error("openai_token_set_error_failed", "account_id", account.ID, "error", setErr)
+							} else {
+								slog.Warn("openai_token_permanently_failed", "account_id", account.ID, "error", err)
+							}
+							return "", errors.New(errMsg)
+						}
 						refreshFailed = true
 					} else {
 						newCredentials := p.openAIOAuthService.BuildAccountCredentials(tokenInfo)
