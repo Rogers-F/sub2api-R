@@ -227,9 +227,10 @@ watch(
 const load = async () => {
   loading.value = true
   try {
-    const res = await adminAPI.groups.list(1, 1000)
-    // 只显示标准类型且活跃的分组
-    groups.value = res.items.filter((g) => g.subscription_type === 'standard' && g.status === 'active')
+    // 这里必须拿全量活跃分组，不能走分页列表接口，否则公开分组可能被截断，导致部分平台不显示。
+    const allGroups = await adminAPI.groups.getAll()
+    // 只显示标准类型的分组
+    groups.value = allGroups.filter((g) => g.subscription_type === 'standard')
 
     // 初始化配置
     const userAllowedGroups = props.user?.allowed_groups || []
