@@ -7,25 +7,23 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"io"
-	"log"
-	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/gemini"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/googleapi"
+	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // geminiCLITmpDirRegex 用于从 Gemini CLI 请求体中提取 tmp 目录的哈希值
@@ -62,7 +60,7 @@ func (h *GatewayHandler) GeminiV1BetaListModels(c *gin.Context) {
 			c.JSON(http.StatusOK, gemini.FallbackModelsList())
 			return
 		}
-		googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+err.Error())
+		googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts: "+err.Error())
 		return
 	}
 
@@ -99,12 +97,6 @@ func (h *GatewayHandler) GeminiV1BetaGetModel(c *gin.Context) {
 		return
 	}
 
-	// Apply deprecated model aliases
-	if alias, ok := domain.DeprecatedModelAliases[modelName]; ok {
-		log.Printf("Deprecated model alias: %s -> %s", modelName, alias)
-		modelName = alias
-	}
-
 	// 强制 antigravity 模式：返回 antigravity 模型信息
 	if forcePlatform == service.PlatformAntigravity {
 		c.JSON(http.StatusOK, antigravity.FallbackGeminiModel(modelName))
@@ -120,7 +112,7 @@ func (h *GatewayHandler) GeminiV1BetaGetModel(c *gin.Context) {
 			c.JSON(http.StatusOK, gemini.FallbackModel(modelName))
 			return
 		}
-		googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+err.Error())
+		googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts: "+err.Error())
 		return
 	}
 
@@ -150,6 +142,13 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		googleError(c, http.StatusInternalServerError, "User context not found")
 		return
 	}
+	reqLog := requestLogger(
+		c,
+		"handler.gemini_v1beta.models",
+		zap.Int64("user_id", authSubject.UserID),
+		zap.Int64("api_key_id", apiKey.ID),
+		zap.Any("group_id", apiKey.GroupID),
+	)
 
 	// 检查平台：优先使用强制平台（/antigravity 路由，中间件已设置 request.Context），否则要求 gemini 分组
 	if !middleware.HasForcePlatform(c) {
@@ -165,15 +164,10 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		return
 	}
 
-	// Apply deprecated model aliases
-	if alias, ok := domain.DeprecatedModelAliases[modelName]; ok {
-		log.Printf("Deprecated model alias: %s -> %s", modelName, alias)
-		modelName = alias
-	}
-
 	stream := action == "streamGenerateContent"
+	reqLog = reqLog.With(zap.String("model", modelName), zap.String("action", action), zap.Bool("stream", stream))
 
-	body, err := io.ReadAll(c.Request.Body)
+	body, err := pkghttputil.ReadRequestBodyWithPrealloc(c.Request)
 	if err != nil {
 		if maxErr, ok := extractMaxBytesError(err); ok {
 			googleError(c, http.StatusRequestEntityTooLarge, buildBodyTooLargeMessage(maxErr.Limit))
@@ -188,6 +182,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	}
 
 	setOpsRequestContext(c, modelName, stream, body)
+	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(stream, false)))
 
 	// Get subscription (may be nil)
 	subscription, _ := middleware.GetSubscriptionFromContext(c)
@@ -200,8 +195,9 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	canWait, err := geminiConcurrency.IncrementWaitCount(c.Request.Context(), authSubject.UserID, maxWait)
 	waitCounted := false
 	if err != nil {
-		log.Printf("Increment wait count failed: %v", err)
+		reqLog.Warn("gemini.user_wait_counter_increment_failed", zap.Error(err))
 	} else if !canWait {
+		reqLog.Info("gemini.user_wait_queue_full", zap.Int("max_wait", maxWait))
 		googleError(c, http.StatusTooManyRequests, "Too many pending requests, please retry later")
 		return
 	}
@@ -221,6 +217,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	}
 	userReleaseFunc, err := geminiConcurrency.AcquireUserSlotWithWait(c, authSubject.UserID, authSubject.Concurrency, stream, &streamStarted)
 	if err != nil {
+		reqLog.Warn("gemini.user_slot_acquire_failed", zap.Error(err))
 		googleError(c, http.StatusTooManyRequests, err.Error())
 		return
 	}
@@ -236,6 +233,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 
 	// 2) billing eligibility check (after wait)
 	if err := h.billingCacheService.CheckBillingEligibility(c.Request.Context(), apiKey.User, apiKey, apiKey.Group, subscription); err != nil {
+		reqLog.Info("gemini.billing_eligibility_check_failed", zap.Error(err))
 		status, _, message := billingErrorDetails(err)
 		googleError(c, status, message)
 		return
@@ -265,6 +263,14 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	var sessionBoundAccountID int64
 	if sessionKey != "" {
 		sessionBoundAccountID, _ = h.gatewayService.GetCachedSessionAccountID(c.Request.Context(), apiKey.GroupID, sessionKey)
+		if sessionBoundAccountID > 0 {
+			prefetchedGroupID := int64(0)
+			if apiKey.GroupID != nil {
+				prefetchedGroupID = *apiKey.GroupID
+			}
+			ctx := service.WithPrefetchedStickySession(c.Request.Context(), sessionBoundAccountID, prefetchedGroupID, h.metadataBridgeEnabled())
+			c.Request = c.Request.WithContext(ctx)
+		}
 	}
 
 	// === Gemini 内容摘要会话 Fallback 逻辑 ===
@@ -309,8 +315,11 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 					matchedDigestChain = foundMatchedChain
 					sessionBoundAccountID = foundAccountID
 					geminiSessionUUID = foundUUID
-					log.Printf("[Gemini] Digest fallback matched: uuid=%s, accountID=%d, chain=%s",
-						safeShortPrefix(foundUUID, 8), foundAccountID, truncateDigestChain(geminiDigestChain))
+					reqLog.Info("gemini.digest_fallback_matched",
+						zap.String("session_uuid_prefix", safeShortPrefix(foundUUID, 8)),
+						zap.Int64("account_id", foundAccountID),
+						zap.String("digest_chain", truncateDigestChain(geminiDigestChain)),
+					)
 
 					// 关键：如果原 sessionKey 为空，使用 prefixHash + uuid 作为 sessionKey
 					// 这样 SelectAccountWithLoadAwareness 的粘性会话逻辑会优先使用匹配到的账号
@@ -334,60 +343,54 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 	hasBoundSession := sessionKey != "" && sessionBoundAccountID > 0
 	cleanedForUnknownBinding := false
 
-	maxAccountSwitches := h.maxAccountSwitchesGemini
-	switchCount := 0
-	failedAccountIDs := make(map[int64]struct{})
-	var lastFailoverErr *service.UpstreamFailoverError
-	var forceCacheBilling bool // 粘性会话切换时的缓存计费标记
+	fs := NewFailoverState(h.maxAccountSwitchesGemini, hasBoundSession)
 
 	// 单账号分组提前设置 SingleAccountRetry 标记，让 Service 层首次 503 就不设模型限流标记。
 	// 避免单账号分组收到 503 (MODEL_CAPACITY_EXHAUSTED) 时设 29s 限流，导致后续请求连续快速失败。
 	if h.gatewayService.IsSingleAntigravityAccountGroup(c.Request.Context(), apiKey.GroupID) {
-		ctx := context.WithValue(c.Request.Context(), ctxkey.SingleAccountRetry, true)
+		ctx := service.WithSingleAccountRetry(c.Request.Context(), true, h.metadataBridgeEnabled())
 		c.Request = c.Request.WithContext(ctx)
 	}
 
 	for {
-		selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), apiKey.GroupID, sessionKey, modelName, failedAccountIDs, "") // Gemini 不使用会话限制
+		selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), apiKey.GroupID, sessionKey, modelName, fs.FailedAccountIDs, "") // Gemini 不使用会话限制
 		if err != nil {
-			if len(failedAccountIDs) == 0 {
-				googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+err.Error())
+			if len(fs.FailedAccountIDs) == 0 {
+				googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts: "+err.Error())
 				return
 			}
-			// Antigravity 单账号退避重试：分组内没有其他可用账号时，
-			// 对 503 错误不直接返回，而是清除排除列表、等待退避后重试同一个账号。
-			// 谷歌上游 503 (MODEL_CAPACITY_EXHAUSTED) 通常是暂时性的，等几秒就能恢复。
-			if lastFailoverErr != nil && lastFailoverErr.StatusCode == http.StatusServiceUnavailable && len(failedAccountIDs) == 1 && switchCount <= maxAccountSwitches {
-				if sleepAntigravitySingleAccountBackoff(c.Request.Context(), switchCount) {
-					log.Printf("Antigravity single-account 503 retry: clearing failed accounts, retry %d/%d", switchCount, maxAccountSwitches)
-					failedAccountIDs = make(map[int64]struct{})
-					// 设置 context 标记，让 Service 层预检查等待限流过期而非直接切换
-					ctx := context.WithValue(c.Request.Context(), ctxkey.SingleAccountRetry, true)
-					c.Request = c.Request.WithContext(ctx)
-					continue
-				}
+			action := fs.HandleSelectionExhausted(c.Request.Context())
+			switch action {
+			case FailoverContinue:
+				ctx := service.WithSingleAccountRetry(c.Request.Context(), true, h.metadataBridgeEnabled())
+				c.Request = c.Request.WithContext(ctx)
+				continue
+			case FailoverCanceled:
+				return
+			default: // FailoverExhausted
+				h.handleGeminiFailoverExhausted(c, fs.LastFailoverErr)
+				return
 			}
-			var noAccErr *service.NoAvailableAccountsError
-			if errors.As(err, &noAccErr) {
-				googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号："+noAccErr.Message)
-			} else {
-				h.handleGeminiFailoverExhausted(c, lastFailoverErr)
-			}
-			return
 		}
 		account := selection.Account
-		setOpsSelectedAccount(c, account.ID)
+		setOpsSelectedAccount(c, account.ID, account.Platform)
 
 		// 检测账号切换：如果粘性会话绑定的账号与当前选择的账号不同，清除 thoughtSignature
 		// 注意：Gemini 原生 API 的 thoughtSignature 与具体上游账号强相关；跨账号透传会导致 400。
 		if sessionBoundAccountID > 0 && sessionBoundAccountID != account.ID {
-			log.Printf("[Gemini] Sticky session account switched: %d -> %d, cleaning thoughtSignature", sessionBoundAccountID, account.ID)
+			reqLog.Info("gemini.sticky_session_account_switched",
+				zap.Int64("from_account_id", sessionBoundAccountID),
+				zap.Int64("to_account_id", account.ID),
+				zap.Bool("clean_thought_signature", true),
+			)
 			body = service.CleanGeminiNativeThoughtSignatures(body)
 			sessionBoundAccountID = account.ID
 		} else if sessionKey != "" && sessionBoundAccountID == 0 && !cleanedForUnknownBinding && bytes.Contains(body, []byte(`"thoughtSignature"`)) {
 			// 无缓存绑定但请求里已有 thoughtSignature：常见于缓存丢失/TTL 过期后，客户端继续携带旧签名。
 			// 为避免第一次转发就 400，这里做一次确定性清理，让新账号重新生成签名链路。
-			log.Printf("[Gemini] Sticky session binding missing, cleaning thoughtSignature proactively")
+			reqLog.Info("gemini.sticky_session_binding_missing",
+				zap.Bool("clean_thought_signature", true),
+			)
 			body = service.CleanGeminiNativeThoughtSignatures(body)
 			cleanedForUnknownBinding = true
 			sessionBoundAccountID = account.ID
@@ -400,15 +403,18 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		accountReleaseFunc := selection.ReleaseFunc
 		if !selection.Acquired {
 			if selection.WaitPlan == nil {
-				googleError(c, http.StatusServiceUnavailable, "无可用 Gemini 账号")
+				googleError(c, http.StatusServiceUnavailable, "No available Gemini accounts")
 				return
 			}
 			accountWaitCounted := false
 			canWait, err := geminiConcurrency.IncrementAccountWaitCount(c.Request.Context(), account.ID, selection.WaitPlan.MaxWaiting)
 			if err != nil {
-				log.Printf("Increment account wait count failed: %v", err)
+				reqLog.Warn("gemini.account_wait_counter_increment_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 			} else if !canWait {
-				log.Printf("Account wait queue full: account=%d", account.ID)
+				reqLog.Info("gemini.account_wait_queue_full",
+					zap.Int64("account_id", account.ID),
+					zap.Int("max_waiting", selection.WaitPlan.MaxWaiting),
+				)
 				googleError(c, http.StatusTooManyRequests, "Too many pending requests, please retry later")
 				return
 			}
@@ -430,6 +436,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 				&streamStarted,
 			)
 			if err != nil {
+				reqLog.Warn("gemini.account_slot_acquire_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 				googleError(c, http.StatusTooManyRequests, err.Error())
 				return
 			}
@@ -438,7 +445,7 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 				accountWaitCounted = false
 			}
 			if err := h.gatewayService.BindStickySession(c.Request.Context(), apiKey.GroupID, sessionKey, account.ID); err != nil {
-				log.Printf("Bind sticky session failed: %v", err)
+				reqLog.Warn("gemini.bind_sticky_session_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 			}
 		}
 		// 账号槽位/等待计数需要在超时或断开时安全回收
@@ -447,8 +454,8 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		// 5) forward (根据平台分流)
 		var result *service.ForwardResult
 		requestCtx := c.Request.Context()
-		if switchCount > 0 {
-			requestCtx = context.WithValue(requestCtx, ctxkey.AccountSwitchCount, switchCount)
+		if fs.SwitchCount > 0 {
+			requestCtx = service.WithAccountSwitchCount(requestCtx, fs.SwitchCount, h.metadataBridgeEnabled())
 		}
 		if account.Platform == service.PlatformAntigravity && account.Type != service.AccountTypeAPIKey {
 			result, err = h.antigravityGatewayService.ForwardGemini(requestCtx, c, account, modelName, action, stream, body, hasBoundSession)
@@ -461,32 +468,19 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		if err != nil {
 			var failoverErr *service.UpstreamFailoverError
 			if errors.As(err, &failoverErr) {
-				failedAccountIDs[account.ID] = struct{}{}
-				if needForceCacheBilling(hasBoundSession, failoverErr) {
-					forceCacheBilling = true
-				}
-				// 终态错误：上游明确表示无可用账号，立即停止 failover
-				if failoverErr.Terminal {
-					h.handleGeminiFailoverExhausted(c, failoverErr)
+				failoverAction := fs.HandleFailoverError(c.Request.Context(), h.gatewayService, account.ID, account.Platform, failoverErr)
+				switch failoverAction {
+				case FailoverContinue:
+					continue
+				case FailoverExhausted:
+					h.handleGeminiFailoverExhausted(c, fs.LastFailoverErr)
+					return
+				case FailoverCanceled:
 					return
 				}
-				if switchCount >= maxAccountSwitches {
-					lastFailoverErr = failoverErr
-					h.handleGeminiFailoverExhausted(c, lastFailoverErr)
-					return
-				}
-				lastFailoverErr = failoverErr
-				switchCount++
-				log.Printf("Gemini account %d: upstream error %d, switching account %d/%d", account.ID, failoverErr.StatusCode, switchCount, maxAccountSwitches)
-				if account.Platform == service.PlatformAntigravity {
-					if !sleepFailoverDelay(c.Request.Context(), switchCount) {
-						return
-					}
-				}
-				continue
 			}
 			// ForwardNative already wrote the response
-			log.Printf("Gemini native forward failed: %v", err)
+			reqLog.Error("gemini.forward_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 			return
 		}
 
@@ -505,31 +499,45 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 				account.ID,
 				matchedDigestChain,
 			); err != nil {
-				log.Printf("[Gemini] Failed to save digest session: %v", err)
+				reqLog.Warn("gemini.digest_session_save_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 			}
 		}
 
-		// 6) record usage async (Gemini 使用长上下文双倍计费)
-		go func(result *service.ForwardResult, usedAccount *service.Account, ua, ip string, fcb bool) {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
+		// 使用量记录通过有界 worker 池提交，避免请求热路径创建无界 goroutine。
+		requestPayloadHash := service.HashUsageRequestPayload(body)
+		inboundEndpoint := GetInboundEndpoint(c)
+		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
+		h.submitUsageRecordTask(func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsageWithLongContext(ctx, &service.RecordUsageLongContextInput{
 				Result:                result,
 				APIKey:                apiKey,
 				User:                  apiKey.User,
-				Account:               usedAccount,
+				Account:               account,
 				Subscription:          subscription,
-				UserAgent:             ua,
-				IPAddress:             ip,
+				InboundEndpoint:       inboundEndpoint,
+				UpstreamEndpoint:      upstreamEndpoint,
+				UserAgent:             userAgent,
+				IPAddress:             clientIP,
+				RequestPayloadHash:    requestPayloadHash,
 				LongContextThreshold:  200000, // Gemini 200K 阈值
 				LongContextMultiplier: 2.0,    // 超出部分双倍计费
-				ForceCacheBilling:     fcb,
+				ForceCacheBilling:     fs.ForceCacheBilling,
 				APIKeyService:         h.apiKeyService,
 			}); err != nil {
-				log.Printf("Record usage failed: %v", err)
+				logger.L().With(
+					zap.String("component", "handler.gemini_v1beta.models"),
+					zap.Int64("user_id", authSubject.UserID),
+					zap.Int64("api_key_id", apiKey.ID),
+					zap.Any("group_id", apiKey.GroupID),
+					zap.String("model", modelName),
+					zap.Int64("account_id", account.ID),
+				).Error("gemini.record_usage_failed", zap.Error(err))
 			}
-		}(result, account, userAgent, clientIP, forceCacheBilling)
+		})
+		reqLog.Debug("gemini.request_completed",
+			zap.Int64("account_id", account.ID),
+			zap.Int("switch_count", fs.SwitchCount),
+		)
 		return
 	}
 }
@@ -555,16 +563,9 @@ func parseGeminiModelAction(rest string) (model string, action string, err error
 
 func (h *GatewayHandler) handleGeminiFailoverExhausted(c *gin.Context, failoverErr *service.UpstreamFailoverError) {
 	if failoverErr == nil {
-		googleError(c, http.StatusBadGateway, "上游请求失败")
+		googleError(c, http.StatusBadGateway, "Upstream request failed")
 		return
 	}
-
-	requestID, _ := c.Request.Context().Value(ctxkey.ClientRequestID).(string)
-	slog.Warn("failover_exhausted",
-		"request_id", requestID,
-		"platform", "gemini",
-		"last_status", failoverErr.StatusCode,
-		"terminal", failoverErr.Terminal)
 
 	statusCode := failoverErr.StatusCode
 	responseBody := failoverErr.ResponseBody
@@ -593,30 +594,29 @@ func (h *GatewayHandler) handleGeminiFailoverExhausted(c *gin.Context, failoverE
 		}
 	}
 
+	// 记录原始上游状态码，以便 ops 错误日志捕获真实的上游错误
+	upstreamMsg := service.ExtractUpstreamErrorMessage(responseBody)
+	service.SetOpsUpstreamError(c, statusCode, upstreamMsg, "")
+
 	// 使用默认的错误映射
 	status, message := mapGeminiUpstreamError(statusCode)
-	if len(responseBody) > 0 {
-		if upstreamMsg := service.ExtractUpstreamErrorMessage(responseBody); upstreamMsg != "" {
-			message = message + "：" + upstreamMsg
-		}
-	}
 	googleError(c, status, message)
 }
 
 func mapGeminiUpstreamError(statusCode int) (int, string) {
 	switch statusCode {
 	case 401:
-		return http.StatusBadGateway, "上游认证失败，请联系管理员"
+		return http.StatusBadGateway, "Upstream authentication failed, please contact administrator"
 	case 403:
-		return http.StatusBadGateway, "上游访问被拒绝，请联系管理员"
+		return http.StatusBadGateway, "Upstream access forbidden, please contact administrator"
 	case 429:
-		return http.StatusTooManyRequests, "上游触发限流，请稍后重试"
+		return http.StatusTooManyRequests, "Upstream rate limit exceeded, please retry later"
 	case 529:
-		return http.StatusServiceUnavailable, "上游服务过载，请稍后重试"
+		return http.StatusServiceUnavailable, "Upstream service overloaded, please retry later"
 	case 500, 502, 503, 504:
-		return http.StatusBadGateway, "上游服务暂时不可用"
+		return http.StatusBadGateway, "Upstream service temporarily unavailable"
 	default:
-		return http.StatusBadGateway, "上游请求失败"
+		return http.StatusBadGateway, "Upstream request failed"
 	}
 }
 

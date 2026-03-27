@@ -21,9 +21,10 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -85,7 +86,6 @@ var (
 )
 
 const (
-	antigravityBillingModelEnv    = "GATEWAY_ANTIGRAVITY_BILL_WITH_MAPPED_MODEL"
 	antigravityForwardBaseURLEnv  = "GATEWAY_ANTIGRAVITY_FORWARD_BASE_URL"
 	antigravityFallbackSecondsEnv = "GATEWAY_ANTIGRAVITY_FALLBACK_COOLDOWN_SECONDS"
 )
@@ -184,12 +184,32 @@ type smartRetryResult struct {
 func (s *AntigravityGatewayService) handleSmartRetry(p antigravityRetryLoopParams, resp *http.Response, respBody []byte, baseURL string, urlIdx int, availableURLs []string) *smartRetryResult {
 	// "Resource has been exhausted" 是 URL 级别限流，切换 URL（仅 429）
 	if resp.StatusCode == http.StatusTooManyRequests && isURLLevelRateLimit(respBody) && urlIdx < len(availableURLs)-1 {
-		log.Printf("%s URL fallback (429): %s -> %s", p.prefix, baseURL, availableURLs[urlIdx+1])
+		logger.LegacyPrintf("service.antigravity_gateway", "%s URL fallback (429): %s -> %s", p.prefix, baseURL, availableURLs[urlIdx+1])
 		return &smartRetryResult{action: smartRetryActionContinueURL}
+	}
+
+	category := antigravity429Unknown
+	if resp.StatusCode == http.StatusTooManyRequests {
+		category = classifyAntigravity429(respBody)
 	}
 
 	// 判断是否触发智能重试
 	shouldSmartRetry, shouldRateLimitModel, waitDuration, modelName, isModelCapacityExhausted := shouldTriggerAntigravitySmartRetry(p.account, respBody)
+
+	// AI Credits 超量请求：
+	// 仅在上游明确返回免费配额耗尽时才允许切换到 credits。
+	if resp.StatusCode == http.StatusTooManyRequests &&
+		category == antigravity429QuotaExhausted &&
+		p.account.IsOveragesEnabled() &&
+		!p.account.isCreditsExhausted() {
+		result := s.attemptCreditsOveragesRetry(p, baseURL, modelName, waitDuration, resp.StatusCode, respBody)
+		if result.handled && result.resp != nil {
+			return &smartRetryResult{
+				action: smartRetryActionBreakWithResp,
+				resp:   result.resp,
+			}
+		}
+	}
 
 	// 情况1: retryDelay >= 阈值，限流模型并切换账号
 	if shouldRateLimitModel {
@@ -204,13 +224,13 @@ func (s *AntigravityGatewayService) handleSmartRetry(p antigravityRetryLoopParam
 		if rateLimitDuration <= 0 {
 			rateLimitDuration = antigravityDefaultRateLimitDuration
 		}
-		log.Printf("%s status=%d oauth_long_delay model=%s account=%d upstream_retry_delay=%v body=%s (model rate limit, switch account)",
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d oauth_long_delay model=%s account=%d upstream_retry_delay=%v body=%s (model rate limit, switch account)",
 			p.prefix, resp.StatusCode, modelName, p.account.ID, rateLimitDuration, truncateForLog(respBody, 200))
 
 		resetAt := time.Now().Add(rateLimitDuration)
 		if !setModelRateLimitByModelName(p.ctx, p.accountRepo, p.account.ID, modelName, p.prefix, resp.StatusCode, resetAt, false) {
 			p.handleError(p.ctx, p.prefix, p.account, resp.StatusCode, resp.Header, respBody, p.requestedModel, p.groupID, p.sessionHash, p.isStickySession)
-			log.Printf("%s status=%d rate_limited account=%d (no model mapping)", p.prefix, resp.StatusCode, p.account.ID)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d rate_limited account=%d (no model mapping)", p.prefix, resp.StatusCode, p.account.ID)
 		} else {
 			s.updateAccountModelRateLimitInCache(p.ctx, p.account, modelName, resetAt)
 		}
@@ -273,7 +293,7 @@ func (s *AntigravityGatewayService) handleSmartRetry(p antigravityRetryLoopParam
 			// 智能重试：创建新请求
 			retryReq, err := antigravity.NewAPIRequestWithURL(p.ctx, baseURL, p.action, p.accessToken, p.body)
 			if err != nil {
-				log.Printf("%s status=smart_retry_request_build_failed error=%v", p.prefix, err)
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=smart_retry_request_build_failed error=%v", p.prefix, err)
 				p.handleError(p.ctx, p.prefix, p.account, resp.StatusCode, resp.Header, respBody, p.requestedModel, p.groupID, p.sessionHash, p.isStickySession)
 				return &smartRetryResult{
 					action: smartRetryActionBreakWithResp,
@@ -356,7 +376,7 @@ func (s *AntigravityGatewayService) handleSmartRetry(p antigravityRetryLoopParam
 		// 单账号 503 退避重试模式：智能重试耗尽后不设限流、不切换账号，
 		// 直接返回 503 让 Handler 层的单账号退避循环做最终处理。
 		if resp.StatusCode == http.StatusServiceUnavailable && isSingleAccountRetry(p.ctx) {
-			log.Printf("%s status=%d smart_retry_exhausted_single_account attempts=%d model=%s account=%d body=%s (return 503 directly)",
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d smart_retry_exhausted_single_account attempts=%d model=%s account=%d body=%s (return 503 directly)",
 				p.prefix, resp.StatusCode, antigravitySmartRetryMaxAttempts, modelName, p.account.ID, truncateForLog(retryBody, 200))
 			return &smartRetryResult{
 				action: smartRetryActionBreakWithResp,
@@ -374,9 +394,9 @@ func (s *AntigravityGatewayService) handleSmartRetry(p antigravityRetryLoopParam
 		resetAt := time.Now().Add(rateLimitDuration)
 		if p.accountRepo != nil && modelName != "" {
 			if err := p.accountRepo.SetModelRateLimit(p.ctx, p.account.ID, modelName, resetAt); err != nil {
-				log.Printf("%s status=%d model_rate_limit_failed model=%s error=%v", p.prefix, resp.StatusCode, modelName, err)
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limit_failed model=%s error=%v", p.prefix, resp.StatusCode, modelName, err)
 			} else {
-				log.Printf("%s status=%d model_rate_limited_after_smart_retry model=%s account=%d reset_in=%v",
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limited_after_smart_retry model=%s account=%d reset_in=%v",
 					p.prefix, resp.StatusCode, modelName, p.account.ID, rateLimitDuration)
 				s.updateAccountModelRateLimitInCache(p.ctx, p.account, modelName, resetAt)
 			}
@@ -431,7 +451,7 @@ func (s *AntigravityGatewayService) handleSingleAccountRetryInPlace(
 		waitDuration = antigravitySmartRetryMinWait
 	}
 
-	log.Printf("%s status=%d single_account_503_retry_in_place model=%s account=%d upstream_retry_delay=%v (retrying in-place instead of rate-limiting)",
+	logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d single_account_503_retry_in_place model=%s account=%d upstream_retry_delay=%v (retrying in-place instead of rate-limiting)",
 		p.prefix, resp.StatusCode, modelName, p.account.ID, waitDuration)
 
 	var lastRetryResp *http.Response
@@ -443,21 +463,21 @@ func (s *AntigravityGatewayService) handleSingleAccountRetryInPlace(
 		if totalWaited+waitDuration > antigravitySingleAccountSmartRetryTotalMaxWait {
 			remaining := antigravitySingleAccountSmartRetryTotalMaxWait - totalWaited
 			if remaining <= 0 {
-				log.Printf("%s single_account_503_retry: total_wait_exceeded total=%v max=%v, giving up",
+				logger.LegacyPrintf("service.antigravity_gateway", "%s single_account_503_retry: total_wait_exceeded total=%v max=%v, giving up",
 					p.prefix, totalWaited, antigravitySingleAccountSmartRetryTotalMaxWait)
 				break
 			}
 			waitDuration = remaining
 		}
 
-		log.Printf("%s status=%d single_account_503_retry attempt=%d/%d delay=%v total_waited=%v model=%s account=%d",
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d single_account_503_retry attempt=%d/%d delay=%v total_waited=%v model=%s account=%d",
 			p.prefix, resp.StatusCode, attempt, antigravitySingleAccountSmartRetryMaxAttempts, waitDuration, totalWaited, modelName, p.account.ID)
 
 		timer := time.NewTimer(waitDuration)
 		select {
 		case <-p.ctx.Done():
 			timer.Stop()
-			log.Printf("%s status=context_canceled_during_single_account_retry", p.prefix)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=context_canceled_during_single_account_retry", p.prefix)
 			return &smartRetryResult{action: smartRetryActionBreakWithResp, err: p.ctx.Err()}
 		case <-timer.C:
 		}
@@ -466,13 +486,13 @@ func (s *AntigravityGatewayService) handleSingleAccountRetryInPlace(
 		// 创建新请求
 		retryReq, err := antigravity.NewAPIRequestWithURL(p.ctx, baseURL, p.action, p.accessToken, p.body)
 		if err != nil {
-			log.Printf("%s single_account_503_retry: request_build_failed error=%v", p.prefix, err)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s single_account_503_retry: request_build_failed error=%v", p.prefix, err)
 			break
 		}
 
 		retryResp, retryErr := p.httpUpstream.Do(retryReq, p.proxyURL, p.account.ID, p.account.Concurrency)
 		if retryErr == nil && retryResp != nil && retryResp.StatusCode != http.StatusTooManyRequests && retryResp.StatusCode != http.StatusServiceUnavailable {
-			log.Printf("%s status=%d single_account_503_retry_success attempt=%d/%d total_waited=%v",
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d single_account_503_retry_success attempt=%d/%d total_waited=%v",
 				p.prefix, retryResp.StatusCode, attempt, antigravitySingleAccountSmartRetryMaxAttempts, totalWaited)
 			// 关闭之前的响应
 			if lastRetryResp != nil {
@@ -483,7 +503,7 @@ func (s *AntigravityGatewayService) handleSingleAccountRetryInPlace(
 
 		// 网络错误时继续重试
 		if retryErr != nil || retryResp == nil {
-			log.Printf("%s single_account_503_retry: network_error attempt=%d/%d error=%v",
+			logger.LegacyPrintf("service.antigravity_gateway", "%s single_account_503_retry: network_error attempt=%d/%d error=%v",
 				p.prefix, attempt, antigravitySingleAccountSmartRetryMaxAttempts, retryErr)
 			continue
 		}
@@ -517,7 +537,7 @@ func (s *AntigravityGatewayService) handleSingleAccountRetryInPlace(
 	if retryBody == nil {
 		retryBody = respBody
 	}
-	log.Printf("%s status=%d single_account_503_retry_exhausted attempts=%d total_waited=%v model=%s account=%d body=%s (return 503 directly)",
+	logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d single_account_503_retry_exhausted attempts=%d total_waited=%v model=%s account=%d body=%s (return 503 directly)",
 		p.prefix, resp.StatusCode, antigravitySingleAccountSmartRetryMaxAttempts, totalWaited, modelName, p.account.ID, truncateForLog(retryBody, 200))
 
 	return &smartRetryResult{
@@ -532,18 +552,35 @@ func (s *AntigravityGatewayService) handleSingleAccountRetryInPlace(
 
 // antigravityRetryLoop 执行带 URL fallback 的重试循环
 func (s *AntigravityGatewayService) antigravityRetryLoop(p antigravityRetryLoopParams) (*antigravityRetryLoopResult, error) {
+	// 预检查：模型限流 + overages 启用 + 积分未耗尽 → 直接注入 AI Credits
+	overagesInjected := false
+	if p.requestedModel != "" && p.account.Platform == PlatformAntigravity &&
+		p.account.IsOveragesEnabled() && !p.account.isCreditsExhausted() &&
+		p.account.isModelRateLimitedWithContext(p.ctx, p.requestedModel) {
+		if creditsBody := injectEnabledCreditTypes(p.body); creditsBody != nil {
+			p.body = creditsBody
+			overagesInjected = true
+			logger.LegacyPrintf("service.antigravity_gateway", "%s pre_check: model_rate_limited_credits_inject model=%s account=%d (injecting enabledCreditTypes)",
+				p.prefix, p.requestedModel, p.account.ID)
+		}
+	}
+
 	// 预检查：如果账号已限流，直接返回切换信号
 	if p.requestedModel != "" {
 		if remaining := p.account.GetRateLimitRemainingTimeWithContext(p.ctx, p.requestedModel); remaining > 0 {
-			// 单账号 503 退避重试模式：跳过限流预检查，直接发请求。
-			// 首次请求设的限流是为了多账号调度器跳过该账号，在单账号模式下无意义。
-			// 如果上游确实还不可用，handleSmartRetry → handleSingleAccountRetryInPlace
-			// 会在 Service 层原地等待+重试，不需要在预检查这里等。
-			if isSingleAccountRetry(p.ctx) {
-				log.Printf("%s pre_check: single_account_retry skipping rate_limit remaining=%v model=%s account=%d (will retry in-place if 503)",
+			// 已注入积分的请求不再受普通模型限流预检查阻断。
+			if overagesInjected {
+				logger.LegacyPrintf("service.antigravity_gateway", "%s pre_check: credits_injected_ignore_rate_limit remaining=%v model=%s account=%d",
+					p.prefix, remaining.Truncate(time.Millisecond), p.requestedModel, p.account.ID)
+			} else if isSingleAccountRetry(p.ctx) {
+				// 单账号 503 退避重试模式：跳过限流预检查，直接发请求。
+				// 首次请求设的限流是为了多账号调度器跳过该账号，在单账号模式下无意义。
+				// 如果上游确实还不可用，handleSmartRetry → handleSingleAccountRetryInPlace
+				// 会在 Service 层原地等待+重试，不需要在预检查这里等。
+				logger.LegacyPrintf("service.antigravity_gateway", "%s pre_check: single_account_retry skipping rate_limit remaining=%v model=%s account=%d (will retry in-place if 503)",
 					p.prefix, remaining.Truncate(time.Millisecond), p.requestedModel, p.account.ID)
 			} else {
-				log.Printf("%s pre_check: rate_limit_switch remaining=%v model=%s account=%d",
+				logger.LegacyPrintf("service.antigravity_gateway", "%s pre_check: rate_limit_switch remaining=%v model=%s account=%d",
 					p.prefix, remaining.Truncate(time.Millisecond), p.requestedModel, p.account.ID)
 				return nil, &AntigravityAccountSwitchError{
 					OriginalAccountID: p.account.ID,
@@ -580,7 +617,7 @@ urlFallbackLoop:
 		for attempt := 1; attempt <= antigravityMaxRetries; attempt++ {
 			select {
 			case <-p.ctx.Done():
-				log.Printf("%s status=context_canceled error=%v", p.prefix, p.ctx.Err())
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=context_canceled error=%v", p.prefix, p.ctx.Err())
 				return nil, p.ctx.Err()
 			default:
 			}
@@ -606,22 +643,23 @@ urlFallbackLoop:
 					AccountID:          p.account.ID,
 					AccountName:        p.account.Name,
 					UpstreamStatusCode: 0,
+					UpstreamURL:        safeUpstreamURL(upstreamReq.URL.String()),
 					Kind:               "request_error",
 					Message:            safeErr,
 				})
 				if shouldAntigravityFallbackToNextURL(err, 0) && urlIdx < len(availableURLs)-1 {
-					log.Printf("%s URL fallback (connection error): %s -> %s", p.prefix, baseURL, availableURLs[urlIdx+1])
+					logger.LegacyPrintf("service.antigravity_gateway", "%s URL fallback (connection error): %s -> %s", p.prefix, baseURL, availableURLs[urlIdx+1])
 					continue urlFallbackLoop
 				}
 				if attempt < antigravityMaxRetries {
-					log.Printf("%s status=request_failed retry=%d/%d error=%v", p.prefix, attempt, antigravityMaxRetries, err)
+					logger.LegacyPrintf("service.antigravity_gateway", "%s status=request_failed retry=%d/%d error=%v", p.prefix, attempt, antigravityMaxRetries, err)
 					if !sleepAntigravityBackoffWithContext(p.ctx, attempt) {
-						log.Printf("%s status=context_canceled_during_backoff", p.prefix)
+						logger.LegacyPrintf("service.antigravity_gateway", "%s status=context_canceled_during_backoff", p.prefix)
 						return nil, p.ctx.Err()
 					}
 					continue
 				}
-				log.Printf("%s status=request_failed retries_exhausted error=%v", p.prefix, err)
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=request_failed retries_exhausted error=%v", p.prefix, err)
 				setOpsUpstreamError(p.c, 0, safeErr, "")
 				return nil, fmt.Errorf("upstream request failed after retries: %w", err)
 			}
@@ -630,6 +668,15 @@ urlFallbackLoop:
 			if resp.StatusCode >= 400 {
 				respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 				_ = resp.Body.Close()
+
+				if overagesInjected && shouldMarkCreditsExhausted(resp, respBody, nil) {
+					modelKey := resolveCreditsOveragesModelKey(p.ctx, p.account, "", p.requestedModel)
+					s.handleCreditsRetryFailure(p.ctx, p.prefix, modelKey, p.account, &http.Response{
+						StatusCode: resp.StatusCode,
+						Header:     resp.Header.Clone(),
+						Body:       io.NopCloser(bytes.NewReader(respBody)),
+					}, nil)
+				}
 
 				// ★ 统一入口：自定义错误码 + 临时不可调度
 				if handled, outStatus, policyErr := s.applyErrorPolicy(p, resp.StatusCode, resp.Header, respBody); handled {
@@ -674,13 +721,14 @@ urlFallbackLoop:
 							AccountName:        p.account.Name,
 							UpstreamStatusCode: resp.StatusCode,
 							UpstreamRequestID:  resp.Header.Get("x-request-id"),
+							UpstreamURL:        safeUpstreamURL(upstreamReq.URL.String()),
 							Kind:               "retry",
 							Message:            upstreamMsg,
 							Detail:             getUpstreamDetail(respBody),
 						})
-						log.Printf("%s status=%d retry=%d/%d body=%s", p.prefix, resp.StatusCode, attempt, antigravityMaxRetries, truncateForLog(respBody, 200))
+						logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d retry=%d/%d body=%s", p.prefix, resp.StatusCode, attempt, antigravityMaxRetries, truncateForLog(respBody, 200))
 						if !sleepAntigravityBackoffWithContext(p.ctx, attempt) {
-							log.Printf("%s status=context_canceled_during_backoff", p.prefix)
+							logger.LegacyPrintf("service.antigravity_gateway", "%s status=context_canceled_during_backoff", p.prefix)
 							return nil, p.ctx.Err()
 						}
 						continue
@@ -688,7 +736,7 @@ urlFallbackLoop:
 
 					// 重试用尽，标记账户限流
 					p.handleError(p.ctx, p.prefix, p.account, resp.StatusCode, resp.Header, respBody, p.requestedModel, p.groupID, p.sessionHash, p.isStickySession)
-					log.Printf("%s status=%d rate_limited base_url=%s body=%s", p.prefix, resp.StatusCode, baseURL, truncateForLog(respBody, 200))
+					logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d rate_limited base_url=%s body=%s", p.prefix, resp.StatusCode, baseURL, truncateForLog(respBody, 200))
 					resp = &http.Response{
 						StatusCode: resp.StatusCode,
 						Header:     resp.Header.Clone(),
@@ -708,13 +756,14 @@ urlFallbackLoop:
 							AccountName:        p.account.Name,
 							UpstreamStatusCode: resp.StatusCode,
 							UpstreamRequestID:  resp.Header.Get("x-request-id"),
+							UpstreamURL:        safeUpstreamURL(upstreamReq.URL.String()),
 							Kind:               "retry",
 							Message:            upstreamMsg,
 							Detail:             getUpstreamDetail(respBody),
 						})
-						log.Printf("%s status=%d retry=%d/%d body=%s", p.prefix, resp.StatusCode, attempt, antigravityMaxRetries, truncateForLog(respBody, 500))
+						logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d retry=%d/%d body=%s", p.prefix, resp.StatusCode, attempt, antigravityMaxRetries, truncateForLog(respBody, 500))
 						if !sleepAntigravityBackoffWithContext(p.ctx, attempt) {
-							log.Printf("%s status=context_canceled_during_backoff", p.prefix)
+							logger.LegacyPrintf("service.antigravity_gateway", "%s status=context_canceled_during_backoff", p.prefix)
 							return nil, p.ctx.Err()
 						}
 						continue
@@ -884,7 +933,7 @@ func (s *AntigravityGatewayService) applyErrorPolicy(p antigravityRetryLoopParam
 	case ErrorPolicyTempUnscheduled:
 		slog.Info("temp_unschedulable_matched",
 			"prefix", p.prefix, "status_code", statusCode, "account_id", p.account.ID)
-		return true, statusCode, &AntigravityAccountSwitchError{OriginalAccountID: p.account.ID, IsStickySession: p.isStickySession}
+		return true, statusCode, &AntigravityAccountSwitchError{OriginalAccountID: p.account.ID, RateLimitedModel: p.requestedModel, IsStickySession: p.isStickySession}
 	}
 	return false, statusCode, nil
 }
@@ -955,8 +1004,9 @@ type TestConnectionResult struct {
 	MappedModel string // 实际使用的模型
 }
 
-// TestConnection 测试 Antigravity 账号连接（非流式，无重试、无计费）
-// 支持 Claude 和 Gemini 两种协议，根据 modelID 前缀自动选择
+// TestConnection 测试 Antigravity 账号连接。
+// 复用 antigravityRetryLoop 的完整重试 / credits overages / 智能重试逻辑，
+// 与真实调度行为一致。差异：不做账号切换（测试指定账号）、不记录 ops 错误。
 func (s *AntigravityGatewayService) TestConnection(ctx context.Context, account *Account, modelID string) (*TestConnectionResult, error) {
 
 	// 获取 token
@@ -980,10 +1030,8 @@ func (s *AntigravityGatewayService) TestConnection(ctx context.Context, account 
 	// 构建请求体
 	var requestBody []byte
 	if strings.HasPrefix(modelID, "gemini-") {
-		// Gemini 模型：直接使用 Gemini 格式
 		requestBody, err = s.buildGeminiTestRequest(projectID, mappedModel)
 	} else {
-		// Claude 模型：使用协议转换
 		requestBody, err = s.buildClaudeTestRequest(projectID, mappedModel)
 	}
 	if err != nil {
@@ -996,64 +1044,63 @@ func (s *AntigravityGatewayService) TestConnection(ctx context.Context, account 
 		proxyURL = account.Proxy.URL()
 	}
 
-	baseURL := resolveAntigravityForwardBaseURL()
-	if baseURL == "" {
-		return nil, errors.New("no antigravity forward base url configured")
-	}
-	availableURLs := []string{baseURL}
-
-	var lastErr error
-	for urlIdx, baseURL := range availableURLs {
-		// 构建 HTTP 请求（总是使用流式 endpoint，与官方客户端一致）
-		req, err := antigravity.NewAPIRequestWithURL(ctx, baseURL, "streamGenerateContent", accessToken, requestBody)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		// 调试日志：Test 请求信息
-		log.Printf("[antigravity-Test] account=%s request_size=%d url=%s", account.Name, len(requestBody), req.URL.String())
-
-		// 发送请求
-		resp, err := s.httpUpstream.Do(req, proxyURL, account.ID, account.Concurrency)
-		if err != nil {
-			lastErr = fmt.Errorf("请求失败: %w", err)
-			if shouldAntigravityFallbackToNextURL(err, 0) && urlIdx < len(availableURLs)-1 {
-				log.Printf("[antigravity-Test] URL fallback: %s -> %s", baseURL, availableURLs[urlIdx+1])
-				continue
-			}
-			return nil, lastErr
-		}
-
-		// 读取响应
-		respBody, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-		_ = resp.Body.Close() // 立即关闭，避免循环内 defer 导致的资源泄漏
-		if err != nil {
-			return nil, fmt.Errorf("读取响应失败: %w", err)
-		}
-
-		// 检查是否需要 URL 降级
-		if shouldAntigravityFallbackToNextURL(nil, resp.StatusCode) && urlIdx < len(availableURLs)-1 {
-			log.Printf("[antigravity-Test] URL fallback (HTTP %d): %s -> %s", resp.StatusCode, baseURL, availableURLs[urlIdx+1])
-			continue
-		}
-
-		if resp.StatusCode >= 400 {
-			return nil, fmt.Errorf("API 返回 %d: %s", resp.StatusCode, string(respBody))
-		}
-
-		// 解析流式响应，提取文本
-		text := extractTextFromSSEResponse(respBody)
-
-		// 标记成功的 URL，下次优先使用
-		antigravity.DefaultURLAvailability.MarkSuccess(baseURL)
-		return &TestConnectionResult{
-			Text:        text,
-			MappedModel: mappedModel,
-		}, nil
+	// 复用 antigravityRetryLoop：完整的重试 / credits overages / 智能重试
+	prefix := fmt.Sprintf("[antigravity-Test] account=%d(%s)", account.ID, account.Name)
+	p := antigravityRetryLoopParams{
+		ctx:            ctx,
+		prefix:         prefix,
+		account:        account,
+		proxyURL:       proxyURL,
+		accessToken:    accessToken,
+		action:         "streamGenerateContent",
+		body:           requestBody,
+		c:              nil, // 无 gin.Context → 跳过 ops 追踪
+		httpUpstream:   s.httpUpstream,
+		settingService: s.settingService,
+		accountRepo:    s.accountRepo,
+		requestedModel: modelID,
+		handleError:    testConnectionHandleError,
 	}
 
-	return nil, lastErr
+	result, err := s.antigravityRetryLoop(p)
+	if err != nil {
+		// AccountSwitchError → 测试时不切换账号，返回友好提示
+		var switchErr *AntigravityAccountSwitchError
+		if errors.As(err, &switchErr) {
+			return nil, fmt.Errorf("该账号模型 %s 当前限流中，请稍后重试", switchErr.RateLimitedModel)
+		}
+		return nil, err
+	}
+
+	if result == nil || result.resp == nil {
+		return nil, errors.New("upstream returned empty response")
+	}
+	defer func() { _ = result.resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(io.LimitReader(result.resp.Body, 2<<20))
+	if err != nil {
+		return nil, fmt.Errorf("读取响应失败: %w", err)
+	}
+
+	if result.resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("API 返回 %d: %s", result.resp.StatusCode, string(respBody))
+	}
+
+	text := extractTextFromSSEResponse(respBody)
+	return &TestConnectionResult{Text: text, MappedModel: mappedModel}, nil
+}
+
+// testConnectionHandleError 是 TestConnection 使用的轻量 handleError 回调。
+// 仅记录日志，不做 ops 错误追踪或粘性会话清除。
+func testConnectionHandleError(
+	_ context.Context, prefix string, account *Account,
+	statusCode int, _ http.Header, body []byte,
+	requestedModel string, _ int64, _ string, _ bool,
+) *handleModelRateLimitResult {
+	logger.LegacyPrintf("service.antigravity_gateway",
+		"%s test_handle_error status=%d model=%s account=%d body=%s",
+		prefix, statusCode, requestedModel, account.ID, truncateForLog(body, 200))
+	return nil
 }
 
 // buildGeminiTestRequest 构建 Gemini 格式测试请求
@@ -1243,16 +1290,12 @@ func (s *AntigravityGatewayService) wrapV1InternalRequest(projectID, model strin
 }
 
 // unwrapV1InternalResponse 解包 v1internal 响应
+// 使用 gjson 零拷贝提取 response 字段，避免 Unmarshal+Marshal 双重开销
 func (s *AntigravityGatewayService) unwrapV1InternalResponse(body []byte) ([]byte, error) {
-	var outer map[string]any
-	if err := json.Unmarshal(body, &outer); err != nil {
-		return nil, err
+	result := gjson.GetBytes(body, "response")
+	if result.Exists() {
+		return []byte(result.Raw), nil
 	}
-
-	if resp, ok := outer["response"]; ok {
-		return json.Marshal(resp)
-	}
-
 	return body, nil
 }
 
@@ -1311,6 +1354,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 	// 应用 thinking 模式自动后缀：如果 thinking 开启且目标是 claude-sonnet-4-5，自动改为 thinking 版本
 	thinkingEnabled := claudeReq.Thinking != nil && (claudeReq.Thinking.Type == "enabled" || claudeReq.Thinking.Type == "adaptive")
 	mappedModel = applyThinkingModelSuffix(mappedModel, thinkingEnabled)
+	billingModel := mappedModel
 
 	// 获取 access_token
 	if s.tokenProvider == nil {
@@ -1318,7 +1362,10 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 	}
 	accessToken, err := s.tokenProvider.GetAccessToken(ctx, account)
 	if err != nil {
-		return nil, s.writeClaudeError(c, http.StatusBadGateway, "authentication_error", "Failed to get upstream access token")
+		return nil, &UpstreamFailoverError{
+			StatusCode:   http.StatusBadGateway,
+			ResponseBody: []byte(`{"error":{"type":"authentication_error","message":"Failed to get upstream access token"},"type":"error"}`),
+		}
 	}
 
 	// 获取 project_id（部分账户类型可能没有）
@@ -1372,7 +1419,11 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 				ForceCacheBilling: switchErr.IsStickySession,
 			}
 		}
-		return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "重试耗尽，上游请求失败")
+		// 区分客户端取消和真正的上游失败，返回更准确的错误消息
+		if c.Request.Context().Err() != nil {
+			return nil, s.writeClaudeError(c, http.StatusBadGateway, "client_disconnected", "Client disconnected before upstream response")
+		}
+		return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "Upstream request failed after retries")
 	}
 	resp := result.resp
 	defer func() { _ = resp.Body.Close() }()
@@ -1383,7 +1434,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 		// 优先检测 thinking block 的 signature 相关错误（400）并重试一次：
 		// Antigravity /v1internal 链路在部分场景会对 thought/thinking signature 做严格校验，
 		// 当历史消息携带的 signature 不合法时会直接 400；去除 thinking 后可继续完成请求。
-		if resp.StatusCode == http.StatusBadRequest && isSignatureRelatedError(respBody) {
+		if resp.StatusCode == http.StatusBadRequest && isSignatureRelatedError(respBody) && s.settingService.IsSignatureRectifierEnabled(ctx) {
 			upstreamMsg := strings.TrimSpace(extractAntigravityErrorMessage(respBody))
 			upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
 			logBody, maxBytes := s.getLogConfig()
@@ -1420,7 +1471,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 					continue
 				}
 
-				log.Printf("Antigravity account %d: detected signature-related 400, retrying once (%s)", account.ID, stage.name)
+				logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: detected signature-related 400, retrying once (%s)", account.ID, stage.name)
 
 				retryGeminiBody, txErr := antigravity.TransformClaudeToGeminiWithOptions(&retryClaudeReq, projectID, mappedModel, s.getClaudeTransformOptions(ctx))
 				if txErr != nil {
@@ -1453,7 +1504,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 						Kind:               "signature_retry_request_error",
 						Message:            sanitizeUpstreamErrorMessage(retryErr.Error()),
 					})
-					log.Printf("Antigravity account %d: signature retry request failed (%s): %v", account.ID, stage.name, retryErr)
+					logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: signature retry request failed (%s): %v", account.ID, stage.name, retryErr)
 					continue
 				}
 
@@ -1472,7 +1523,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 					if retryResp.Request != nil && retryResp.Request.URL != nil {
 						retryBaseURL = retryResp.Request.URL.Scheme + "://" + retryResp.Request.URL.Host
 					}
-					log.Printf("%s status=429 rate_limited base_url=%s retry_stage=%s body=%s", prefix, retryBaseURL, stage.name, truncateForLog(retryBody, 200))
+					logger.LegacyPrintf("service.antigravity_gateway", "%s status=429 rate_limited base_url=%s retry_stage=%s body=%s", prefix, retryBaseURL, stage.name, truncateForLog(retryBody, 200))
 				}
 				kind := "signature_retry"
 				if strings.TrimSpace(stage.name) != "" {
@@ -1516,6 +1567,80 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 			}
 		}
 
+		// Budget 整流：检测 budget_tokens 约束错误并自动修正重试
+		if resp.StatusCode == http.StatusBadRequest && respBody != nil && !isSignatureRelatedError(respBody) {
+			errMsg := strings.TrimSpace(extractAntigravityErrorMessage(respBody))
+			if isThinkingBudgetConstraintError(errMsg) && s.settingService.IsBudgetRectifierEnabled(ctx) {
+				appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+					Platform:           account.Platform,
+					AccountID:          account.ID,
+					AccountName:        account.Name,
+					UpstreamStatusCode: resp.StatusCode,
+					UpstreamRequestID:  resp.Header.Get("x-request-id"),
+					Kind:               "budget_constraint_error",
+					Message:            errMsg,
+					Detail:             s.getUpstreamErrorDetail(respBody),
+				})
+
+				// 修正 claudeReq 的 thinking 参数（adaptive 模式不修正）
+				if claudeReq.Thinking == nil || claudeReq.Thinking.Type != "adaptive" {
+					retryClaudeReq := claudeReq
+					retryClaudeReq.Messages = append([]antigravity.ClaudeMessage(nil), claudeReq.Messages...)
+					// 创建新的 ThinkingConfig 避免修改原始 claudeReq.Thinking 指针
+					retryClaudeReq.Thinking = &antigravity.ThinkingConfig{
+						Type:         "enabled",
+						BudgetTokens: BudgetRectifyBudgetTokens,
+					}
+					if retryClaudeReq.MaxTokens < BudgetRectifyMinMaxTokens {
+						retryClaudeReq.MaxTokens = BudgetRectifyMaxTokens
+					}
+
+					logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: detected budget_tokens constraint error, retrying with rectified budget (budget_tokens=%d, max_tokens=%d)", account.ID, BudgetRectifyBudgetTokens, BudgetRectifyMaxTokens)
+
+					retryGeminiBody, txErr := antigravity.TransformClaudeToGeminiWithOptions(&retryClaudeReq, projectID, mappedModel, transformOpts)
+					if txErr == nil {
+						retryResult, retryErr := s.antigravityRetryLoop(antigravityRetryLoopParams{
+							ctx:             ctx,
+							prefix:          prefix,
+							account:         account,
+							proxyURL:        proxyURL,
+							accessToken:     accessToken,
+							action:          action,
+							body:            retryGeminiBody,
+							c:               c,
+							httpUpstream:    s.httpUpstream,
+							settingService:  s.settingService,
+							accountRepo:     s.accountRepo,
+							handleError:     s.handleUpstreamError,
+							requestedModel:  originalModel,
+							isStickySession: isStickySession,
+							groupID:         0,
+							sessionHash:     "",
+						})
+						if retryErr == nil {
+							retryResp := retryResult.resp
+							if retryResp.StatusCode < 400 {
+								_ = resp.Body.Close()
+								resp = retryResp
+								respBody = nil
+							} else {
+								retryBody, _ := io.ReadAll(io.LimitReader(retryResp.Body, 2<<20))
+								_ = retryResp.Body.Close()
+								respBody = retryBody
+								resp = &http.Response{
+									StatusCode: retryResp.StatusCode,
+									Header:     retryResp.Header.Clone(),
+									Body:       io.NopCloser(bytes.NewReader(retryBody)),
+								}
+							}
+						} else {
+							logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: budget rectifier retry failed: %v", account.ID, retryErr)
+						}
+					}
+				}
+			}
+		}
+
 		// 处理错误响应（重试后仍失败或不触发重试）
 		if resp.StatusCode >= 400 {
 			// 检测 prompt too long 错误，返回特殊错误类型供上层 fallback
@@ -1525,7 +1650,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 				upstreamDetail := s.getUpstreamErrorDetail(respBody)
 				logBody, maxBytes := s.getLogConfig()
 				if logBody {
-					log.Printf("%s status=400 prompt_too_long=true upstream_message=%q request_id=%s body=%s", prefix, upstreamMsg, resp.Header.Get("x-request-id"), truncateForLog(respBody, maxBytes))
+					logger.LegacyPrintf("service.antigravity_gateway", "%s status=400 prompt_too_long=true upstream_message=%q request_id=%s body=%s", prefix, upstreamMsg, resp.Header.Get("x-request-id"), truncateForLog(respBody, maxBytes))
 				}
 				appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 					Platform:           account.Platform,
@@ -1600,7 +1725,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 		// 客户端要求流式，直接透传转换
 		streamRes, err := s.handleClaudeStreamingResponse(c, resp, startTime, originalModel)
 		if err != nil {
-			log.Printf("%s status=stream_error error=%v", prefix, err)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=stream_error error=%v", prefix, err)
 			return nil, err
 		}
 		usage = streamRes.usage
@@ -1610,7 +1735,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 		// 客户端要求非流式，收集流式响应后转换返回
 		streamRes, err := s.handleClaudeStreamToNonStreaming(c, resp, startTime, originalModel)
 		if err != nil {
-			log.Printf("%s status=stream_collect_error error=%v", prefix, err)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=stream_collect_error error=%v", prefix, err)
 			return nil, err
 		}
 		usage = streamRes.usage
@@ -1620,7 +1745,8 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 	return &ForwardResult{
 		RequestID:        requestID,
 		Usage:            *usage,
-		Model:            originalModel, // 使用原始模型用于计费和日志
+		Model:            originalModel,
+		UpstreamModel:    billingModel,
 		Stream:           claudeReq.Stream,
 		Duration:         time.Since(startTime),
 		FirstTokenMs:     firstTokenMs,
@@ -1963,7 +2089,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 			Usage:        ClaudeUsage{},
 			Model:        originalModel,
 			Stream:       false,
-			Duration:     time.Since(time.Now()),
+			Duration:     time.Since(startTime),
 			FirstTokenMs: nil,
 		}, nil
 	default:
@@ -1974,6 +2100,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 	if mappedModel == "" {
 		return nil, s.writeGoogleError(c, http.StatusForbidden, fmt.Sprintf("model %s not in whitelist", originalModel))
 	}
+	billingModel := mappedModel
 
 	// 获取 access_token
 	if s.tokenProvider == nil {
@@ -1981,7 +2108,10 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 	}
 	accessToken, err := s.tokenProvider.GetAccessToken(ctx, account)
 	if err != nil {
-		return nil, s.writeGoogleError(c, http.StatusBadGateway, "Failed to get upstream access token")
+		return nil, &UpstreamFailoverError{
+			StatusCode:   http.StatusBadGateway,
+			ResponseBody: []byte(`{"error":{"message":"Failed to get upstream access token","status":"UNAVAILABLE"}}`),
+		}
 	}
 
 	// 获取 project_id（部分账户类型可能没有）
@@ -2002,9 +2132,9 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 	// 清理 Schema
 	if cleanedBody, err := cleanGeminiRequest(injectedBody); err == nil {
 		injectedBody = cleanedBody
-		log.Printf("[Antigravity] Cleaned request schema in forwarded request for account %s", account.Name)
+		logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] Cleaned request schema in forwarded request for account %s", account.Name)
 	} else {
-		log.Printf("[Antigravity] Failed to clean schema: %v", err)
+		logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] Failed to clean schema: %v", err)
 	}
 
 	// 包装请求
@@ -2044,7 +2174,11 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 				ForceCacheBilling: switchErr.IsStickySession,
 			}
 		}
-		return nil, s.writeGoogleError(c, http.StatusBadGateway, "重试耗尽，上游请求失败")
+		// 区分客户端取消和真正的上游失败，返回更准确的错误消息
+		if c.Request.Context().Err() != nil {
+			return nil, s.writeGoogleError(c, http.StatusBadGateway, "Client disconnected before upstream response")
+		}
+		return nil, s.writeGoogleError(c, http.StatusBadGateway, "Upstream request failed after retries")
 	}
 	resp := result.resp
 	defer func() {
@@ -2066,7 +2200,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 			isModelNotFoundError(resp.StatusCode, respBody) {
 			fallbackModel := s.settingService.GetFallbackModel(ctx, PlatformAntigravity)
 			if fallbackModel != "" && fallbackModel != mappedModel {
-				log.Printf("[Antigravity] Model not found (%s), retrying with fallback model %s (account: %s)", mappedModel, fallbackModel, account.Name)
+				logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] Model not found (%s), retrying with fallback model %s (account: %s)", mappedModel, fallbackModel, account.Name)
 
 				fallbackWrapped, err := s.wrapV1InternalRequest(projectID, fallbackModel, injectedBody)
 				if err == nil {
@@ -2081,6 +2215,112 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 						}
 					}
 				}
+			}
+		}
+
+		// Gemini 原生请求中的 thoughtSignature 可能来自旧上下文/旧账号，触发上游严格校验后返回
+		// "Corrupted thought signature."。检测到此类 400 时，将 thoughtSignature 清理为 dummy 值后重试一次。
+		signatureCheckBody := respBody
+		if unwrapped, unwrapErr := s.unwrapV1InternalResponse(respBody); unwrapErr == nil && len(unwrapped) > 0 {
+			signatureCheckBody = unwrapped
+		}
+		if resp.StatusCode == http.StatusBadRequest &&
+			s.settingService != nil &&
+			s.settingService.IsSignatureRectifierEnabled(ctx) &&
+			isSignatureRelatedError(signatureCheckBody) &&
+			bytes.Contains(injectedBody, []byte(`"thoughtSignature"`)) {
+			upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractAntigravityErrorMessage(signatureCheckBody)))
+			upstreamDetail := s.getUpstreamErrorDetail(signatureCheckBody)
+			appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+				Platform:           account.Platform,
+				AccountID:          account.ID,
+				AccountName:        account.Name,
+				UpstreamStatusCode: resp.StatusCode,
+				UpstreamRequestID:  resp.Header.Get("x-request-id"),
+				Kind:               "signature_error",
+				Message:            upstreamMsg,
+				Detail:             upstreamDetail,
+			})
+
+			logger.LegacyPrintf("service.antigravity_gateway", "Antigravity Gemini account %d: detected signature-related 400, retrying with cleaned thought signatures", account.ID)
+
+			cleanedInjectedBody := CleanGeminiNativeThoughtSignatures(injectedBody)
+			retryWrappedBody, wrapErr := s.wrapV1InternalRequest(projectID, mappedModel, cleanedInjectedBody)
+			if wrapErr == nil {
+				retryResult, retryErr := s.antigravityRetryLoop(antigravityRetryLoopParams{
+					ctx:             ctx,
+					prefix:          prefix,
+					account:         account,
+					proxyURL:        proxyURL,
+					accessToken:     accessToken,
+					action:          upstreamAction,
+					body:            retryWrappedBody,
+					c:               c,
+					httpUpstream:    s.httpUpstream,
+					settingService:  s.settingService,
+					accountRepo:     s.accountRepo,
+					handleError:     s.handleUpstreamError,
+					requestedModel:  originalModel,
+					isStickySession: isStickySession,
+					groupID:         0,
+					sessionHash:     "",
+				})
+				if retryErr == nil {
+					retryResp := retryResult.resp
+					if retryResp.StatusCode < 400 {
+						resp = retryResp
+					} else {
+						retryRespBody, _ := io.ReadAll(io.LimitReader(retryResp.Body, 2<<20))
+						_ = retryResp.Body.Close()
+						retryOpsBody := retryRespBody
+						if retryUnwrapped, unwrapErr := s.unwrapV1InternalResponse(retryRespBody); unwrapErr == nil && len(retryUnwrapped) > 0 {
+							retryOpsBody = retryUnwrapped
+						}
+						appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+							Platform:           account.Platform,
+							AccountID:          account.ID,
+							AccountName:        account.Name,
+							UpstreamStatusCode: retryResp.StatusCode,
+							UpstreamRequestID:  retryResp.Header.Get("x-request-id"),
+							Kind:               "signature_retry",
+							Message:            sanitizeUpstreamErrorMessage(strings.TrimSpace(extractAntigravityErrorMessage(retryOpsBody))),
+							Detail:             s.getUpstreamErrorDetail(retryOpsBody),
+						})
+						respBody = retryRespBody
+						resp = &http.Response{
+							StatusCode: retryResp.StatusCode,
+							Header:     retryResp.Header.Clone(),
+							Body:       io.NopCloser(bytes.NewReader(retryRespBody)),
+						}
+						contentType = resp.Header.Get("Content-Type")
+					}
+				} else {
+					if switchErr, ok := IsAntigravityAccountSwitchError(retryErr); ok {
+						appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+							Platform:           account.Platform,
+							AccountID:          account.ID,
+							AccountName:        account.Name,
+							UpstreamStatusCode: http.StatusServiceUnavailable,
+							Kind:               "failover",
+							Message:            sanitizeUpstreamErrorMessage(retryErr.Error()),
+						})
+						return nil, &UpstreamFailoverError{
+							StatusCode:        http.StatusServiceUnavailable,
+							ForceCacheBilling: switchErr.IsStickySession,
+						}
+					}
+					appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+						Platform:           account.Platform,
+						AccountID:          account.ID,
+						AccountName:        account.Name,
+						UpstreamStatusCode: 0,
+						Kind:               "signature_retry_request_error",
+						Message:            sanitizeUpstreamErrorMessage(retryErr.Error()),
+					})
+					logger.LegacyPrintf("service.antigravity_gateway", "Antigravity Gemini account %d: signature retry request failed: %v", account.ID, retryErr)
+				}
+			} else {
+				logger.LegacyPrintf("service.antigravity_gateway", "Antigravity Gemini account %d: signature retry wrap failed: %v", account.ID, wrapErr)
 			}
 		}
 
@@ -2149,7 +2389,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 			Message:            upstreamMsg,
 			Detail:             upstreamDetail,
 		})
-		log.Printf("[antigravity-Forward] upstream error status=%d body=%s", resp.StatusCode, truncateForLog(unwrappedForOps, 500))
+		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] upstream error status=%d body=%s", resp.StatusCode, truncateForLog(unwrappedForOps, 500))
 		c.Data(resp.StatusCode, contentType, unwrappedForOps)
 		return nil, fmt.Errorf("antigravity upstream error: %d", resp.StatusCode)
 	}
@@ -2168,7 +2408,7 @@ handleSuccess:
 		// 客户端要求流式，直接透传
 		streamRes, err := s.handleGeminiStreamingResponse(c, resp, startTime)
 		if err != nil {
-			log.Printf("%s status=stream_error error=%v", prefix, err)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=stream_error error=%v", prefix, err)
 			return nil, err
 		}
 		usage = streamRes.usage
@@ -2178,7 +2418,7 @@ handleSuccess:
 		// 客户端要求非流式，收集流式响应后返回
 		streamRes, err := s.handleGeminiStreamToNonStreaming(c, resp, startTime)
 		if err != nil {
-			log.Printf("%s status=stream_collect_error error=%v", prefix, err)
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=stream_collect_error error=%v", prefix, err)
 			return nil, err
 		}
 		usage = streamRes.usage
@@ -2200,6 +2440,7 @@ handleSuccess:
 		RequestID:        requestID,
 		Usage:            *usage,
 		Model:            originalModel,
+		UpstreamModel:    billingModel,
 		Stream:           stream,
 		Duration:         time.Since(startTime),
 		FirstTokenMs:     firstTokenMs,
@@ -2284,7 +2525,7 @@ func sleepAntigravityBackoffWithContext(ctx context.Context, attempt int) bool {
 
 // isSingleAccountRetry 检查 context 中是否设置了单账号退避重试标记
 func isSingleAccountRetry(ctx context.Context) bool {
-	v, _ := ctx.Value(ctxkey.SingleAccountRetry).(bool)
+	v, _ := SingleAccountRetryFromContext(ctx)
 	return v
 }
 
@@ -2297,13 +2538,13 @@ func setModelRateLimitByModelName(ctx context.Context, repo AccountRepository, a
 	}
 	// 直接使用官方模型 ID 作为 key，不再转换为 scope
 	if err := repo.SetModelRateLimit(ctx, accountID, modelName, resetAt); err != nil {
-		log.Printf("%s status=%d model_rate_limit_failed model=%s error=%v", prefix, statusCode, modelName, err)
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limit_failed model=%s error=%v", prefix, statusCode, modelName, err)
 		return false
 	}
 	if afterSmartRetry {
-		log.Printf("%s status=%d model_rate_limited_after_smart_retry model=%s account=%d reset_in=%v", prefix, statusCode, modelName, accountID, time.Until(resetAt).Truncate(time.Second))
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limited_after_smart_retry model=%s account=%d reset_in=%v", prefix, statusCode, modelName, accountID, time.Until(resetAt).Truncate(time.Second))
 	} else {
-		log.Printf("%s status=%d model_rate_limited model=%s account=%d reset_in=%v", prefix, statusCode, modelName, accountID, time.Until(resetAt).Truncate(time.Second))
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limited model=%s account=%d reset_in=%v", prefix, statusCode, modelName, accountID, time.Until(resetAt).Truncate(time.Second))
 	}
 	return true
 }
@@ -2411,7 +2652,7 @@ func parseAntigravitySmartRetryInfo(body []byte) *antigravitySmartRetryInfo {
 			// 例如: "0.5s", "10s", "4m50s", "1h30m", "200ms" 等
 			dur, err := time.ParseDuration(delay)
 			if err != nil {
-				log.Printf("[Antigravity] failed to parse retryDelay: %s error=%v", delay, err)
+				logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] failed to parse retryDelay: %s error=%v", delay, err)
 				continue
 			}
 			retryDelay = dur
@@ -2532,7 +2773,7 @@ func (s *AntigravityGatewayService) handleModelRateLimit(p *handleModelRateLimit
 
 	// RATE_LIMIT_EXCEEDED: < antigravityRateLimitThreshold: 等待后重试
 	if info.RetryDelay < antigravityRateLimitThreshold {
-		log.Printf("%s status=%d model_rate_limit_wait model=%s wait=%v",
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limit_wait model=%s wait=%v",
 			p.prefix, p.statusCode, info.ModelName, info.RetryDelay)
 		return &handleModelRateLimitResult{
 			Handled:      true,
@@ -2557,12 +2798,12 @@ func (s *AntigravityGatewayService) handleModelRateLimit(p *handleModelRateLimit
 // setModelRateLimitAndClearSession 设置模型限流并清除粘性会话
 func (s *AntigravityGatewayService) setModelRateLimitAndClearSession(p *handleModelRateLimitParams, info *antigravitySmartRetryInfo) {
 	resetAt := time.Now().Add(info.RetryDelay)
-	log.Printf("%s status=%d model_rate_limited model=%s account=%d reset_in=%v",
+	logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d model_rate_limited model=%s account=%d reset_in=%v",
 		p.prefix, p.statusCode, info.ModelName, p.account.ID, info.RetryDelay)
 
 	// 设置模型限流状态（数据库）
 	if err := s.accountRepo.SetModelRateLimit(p.ctx, p.account.ID, info.ModelName, resetAt); err != nil {
-		log.Printf("%s model_rate_limit_failed model=%s error=%v", p.prefix, info.ModelName, err)
+		logger.LegacyPrintf("service.antigravity_gateway", "%s model_rate_limit_failed model=%s error=%v", p.prefix, info.ModelName, err)
 	}
 
 	// 立即更新 Redis 快照中账号的限流状态，避免并发请求重复选中
@@ -2598,7 +2839,7 @@ func (s *AntigravityGatewayService) updateAccountModelRateLimitInCache(ctx conte
 
 	// 更新 Redis 快照
 	if err := s.schedulerSnapshot.UpdateAccountInCache(ctx, account); err != nil {
-		log.Printf("[antigravity-Forward] cache_update_failed account=%d model=%s err=%v", account.ID, modelKey, err)
+		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] cache_update_failed account=%d model=%s err=%v", account.ID, modelKey, err)
 	}
 }
 
@@ -2637,20 +2878,29 @@ func (s *AntigravityGatewayService) handleUpstreamError(
 	// 429：尝试解析模型级限流，解析失败时兜底为账号级限流
 	if statusCode == 429 {
 		if logBody, maxBytes := s.getLogConfig(); logBody {
-			log.Printf("[Antigravity-Debug] 429 response body: %s", truncateString(string(body), maxBytes))
+			logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity-Debug] 429 response body: %s", truncateString(string(body), maxBytes))
 		}
 
 		resetAt := ParseGeminiRateLimitResetTime(body)
 		defaultDur := s.getDefaultRateLimitDuration()
 
 		// 尝试解析模型 key 并设置模型级限流
-		modelKey := resolveAntigravityModelKey(requestedModel)
+		//
+		// 注意：requestedModel 可能是"映射前"的请求模型名（例如 claude-opus-4-6），
+		// 调度与限流判定使用的是 Antigravity 最终模型名（包含映射与 thinking 后缀）。
+		// 因此这里必须写入最终模型 key，确保后续调度能正确避开已限流模型。
+		modelKey := resolveFinalAntigravityModelKey(ctx, account, requestedModel)
+		if strings.TrimSpace(modelKey) == "" {
+			// 极少数情况下无法映射（理论上不应发生：能转发成功说明映射已通过），
+			// 保持旧行为作为兜底，避免完全丢失模型级限流记录。
+			modelKey = resolveAntigravityModelKey(requestedModel)
+		}
 		if modelKey != "" {
 			ra := s.resolveResetTime(resetAt, defaultDur)
 			if err := s.accountRepo.SetModelRateLimit(ctx, account.ID, modelKey, ra); err != nil {
-				log.Printf("%s status=429 model_rate_limit_set_failed model=%s error=%v", prefix, modelKey, err)
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=429 model_rate_limit_set_failed model=%s error=%v", prefix, modelKey, err)
 			} else {
-				log.Printf("%s status=429 model_rate_limited model=%s account=%d reset_at=%v reset_in=%v",
+				logger.LegacyPrintf("service.antigravity_gateway", "%s status=429 model_rate_limited model=%s account=%d reset_at=%v reset_in=%v",
 					prefix, modelKey, account.ID, ra.Format("15:04:05"), time.Until(ra).Truncate(time.Second))
 				s.updateAccountModelRateLimitInCache(ctx, account, modelKey, ra)
 			}
@@ -2659,10 +2909,10 @@ func (s *AntigravityGatewayService) handleUpstreamError(
 
 		// 无法解析模型 key，兜底为账号级限流
 		ra := s.resolveResetTime(resetAt, defaultDur)
-		log.Printf("%s status=429 rate_limited account=%d reset_at=%v reset_in=%v (fallback)",
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=429 rate_limited account=%d reset_at=%v reset_in=%v (fallback)",
 			prefix, account.ID, ra.Format("15:04:05"), time.Until(ra).Truncate(time.Second))
-		if err := s.accountRepo.SetRateLimited(ctx, account.ID, ra, "", "antigravity 429 fallback"); err != nil {
-			log.Printf("%s status=429 rate_limit_set_failed account=%d error=%v", prefix, account.ID, err)
+		if err := s.accountRepo.SetRateLimited(ctx, account.ID, ra); err != nil {
+			logger.LegacyPrintf("service.antigravity_gateway", "%s status=429 rate_limit_set_failed account=%d error=%v", prefix, account.ID, err)
 		}
 		return nil
 	}
@@ -2672,7 +2922,7 @@ func (s *AntigravityGatewayService) handleUpstreamError(
 	}
 	shouldDisable := s.rateLimitService.HandleUpstreamError(ctx, account, statusCode, headers, body)
 	if shouldDisable {
-		log.Printf("%s status=%d marked_error", prefix, statusCode)
+		logger.LegacyPrintf("service.antigravity_gateway", "%s status=%d marked_error", prefix, statusCode)
 	}
 	return nil
 }
@@ -2746,18 +2996,18 @@ func (cw *antigravityClientWriter) Disconnected() bool { return cw.disconnected 
 
 func (cw *antigravityClientWriter) markDisconnected() {
 	cw.disconnected = true
-	log.Printf("Client disconnected during streaming (%s), continuing to drain upstream for billing", cw.prefix)
+	logger.LegacyPrintf("service.antigravity_gateway", "Client disconnected during streaming (%s), continuing to drain upstream for billing", cw.prefix)
 }
 
 // handleStreamReadError 处理上游读取错误的通用逻辑。
 // 返回 (clientDisconnect, handled)：handled=true 表示错误已处理，调用方应返回已收集的 usage。
 func handleStreamReadError(err error, clientDisconnected bool, prefix string) (disconnect bool, handled bool) {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		log.Printf("Context canceled during streaming (%s), returning collected usage", prefix)
+		logger.LegacyPrintf("service.antigravity_gateway", "Context canceled during streaming (%s), returning collected usage", prefix)
 		return true, true
 	}
 	if clientDisconnected {
-		log.Printf("Upstream read error after client disconnect (%s): %v, returning collected usage", prefix, err)
+		logger.LegacyPrintf("service.antigravity_gateway", "Upstream read error after client disconnect (%s): %v, returning collected usage", prefix, err)
 		return true, true
 	}
 	return false, false
@@ -2786,7 +3036,8 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.MaxLineSize > 0 {
 		maxLineSize = s.settingService.cfg.Gateway.MaxLineSize
 	}
-	scanner.Buffer(make([]byte, 64*1024), maxLineSize)
+	scanBuf := getSSEScannerBuf64K()
+	scanner.Buffer(scanBuf[:0], maxLineSize)
 	usage := &ClaudeUsage{}
 	var firstTokenMs *int
 
@@ -2807,7 +3058,8 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 	}
 	var lastReadAt int64
 	atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
-	go func() {
+	go func(scanBuf *sseScannerBuf64K) {
+		defer putSSEScannerBuf64K(scanBuf)
 		defer close(events)
 		for scanner.Scan() {
 			atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
@@ -2818,7 +3070,7 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 		if err := scanner.Err(); err != nil {
 			_ = sendEvent(scanEvent{err: err})
 		}
-	}()
+	}(scanBuf)
 	defer close(done)
 
 	// 上游数据间隔超时保护（防止上游挂起长期占用连接）
@@ -2835,6 +3087,22 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 	if intervalTicker != nil {
 		intervalCh = intervalTicker.C
 	}
+
+	// 下游 keepalive：防止代理/Cloudflare Tunnel 因连接空闲而断开
+	keepaliveInterval := time.Duration(0)
+	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.StreamKeepaliveInterval > 0 {
+		keepaliveInterval = time.Duration(s.settingService.cfg.Gateway.StreamKeepaliveInterval) * time.Second
+	}
+	var keepaliveTicker *time.Ticker
+	if keepaliveInterval > 0 {
+		keepaliveTicker = time.NewTicker(keepaliveInterval)
+		defer keepaliveTicker.Stop()
+	}
+	var keepaliveCh <-chan time.Time
+	if keepaliveTicker != nil {
+		keepaliveCh = keepaliveTicker.C
+	}
+	lastDataAt := time.Now()
 
 	cw := newAntigravityClientWriter(c.Writer, flusher, "antigravity gemini")
 
@@ -2860,13 +3128,15 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 					return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: disconnect}, nil
 				}
 				if errors.Is(ev.err, bufio.ErrTooLong) {
-					log.Printf("SSE line too long (antigravity): max_size=%d error=%v", maxLineSize, ev.err)
+					logger.LegacyPrintf("service.antigravity_gateway", "SSE line too long (antigravity): max_size=%d error=%v", maxLineSize, ev.err)
 					sendErrorEvent("response_too_large")
 					return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs}, ev.err
 				}
 				sendErrorEvent("stream_read_error")
 				return nil, ev.err
 			}
+
+			lastDataAt = time.Now()
 
 			line := ev.line
 			trimmed := strings.TrimRight(line, "\r\n")
@@ -2884,19 +3154,19 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 				}
 
 				// 解析 usage
+				if u := extractGeminiUsage(inner); u != nil {
+					usage = u
+				}
 				var parsed map[string]any
 				if json.Unmarshal(inner, &parsed) == nil {
-					if u := extractGeminiUsage(parsed); u != nil {
-						usage = u
-					}
 					// Check for MALFORMED_FUNCTION_CALL
 					if candidates, ok := parsed["candidates"].([]any); ok && len(candidates) > 0 {
 						if cand, ok := candidates[0].(map[string]any); ok {
 							if fr, ok := cand["finishReason"].(string); ok && fr == "MALFORMED_FUNCTION_CALL" {
-								log.Printf("[Antigravity] MALFORMED_FUNCTION_CALL detected in forward stream")
+								logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] MALFORMED_FUNCTION_CALL detected in forward stream")
 								if content, ok := cand["content"]; ok {
 									if b, err := json.Marshal(content); err == nil {
-										log.Printf("[Antigravity] Malformed content: %s", string(b))
+										logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] Malformed content: %s", string(b))
 									}
 								}
 							}
@@ -2921,12 +3191,25 @@ func (s *AntigravityGatewayService) handleGeminiStreamingResponse(c *gin.Context
 				continue
 			}
 			if cw.Disconnected() {
-				log.Printf("Upstream timeout after client disconnect (antigravity gemini), returning collected usage")
+				logger.LegacyPrintf("service.antigravity_gateway", "Upstream timeout after client disconnect (antigravity gemini), returning collected usage")
 				return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: true}, nil
 			}
-			log.Printf("Stream data interval timeout (antigravity)")
+			logger.LegacyPrintf("service.antigravity_gateway", "Stream data interval timeout (antigravity)")
 			sendErrorEvent("stream_timeout")
 			return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs}, fmt.Errorf("stream data interval timeout")
+
+		case <-keepaliveCh:
+			if cw.Disconnected() {
+				continue
+			}
+			if time.Since(lastDataAt) < keepaliveInterval {
+				continue
+			}
+			// SSE ping/keepalive：保持连接活跃防止 Cloudflare Tunnel 等代理断开
+			if !cw.Fprintf(":\n\n") {
+				logger.LegacyPrintf("service.antigravity_gateway", "Client disconnected during keepalive ping (antigravity gemini), continuing to drain upstream for billing")
+				continue
+			}
 		}
 	}
 }
@@ -2939,7 +3222,8 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.MaxLineSize > 0 {
 		maxLineSize = s.settingService.cfg.Gateway.MaxLineSize
 	}
-	scanner.Buffer(make([]byte, 64*1024), maxLineSize)
+	scanBuf := getSSEScannerBuf64K()
+	scanner.Buffer(scanBuf[:0], maxLineSize)
 
 	usage := &ClaudeUsage{}
 	var firstTokenMs *int
@@ -2967,7 +3251,8 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 
 	var lastReadAt int64
 	atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
-	go func() {
+	go func(scanBuf *sseScannerBuf64K) {
+		defer putSSEScannerBuf64K(scanBuf)
 		defer close(events)
 		for scanner.Scan() {
 			atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
@@ -2978,7 +3263,7 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 		if err := scanner.Err(); err != nil {
 			_ = sendEvent(scanEvent{err: err})
 		}
-	}()
+	}(scanBuf)
 	defer close(done)
 
 	// 上游数据间隔超时保护（防止上游挂起长期占用连接）
@@ -3005,7 +3290,7 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 			}
 			if ev.err != nil {
 				if errors.Is(ev.err, bufio.ErrTooLong) {
-					log.Printf("SSE line too long (antigravity non-stream): max_size=%d error=%v", maxLineSize, ev.err)
+					logger.LegacyPrintf("service.antigravity_gateway", "SSE line too long (antigravity non-stream): max_size=%d error=%v", maxLineSize, ev.err)
 				}
 				return nil, ev.err
 			}
@@ -3042,7 +3327,7 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 			last = parsed
 
 			// 提取 usage
-			if u := extractGeminiUsage(parsed); u != nil {
+			if u := extractGeminiUsage(inner); u != nil {
 				usage = u
 			}
 
@@ -3050,10 +3335,10 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 			if candidates, ok := parsed["candidates"].([]any); ok && len(candidates) > 0 {
 				if cand, ok := candidates[0].(map[string]any); ok {
 					if fr, ok := cand["finishReason"].(string); ok && fr == "MALFORMED_FUNCTION_CALL" {
-						log.Printf("[Antigravity] MALFORMED_FUNCTION_CALL detected in forward non-stream collect")
+						logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] MALFORMED_FUNCTION_CALL detected in forward non-stream collect")
 						if content, ok := cand["content"]; ok {
 							if b, err := json.Marshal(content); err == nil {
-								log.Printf("[Antigravity] Malformed content: %s", string(b))
+								logger.LegacyPrintf("service.antigravity_gateway", "[Antigravity] Malformed content: %s", string(b))
 							}
 						}
 					}
@@ -3080,7 +3365,7 @@ func (s *AntigravityGatewayService) handleGeminiStreamToNonStreaming(c *gin.Cont
 			if time.Since(lastRead) < streamInterval {
 				continue
 			}
-			log.Printf("Stream data interval timeout (antigravity non-stream)")
+			logger.LegacyPrintf("service.antigravity_gateway", "Stream data interval timeout (antigravity non-stream)")
 			return nil, fmt.Errorf("stream data interval timeout")
 		}
 	}
@@ -3091,7 +3376,7 @@ returnResponse:
 
 	// 处理空响应情况 — 触发同账号重试 + failover 切换账号
 	if last == nil && lastWithParts == nil {
-		log.Printf("[antigravity-Forward] warning: empty stream response (gemini non-stream), triggering failover")
+		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] warning: empty stream response (gemini non-stream), triggering failover")
 		return nil, &UpstreamFailoverError{
 			StatusCode:             http.StatusBadGateway,
 			ResponseBody:           []byte(`{"error":"empty stream response from upstream"}`),
@@ -3311,7 +3596,7 @@ func (s *AntigravityGatewayService) writeMappedClaudeError(c *gin.Context, accou
 
 	// 记录上游错误详情便于排障（可选：由配置控制；不回显到客户端）
 	if logBody {
-		log.Printf("[antigravity-Forward] upstream_error status=%d body=%s", upstreamStatus, truncateForLog(body, maxBytes))
+		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] upstream_error status=%d body=%s", upstreamStatus, truncateForLog(body, maxBytes))
 	}
 
 	// 检查错误透传规则
@@ -3336,27 +3621,27 @@ func (s *AntigravityGatewayService) writeMappedClaudeError(c *gin.Context, accou
 	case 400:
 		statusCode = http.StatusBadRequest
 		errType = "invalid_request_error"
-		errMsg = getPassthroughOrDefault(upstreamMsg, "无效请求")
+		errMsg = getPassthroughOrDefault(upstreamMsg, "Invalid request")
 	case 401:
 		statusCode = http.StatusBadGateway
 		errType = "authentication_error"
-		errMsg = "上游认证失败"
+		errMsg = "Upstream authentication failed"
 	case 403:
 		statusCode = http.StatusBadGateway
 		errType = "permission_error"
-		errMsg = "上游访问被拒绝"
+		errMsg = "Upstream access forbidden"
 	case 429:
 		statusCode = http.StatusTooManyRequests
 		errType = "rate_limit_error"
-		errMsg = "上游触发限流"
+		errMsg = "Upstream rate limit exceeded"
 	case 529:
 		statusCode = http.StatusServiceUnavailable
 		errType = "overloaded_error"
-		errMsg = "上游服务过载"
+		errMsg = "Upstream service overloaded"
 	default:
 		statusCode = http.StatusBadGateway
 		errType = "upstream_error"
-		errMsg = "上游请求失败"
+		errMsg = "Upstream request failed"
 	}
 
 	c.JSON(statusCode, gin.H{
@@ -3402,7 +3687,8 @@ func (s *AntigravityGatewayService) handleClaudeStreamToNonStreaming(c *gin.Cont
 	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.MaxLineSize > 0 {
 		maxLineSize = s.settingService.cfg.Gateway.MaxLineSize
 	}
-	scanner.Buffer(make([]byte, 64*1024), maxLineSize)
+	scanBuf := getSSEScannerBuf64K()
+	scanner.Buffer(scanBuf[:0], maxLineSize)
 
 	var firstTokenMs *int
 	var last map[string]any
@@ -3428,7 +3714,8 @@ func (s *AntigravityGatewayService) handleClaudeStreamToNonStreaming(c *gin.Cont
 
 	var lastReadAt int64
 	atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
-	go func() {
+	go func(scanBuf *sseScannerBuf64K) {
+		defer putSSEScannerBuf64K(scanBuf)
 		defer close(events)
 		for scanner.Scan() {
 			atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
@@ -3439,7 +3726,7 @@ func (s *AntigravityGatewayService) handleClaudeStreamToNonStreaming(c *gin.Cont
 		if err := scanner.Err(); err != nil {
 			_ = sendEvent(scanEvent{err: err})
 		}
-	}()
+	}(scanBuf)
 	defer close(done)
 
 	// 上游数据间隔超时保护（防止上游挂起长期占用连接）
@@ -3466,7 +3753,7 @@ func (s *AntigravityGatewayService) handleClaudeStreamToNonStreaming(c *gin.Cont
 			}
 			if ev.err != nil {
 				if errors.Is(ev.err, bufio.ErrTooLong) {
-					log.Printf("SSE line too long (antigravity claude non-stream): max_size=%d error=%v", maxLineSize, ev.err)
+					logger.LegacyPrintf("service.antigravity_gateway", "SSE line too long (antigravity claude non-stream): max_size=%d error=%v", maxLineSize, ev.err)
 				}
 				return nil, ev.err
 			}
@@ -3515,7 +3802,7 @@ func (s *AntigravityGatewayService) handleClaudeStreamToNonStreaming(c *gin.Cont
 			if time.Since(lastRead) < streamInterval {
 				continue
 			}
-			log.Printf("Stream data interval timeout (antigravity claude non-stream)")
+			logger.LegacyPrintf("service.antigravity_gateway", "Stream data interval timeout (antigravity claude non-stream)")
 			return nil, fmt.Errorf("stream data interval timeout")
 		}
 	}
@@ -3526,7 +3813,7 @@ returnResponse:
 
 	// 处理空响应情况 — 触发同账号重试 + failover 切换账号
 	if last == nil && lastWithParts == nil {
-		log.Printf("[antigravity-Forward] warning: empty stream response (claude non-stream), triggering failover")
+		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] warning: empty stream response (claude non-stream), triggering failover")
 		return nil, &UpstreamFailoverError{
 			StatusCode:             http.StatusBadGateway,
 			ResponseBody:           []byte(`{"error":"empty stream response from upstream"}`),
@@ -3548,7 +3835,7 @@ returnResponse:
 	// 转换 Gemini 响应为 Claude 格式
 	claudeResp, agUsage, err := antigravity.TransformGeminiToClaude(geminiBody, originalModel)
 	if err != nil {
-		log.Printf("[antigravity-Forward] transform_error error=%v body=%s", err, string(geminiBody))
+		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] transform_error error=%v body=%s", err, string(geminiBody))
 		return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "Failed to parse upstream response")
 	}
 
@@ -3586,7 +3873,8 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.MaxLineSize > 0 {
 		maxLineSize = s.settingService.cfg.Gateway.MaxLineSize
 	}
-	scanner.Buffer(make([]byte, 64*1024), maxLineSize)
+	scanBuf := getSSEScannerBuf64K()
+	scanner.Buffer(scanBuf[:0], maxLineSize)
 
 	// 辅助函数：转换 antigravity.ClaudeUsage 到 service.ClaudeUsage
 	convertUsage := func(agUsage *antigravity.ClaudeUsage) *ClaudeUsage {
@@ -3618,7 +3906,8 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 	}
 	var lastReadAt int64
 	atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
-	go func() {
+	go func(scanBuf *sseScannerBuf64K) {
+		defer putSSEScannerBuf64K(scanBuf)
 		defer close(events)
 		for scanner.Scan() {
 			atomic.StoreInt64(&lastReadAt, time.Now().UnixNano())
@@ -3629,7 +3918,7 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 		if err := scanner.Err(); err != nil {
 			_ = sendEvent(scanEvent{err: err})
 		}
-	}()
+	}(scanBuf)
 	defer close(done)
 
 	streamInterval := time.Duration(0)
@@ -3645,6 +3934,22 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 	if intervalTicker != nil {
 		intervalCh = intervalTicker.C
 	}
+
+	// 下游 keepalive：防止代理/Cloudflare Tunnel 因连接空闲而断开
+	keepaliveInterval := time.Duration(0)
+	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.StreamKeepaliveInterval > 0 {
+		keepaliveInterval = time.Duration(s.settingService.cfg.Gateway.StreamKeepaliveInterval) * time.Second
+	}
+	var keepaliveTicker *time.Ticker
+	if keepaliveInterval > 0 {
+		keepaliveTicker = time.NewTicker(keepaliveInterval)
+		defer keepaliveTicker.Stop()
+	}
+	var keepaliveCh <-chan time.Time
+	if keepaliveTicker != nil {
+		keepaliveCh = keepaliveTicker.C
+	}
+	lastDataAt := time.Now()
 
 	cw := newAntigravityClientWriter(c.Writer, flusher, "antigravity claude")
 
@@ -3673,6 +3978,15 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 				finalEvents, agUsage := processor.Finish()
 				if len(finalEvents) > 0 {
 					cw.Write(finalEvents)
+				} else if !processor.MessageStartSent() && !cw.Disconnected() {
+					// 整个流未收到任何可解析的上游数据（全部 SSE 行均无法被 JSON 解析），
+					// 触发 failover 在同账号重试，避免向客户端发出缺少 message_start 的残缺流
+					logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Claude-Stream] empty stream response (no valid events parsed), triggering failover")
+					return nil, &UpstreamFailoverError{
+						StatusCode:             http.StatusBadGateway,
+						ResponseBody:           []byte(`{"error":"empty stream response from upstream"}`),
+						RetryableOnSameAccount: true,
+					}
 				}
 				return &antigravityStreamResult{usage: convertUsage(agUsage), firstTokenMs: firstTokenMs, clientDisconnect: cw.Disconnected()}, nil
 			}
@@ -3681,13 +3995,15 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 					return &antigravityStreamResult{usage: finishUsage(), firstTokenMs: firstTokenMs, clientDisconnect: disconnect}, nil
 				}
 				if errors.Is(ev.err, bufio.ErrTooLong) {
-					log.Printf("SSE line too long (antigravity): max_size=%d error=%v", maxLineSize, ev.err)
+					logger.LegacyPrintf("service.antigravity_gateway", "SSE line too long (antigravity): max_size=%d error=%v", maxLineSize, ev.err)
 					sendErrorEvent("response_too_large")
 					return &antigravityStreamResult{usage: convertUsage(nil), firstTokenMs: firstTokenMs}, ev.err
 				}
 				sendErrorEvent("stream_read_error")
 				return nil, fmt.Errorf("stream read error: %w", ev.err)
 			}
+
+			lastDataAt = time.Now()
 
 			// 处理 SSE 行，转换为 Claude 格式
 			claudeEvents := processor.ProcessLine(strings.TrimRight(ev.line, "\r\n"))
@@ -3705,12 +4021,26 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 				continue
 			}
 			if cw.Disconnected() {
-				log.Printf("Upstream timeout after client disconnect (antigravity claude), returning collected usage")
+				logger.LegacyPrintf("service.antigravity_gateway", "Upstream timeout after client disconnect (antigravity claude), returning collected usage")
 				return &antigravityStreamResult{usage: finishUsage(), firstTokenMs: firstTokenMs, clientDisconnect: true}, nil
 			}
-			log.Printf("Stream data interval timeout (antigravity)")
+			logger.LegacyPrintf("service.antigravity_gateway", "Stream data interval timeout (antigravity)")
 			sendErrorEvent("stream_timeout")
 			return &antigravityStreamResult{usage: convertUsage(nil), firstTokenMs: firstTokenMs}, fmt.Errorf("stream data interval timeout")
+
+		case <-keepaliveCh:
+			if cw.Disconnected() {
+				continue
+			}
+			if time.Since(lastDataAt) < keepaliveInterval {
+				continue
+			}
+			// SSE ping 事件：Anthropic 原生格式，客户端会正确处理，
+			// 同时保持连接活跃防止 Cloudflare Tunnel 等代理断开
+			if !cw.Fprintf("event: ping\ndata: {\"type\": \"ping\"}\n\n") {
+				logger.LegacyPrintf("service.antigravity_gateway", "Client disconnected during keepalive ping (antigravity claude), continuing to drain upstream for billing")
+				continue
+			}
 		}
 	}
 }
@@ -3733,14 +4063,17 @@ func (s *AntigravityGatewayService) extractImageSize(body []byte) string {
 }
 
 // isImageGenerationModel 判断模型是否为图片生成模型
-// 支持的模型：gemini-3-pro-image, gemini-3-pro-image-preview, gemini-2.5-flash-image 等
+// 支持的模型：gemini-3.1-flash-image, gemini-3-pro-image, gemini-2.5-flash-image 等
 func isImageGenerationModel(model string) bool {
 	modelLower := strings.ToLower(model)
 	// 移除 models/ 前缀
 	modelLower = strings.TrimPrefix(modelLower, "models/")
 
 	// 精确匹配或前缀匹配
-	return modelLower == "gemini-3-pro-image" ||
+	return modelLower == "gemini-3.1-flash-image" ||
+		modelLower == "gemini-3.1-flash-image-preview" ||
+		strings.HasPrefix(modelLower, "gemini-3.1-flash-image-") ||
+		modelLower == "gemini-3-pro-image" ||
 		modelLower == "gemini-3-pro-image-preview" ||
 		strings.HasPrefix(modelLower, "gemini-3-pro-image-") ||
 		modelLower == "gemini-2.5-flash-image" ||
@@ -3875,7 +4208,6 @@ func (s *AntigravityGatewayService) ForwardUpstream(ctx context.Context, c *gin.
 		return nil, fmt.Errorf("missing model")
 	}
 	originalModel := claudeReq.Model
-	billingModel := originalModel
 
 	// 构建上游请求 URL
 	upstreamURL := baseURL + "/v1/messages"
@@ -3908,7 +4240,7 @@ func (s *AntigravityGatewayService) ForwardUpstream(ctx context.Context, c *gin.
 	// 发送请求
 	resp, err := s.httpUpstream.Do(req, proxyURL, account.ID, account.Concurrency)
 	if err != nil {
-		log.Printf("%s upstream request failed: %v", prefix, err)
+		logger.LegacyPrintf("service.antigravity_gateway", "%s upstream request failed: %v", prefix, err)
 		return nil, fmt.Errorf("upstream request failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -3928,7 +4260,7 @@ func (s *AntigravityGatewayService) ForwardUpstream(ctx context.Context, c *gin.
 		_, _ = c.Writer.Write(respBody)
 
 		return &ForwardResult{
-			Model: billingModel,
+			Model: originalModel,
 		}, nil
 	}
 
@@ -3966,10 +4298,10 @@ func (s *AntigravityGatewayService) ForwardUpstream(ctx context.Context, c *gin.
 
 	// 构建计费结果
 	duration := time.Since(startTime)
-	log.Printf("%s status=success duration_ms=%d", prefix, duration.Milliseconds())
+	logger.LegacyPrintf("service.antigravity_gateway", "%s status=success duration_ms=%d", prefix, duration.Milliseconds())
 
 	return &ForwardResult{
-		Model:            billingModel,
+		Model:            originalModel,
 		Stream:           claudeReq.Stream,
 		Duration:         duration,
 		FirstTokenMs:     firstTokenMs,
@@ -4039,6 +4371,22 @@ func (s *AntigravityGatewayService) streamUpstreamResponse(c *gin.Context, resp 
 		intervalCh = intervalTicker.C
 	}
 
+	// 下游 keepalive：防止代理/Cloudflare Tunnel 因连接空闲而断开
+	keepaliveInterval := time.Duration(0)
+	if s.settingService.cfg != nil && s.settingService.cfg.Gateway.StreamKeepaliveInterval > 0 {
+		keepaliveInterval = time.Duration(s.settingService.cfg.Gateway.StreamKeepaliveInterval) * time.Second
+	}
+	var keepaliveTicker *time.Ticker
+	if keepaliveInterval > 0 {
+		keepaliveTicker = time.NewTicker(keepaliveInterval)
+		defer keepaliveTicker.Stop()
+	}
+	var keepaliveCh <-chan time.Time
+	if keepaliveTicker != nil {
+		keepaliveCh = keepaliveTicker.C
+	}
+	lastDataAt := time.Now()
+
 	flusher, _ := c.Writer.(http.Flusher)
 	cw := newAntigravityClientWriter(c.Writer, flusher, "antigravity upstream")
 
@@ -4052,9 +4400,11 @@ func (s *AntigravityGatewayService) streamUpstreamResponse(c *gin.Context, resp 
 				if disconnect, handled := handleStreamReadError(ev.err, cw.Disconnected(), "antigravity upstream"); handled {
 					return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: disconnect}
 				}
-				log.Printf("Stream read error (antigravity upstream): %v", ev.err)
+				logger.LegacyPrintf("service.antigravity_gateway", "Stream read error (antigravity upstream): %v", ev.err)
 				return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs}
 			}
+
+			lastDataAt = time.Now()
 
 			line := ev.line
 
@@ -4076,11 +4426,25 @@ func (s *AntigravityGatewayService) streamUpstreamResponse(c *gin.Context, resp 
 				continue
 			}
 			if cw.Disconnected() {
-				log.Printf("Upstream timeout after client disconnect (antigravity upstream), returning collected usage")
+				logger.LegacyPrintf("service.antigravity_gateway", "Upstream timeout after client disconnect (antigravity upstream), returning collected usage")
 				return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: true}
 			}
-			log.Printf("Stream data interval timeout (antigravity upstream)")
+			logger.LegacyPrintf("service.antigravity_gateway", "Stream data interval timeout (antigravity upstream)")
 			return &antigravityStreamResult{usage: usage, firstTokenMs: firstTokenMs}
+
+		case <-keepaliveCh:
+			if cw.Disconnected() {
+				continue
+			}
+			if time.Since(lastDataAt) < keepaliveInterval {
+				continue
+			}
+			// SSE ping 事件：Anthropic 原生格式，客户端会正确处理，
+			// 同时保持连接活跃防止 Cloudflare Tunnel 等代理断开
+			if !cw.Fprintf("event: ping\ndata: {\"type\": \"ping\"}\n\n") {
+				logger.LegacyPrintf("service.antigravity_gateway", "Client disconnected during keepalive ping (antigravity upstream), continuing to drain upstream for billing")
+				continue
+			}
 		}
 	}
 }

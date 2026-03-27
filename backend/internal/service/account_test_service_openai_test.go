@@ -1,60 +1,102 @@
+//go:build unit
+
 package service
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/require"
 )
 
-type accountTestTokenCacheStub struct {
-	token string
+type openAIAccountTestRepo struct {
+	mockAccountRepoForGemini
+	updatedExtra  map[string]any
+	rateLimitedID int64
+	rateLimitedAt *time.Time
 }
 
-func (s *accountTestTokenCacheStub) GetAccessToken(ctx context.Context, cacheKey string) (string, error) {
-	return s.token, nil
-}
-
-func (s *accountTestTokenCacheStub) SetAccessToken(ctx context.Context, cacheKey string, token string, ttl time.Duration) error {
+func (r *openAIAccountTestRepo) UpdateExtra(_ context.Context, _ int64, updates map[string]any) error {
+	r.updatedExtra = updates
 	return nil
 }
 
-func (s *accountTestTokenCacheStub) DeleteAccessToken(ctx context.Context, cacheKey string) error {
+func (r *openAIAccountTestRepo) SetRateLimited(_ context.Context, id int64, resetAt time.Time) error {
+	r.rateLimitedID = id
+	r.rateLimitedAt = &resetAt
 	return nil
 }
 
-func (s *accountTestTokenCacheStub) AcquireRefreshLock(ctx context.Context, cacheKey string, ttl time.Duration) (bool, error) {
-	return false, nil
-}
+func TestAccountTestService_OpenAISuccessPersistsSnapshotFromHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, recorder := newSoraTestContext()
 
-func (s *accountTestTokenCacheStub) ReleaseRefreshLock(ctx context.Context, cacheKey string) error {
-	return nil
-}
+	resp := newJSONResponse(http.StatusOK, "")
+	resp.Body = io.NopCloser(strings.NewReader(`data: {"type":"response.completed"}
 
-func TestBuildOpenAITestRequest_UsesTokenProviderForOAuth(t *testing.T) {
-	provider := NewOpenAITokenProvider(nil, &accountTestTokenCacheStub{token: "provider-token"}, nil)
-	service := NewAccountTestService(nil, nil, nil, provider, nil, nil, nil)
+`))
+	resp.Header.Set("x-codex-primary-used-percent", "88")
+	resp.Header.Set("x-codex-primary-reset-after-seconds", "604800")
+	resp.Header.Set("x-codex-primary-window-minutes", "10080")
+	resp.Header.Set("x-codex-secondary-used-percent", "42")
+	resp.Header.Set("x-codex-secondary-reset-after-seconds", "18000")
+	resp.Header.Set("x-codex-secondary-window-minutes", "300")
+
+	repo := &openAIAccountTestRepo{}
+	upstream := &queuedHTTPUpstream{responses: []*http.Response{resp}}
+	svc := &AccountTestService{accountRepo: repo, httpUpstream: upstream}
 	account := &Account{
-		ID:       42,
-		Platform: PlatformOpenAI,
-		Type:     AccountTypeOAuth,
-		Credentials: map[string]any{
-			"access_token":       "stale-db-token",
-			"chatgpt_account_id": "acct-123",
-		},
+		ID:          89,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{"access_token": "test-token"},
 	}
 
-	req, _, _, err := service.buildOpenAITestRequest(context.Background(), account, "", false)
-	if err != nil {
-		t.Fatalf("buildOpenAITestRequest returned error: %v", err)
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.4")
+	require.NoError(t, err)
+	require.NotEmpty(t, repo.updatedExtra)
+	require.Equal(t, 42.0, repo.updatedExtra["codex_5h_used_percent"])
+	require.Equal(t, 88.0, repo.updatedExtra["codex_7d_used_percent"])
+	require.Contains(t, recorder.Body.String(), "test_complete")
+}
+
+func TestAccountTestService_OpenAI429PersistsSnapshotAndRateLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, _ := newSoraTestContext()
+
+	resp := newJSONResponse(http.StatusTooManyRequests, `{"error":{"type":"usage_limit_reached","message":"limit reached"}}`)
+	resp.Header.Set("x-codex-primary-used-percent", "100")
+	resp.Header.Set("x-codex-primary-reset-after-seconds", "604800")
+	resp.Header.Set("x-codex-primary-window-minutes", "10080")
+	resp.Header.Set("x-codex-secondary-used-percent", "100")
+	resp.Header.Set("x-codex-secondary-reset-after-seconds", "18000")
+	resp.Header.Set("x-codex-secondary-window-minutes", "300")
+
+	repo := &openAIAccountTestRepo{}
+	upstream := &queuedHTTPUpstream{responses: []*http.Response{resp}}
+	svc := &AccountTestService{accountRepo: repo, httpUpstream: upstream}
+	account := &Account{
+		ID:          88,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{"access_token": "test-token"},
 	}
-	if got := req.Header.Get("Authorization"); got != "Bearer provider-token" {
-		t.Fatalf("Authorization = %q, want %q", got, "Bearer provider-token")
-	}
-	if got := req.Header.Get("chatgpt-account-id"); got != "acct-123" {
-		t.Fatalf("chatgpt-account-id = %q, want %q", got, "acct-123")
-	}
-	if req.Method != http.MethodPost {
-		t.Fatalf("Method = %q, want %q", req.Method, http.MethodPost)
+
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.4")
+	require.Error(t, err)
+	require.NotEmpty(t, repo.updatedExtra)
+	require.Equal(t, 100.0, repo.updatedExtra["codex_5h_used_percent"])
+	require.Equal(t, int64(88), repo.rateLimitedID)
+	require.NotNil(t, repo.rateLimitedAt)
+	require.NotNil(t, account.RateLimitResetAt)
+	if account.RateLimitResetAt != nil && repo.rateLimitedAt != nil {
+		require.WithinDuration(t, *repo.rateLimitedAt, *account.RateLimitResetAt, time.Second)
 	}
 }

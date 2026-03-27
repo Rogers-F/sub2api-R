@@ -125,19 +125,14 @@ func TotpEnabledAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldTotpEnabledAt, v))
 }
 
-// ReferrerID applies equality check predicate on the "referrer_id" field. It's identical to ReferrerIDEQ.
-func ReferrerID(v int64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldReferrerID, v))
+// SoraStorageQuotaBytes applies equality check predicate on the "sora_storage_quota_bytes" field. It's identical to SoraStorageQuotaBytesEQ.
+func SoraStorageQuotaBytes(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferralCode applies equality check predicate on the "referral_code" field. It's identical to ReferralCodeEQ.
-func ReferralCode(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldReferralCode, v))
-}
-
-// CommissionRate applies equality check predicate on the "commission_rate" field. It's identical to CommissionRateEQ.
-func CommissionRate(v float64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldCommissionRate, v))
+// SoraStorageUsedBytes applies equality check predicate on the "sora_storage_used_bytes" field. It's identical to SoraStorageUsedBytesEQ.
+func SoraStorageUsedBytes(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSoraStorageUsedBytes, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -875,179 +870,84 @@ func TotpEnabledAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldTotpEnabledAt))
 }
 
-// ReferrerIDEQ applies the EQ predicate on the "referrer_id" field.
-func ReferrerIDEQ(v int64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldReferrerID, v))
+// SoraStorageQuotaBytesEQ applies the EQ predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferrerIDNEQ applies the NEQ predicate on the "referrer_id" field.
-func ReferrerIDNEQ(v int64) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldReferrerID, v))
+// SoraStorageQuotaBytesNEQ applies the NEQ predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferrerIDIn applies the In predicate on the "referrer_id" field.
-func ReferrerIDIn(vs ...int64) predicate.User {
-	return predicate.User(sql.FieldIn(FieldReferrerID, vs...))
+// SoraStorageQuotaBytesIn applies the In predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSoraStorageQuotaBytes, vs...))
 }
 
-// ReferrerIDNotIn applies the NotIn predicate on the "referrer_id" field.
-func ReferrerIDNotIn(vs ...int64) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldReferrerID, vs...))
+// SoraStorageQuotaBytesNotIn applies the NotIn predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSoraStorageQuotaBytes, vs...))
 }
 
-// ReferrerIDGT applies the GT predicate on the "referrer_id" field.
-func ReferrerIDGT(v int64) predicate.User {
-	return predicate.User(sql.FieldGT(FieldReferrerID, v))
+// SoraStorageQuotaBytesGT applies the GT predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferrerIDGTE applies the GTE predicate on the "referrer_id" field.
-func ReferrerIDGTE(v int64) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldReferrerID, v))
+// SoraStorageQuotaBytesGTE applies the GTE predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferrerIDLT applies the LT predicate on the "referrer_id" field.
-func ReferrerIDLT(v int64) predicate.User {
-	return predicate.User(sql.FieldLT(FieldReferrerID, v))
+// SoraStorageQuotaBytesLT applies the LT predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferrerIDLTE applies the LTE predicate on the "referrer_id" field.
-func ReferrerIDLTE(v int64) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldReferrerID, v))
+// SoraStorageQuotaBytesLTE applies the LTE predicate on the "sora_storage_quota_bytes" field.
+func SoraStorageQuotaBytesLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSoraStorageQuotaBytes, v))
 }
 
-// ReferrerIDIsNil applies the IsNil predicate on the "referrer_id" field.
-func ReferrerIDIsNil() predicate.User {
-	return predicate.User(sql.FieldIsNull(FieldReferrerID))
+// SoraStorageUsedBytesEQ applies the EQ predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSoraStorageUsedBytes, v))
 }
 
-// ReferrerIDNotNil applies the NotNil predicate on the "referrer_id" field.
-func ReferrerIDNotNil() predicate.User {
-	return predicate.User(sql.FieldNotNull(FieldReferrerID))
+// SoraStorageUsedBytesNEQ applies the NEQ predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSoraStorageUsedBytes, v))
 }
 
-// ReferralCodeEQ applies the EQ predicate on the "referral_code" field.
-func ReferralCodeEQ(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldReferralCode, v))
+// SoraStorageUsedBytesIn applies the In predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSoraStorageUsedBytes, vs...))
 }
 
-// ReferralCodeNEQ applies the NEQ predicate on the "referral_code" field.
-func ReferralCodeNEQ(v string) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldReferralCode, v))
+// SoraStorageUsedBytesNotIn applies the NotIn predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSoraStorageUsedBytes, vs...))
 }
 
-// ReferralCodeIn applies the In predicate on the "referral_code" field.
-func ReferralCodeIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldIn(FieldReferralCode, vs...))
+// SoraStorageUsedBytesGT applies the GT predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSoraStorageUsedBytes, v))
 }
 
-// ReferralCodeNotIn applies the NotIn predicate on the "referral_code" field.
-func ReferralCodeNotIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldReferralCode, vs...))
+// SoraStorageUsedBytesGTE applies the GTE predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSoraStorageUsedBytes, v))
 }
 
-// ReferralCodeGT applies the GT predicate on the "referral_code" field.
-func ReferralCodeGT(v string) predicate.User {
-	return predicate.User(sql.FieldGT(FieldReferralCode, v))
+// SoraStorageUsedBytesLT applies the LT predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSoraStorageUsedBytes, v))
 }
 
-// ReferralCodeGTE applies the GTE predicate on the "referral_code" field.
-func ReferralCodeGTE(v string) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldReferralCode, v))
-}
-
-// ReferralCodeLT applies the LT predicate on the "referral_code" field.
-func ReferralCodeLT(v string) predicate.User {
-	return predicate.User(sql.FieldLT(FieldReferralCode, v))
-}
-
-// ReferralCodeLTE applies the LTE predicate on the "referral_code" field.
-func ReferralCodeLTE(v string) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldReferralCode, v))
-}
-
-// ReferralCodeContains applies the Contains predicate on the "referral_code" field.
-func ReferralCodeContains(v string) predicate.User {
-	return predicate.User(sql.FieldContains(FieldReferralCode, v))
-}
-
-// ReferralCodeHasPrefix applies the HasPrefix predicate on the "referral_code" field.
-func ReferralCodeHasPrefix(v string) predicate.User {
-	return predicate.User(sql.FieldHasPrefix(FieldReferralCode, v))
-}
-
-// ReferralCodeHasSuffix applies the HasSuffix predicate on the "referral_code" field.
-func ReferralCodeHasSuffix(v string) predicate.User {
-	return predicate.User(sql.FieldHasSuffix(FieldReferralCode, v))
-}
-
-// ReferralCodeIsNil applies the IsNil predicate on the "referral_code" field.
-func ReferralCodeIsNil() predicate.User {
-	return predicate.User(sql.FieldIsNull(FieldReferralCode))
-}
-
-// ReferralCodeNotNil applies the NotNil predicate on the "referral_code" field.
-func ReferralCodeNotNil() predicate.User {
-	return predicate.User(sql.FieldNotNull(FieldReferralCode))
-}
-
-// ReferralCodeEqualFold applies the EqualFold predicate on the "referral_code" field.
-func ReferralCodeEqualFold(v string) predicate.User {
-	return predicate.User(sql.FieldEqualFold(FieldReferralCode, v))
-}
-
-// ReferralCodeContainsFold applies the ContainsFold predicate on the "referral_code" field.
-func ReferralCodeContainsFold(v string) predicate.User {
-	return predicate.User(sql.FieldContainsFold(FieldReferralCode, v))
-}
-
-// CommissionRateEQ applies the EQ predicate on the "commission_rate" field.
-func CommissionRateEQ(v float64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldCommissionRate, v))
-}
-
-// CommissionRateNEQ applies the NEQ predicate on the "commission_rate" field.
-func CommissionRateNEQ(v float64) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldCommissionRate, v))
-}
-
-// CommissionRateIn applies the In predicate on the "commission_rate" field.
-func CommissionRateIn(vs ...float64) predicate.User {
-	return predicate.User(sql.FieldIn(FieldCommissionRate, vs...))
-}
-
-// CommissionRateNotIn applies the NotIn predicate on the "commission_rate" field.
-func CommissionRateNotIn(vs ...float64) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldCommissionRate, vs...))
-}
-
-// CommissionRateGT applies the GT predicate on the "commission_rate" field.
-func CommissionRateGT(v float64) predicate.User {
-	return predicate.User(sql.FieldGT(FieldCommissionRate, v))
-}
-
-// CommissionRateGTE applies the GTE predicate on the "commission_rate" field.
-func CommissionRateGTE(v float64) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldCommissionRate, v))
-}
-
-// CommissionRateLT applies the LT predicate on the "commission_rate" field.
-func CommissionRateLT(v float64) predicate.User {
-	return predicate.User(sql.FieldLT(FieldCommissionRate, v))
-}
-
-// CommissionRateLTE applies the LTE predicate on the "commission_rate" field.
-func CommissionRateLTE(v float64) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldCommissionRate, v))
-}
-
-// CommissionRateIsNil applies the IsNil predicate on the "commission_rate" field.
-func CommissionRateIsNil() predicate.User {
-	return predicate.User(sql.FieldIsNull(FieldCommissionRate))
-}
-
-// CommissionRateNotNil applies the NotNil predicate on the "commission_rate" field.
-func CommissionRateNotNil() predicate.User {
-	return predicate.User(sql.FieldNotNull(FieldCommissionRate))
+// SoraStorageUsedBytesLTE applies the LTE predicate on the "sora_storage_used_bytes" field.
+func SoraStorageUsedBytesLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSoraStorageUsedBytes, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.
@@ -1249,52 +1149,6 @@ func HasPromoCodeUsages() predicate.User {
 func HasPromoCodeUsagesWith(preds ...predicate.PromoCodeUsage) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newPromoCodeUsagesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasReferralRewardsGiven applies the HasEdge predicate on the "referral_rewards_given" edge.
-func HasReferralRewardsGiven() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsGivenTable, ReferralRewardsGivenColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasReferralRewardsGivenWith applies the HasEdge predicate on the "referral_rewards_given" edge with a given conditions (other predicates).
-func HasReferralRewardsGivenWith(preds ...predicate.ReferralReward) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := newReferralRewardsGivenStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasReferralRewardsReceived applies the HasEdge predicate on the "referral_rewards_received" edge.
-func HasReferralRewardsReceived() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsReceivedTable, ReferralRewardsReceivedColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasReferralRewardsReceivedWith applies the HasEdge predicate on the "referral_rewards_received" edge with a given conditions (other predicates).
-func HasReferralRewardsReceivedWith(preds ...predicate.ReferralReward) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := newReferralRewardsReceivedStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

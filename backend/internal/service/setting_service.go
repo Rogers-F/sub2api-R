@@ -7,16 +7,31 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"golang.org/x/sync/singleflight"
 )
 
 var (
-	ErrRegistrationDisabled = infraerrors.Forbidden("REGISTRATION_DISABLED", "registration is currently disabled")
-	ErrSettingNotFound      = infraerrors.NotFound("SETTING_NOT_FOUND", "setting not found")
+	ErrRegistrationDisabled   = infraerrors.Forbidden("REGISTRATION_DISABLED", "registration is currently disabled")
+	ErrSettingNotFound        = infraerrors.NotFound("SETTING_NOT_FOUND", "setting not found")
+	ErrSoraS3ProfileNotFound  = infraerrors.NotFound("SORA_S3_PROFILE_NOT_FOUND", "sora s3 profile not found")
+	ErrSoraS3ProfileExists    = infraerrors.Conflict("SORA_S3_PROFILE_EXISTS", "sora s3 profile already exists")
+	ErrDefaultSubGroupInvalid = infraerrors.BadRequest(
+		"DEFAULT_SUBSCRIPTION_GROUP_INVALID",
+		"default subscription group must exist and be subscription type",
+	)
+	ErrDefaultSubGroupDuplicate = infraerrors.BadRequest(
+		"DEFAULT_SUBSCRIPTION_GROUP_DUPLICATE",
+		"default subscription group cannot be duplicated",
+	)
 )
 
 type SettingRepository interface {
@@ -29,12 +44,54 @@ type SettingRepository interface {
 	Delete(ctx context.Context, key string) error
 }
 
+// cachedVersionBounds 缓存 Claude Code 版本号上下限（进程内缓存，60s TTL）
+type cachedVersionBounds struct {
+	min       string // 空字符串 = 不检查
+	max       string // 空字符串 = 不检查
+	expiresAt int64  // unix nano
+}
+
+// versionBoundsCache 版本号上下限进程内缓存
+var versionBoundsCache atomic.Value // *cachedVersionBounds
+
+// versionBoundsSF 防止缓存过期时 thundering herd
+var versionBoundsSF singleflight.Group
+
+// versionBoundsCacheTTL 缓存有效期
+const versionBoundsCacheTTL = 60 * time.Second
+
+// versionBoundsErrorTTL DB 错误时的短缓存，快速重试
+const versionBoundsErrorTTL = 5 * time.Second
+
+// versionBoundsDBTimeout singleflight 内 DB 查询超时，独立于请求 context
+const versionBoundsDBTimeout = 5 * time.Second
+
+// cachedBackendMode Backend Mode cache (in-process, 60s TTL)
+type cachedBackendMode struct {
+	value     bool
+	expiresAt int64 // unix nano
+}
+
+var backendModeCache atomic.Value // *cachedBackendMode
+var backendModeSF singleflight.Group
+
+const backendModeCacheTTL = 60 * time.Second
+const backendModeErrorTTL = 5 * time.Second
+const backendModeDBTimeout = 5 * time.Second
+
+// DefaultSubscriptionGroupReader validates group references used by default subscriptions.
+type DefaultSubscriptionGroupReader interface {
+	GetByID(ctx context.Context, id int64) (*Group, error)
+}
+
 // SettingService 系统设置服务
 type SettingService struct {
-	settingRepo SettingRepository
-	cfg         *config.Config
-	onUpdate    func() // Callback when settings are updated (for cache invalidation)
-	version     string // Application version
+	settingRepo           SettingRepository
+	defaultSubGroupReader DefaultSubscriptionGroupReader
+	cfg                   *config.Config
+	onUpdate              func() // Callback when settings are updated (for cache invalidation)
+	onS3Update            func() // Callback when Sora S3 settings are updated
+	version               string // Application version
 }
 
 // NewSettingService 创建系统设置服务实例
@@ -43,6 +100,11 @@ func NewSettingService(settingRepo SettingRepository, cfg *config.Config) *Setti
 		settingRepo: settingRepo,
 		cfg:         cfg,
 	}
+}
+
+// SetDefaultSubscriptionGroupReader injects an optional group reader for default subscription validation.
+func (s *SettingService) SetDefaultSubscriptionGroupReader(reader DefaultSubscriptionGroupReader) {
+	s.defaultSubGroupReader = reader
 }
 
 // GetAllSettings 获取所有系统设置
@@ -55,11 +117,21 @@ func (s *SettingService) GetAllSettings(ctx context.Context) (*SystemSettings, e
 	return s.parseSettings(settings), nil
 }
 
+// GetFrontendURL 获取前端基础URL（数据库优先，fallback 到配置文件）
+func (s *SettingService) GetFrontendURL(ctx context.Context) string {
+	val, err := s.settingRepo.GetValue(ctx, SettingKeyFrontendURL)
+	if err == nil && strings.TrimSpace(val) != "" {
+		return strings.TrimSpace(val)
+	}
+	return s.cfg.Server.FrontendURL
+}
+
 // GetPublicSettings 获取公开设置（无需登录）
 func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings, error) {
 	keys := []string{
 		SettingKeyRegistrationEnabled,
 		SettingKeyEmailVerifyEnabled,
+		SettingKeyRegistrationEmailSuffixWhitelist,
 		SettingKeyPromoCodeEnabled,
 		SettingKeyPasswordResetEnabled,
 		SettingKeyInvitationCodeEnabled,
@@ -76,7 +148,11 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyHideCcsImportButton,
 		SettingKeyPurchaseSubscriptionEnabled,
 		SettingKeyPurchaseSubscriptionURL,
+		SettingKeySoraClientEnabled,
+		SettingKeyCustomMenuItems,
+		SettingKeyCustomEndpoints,
 		SettingKeyLinuxDoConnectEnabled,
+		SettingKeyBackendModeEnabled,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -94,27 +170,35 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 	// Password reset requires email verification to be enabled
 	emailVerifyEnabled := settings[SettingKeyEmailVerifyEnabled] == "true"
 	passwordResetEnabled := emailVerifyEnabled && settings[SettingKeyPasswordResetEnabled] == "true"
+	registrationEmailSuffixWhitelist := ParseRegistrationEmailSuffixWhitelist(
+		settings[SettingKeyRegistrationEmailSuffixWhitelist],
+	)
 
 	return &PublicSettings{
-		RegistrationEnabled:         settings[SettingKeyRegistrationEnabled] == "true",
-		EmailVerifyEnabled:          emailVerifyEnabled,
-		PromoCodeEnabled:            settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用
-		PasswordResetEnabled:        passwordResetEnabled,
-		InvitationCodeEnabled:       settings[SettingKeyInvitationCodeEnabled] == "true",
-		TotpEnabled:                 settings[SettingKeyTotpEnabled] == "true",
-		TurnstileEnabled:            settings[SettingKeyTurnstileEnabled] == "true",
-		TurnstileSiteKey:            settings[SettingKeyTurnstileSiteKey],
-		SiteName:                    s.getStringOrDefault(settings, SettingKeySiteName, "Sub2API"),
-		SiteLogo:                    settings[SettingKeySiteLogo],
-		SiteSubtitle:                s.getStringOrDefault(settings, SettingKeySiteSubtitle, "Subscription to API Conversion Platform"),
-		APIBaseURL:                  settings[SettingKeyAPIBaseURL],
-		ContactInfo:                 settings[SettingKeyContactInfo],
-		DocURL:                      settings[SettingKeyDocURL],
-		HomeContent:                 settings[SettingKeyHomeContent],
-		HideCcsImportButton:         settings[SettingKeyHideCcsImportButton] == "true",
-		PurchaseSubscriptionEnabled: settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
-		PurchaseSubscriptionURL:     strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
-		LinuxDoOAuthEnabled:         linuxDoEnabled,
+		RegistrationEnabled:              settings[SettingKeyRegistrationEnabled] == "true",
+		EmailVerifyEnabled:               emailVerifyEnabled,
+		RegistrationEmailSuffixWhitelist: registrationEmailSuffixWhitelist,
+		PromoCodeEnabled:                 settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用
+		PasswordResetEnabled:             passwordResetEnabled,
+		InvitationCodeEnabled:            settings[SettingKeyInvitationCodeEnabled] == "true",
+		TotpEnabled:                      settings[SettingKeyTotpEnabled] == "true",
+		TurnstileEnabled:                 settings[SettingKeyTurnstileEnabled] == "true",
+		TurnstileSiteKey:                 settings[SettingKeyTurnstileSiteKey],
+		SiteName:                         s.getStringOrDefault(settings, SettingKeySiteName, "Sub2API"),
+		SiteLogo:                         settings[SettingKeySiteLogo],
+		SiteSubtitle:                     s.getStringOrDefault(settings, SettingKeySiteSubtitle, "Subscription to API Conversion Platform"),
+		APIBaseURL:                       settings[SettingKeyAPIBaseURL],
+		ContactInfo:                      settings[SettingKeyContactInfo],
+		DocURL:                           settings[SettingKeyDocURL],
+		HomeContent:                      settings[SettingKeyHomeContent],
+		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
+		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
+		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
+		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
+		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
+		LinuxDoOAuthEnabled:              linuxDoEnabled,
+		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 	}, nil
 }
 
@@ -122,6 +206,11 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 // This is used for cache invalidation (e.g., HTML cache in frontend server)
 func (s *SettingService) SetOnUpdateCallback(callback func()) {
 	s.onUpdate = callback
+}
+
+// SetOnS3UpdateCallback 设置 Sora S3 配置变更时的回调函数（用于刷新 S3 客户端缓存）。
+func (s *SettingService) SetOnS3UpdateCallback(callback func()) {
+	s.onS3Update = callback
 }
 
 // SetVersion sets the application version for injection into public settings
@@ -139,59 +228,206 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 
 	// Return a struct that matches the frontend's expected format
 	return &struct {
-		RegistrationEnabled         bool   `json:"registration_enabled"`
-		EmailVerifyEnabled          bool   `json:"email_verify_enabled"`
-		PromoCodeEnabled            bool   `json:"promo_code_enabled"`
-		PasswordResetEnabled        bool   `json:"password_reset_enabled"`
-		InvitationCodeEnabled       bool   `json:"invitation_code_enabled"`
-		TotpEnabled                 bool   `json:"totp_enabled"`
-		TurnstileEnabled            bool   `json:"turnstile_enabled"`
-		TurnstileSiteKey            string `json:"turnstile_site_key,omitempty"`
-		SiteName                    string `json:"site_name"`
-		SiteLogo                    string `json:"site_logo,omitempty"`
-		SiteSubtitle                string `json:"site_subtitle,omitempty"`
-		APIBaseURL                  string `json:"api_base_url,omitempty"`
-		ContactInfo                 string `json:"contact_info,omitempty"`
-		DocURL                      string `json:"doc_url,omitempty"`
-		HomeContent                 string `json:"home_content,omitempty"`
-		HideCcsImportButton         bool   `json:"hide_ccs_import_button"`
-		PurchaseSubscriptionEnabled bool   `json:"purchase_subscription_enabled"`
-		PurchaseSubscriptionURL     string `json:"purchase_subscription_url,omitempty"`
-		LinuxDoOAuthEnabled         bool   `json:"linuxdo_oauth_enabled"`
-		Version                     string `json:"version,omitempty"`
+		RegistrationEnabled              bool            `json:"registration_enabled"`
+		EmailVerifyEnabled               bool            `json:"email_verify_enabled"`
+		RegistrationEmailSuffixWhitelist []string        `json:"registration_email_suffix_whitelist"`
+		PromoCodeEnabled                 bool            `json:"promo_code_enabled"`
+		PasswordResetEnabled             bool            `json:"password_reset_enabled"`
+		InvitationCodeEnabled            bool            `json:"invitation_code_enabled"`
+		TotpEnabled                      bool            `json:"totp_enabled"`
+		TurnstileEnabled                 bool            `json:"turnstile_enabled"`
+		TurnstileSiteKey                 string          `json:"turnstile_site_key,omitempty"`
+		SiteName                         string          `json:"site_name"`
+		SiteLogo                         string          `json:"site_logo,omitempty"`
+		SiteSubtitle                     string          `json:"site_subtitle,omitempty"`
+		APIBaseURL                       string          `json:"api_base_url,omitempty"`
+		ContactInfo                      string          `json:"contact_info,omitempty"`
+		DocURL                           string          `json:"doc_url,omitempty"`
+		HomeContent                      string          `json:"home_content,omitempty"`
+		HideCcsImportButton              bool            `json:"hide_ccs_import_button"`
+		PurchaseSubscriptionEnabled      bool            `json:"purchase_subscription_enabled"`
+		PurchaseSubscriptionURL          string          `json:"purchase_subscription_url,omitempty"`
+		SoraClientEnabled                bool            `json:"sora_client_enabled"`
+		CustomMenuItems                  json.RawMessage `json:"custom_menu_items"`
+		CustomEndpoints                  json.RawMessage `json:"custom_endpoints"`
+		LinuxDoOAuthEnabled              bool            `json:"linuxdo_oauth_enabled"`
+		BackendModeEnabled               bool            `json:"backend_mode_enabled"`
+		Version                          string          `json:"version,omitempty"`
 	}{
-		RegistrationEnabled:         settings.RegistrationEnabled,
-		EmailVerifyEnabled:          settings.EmailVerifyEnabled,
-		PromoCodeEnabled:            settings.PromoCodeEnabled,
-		PasswordResetEnabled:        settings.PasswordResetEnabled,
-		InvitationCodeEnabled:       settings.InvitationCodeEnabled,
-		TotpEnabled:                 settings.TotpEnabled,
-		TurnstileEnabled:            settings.TurnstileEnabled,
-		TurnstileSiteKey:            settings.TurnstileSiteKey,
-		SiteName:                    settings.SiteName,
-		SiteLogo:                    settings.SiteLogo,
-		SiteSubtitle:                settings.SiteSubtitle,
-		APIBaseURL:                  settings.APIBaseURL,
-		ContactInfo:                 settings.ContactInfo,
-		DocURL:                      settings.DocURL,
-		HomeContent:                 settings.HomeContent,
-		HideCcsImportButton:         settings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled: settings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:     settings.PurchaseSubscriptionURL,
-		LinuxDoOAuthEnabled:         settings.LinuxDoOAuthEnabled,
-		Version:                     s.version,
+		RegistrationEnabled:              settings.RegistrationEnabled,
+		EmailVerifyEnabled:               settings.EmailVerifyEnabled,
+		RegistrationEmailSuffixWhitelist: settings.RegistrationEmailSuffixWhitelist,
+		PromoCodeEnabled:                 settings.PromoCodeEnabled,
+		PasswordResetEnabled:             settings.PasswordResetEnabled,
+		InvitationCodeEnabled:            settings.InvitationCodeEnabled,
+		TotpEnabled:                      settings.TotpEnabled,
+		TurnstileEnabled:                 settings.TurnstileEnabled,
+		TurnstileSiteKey:                 settings.TurnstileSiteKey,
+		SiteName:                         settings.SiteName,
+		SiteLogo:                         settings.SiteLogo,
+		SiteSubtitle:                     settings.SiteSubtitle,
+		APIBaseURL:                       settings.APIBaseURL,
+		ContactInfo:                      settings.ContactInfo,
+		DocURL:                           settings.DocURL,
+		HomeContent:                      settings.HomeContent,
+		HideCcsImportButton:              settings.HideCcsImportButton,
+		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
+		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
+		SoraClientEnabled:                settings.SoraClientEnabled,
+		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
+		CustomEndpoints:                  safeRawJSONArray(settings.CustomEndpoints),
+		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
+		BackendModeEnabled:               settings.BackendModeEnabled,
+		Version:                          s.version,
 	}, nil
+}
+
+// filterUserVisibleMenuItems filters out admin-only menu items from a raw JSON
+// array string, returning only items with visibility != "admin".
+func filterUserVisibleMenuItems(raw string) json.RawMessage {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "[]" {
+		return json.RawMessage("[]")
+	}
+	var items []struct {
+		Visibility string `json:"visibility"`
+	}
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return json.RawMessage("[]")
+	}
+
+	// Parse full items to preserve all fields
+	var fullItems []json.RawMessage
+	if err := json.Unmarshal([]byte(raw), &fullItems); err != nil {
+		return json.RawMessage("[]")
+	}
+
+	var filtered []json.RawMessage
+	for i, item := range items {
+		if item.Visibility != "admin" {
+			filtered = append(filtered, fullItems[i])
+		}
+	}
+	if len(filtered) == 0 {
+		return json.RawMessage("[]")
+	}
+	result, err := json.Marshal(filtered)
+	if err != nil {
+		return json.RawMessage("[]")
+	}
+	return result
+}
+
+// safeRawJSONArray returns raw as json.RawMessage if it's valid JSON, otherwise "[]".
+func safeRawJSONArray(raw string) json.RawMessage {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return json.RawMessage("[]")
+	}
+	if json.Valid([]byte(raw)) {
+		return json.RawMessage(raw)
+	}
+	return json.RawMessage("[]")
+}
+
+// GetFrameSrcOrigins returns deduplicated http(s) origins from purchase_subscription_url
+// and all custom_menu_items URLs. Used by the router layer for CSP frame-src injection.
+func (s *SettingService) GetFrameSrcOrigins(ctx context.Context) ([]string, error) {
+	settings, err := s.GetPublicSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]struct{})
+	var origins []string
+
+	addOrigin := func(rawURL string) {
+		if origin := extractOriginFromURL(rawURL); origin != "" {
+			if _, ok := seen[origin]; !ok {
+				seen[origin] = struct{}{}
+				origins = append(origins, origin)
+			}
+		}
+	}
+
+	// purchase subscription URL
+	if settings.PurchaseSubscriptionEnabled {
+		addOrigin(settings.PurchaseSubscriptionURL)
+	}
+
+	// all custom menu items (including admin-only, since CSP must allow all iframes)
+	for _, item := range parseCustomMenuItemURLs(settings.CustomMenuItems) {
+		addOrigin(item)
+	}
+
+	return origins, nil
+}
+
+// extractOriginFromURL returns the scheme+host origin from rawURL.
+// Only http and https schemes are accepted.
+func extractOriginFromURL(rawURL string) string {
+	rawURL = strings.TrimSpace(rawURL)
+	if rawURL == "" {
+		return ""
+	}
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host
+}
+
+// parseCustomMenuItemURLs extracts URLs from a raw JSON array of custom menu items.
+func parseCustomMenuItemURLs(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "[]" {
+		return nil
+	}
+	var items []struct {
+		URL string `json:"url"`
+	}
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return nil
+	}
+	urls := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.URL != "" {
+			urls = append(urls, item.URL)
+		}
+	}
+	return urls
 }
 
 // UpdateSettings 更新系统设置
 func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSettings) error {
+	if err := s.validateDefaultSubscriptionGroups(ctx, settings.DefaultSubscriptions); err != nil {
+		return err
+	}
+	normalizedWhitelist, err := NormalizeRegistrationEmailSuffixWhitelist(settings.RegistrationEmailSuffixWhitelist)
+	if err != nil {
+		return infraerrors.BadRequest("INVALID_REGISTRATION_EMAIL_SUFFIX_WHITELIST", err.Error())
+	}
+	if normalizedWhitelist == nil {
+		normalizedWhitelist = []string{}
+	}
+	settings.RegistrationEmailSuffixWhitelist = normalizedWhitelist
+
 	updates := make(map[string]string)
 
 	// 注册设置
 	updates[SettingKeyRegistrationEnabled] = strconv.FormatBool(settings.RegistrationEnabled)
 	updates[SettingKeyEmailVerifyEnabled] = strconv.FormatBool(settings.EmailVerifyEnabled)
+	registrationEmailSuffixWhitelistJSON, err := json.Marshal(settings.RegistrationEmailSuffixWhitelist)
+	if err != nil {
+		return fmt.Errorf("marshal registration email suffix whitelist: %w", err)
+	}
+	updates[SettingKeyRegistrationEmailSuffixWhitelist] = string(registrationEmailSuffixWhitelistJSON)
 	updates[SettingKeyPromoCodeEnabled] = strconv.FormatBool(settings.PromoCodeEnabled)
 	updates[SettingKeyPasswordResetEnabled] = strconv.FormatBool(settings.PasswordResetEnabled)
+	updates[SettingKeyFrontendURL] = settings.FrontendURL
 	updates[SettingKeyInvitationCodeEnabled] = strconv.FormatBool(settings.InvitationCodeEnabled)
 	updates[SettingKeyTotpEnabled] = strconv.FormatBool(settings.TotpEnabled)
 
@@ -232,10 +468,18 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
+	updates[SettingKeySoraClientEnabled] = strconv.FormatBool(settings.SoraClientEnabled)
+	updates[SettingKeyCustomMenuItems] = settings.CustomMenuItems
+	updates[SettingKeyCustomEndpoints] = settings.CustomEndpoints
 
 	// 默认配置
 	updates[SettingKeyDefaultConcurrency] = strconv.Itoa(settings.DefaultConcurrency)
 	updates[SettingKeyDefaultBalance] = strconv.FormatFloat(settings.DefaultBalance, 'f', 8, 64)
+	defaultSubsJSON, err := json.Marshal(settings.DefaultSubscriptions)
+	if err != nil {
+		return fmt.Errorf("marshal default subscriptions: %w", err)
+	}
+	updates[SettingKeyDefaultSubscriptions] = string(defaultSubsJSON)
 
 	// Model fallback configuration
 	updates[SettingKeyEnableModelFallback] = strconv.FormatBool(settings.EnableModelFallback)
@@ -256,17 +500,74 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 		updates[SettingKeyOpsMetricsIntervalSeconds] = strconv.Itoa(settings.OpsMetricsIntervalSeconds)
 	}
 
-	// 邀请系统设置
-	updates[SettingKeyReferralEnabled] = strconv.FormatBool(settings.ReferralEnabled)
-	updates[SettingKeyReferralRegisterBonus] = strconv.FormatFloat(settings.ReferralRegisterBonus, 'f', 2, 64)
-	updates[SettingKeyReferralCommissionRate] = strconv.FormatFloat(settings.ReferralCommissionRate, 'f', 4, 64)
-	updates[SettingKeyReferralMaxTotalReward] = strconv.FormatFloat(settings.ReferralMaxTotalReward, 'f', 2, 64)
+	// Claude Code version check
+	updates[SettingKeyMinClaudeCodeVersion] = settings.MinClaudeCodeVersion
+	updates[SettingKeyMaxClaudeCodeVersion] = settings.MaxClaudeCodeVersion
 
-	err := s.settingRepo.SetMultiple(ctx, updates)
-	if err == nil && s.onUpdate != nil {
-		s.onUpdate() // Invalidate cache after settings update
+	// 分组隔离
+	updates[SettingKeyAllowUngroupedKeyScheduling] = strconv.FormatBool(settings.AllowUngroupedKeyScheduling)
+
+	// Backend Mode
+	updates[SettingKeyBackendModeEnabled] = strconv.FormatBool(settings.BackendModeEnabled)
+
+	err = s.settingRepo.SetMultiple(ctx, updates)
+	if err == nil {
+		// 先使 inflight singleflight 失效，再刷新缓存，缩小旧值覆盖新值的竞态窗口
+		versionBoundsSF.Forget("version_bounds")
+		versionBoundsCache.Store(&cachedVersionBounds{
+			min:       settings.MinClaudeCodeVersion,
+			max:       settings.MaxClaudeCodeVersion,
+			expiresAt: time.Now().Add(versionBoundsCacheTTL).UnixNano(),
+		})
+		backendModeSF.Forget("backend_mode")
+		backendModeCache.Store(&cachedBackendMode{
+			value:     settings.BackendModeEnabled,
+			expiresAt: time.Now().Add(backendModeCacheTTL).UnixNano(),
+		})
+		if s.onUpdate != nil {
+			s.onUpdate() // Invalidate cache after settings update
+		}
 	}
 	return err
+}
+
+func (s *SettingService) validateDefaultSubscriptionGroups(ctx context.Context, items []DefaultSubscriptionSetting) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	checked := make(map[int64]struct{}, len(items))
+	for _, item := range items {
+		if item.GroupID <= 0 {
+			continue
+		}
+		if _, ok := checked[item.GroupID]; ok {
+			return ErrDefaultSubGroupDuplicate.WithMetadata(map[string]string{
+				"group_id": strconv.FormatInt(item.GroupID, 10),
+			})
+		}
+		checked[item.GroupID] = struct{}{}
+		if s.defaultSubGroupReader == nil {
+			continue
+		}
+
+		group, err := s.defaultSubGroupReader.GetByID(ctx, item.GroupID)
+		if err != nil {
+			if errors.Is(err, ErrGroupNotFound) {
+				return ErrDefaultSubGroupInvalid.WithMetadata(map[string]string{
+					"group_id": strconv.FormatInt(item.GroupID, 10),
+				})
+			}
+			return fmt.Errorf("get default subscription group %d: %w", item.GroupID, err)
+		}
+		if !group.IsSubscriptionType() {
+			return ErrDefaultSubGroupInvalid.WithMetadata(map[string]string{
+				"group_id": strconv.FormatInt(item.GroupID, 10),
+			})
+		}
+	}
+
+	return nil
 }
 
 // IsRegistrationEnabled 检查是否开放注册
@@ -279,6 +580,52 @@ func (s *SettingService) IsRegistrationEnabled(ctx context.Context) bool {
 	return value == "true"
 }
 
+// IsBackendModeEnabled checks if backend mode is enabled
+// Uses in-process atomic.Value cache with 60s TTL, zero-lock hot path
+func (s *SettingService) IsBackendModeEnabled(ctx context.Context) bool {
+	if cached, ok := backendModeCache.Load().(*cachedBackendMode); ok && cached != nil {
+		if time.Now().UnixNano() < cached.expiresAt {
+			return cached.value
+		}
+	}
+	result, _, _ := backendModeSF.Do("backend_mode", func() (any, error) {
+		if cached, ok := backendModeCache.Load().(*cachedBackendMode); ok && cached != nil {
+			if time.Now().UnixNano() < cached.expiresAt {
+				return cached.value, nil
+			}
+		}
+		dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), backendModeDBTimeout)
+		defer cancel()
+		value, err := s.settingRepo.GetValue(dbCtx, SettingKeyBackendModeEnabled)
+		if err != nil {
+			if errors.Is(err, ErrSettingNotFound) {
+				// Setting not yet created (fresh install) - default to disabled with full TTL
+				backendModeCache.Store(&cachedBackendMode{
+					value:     false,
+					expiresAt: time.Now().Add(backendModeCacheTTL).UnixNano(),
+				})
+				return false, nil
+			}
+			slog.Warn("failed to get backend_mode_enabled setting", "error", err)
+			backendModeCache.Store(&cachedBackendMode{
+				value:     false,
+				expiresAt: time.Now().Add(backendModeErrorTTL).UnixNano(),
+			})
+			return false, nil
+		}
+		enabled := value == "true"
+		backendModeCache.Store(&cachedBackendMode{
+			value:     enabled,
+			expiresAt: time.Now().Add(backendModeCacheTTL).UnixNano(),
+		})
+		return enabled, nil
+	})
+	if val, ok := result.(bool); ok {
+		return val
+	}
+	return false
+}
+
 // IsEmailVerifyEnabled 检查是否开启邮件验证
 func (s *SettingService) IsEmailVerifyEnabled(ctx context.Context) bool {
 	value, err := s.settingRepo.GetValue(ctx, SettingKeyEmailVerifyEnabled)
@@ -286,6 +633,15 @@ func (s *SettingService) IsEmailVerifyEnabled(ctx context.Context) bool {
 		return false
 	}
 	return value == "true"
+}
+
+// GetRegistrationEmailSuffixWhitelist returns normalized registration email suffix whitelist.
+func (s *SettingService) GetRegistrationEmailSuffixWhitelist(ctx context.Context) []string {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyRegistrationEmailSuffixWhitelist)
+	if err != nil {
+		return []string{}
+	}
+	return ParseRegistrationEmailSuffixWhitelist(value)
 }
 
 // IsPromoCodeEnabled 检查是否启用优惠码功能
@@ -368,6 +724,15 @@ func (s *SettingService) GetDefaultBalance(ctx context.Context) float64 {
 	return s.cfg.Default.UserBalance
 }
 
+// GetDefaultSubscriptions 获取新用户默认订阅配置列表。
+func (s *SettingService) GetDefaultSubscriptions(ctx context.Context) []DefaultSubscriptionSetting {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyDefaultSubscriptions)
+	if err != nil {
+		return nil
+	}
+	return parseDefaultSubscriptions(value)
+}
+
 // InitializeDefaultSettings 初始化默认设置
 func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 	// 检查是否已有设置
@@ -382,17 +747,22 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 
 	// 初始化默认设置
 	defaults := map[string]string{
-		SettingKeyRegistrationEnabled:         "true",
-		SettingKeyEmailVerifyEnabled:          "false",
-		SettingKeyPromoCodeEnabled:            "true", // 默认启用优惠码功能
-		SettingKeySiteName:                    "Sub2API",
-		SettingKeySiteLogo:                    "",
-		SettingKeyPurchaseSubscriptionEnabled: "false",
-		SettingKeyPurchaseSubscriptionURL:     "",
-		SettingKeyDefaultConcurrency:          strconv.Itoa(s.cfg.Default.UserConcurrency),
-		SettingKeyDefaultBalance:              strconv.FormatFloat(s.cfg.Default.UserBalance, 'f', 8, 64),
-		SettingKeySMTPPort:                    "587",
-		SettingKeySMTPUseTLS:                  "false",
+		SettingKeyRegistrationEnabled:              "true",
+		SettingKeyEmailVerifyEnabled:               "false",
+		SettingKeyRegistrationEmailSuffixWhitelist: "[]",
+		SettingKeyPromoCodeEnabled:                 "true", // 默认启用优惠码功能
+		SettingKeySiteName:                         "Sub2API",
+		SettingKeySiteLogo:                         "",
+		SettingKeyPurchaseSubscriptionEnabled:      "false",
+		SettingKeyPurchaseSubscriptionURL:          "",
+		SettingKeySoraClientEnabled:                "false",
+		SettingKeyCustomMenuItems:                  "[]",
+		SettingKeyCustomEndpoints:                  "[]",
+		SettingKeyDefaultConcurrency:               strconv.Itoa(s.cfg.Default.UserConcurrency),
+		SettingKeyDefaultBalance:                   strconv.FormatFloat(s.cfg.Default.UserBalance, 'f', 8, 64),
+		SettingKeyDefaultSubscriptions:             "[]",
+		SettingKeySMTPPort:                         "587",
+		SettingKeySMTPUseTLS:                       "false",
 		// Model fallback defaults
 		SettingKeyEnableModelFallback:      "false",
 		SettingKeyFallbackModelAnthropic:   "claude-3-5-sonnet-20241022",
@@ -408,6 +778,13 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyOpsRealtimeMonitoringEnabled: "true",
 		SettingKeyOpsQueryModeDefault:          "auto",
 		SettingKeyOpsMetricsIntervalSeconds:    "60",
+
+		// Claude Code version check (default: empty = disabled)
+		SettingKeyMinClaudeCodeVersion: "",
+		SettingKeyMaxClaudeCodeVersion: "",
+
+		// 分组隔离（默认不允许未分组 Key 调度）
+		SettingKeyAllowUngroupedKeyScheduling: "false",
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)
@@ -417,31 +794,37 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 func (s *SettingService) parseSettings(settings map[string]string) *SystemSettings {
 	emailVerifyEnabled := settings[SettingKeyEmailVerifyEnabled] == "true"
 	result := &SystemSettings{
-		RegistrationEnabled:          settings[SettingKeyRegistrationEnabled] == "true",
-		EmailVerifyEnabled:           emailVerifyEnabled,
-		PromoCodeEnabled:             settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用
-		PasswordResetEnabled:         emailVerifyEnabled && settings[SettingKeyPasswordResetEnabled] == "true",
-		InvitationCodeEnabled:        settings[SettingKeyInvitationCodeEnabled] == "true",
-		TotpEnabled:                  settings[SettingKeyTotpEnabled] == "true",
-		SMTPHost:                     settings[SettingKeySMTPHost],
-		SMTPUsername:                 settings[SettingKeySMTPUsername],
-		SMTPFrom:                     settings[SettingKeySMTPFrom],
-		SMTPFromName:                 settings[SettingKeySMTPFromName],
-		SMTPUseTLS:                   settings[SettingKeySMTPUseTLS] == "true",
-		SMTPPasswordConfigured:       settings[SettingKeySMTPPassword] != "",
-		TurnstileEnabled:             settings[SettingKeyTurnstileEnabled] == "true",
-		TurnstileSiteKey:             settings[SettingKeyTurnstileSiteKey],
-		TurnstileSecretKeyConfigured: settings[SettingKeyTurnstileSecretKey] != "",
-		SiteName:                     s.getStringOrDefault(settings, SettingKeySiteName, "Sub2API"),
-		SiteLogo:                     settings[SettingKeySiteLogo],
-		SiteSubtitle:                 s.getStringOrDefault(settings, SettingKeySiteSubtitle, "Subscription to API Conversion Platform"),
-		APIBaseURL:                   settings[SettingKeyAPIBaseURL],
-		ContactInfo:                  settings[SettingKeyContactInfo],
-		DocURL:                       settings[SettingKeyDocURL],
-		HomeContent:                  settings[SettingKeyHomeContent],
-		HideCcsImportButton:          settings[SettingKeyHideCcsImportButton] == "true",
-		PurchaseSubscriptionEnabled:  settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
-		PurchaseSubscriptionURL:      strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		RegistrationEnabled:              settings[SettingKeyRegistrationEnabled] == "true",
+		EmailVerifyEnabled:               emailVerifyEnabled,
+		RegistrationEmailSuffixWhitelist: ParseRegistrationEmailSuffixWhitelist(settings[SettingKeyRegistrationEmailSuffixWhitelist]),
+		PromoCodeEnabled:                 settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用
+		PasswordResetEnabled:             emailVerifyEnabled && settings[SettingKeyPasswordResetEnabled] == "true",
+		FrontendURL:                      settings[SettingKeyFrontendURL],
+		InvitationCodeEnabled:            settings[SettingKeyInvitationCodeEnabled] == "true",
+		TotpEnabled:                      settings[SettingKeyTotpEnabled] == "true",
+		SMTPHost:                         settings[SettingKeySMTPHost],
+		SMTPUsername:                     settings[SettingKeySMTPUsername],
+		SMTPFrom:                         settings[SettingKeySMTPFrom],
+		SMTPFromName:                     settings[SettingKeySMTPFromName],
+		SMTPUseTLS:                       settings[SettingKeySMTPUseTLS] == "true",
+		SMTPPasswordConfigured:           settings[SettingKeySMTPPassword] != "",
+		TurnstileEnabled:                 settings[SettingKeyTurnstileEnabled] == "true",
+		TurnstileSiteKey:                 settings[SettingKeyTurnstileSiteKey],
+		TurnstileSecretKeyConfigured:     settings[SettingKeyTurnstileSecretKey] != "",
+		SiteName:                         s.getStringOrDefault(settings, SettingKeySiteName, "Sub2API"),
+		SiteLogo:                         settings[SettingKeySiteLogo],
+		SiteSubtitle:                     s.getStringOrDefault(settings, SettingKeySiteSubtitle, "Subscription to API Conversion Platform"),
+		APIBaseURL:                       settings[SettingKeyAPIBaseURL],
+		ContactInfo:                      settings[SettingKeyContactInfo],
+		DocURL:                           settings[SettingKeyDocURL],
+		HomeContent:                      settings[SettingKeyHomeContent],
+		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
+		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
+		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
+		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
+		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
+		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
 	}
 
 	// 解析整数类型
@@ -463,6 +846,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	} else {
 		result.DefaultBalance = s.cfg.Default.UserBalance
 	}
+	result.DefaultSubscriptions = parseDefaultSubscriptions(settings[SettingKeyDefaultSubscriptions])
 
 	// 敏感信息直接返回，方便测试连接时使用
 	result.SMTPPassword = settings[SettingKeySMTPPassword]
@@ -532,23 +916,12 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		}
 	}
 
-	// Referral system settings
-	result.ReferralEnabled = settings[SettingKeyReferralEnabled] == "true"
-	if v, err := strconv.ParseFloat(settings[SettingKeyReferralRegisterBonus], 64); err == nil && v >= 0 {
-		result.ReferralRegisterBonus = v
-	} else {
-		result.ReferralRegisterBonus = 5.0 // 默认 $5
-	}
-	if v, err := strconv.ParseFloat(settings[SettingKeyReferralCommissionRate], 64); err == nil && v >= 0 && v <= 1 {
-		result.ReferralCommissionRate = v
-	} else {
-		result.ReferralCommissionRate = 0.3 // 默认 30%
-	}
-	if v, err := strconv.ParseFloat(settings[SettingKeyReferralMaxTotalReward], 64); err == nil && v >= 0 {
-		result.ReferralMaxTotalReward = v
-	} else {
-		result.ReferralMaxTotalReward = 0 // 默认无限制
-	}
+	// Claude Code version check
+	result.MinClaudeCodeVersion = settings[SettingKeyMinClaudeCodeVersion]
+	result.MaxClaudeCodeVersion = settings[SettingKeyMaxClaudeCodeVersion]
+
+	// 分组隔离
+	result.AllowUngroupedKeyScheduling = settings[SettingKeyAllowUngroupedKeyScheduling] == "true"
 
 	return result
 }
@@ -560,6 +933,31 @@ func isFalseSettingValue(value string) bool {
 	default:
 		return false
 	}
+}
+
+func parseDefaultSubscriptions(raw string) []DefaultSubscriptionSetting {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	var items []DefaultSubscriptionSetting
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return nil
+	}
+
+	normalized := make([]DefaultSubscriptionSetting, 0, len(items))
+	for _, item := range items {
+		if item.GroupID <= 0 || item.ValidityDays <= 0 {
+			continue
+		}
+		if item.ValidityDays > MaxValidityDays {
+			item.ValidityDays = MaxValidityDays
+		}
+		normalized = append(normalized, item)
+	}
+
+	return normalized
 }
 
 // getStringOrDefault 获取字符串值或默认值
@@ -798,6 +1196,57 @@ func (s *SettingService) GetLinuxDoConnectOAuthConfig(ctx context.Context) (conf
 	return effective, nil
 }
 
+// GetOverloadCooldownSettings 获取529过载冷却配置
+func (s *SettingService) GetOverloadCooldownSettings(ctx context.Context) (*OverloadCooldownSettings, error) {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyOverloadCooldownSettings)
+	if err != nil {
+		if errors.Is(err, ErrSettingNotFound) {
+			return DefaultOverloadCooldownSettings(), nil
+		}
+		return nil, fmt.Errorf("get overload cooldown settings: %w", err)
+	}
+	if value == "" {
+		return DefaultOverloadCooldownSettings(), nil
+	}
+
+	var settings OverloadCooldownSettings
+	if err := json.Unmarshal([]byte(value), &settings); err != nil {
+		return DefaultOverloadCooldownSettings(), nil
+	}
+
+	// 修正配置值范围
+	if settings.CooldownMinutes < 1 {
+		settings.CooldownMinutes = 1
+	}
+	if settings.CooldownMinutes > 120 {
+		settings.CooldownMinutes = 120
+	}
+
+	return &settings, nil
+}
+
+// SetOverloadCooldownSettings 设置529过载冷却配置
+func (s *SettingService) SetOverloadCooldownSettings(ctx context.Context, settings *OverloadCooldownSettings) error {
+	if settings == nil {
+		return fmt.Errorf("settings cannot be nil")
+	}
+
+	// 禁用时修正为合法值即可，不拒绝请求
+	if settings.CooldownMinutes < 1 || settings.CooldownMinutes > 120 {
+		if settings.Enabled {
+			return fmt.Errorf("cooldown_minutes must be between 1-120")
+		}
+		settings.CooldownMinutes = 10 // 禁用状态下归一化为默认值
+	}
+
+	data, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("marshal overload cooldown settings: %w", err)
+	}
+
+	return s.settingRepo.Set(ctx, SettingKeyOverloadCooldownSettings, string(data))
+}
+
 // GetStreamTimeoutSettings 获取流超时处理配置
 func (s *SettingService) GetStreamTimeoutSettings(ctx context.Context) (*StreamTimeoutSettings, error) {
 	value, err := s.settingRepo.GetValue(ctx, SettingKeyStreamTimeoutSettings)
@@ -847,6 +1296,179 @@ func (s *SettingService) GetStreamTimeoutSettings(ctx context.Context) (*StreamT
 	return &settings, nil
 }
 
+// IsUngroupedKeySchedulingAllowed 查询是否允许未分组 Key 调度
+func (s *SettingService) IsUngroupedKeySchedulingAllowed(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyAllowUngroupedKeyScheduling)
+	if err != nil {
+		return false // fail-closed: 查询失败时默认不允许
+	}
+	return value == "true"
+}
+
+// GetClaudeCodeVersionBounds 获取 Claude Code 版本号上下限要求
+// 使用进程内 atomic.Value 缓存，60 秒 TTL，热路径零锁开销
+// singleflight 防止缓存过期时 thundering herd
+// 返回空字符串表示不做对应方向的版本检查
+func (s *SettingService) GetClaudeCodeVersionBounds(ctx context.Context) (min, max string) {
+	if cached, ok := versionBoundsCache.Load().(*cachedVersionBounds); ok {
+		if time.Now().UnixNano() < cached.expiresAt {
+			return cached.min, cached.max
+		}
+	}
+	// singleflight: 同一时刻只有一个 goroutine 查询 DB，其余复用结果
+	type bounds struct{ min, max string }
+	result, err, _ := versionBoundsSF.Do("version_bounds", func() (any, error) {
+		// 二次检查，避免排队的 goroutine 重复查询
+		if cached, ok := versionBoundsCache.Load().(*cachedVersionBounds); ok {
+			if time.Now().UnixNano() < cached.expiresAt {
+				return bounds{cached.min, cached.max}, nil
+			}
+		}
+		// 使用独立 context：断开请求取消链，避免客户端断连导致空值被长期缓存
+		dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), versionBoundsDBTimeout)
+		defer cancel()
+		values, err := s.settingRepo.GetMultiple(dbCtx, []string{
+			SettingKeyMinClaudeCodeVersion,
+			SettingKeyMaxClaudeCodeVersion,
+		})
+		if err != nil {
+			// fail-open: DB 错误时不阻塞请求，但记录日志并使用短 TTL 快速重试
+			slog.Warn("failed to get claude code version bounds setting, skipping version check", "error", err)
+			versionBoundsCache.Store(&cachedVersionBounds{
+				min:       "",
+				max:       "",
+				expiresAt: time.Now().Add(versionBoundsErrorTTL).UnixNano(),
+			})
+			return bounds{"", ""}, nil
+		}
+		b := bounds{
+			min: values[SettingKeyMinClaudeCodeVersion],
+			max: values[SettingKeyMaxClaudeCodeVersion],
+		}
+		versionBoundsCache.Store(&cachedVersionBounds{
+			min:       b.min,
+			max:       b.max,
+			expiresAt: time.Now().Add(versionBoundsCacheTTL).UnixNano(),
+		})
+		return b, nil
+	})
+	if err != nil {
+		return "", ""
+	}
+	b, ok := result.(bounds)
+	if !ok {
+		return "", ""
+	}
+	return b.min, b.max
+}
+
+// GetRectifierSettings 获取请求整流器配置
+func (s *SettingService) GetRectifierSettings(ctx context.Context) (*RectifierSettings, error) {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyRectifierSettings)
+	if err != nil {
+		if errors.Is(err, ErrSettingNotFound) {
+			return DefaultRectifierSettings(), nil
+		}
+		return nil, fmt.Errorf("get rectifier settings: %w", err)
+	}
+	if value == "" {
+		return DefaultRectifierSettings(), nil
+	}
+
+	var settings RectifierSettings
+	if err := json.Unmarshal([]byte(value), &settings); err != nil {
+		return DefaultRectifierSettings(), nil
+	}
+
+	return &settings, nil
+}
+
+// SetRectifierSettings 设置请求整流器配置
+func (s *SettingService) SetRectifierSettings(ctx context.Context, settings *RectifierSettings) error {
+	if settings == nil {
+		return fmt.Errorf("settings cannot be nil")
+	}
+
+	data, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("marshal rectifier settings: %w", err)
+	}
+
+	return s.settingRepo.Set(ctx, SettingKeyRectifierSettings, string(data))
+}
+
+// IsSignatureRectifierEnabled 判断签名整流是否启用（总开关 && 签名子开关）
+func (s *SettingService) IsSignatureRectifierEnabled(ctx context.Context) bool {
+	settings, err := s.GetRectifierSettings(ctx)
+	if err != nil {
+		return true // fail-open: 查询失败时默认启用
+	}
+	return settings.Enabled && settings.ThinkingSignatureEnabled
+}
+
+// IsBudgetRectifierEnabled 判断 Budget 整流是否启用（总开关 && Budget 子开关）
+func (s *SettingService) IsBudgetRectifierEnabled(ctx context.Context) bool {
+	settings, err := s.GetRectifierSettings(ctx)
+	if err != nil {
+		return true // fail-open: 查询失败时默认启用
+	}
+	return settings.Enabled && settings.ThinkingBudgetEnabled
+}
+
+// GetBetaPolicySettings 获取 Beta 策略配置
+func (s *SettingService) GetBetaPolicySettings(ctx context.Context) (*BetaPolicySettings, error) {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyBetaPolicySettings)
+	if err != nil {
+		if errors.Is(err, ErrSettingNotFound) {
+			return DefaultBetaPolicySettings(), nil
+		}
+		return nil, fmt.Errorf("get beta policy settings: %w", err)
+	}
+	if value == "" {
+		return DefaultBetaPolicySettings(), nil
+	}
+
+	var settings BetaPolicySettings
+	if err := json.Unmarshal([]byte(value), &settings); err != nil {
+		return DefaultBetaPolicySettings(), nil
+	}
+
+	return &settings, nil
+}
+
+// SetBetaPolicySettings 设置 Beta 策略配置
+func (s *SettingService) SetBetaPolicySettings(ctx context.Context, settings *BetaPolicySettings) error {
+	if settings == nil {
+		return fmt.Errorf("settings cannot be nil")
+	}
+
+	validActions := map[string]bool{
+		BetaPolicyActionPass: true, BetaPolicyActionFilter: true, BetaPolicyActionBlock: true,
+	}
+	validScopes := map[string]bool{
+		BetaPolicyScopeAll: true, BetaPolicyScopeOAuth: true, BetaPolicyScopeAPIKey: true, BetaPolicyScopeBedrock: true,
+	}
+
+	for i, rule := range settings.Rules {
+		if rule.BetaToken == "" {
+			return fmt.Errorf("rule[%d]: beta_token cannot be empty", i)
+		}
+		if !validActions[rule.Action] {
+			return fmt.Errorf("rule[%d]: invalid action %q", i, rule.Action)
+		}
+		if !validScopes[rule.Scope] {
+			return fmt.Errorf("rule[%d]: invalid scope %q", i, rule.Scope)
+		}
+	}
+
+	data, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("marshal beta policy settings: %w", err)
+	}
+
+	return s.settingRepo.Set(ctx, SettingKeyBetaPolicySettings, string(data))
+}
+
 // SetStreamTimeoutSettings 设置流超时处理配置
 func (s *SettingService) SetStreamTimeoutSettings(ctx context.Context, settings *StreamTimeoutSettings) error {
 	if settings == nil {
@@ -879,60 +1501,606 @@ func (s *SettingService) SetStreamTimeoutSettings(ctx context.Context, settings 
 	return s.settingRepo.Set(ctx, SettingKeyStreamTimeoutSettings, string(data))
 }
 
-// =========================
-// Referral System Settings
-// =========================
-
-// IsReferralEnabled 检查是否启用邀请系统
-func (s *SettingService) IsReferralEnabled(ctx context.Context) bool {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralEnabled)
-	if err != nil {
-		return false // 默认关闭
-	}
-	return value == "true"
+type soraS3ProfilesStore struct {
+	ActiveProfileID string                   `json:"active_profile_id"`
+	Items           []soraS3ProfileStoreItem `json:"items"`
 }
 
-// GetReferralRegisterBonus 获取注册奖励金额
-func (s *SettingService) GetReferralRegisterBonus(ctx context.Context) float64 {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralRegisterBonus)
-	if err != nil {
-		return 5.0 // 默认 $5
-	}
-	if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0 {
-		return v
-	}
-	return 5.0
+type soraS3ProfileStoreItem struct {
+	ProfileID                string `json:"profile_id"`
+	Name                     string `json:"name"`
+	Enabled                  bool   `json:"enabled"`
+	Endpoint                 string `json:"endpoint"`
+	Region                   string `json:"region"`
+	Bucket                   string `json:"bucket"`
+	AccessKeyID              string `json:"access_key_id"`
+	SecretAccessKey          string `json:"secret_access_key"`
+	Prefix                   string `json:"prefix"`
+	ForcePathStyle           bool   `json:"force_path_style"`
+	CDNURL                   string `json:"cdn_url"`
+	DefaultStorageQuotaBytes int64  `json:"default_storage_quota_bytes"`
+	UpdatedAt                string `json:"updated_at"`
 }
 
-// GetReferralCommissionRate 获取返利比例
-func (s *SettingService) GetReferralCommissionRate(ctx context.Context) float64 {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralCommissionRate)
+// GetSoraS3Settings 获取 Sora S3 存储配置（兼容旧单配置语义：返回当前激活配置）
+func (s *SettingService) GetSoraS3Settings(ctx context.Context) (*SoraS3Settings, error) {
+	profiles, err := s.ListSoraS3Profiles(ctx)
 	if err != nil {
-		return 0.3 // 默认 30%
+		return nil, err
 	}
-	if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0 && v <= 1 {
-		return v
+
+	activeProfile := pickActiveSoraS3Profile(profiles.Items, profiles.ActiveProfileID)
+	if activeProfile == nil {
+		return &SoraS3Settings{}, nil
 	}
-	return 0.3
+
+	return &SoraS3Settings{
+		Enabled:                   activeProfile.Enabled,
+		Endpoint:                  activeProfile.Endpoint,
+		Region:                    activeProfile.Region,
+		Bucket:                    activeProfile.Bucket,
+		AccessKeyID:               activeProfile.AccessKeyID,
+		SecretAccessKey:           activeProfile.SecretAccessKey,
+		SecretAccessKeyConfigured: activeProfile.SecretAccessKeyConfigured,
+		Prefix:                    activeProfile.Prefix,
+		ForcePathStyle:            activeProfile.ForcePathStyle,
+		CDNURL:                    activeProfile.CDNURL,
+		DefaultStorageQuotaBytes:  activeProfile.DefaultStorageQuotaBytes,
+	}, nil
 }
 
-// GetReferralMaxTotalReward 获取奖励上限（0=无限制）
-func (s *SettingService) GetReferralMaxTotalReward(ctx context.Context) float64 {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralMaxTotalReward)
+// SetSoraS3Settings 更新 Sora S3 存储配置（兼容旧单配置语义：写入当前激活配置）
+func (s *SettingService) SetSoraS3Settings(ctx context.Context, settings *SoraS3Settings) error {
+	if settings == nil {
+		return fmt.Errorf("settings cannot be nil")
+	}
+
+	store, err := s.loadSoraS3ProfilesStore(ctx)
 	if err != nil {
-		return 0 // 默认无限制
+		return err
 	}
-	if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0 {
-		return v
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	activeIndex := findSoraS3ProfileIndex(store.Items, store.ActiveProfileID)
+	if activeIndex < 0 {
+		activeID := "default"
+		if hasSoraS3ProfileID(store.Items, activeID) {
+			activeID = fmt.Sprintf("default-%d", time.Now().Unix())
+		}
+		store.Items = append(store.Items, soraS3ProfileStoreItem{
+			ProfileID: activeID,
+			Name:      "Default",
+			UpdatedAt: now,
+		})
+		store.ActiveProfileID = activeID
+		activeIndex = len(store.Items) - 1
 	}
-	return 0
+
+	active := store.Items[activeIndex]
+	active.Enabled = settings.Enabled
+	active.Endpoint = strings.TrimSpace(settings.Endpoint)
+	active.Region = strings.TrimSpace(settings.Region)
+	active.Bucket = strings.TrimSpace(settings.Bucket)
+	active.AccessKeyID = strings.TrimSpace(settings.AccessKeyID)
+	active.Prefix = strings.TrimSpace(settings.Prefix)
+	active.ForcePathStyle = settings.ForcePathStyle
+	active.CDNURL = strings.TrimSpace(settings.CDNURL)
+	active.DefaultStorageQuotaBytes = maxInt64(settings.DefaultStorageQuotaBytes, 0)
+	if settings.SecretAccessKey != "" {
+		active.SecretAccessKey = settings.SecretAccessKey
+	}
+	active.UpdatedAt = now
+	store.Items[activeIndex] = active
+
+	return s.persistSoraS3ProfilesStore(ctx, store)
 }
 
-// GetAPIBaseURL 获取 API 基础 URL
-func (s *SettingService) GetAPIBaseURL(ctx context.Context) string {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyAPIBaseURL)
-	if err != nil || value == "" {
-		return ""
+// ListSoraS3Profiles 获取 Sora S3 多配置列表
+func (s *SettingService) ListSoraS3Profiles(ctx context.Context) (*SoraS3ProfileList, error) {
+	store, err := s.loadSoraS3ProfilesStore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return convertSoraS3ProfilesStore(store), nil
+}
+
+// CreateSoraS3Profile 创建 Sora S3 配置
+func (s *SettingService) CreateSoraS3Profile(ctx context.Context, profile *SoraS3Profile, setActive bool) (*SoraS3Profile, error) {
+	if profile == nil {
+		return nil, fmt.Errorf("profile cannot be nil")
+	}
+
+	profileID := strings.TrimSpace(profile.ProfileID)
+	if profileID == "" {
+		return nil, infraerrors.BadRequest("SORA_S3_PROFILE_ID_REQUIRED", "profile_id is required")
+	}
+	name := strings.TrimSpace(profile.Name)
+	if name == "" {
+		return nil, infraerrors.BadRequest("SORA_S3_PROFILE_NAME_REQUIRED", "name is required")
+	}
+
+	store, err := s.loadSoraS3ProfilesStore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if hasSoraS3ProfileID(store.Items, profileID) {
+		return nil, ErrSoraS3ProfileExists
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	store.Items = append(store.Items, soraS3ProfileStoreItem{
+		ProfileID:                profileID,
+		Name:                     name,
+		Enabled:                  profile.Enabled,
+		Endpoint:                 strings.TrimSpace(profile.Endpoint),
+		Region:                   strings.TrimSpace(profile.Region),
+		Bucket:                   strings.TrimSpace(profile.Bucket),
+		AccessKeyID:              strings.TrimSpace(profile.AccessKeyID),
+		SecretAccessKey:          profile.SecretAccessKey,
+		Prefix:                   strings.TrimSpace(profile.Prefix),
+		ForcePathStyle:           profile.ForcePathStyle,
+		CDNURL:                   strings.TrimSpace(profile.CDNURL),
+		DefaultStorageQuotaBytes: maxInt64(profile.DefaultStorageQuotaBytes, 0),
+		UpdatedAt:                now,
+	})
+
+	if setActive || store.ActiveProfileID == "" {
+		store.ActiveProfileID = profileID
+	}
+
+	if err := s.persistSoraS3ProfilesStore(ctx, store); err != nil {
+		return nil, err
+	}
+
+	profiles := convertSoraS3ProfilesStore(store)
+	created := findSoraS3ProfileByID(profiles.Items, profileID)
+	if created == nil {
+		return nil, ErrSoraS3ProfileNotFound
+	}
+	return created, nil
+}
+
+// UpdateSoraS3Profile 更新 Sora S3 配置
+func (s *SettingService) UpdateSoraS3Profile(ctx context.Context, profileID string, profile *SoraS3Profile) (*SoraS3Profile, error) {
+	if profile == nil {
+		return nil, fmt.Errorf("profile cannot be nil")
+	}
+
+	targetID := strings.TrimSpace(profileID)
+	if targetID == "" {
+		return nil, infraerrors.BadRequest("SORA_S3_PROFILE_ID_REQUIRED", "profile_id is required")
+	}
+
+	store, err := s.loadSoraS3ProfilesStore(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	targetIndex := findSoraS3ProfileIndex(store.Items, targetID)
+	if targetIndex < 0 {
+		return nil, ErrSoraS3ProfileNotFound
+	}
+
+	target := store.Items[targetIndex]
+	name := strings.TrimSpace(profile.Name)
+	if name == "" {
+		return nil, infraerrors.BadRequest("SORA_S3_PROFILE_NAME_REQUIRED", "name is required")
+	}
+	target.Name = name
+	target.Enabled = profile.Enabled
+	target.Endpoint = strings.TrimSpace(profile.Endpoint)
+	target.Region = strings.TrimSpace(profile.Region)
+	target.Bucket = strings.TrimSpace(profile.Bucket)
+	target.AccessKeyID = strings.TrimSpace(profile.AccessKeyID)
+	target.Prefix = strings.TrimSpace(profile.Prefix)
+	target.ForcePathStyle = profile.ForcePathStyle
+	target.CDNURL = strings.TrimSpace(profile.CDNURL)
+	target.DefaultStorageQuotaBytes = maxInt64(profile.DefaultStorageQuotaBytes, 0)
+	if profile.SecretAccessKey != "" {
+		target.SecretAccessKey = profile.SecretAccessKey
+	}
+	target.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	store.Items[targetIndex] = target
+
+	if err := s.persistSoraS3ProfilesStore(ctx, store); err != nil {
+		return nil, err
+	}
+
+	profiles := convertSoraS3ProfilesStore(store)
+	updated := findSoraS3ProfileByID(profiles.Items, targetID)
+	if updated == nil {
+		return nil, ErrSoraS3ProfileNotFound
+	}
+	return updated, nil
+}
+
+// DeleteSoraS3Profile 删除 Sora S3 配置
+func (s *SettingService) DeleteSoraS3Profile(ctx context.Context, profileID string) error {
+	targetID := strings.TrimSpace(profileID)
+	if targetID == "" {
+		return infraerrors.BadRequest("SORA_S3_PROFILE_ID_REQUIRED", "profile_id is required")
+	}
+
+	store, err := s.loadSoraS3ProfilesStore(ctx)
+	if err != nil {
+		return err
+	}
+
+	targetIndex := findSoraS3ProfileIndex(store.Items, targetID)
+	if targetIndex < 0 {
+		return ErrSoraS3ProfileNotFound
+	}
+
+	store.Items = append(store.Items[:targetIndex], store.Items[targetIndex+1:]...)
+	if store.ActiveProfileID == targetID {
+		store.ActiveProfileID = ""
+		if len(store.Items) > 0 {
+			store.ActiveProfileID = store.Items[0].ProfileID
+		}
+	}
+
+	return s.persistSoraS3ProfilesStore(ctx, store)
+}
+
+// SetActiveSoraS3Profile 设置激活的 Sora S3 配置
+func (s *SettingService) SetActiveSoraS3Profile(ctx context.Context, profileID string) (*SoraS3Profile, error) {
+	targetID := strings.TrimSpace(profileID)
+	if targetID == "" {
+		return nil, infraerrors.BadRequest("SORA_S3_PROFILE_ID_REQUIRED", "profile_id is required")
+	}
+
+	store, err := s.loadSoraS3ProfilesStore(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	targetIndex := findSoraS3ProfileIndex(store.Items, targetID)
+	if targetIndex < 0 {
+		return nil, ErrSoraS3ProfileNotFound
+	}
+
+	store.ActiveProfileID = targetID
+	store.Items[targetIndex].UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	if err := s.persistSoraS3ProfilesStore(ctx, store); err != nil {
+		return nil, err
+	}
+
+	profiles := convertSoraS3ProfilesStore(store)
+	active := pickActiveSoraS3Profile(profiles.Items, profiles.ActiveProfileID)
+	if active == nil {
+		return nil, ErrSoraS3ProfileNotFound
+	}
+	return active, nil
+}
+
+func (s *SettingService) loadSoraS3ProfilesStore(ctx context.Context) (*soraS3ProfilesStore, error) {
+	raw, err := s.settingRepo.GetValue(ctx, SettingKeySoraS3Profiles)
+	if err == nil {
+		trimmed := strings.TrimSpace(raw)
+		if trimmed == "" {
+			return &soraS3ProfilesStore{}, nil
+		}
+		var store soraS3ProfilesStore
+		if unmarshalErr := json.Unmarshal([]byte(trimmed), &store); unmarshalErr != nil {
+			legacy, legacyErr := s.getLegacySoraS3Settings(ctx)
+			if legacyErr != nil {
+				return nil, fmt.Errorf("unmarshal sora s3 profiles: %w", unmarshalErr)
+			}
+			if isEmptyLegacySoraS3Settings(legacy) {
+				return &soraS3ProfilesStore{}, nil
+			}
+			now := time.Now().UTC().Format(time.RFC3339)
+			return &soraS3ProfilesStore{
+				ActiveProfileID: "default",
+				Items: []soraS3ProfileStoreItem{
+					{
+						ProfileID:                "default",
+						Name:                     "Default",
+						Enabled:                  legacy.Enabled,
+						Endpoint:                 strings.TrimSpace(legacy.Endpoint),
+						Region:                   strings.TrimSpace(legacy.Region),
+						Bucket:                   strings.TrimSpace(legacy.Bucket),
+						AccessKeyID:              strings.TrimSpace(legacy.AccessKeyID),
+						SecretAccessKey:          legacy.SecretAccessKey,
+						Prefix:                   strings.TrimSpace(legacy.Prefix),
+						ForcePathStyle:           legacy.ForcePathStyle,
+						CDNURL:                   strings.TrimSpace(legacy.CDNURL),
+						DefaultStorageQuotaBytes: maxInt64(legacy.DefaultStorageQuotaBytes, 0),
+						UpdatedAt:                now,
+					},
+				},
+			}, nil
+		}
+		normalized := normalizeSoraS3ProfilesStore(store)
+		return &normalized, nil
+	}
+
+	if !errors.Is(err, ErrSettingNotFound) {
+		return nil, fmt.Errorf("get sora s3 profiles: %w", err)
+	}
+
+	legacy, legacyErr := s.getLegacySoraS3Settings(ctx)
+	if legacyErr != nil {
+		return nil, legacyErr
+	}
+	if isEmptyLegacySoraS3Settings(legacy) {
+		return &soraS3ProfilesStore{}, nil
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	return &soraS3ProfilesStore{
+		ActiveProfileID: "default",
+		Items: []soraS3ProfileStoreItem{
+			{
+				ProfileID:                "default",
+				Name:                     "Default",
+				Enabled:                  legacy.Enabled,
+				Endpoint:                 strings.TrimSpace(legacy.Endpoint),
+				Region:                   strings.TrimSpace(legacy.Region),
+				Bucket:                   strings.TrimSpace(legacy.Bucket),
+				AccessKeyID:              strings.TrimSpace(legacy.AccessKeyID),
+				SecretAccessKey:          legacy.SecretAccessKey,
+				Prefix:                   strings.TrimSpace(legacy.Prefix),
+				ForcePathStyle:           legacy.ForcePathStyle,
+				CDNURL:                   strings.TrimSpace(legacy.CDNURL),
+				DefaultStorageQuotaBytes: maxInt64(legacy.DefaultStorageQuotaBytes, 0),
+				UpdatedAt:                now,
+			},
+		},
+	}, nil
+}
+
+func (s *SettingService) persistSoraS3ProfilesStore(ctx context.Context, store *soraS3ProfilesStore) error {
+	if store == nil {
+		return fmt.Errorf("sora s3 profiles store cannot be nil")
+	}
+
+	normalized := normalizeSoraS3ProfilesStore(*store)
+	data, err := json.Marshal(normalized)
+	if err != nil {
+		return fmt.Errorf("marshal sora s3 profiles: %w", err)
+	}
+
+	updates := map[string]string{
+		SettingKeySoraS3Profiles: string(data),
+	}
+
+	active := pickActiveSoraS3ProfileFromStore(normalized.Items, normalized.ActiveProfileID)
+	if active == nil {
+		updates[SettingKeySoraS3Enabled] = "false"
+		updates[SettingKeySoraS3Endpoint] = ""
+		updates[SettingKeySoraS3Region] = ""
+		updates[SettingKeySoraS3Bucket] = ""
+		updates[SettingKeySoraS3AccessKeyID] = ""
+		updates[SettingKeySoraS3Prefix] = ""
+		updates[SettingKeySoraS3ForcePathStyle] = "false"
+		updates[SettingKeySoraS3CDNURL] = ""
+		updates[SettingKeySoraDefaultStorageQuotaBytes] = "0"
+		updates[SettingKeySoraS3SecretAccessKey] = ""
+	} else {
+		updates[SettingKeySoraS3Enabled] = strconv.FormatBool(active.Enabled)
+		updates[SettingKeySoraS3Endpoint] = strings.TrimSpace(active.Endpoint)
+		updates[SettingKeySoraS3Region] = strings.TrimSpace(active.Region)
+		updates[SettingKeySoraS3Bucket] = strings.TrimSpace(active.Bucket)
+		updates[SettingKeySoraS3AccessKeyID] = strings.TrimSpace(active.AccessKeyID)
+		updates[SettingKeySoraS3Prefix] = strings.TrimSpace(active.Prefix)
+		updates[SettingKeySoraS3ForcePathStyle] = strconv.FormatBool(active.ForcePathStyle)
+		updates[SettingKeySoraS3CDNURL] = strings.TrimSpace(active.CDNURL)
+		updates[SettingKeySoraDefaultStorageQuotaBytes] = strconv.FormatInt(maxInt64(active.DefaultStorageQuotaBytes, 0), 10)
+		updates[SettingKeySoraS3SecretAccessKey] = active.SecretAccessKey
+	}
+
+	if err := s.settingRepo.SetMultiple(ctx, updates); err != nil {
+		return err
+	}
+
+	if s.onUpdate != nil {
+		s.onUpdate()
+	}
+	if s.onS3Update != nil {
+		s.onS3Update()
+	}
+	return nil
+}
+
+func (s *SettingService) getLegacySoraS3Settings(ctx context.Context) (*SoraS3Settings, error) {
+	keys := []string{
+		SettingKeySoraS3Enabled,
+		SettingKeySoraS3Endpoint,
+		SettingKeySoraS3Region,
+		SettingKeySoraS3Bucket,
+		SettingKeySoraS3AccessKeyID,
+		SettingKeySoraS3SecretAccessKey,
+		SettingKeySoraS3Prefix,
+		SettingKeySoraS3ForcePathStyle,
+		SettingKeySoraS3CDNURL,
+		SettingKeySoraDefaultStorageQuotaBytes,
+	}
+
+	values, err := s.settingRepo.GetMultiple(ctx, keys)
+	if err != nil {
+		return nil, fmt.Errorf("get legacy sora s3 settings: %w", err)
+	}
+
+	result := &SoraS3Settings{
+		Enabled:                   values[SettingKeySoraS3Enabled] == "true",
+		Endpoint:                  values[SettingKeySoraS3Endpoint],
+		Region:                    values[SettingKeySoraS3Region],
+		Bucket:                    values[SettingKeySoraS3Bucket],
+		AccessKeyID:               values[SettingKeySoraS3AccessKeyID],
+		SecretAccessKey:           values[SettingKeySoraS3SecretAccessKey],
+		SecretAccessKeyConfigured: values[SettingKeySoraS3SecretAccessKey] != "",
+		Prefix:                    values[SettingKeySoraS3Prefix],
+		ForcePathStyle:            values[SettingKeySoraS3ForcePathStyle] == "true",
+		CDNURL:                    values[SettingKeySoraS3CDNURL],
+	}
+	if v, parseErr := strconv.ParseInt(values[SettingKeySoraDefaultStorageQuotaBytes], 10, 64); parseErr == nil {
+		result.DefaultStorageQuotaBytes = v
+	}
+	return result, nil
+}
+
+func normalizeSoraS3ProfilesStore(store soraS3ProfilesStore) soraS3ProfilesStore {
+	seen := make(map[string]struct{}, len(store.Items))
+	normalized := soraS3ProfilesStore{
+		ActiveProfileID: strings.TrimSpace(store.ActiveProfileID),
+		Items:           make([]soraS3ProfileStoreItem, 0, len(store.Items)),
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	for idx := range store.Items {
+		item := store.Items[idx]
+		item.ProfileID = strings.TrimSpace(item.ProfileID)
+		if item.ProfileID == "" {
+			item.ProfileID = fmt.Sprintf("profile-%d", idx+1)
+		}
+		if _, exists := seen[item.ProfileID]; exists {
+			continue
+		}
+		seen[item.ProfileID] = struct{}{}
+
+		item.Name = strings.TrimSpace(item.Name)
+		if item.Name == "" {
+			item.Name = item.ProfileID
+		}
+		item.Endpoint = strings.TrimSpace(item.Endpoint)
+		item.Region = strings.TrimSpace(item.Region)
+		item.Bucket = strings.TrimSpace(item.Bucket)
+		item.AccessKeyID = strings.TrimSpace(item.AccessKeyID)
+		item.Prefix = strings.TrimSpace(item.Prefix)
+		item.CDNURL = strings.TrimSpace(item.CDNURL)
+		item.DefaultStorageQuotaBytes = maxInt64(item.DefaultStorageQuotaBytes, 0)
+		item.UpdatedAt = strings.TrimSpace(item.UpdatedAt)
+		if item.UpdatedAt == "" {
+			item.UpdatedAt = now
+		}
+		normalized.Items = append(normalized.Items, item)
+	}
+
+	if len(normalized.Items) == 0 {
+		normalized.ActiveProfileID = ""
+		return normalized
+	}
+
+	if findSoraS3ProfileIndex(normalized.Items, normalized.ActiveProfileID) >= 0 {
+		return normalized
+	}
+
+	normalized.ActiveProfileID = normalized.Items[0].ProfileID
+	return normalized
+}
+
+func convertSoraS3ProfilesStore(store *soraS3ProfilesStore) *SoraS3ProfileList {
+	if store == nil {
+		return &SoraS3ProfileList{}
+	}
+	items := make([]SoraS3Profile, 0, len(store.Items))
+	for idx := range store.Items {
+		item := store.Items[idx]
+		items = append(items, SoraS3Profile{
+			ProfileID:                 item.ProfileID,
+			Name:                      item.Name,
+			IsActive:                  item.ProfileID == store.ActiveProfileID,
+			Enabled:                   item.Enabled,
+			Endpoint:                  item.Endpoint,
+			Region:                    item.Region,
+			Bucket:                    item.Bucket,
+			AccessKeyID:               item.AccessKeyID,
+			SecretAccessKey:           item.SecretAccessKey,
+			SecretAccessKeyConfigured: item.SecretAccessKey != "",
+			Prefix:                    item.Prefix,
+			ForcePathStyle:            item.ForcePathStyle,
+			CDNURL:                    item.CDNURL,
+			DefaultStorageQuotaBytes:  item.DefaultStorageQuotaBytes,
+			UpdatedAt:                 item.UpdatedAt,
+		})
+	}
+	return &SoraS3ProfileList{
+		ActiveProfileID: store.ActiveProfileID,
+		Items:           items,
+	}
+}
+
+func pickActiveSoraS3Profile(items []SoraS3Profile, activeProfileID string) *SoraS3Profile {
+	for idx := range items {
+		if items[idx].ProfileID == activeProfileID {
+			return &items[idx]
+		}
+	}
+	if len(items) == 0 {
+		return nil
+	}
+	return &items[0]
+}
+
+func findSoraS3ProfileByID(items []SoraS3Profile, profileID string) *SoraS3Profile {
+	for idx := range items {
+		if items[idx].ProfileID == profileID {
+			return &items[idx]
+		}
+	}
+	return nil
+}
+
+func pickActiveSoraS3ProfileFromStore(items []soraS3ProfileStoreItem, activeProfileID string) *soraS3ProfileStoreItem {
+	for idx := range items {
+		if items[idx].ProfileID == activeProfileID {
+			return &items[idx]
+		}
+	}
+	if len(items) == 0 {
+		return nil
+	}
+	return &items[0]
+}
+
+func findSoraS3ProfileIndex(items []soraS3ProfileStoreItem, profileID string) int {
+	for idx := range items {
+		if items[idx].ProfileID == profileID {
+			return idx
+		}
+	}
+	return -1
+}
+
+func hasSoraS3ProfileID(items []soraS3ProfileStoreItem, profileID string) bool {
+	return findSoraS3ProfileIndex(items, profileID) >= 0
+}
+
+func isEmptyLegacySoraS3Settings(settings *SoraS3Settings) bool {
+	if settings == nil {
+		return true
+	}
+	if settings.Enabled {
+		return false
+	}
+	if strings.TrimSpace(settings.Endpoint) != "" {
+		return false
+	}
+	if strings.TrimSpace(settings.Region) != "" {
+		return false
+	}
+	if strings.TrimSpace(settings.Bucket) != "" {
+		return false
+	}
+	if strings.TrimSpace(settings.AccessKeyID) != "" {
+		return false
+	}
+	if settings.SecretAccessKey != "" {
+		return false
+	}
+	if strings.TrimSpace(settings.Prefix) != "" {
+		return false
+	}
+	if strings.TrimSpace(settings.CDNURL) != "" {
+		return false
+	}
+	return settings.DefaultStorageQuotaBytes == 0
+}
+
+func maxInt64(value int64, min int64) int64 {
+	if value < min {
+		return min
 	}
 	return value
 }

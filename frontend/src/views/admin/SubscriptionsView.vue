@@ -81,6 +81,14 @@
                 @change="applyFilters"
               />
             </div>
+            <div class="w-full sm:w-40">
+              <Select
+                v-model="filters.platform"
+                :options="platformFilterOptions"
+                :placeholder="t('admin.subscriptions.allPlatforms')"
+                @change="applyFilters"
+              />
+            </div>
           </div>
 
           <!-- Right: Actions -->
@@ -144,6 +152,13 @@
                 </div>
               </div>
             </div>
+            <button
+              @click="showGuideModal = true"
+              class="btn btn-secondary"
+              :title="t('admin.subscriptions.guide.showGuide')"
+            >
+              <Icon name="questionCircle" size="md" />
+            </button>
             <button @click="showAssignModal = true" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.subscriptions.assignSubscription') }}
@@ -215,7 +230,7 @@
                     ${{ row.group?.daily_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="reset-info whitespace-pre-line" v-if="formatWindowStatus(row.daily_reset_status)" :class="getResetStatusClass(row.daily_reset_status)">
+                <div class="reset-info" v-if="row.daily_window_start">
                   <svg
                     class="h-3 w-3"
                     fill="none"
@@ -229,7 +244,7 @@
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span>{{ formatWindowStatus(row.daily_reset_status) }}</span>
+                  <span>{{ formatResetTime(row.daily_window_start, 'daily') }}</span>
                 </div>
               </div>
 
@@ -252,7 +267,7 @@
                     ${{ row.group?.weekly_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="reset-info whitespace-pre-line" v-if="formatWindowStatus(row.weekly_reset_status)" :class="getResetStatusClass(row.weekly_reset_status)">
+                <div class="reset-info" v-if="row.weekly_window_start">
                   <svg
                     class="h-3 w-3"
                     fill="none"
@@ -266,7 +281,7 @@
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span>{{ formatWindowStatus(row.weekly_reset_status) }}</span>
+                  <span>{{ formatResetTime(row.weekly_window_start, 'weekly') }}</span>
                 </div>
               </div>
 
@@ -289,7 +304,7 @@
                     ${{ row.group?.monthly_limit_usd?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="reset-info whitespace-pre-line" v-if="formatWindowStatus(row.monthly_reset_status)" :class="getResetStatusClass(row.monthly_reset_status)">
+                <div class="reset-info" v-if="row.monthly_window_start">
                   <svg
                     class="h-3 w-3"
                     fill="none"
@@ -303,7 +318,7 @@
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span>{{ formatWindowStatus(row.monthly_reset_status) }}</span>
+                  <span>{{ formatResetTime(row.monthly_window_start, 'monthly') }}</span>
                 </div>
               </div>
 
@@ -372,11 +387,12 @@
               </button>
               <button
                 v-if="row.status === 'active'"
-                @click="handleTransfer(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
+                @click="handleResetQuota(row)"
+                :disabled="resettingQuota && resettingSubscription?.id === row.id"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Icon name="swap" size="sm" />
-                <span class="text-xs">{{ t('admin.subscriptions.transfer') }}</span>
+                <Icon name="refresh" size="sm" />
+                <span class="text-xs">{{ t('admin.subscriptions.resetQuota') }}</span>
               </button>
               <button
                 v-if="row.status === 'active'"
@@ -615,87 +631,6 @@
       </template>
     </BaseDialog>
 
-    <!-- Transfer Subscription Modal -->
-    <BaseDialog
-      :show="showTransferModal"
-      :title="t('admin.subscriptions.transferSubscription')"
-      width="normal"
-      @close="closeTransferModal"
-    >
-      <form
-        v-if="transferringSubscription"
-        id="transfer-subscription-form"
-        @submit.prevent="handleTransferSubscription"
-        class="space-y-5"
-      >
-        <div class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700">
-          <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ transferringSubscription.user?.email }}
-          </p>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ t('admin.subscriptions.currentGroup') }}:
-            <span class="font-medium text-gray-900 dark:text-white">
-              {{ transferringSubscription.group?.name || '-' }}
-            </span>
-          </p>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ t('admin.subscriptions.columns.expires') }}:
-            <span class="font-medium text-gray-900 dark:text-white">
-              {{ transferringSubscription.expires_at ? formatDateOnly(transferringSubscription.expires_at) : t('admin.subscriptions.noExpiration') }}
-            </span>
-            <span v-if="transferringSubscription.expires_at && getDaysRemaining(transferringSubscription.expires_at) !== null" class="ml-1 text-gray-500">
-              ({{ getDaysRemaining(transferringSubscription.expires_at) }} {{ t('admin.subscriptions.daysRemaining') }})
-            </span>
-          </p>
-        </div>
-        <div>
-          <label class="input-label">{{ t('admin.subscriptions.targetGroup') }}</label>
-          <Select
-            v-model="transferForm.target_group_id"
-            :options="transferTargetGroupOptions"
-            :placeholder="t('admin.subscriptions.selectTargetGroup')"
-          >
-            <template #selected="{ option }">
-              <GroupBadge
-                v-if="option"
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-              />
-              <span v-else class="text-gray-400">{{ t('admin.subscriptions.selectTargetGroup') }}</span>
-            </template>
-            <template #option="{ option, selected }">
-              <GroupOptionItem
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :description="(option as unknown as GroupOption).description"
-                :selected="selected"
-              />
-            </template>
-          </Select>
-          <p class="input-hint">{{ t('admin.subscriptions.transferHint') }}</p>
-        </div>
-      </form>
-      <template #footer>
-        <div v-if="transferringSubscription" class="flex justify-end gap-3">
-          <button @click="closeTransferModal" type="button" class="btn btn-secondary">
-            {{ t('common.cancel') }}
-          </button>
-          <button
-            type="submit"
-            form="transfer-subscription-form"
-            :disabled="submitting"
-            class="btn btn-primary"
-          >
-            {{ submitting ? t('admin.subscriptions.transferring') : t('admin.subscriptions.transfer') }}
-          </button>
-        </div>
-      </template>
-    </BaseDialog>
-
     <!-- Revoke Confirmation Dialog -->
     <ConfirmDialog
       :show="showRevokeDialog"
@@ -707,6 +642,96 @@
       @confirm="confirmRevoke"
       @cancel="showRevokeDialog = false"
     />
+
+    <!-- Reset Quota Confirmation Dialog -->
+    <ConfirmDialog
+      :show="showResetQuotaConfirm"
+      :title="t('admin.subscriptions.resetQuotaTitle')"
+      :message="t('admin.subscriptions.resetQuotaConfirm', { user: resettingSubscription?.user?.email })"
+      :confirm-text="t('admin.subscriptions.resetQuota')"
+      :cancel-text="t('common.cancel')"
+      @confirm="confirmResetQuota"
+      @cancel="showResetQuotaConfirm = false"
+    />
+    <!-- Subscription Guide Modal -->
+    <teleport to="body">
+      <transition name="modal">
+        <div v-if="showGuideModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" @mousedown.self="showGuideModal = false">
+          <div class="fixed inset-0 bg-black/50" @click="showGuideModal = false"></div>
+          <div class="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-dark-800">
+            <button type="button" class="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="showGuideModal = false">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+
+            <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">{{ t('admin.subscriptions.guide.title') }}</h2>
+            <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.subscriptions.guide.subtitle') }}</p>
+
+            <!-- Step 1 -->
+            <div class="mb-5">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">1</span>
+                {{ t('admin.subscriptions.guide.step1.title') }}
+              </h3>
+              <ol class="ml-8 list-decimal space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                <li>{{ t('admin.subscriptions.guide.step1.line1') }}</li>
+                <li>{{ t('admin.subscriptions.guide.step1.line2') }}</li>
+                <li>{{ t('admin.subscriptions.guide.step1.line3') }}</li>
+              </ol>
+              <div class="ml-8 mt-2">
+                <router-link
+                  to="/admin/groups"
+                  @click="showGuideModal = false"
+                  class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                >
+                  {{ t('admin.subscriptions.guide.step1.link') }}
+                  <Icon name="arrowRight" size="xs" />
+                </router-link>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="mb-5">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">2</span>
+                {{ t('admin.subscriptions.guide.step2.title') }}
+              </h3>
+              <ol class="ml-8 list-decimal space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                <li>{{ t('admin.subscriptions.guide.step2.line1') }}</li>
+                <li>{{ t('admin.subscriptions.guide.step2.line2') }}</li>
+                <li>{{ t('admin.subscriptions.guide.step2.line3') }}</li>
+              </ol>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="mb-5">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">3</span>
+                {{ t('admin.subscriptions.guide.step3.title') }}
+              </h3>
+              <div class="ml-8 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
+                <table class="w-full text-sm">
+                  <tbody>
+                    <tr v-for="(row, i) in guideActionRows" :key="i" class="border-b border-gray-100 dark:border-dark-700 last:border-0">
+                      <td class="whitespace-nowrap bg-gray-50 px-3 py-2 font-medium text-gray-700 dark:bg-dark-700 dark:text-gray-300">{{ row.action }}</td>
+                      <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tip -->
+            <div class="rounded-lg bg-blue-50 p-3 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+              {{ t('admin.subscriptions.guide.tip') }}
+            </div>
+
+            <div class="mt-4 text-right">
+              <button type="button" class="btn btn-primary btn-sm" @click="showGuideModal = false">{{ t('common.close') }}</button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </AppLayout>
 </template>
 
@@ -719,7 +744,7 @@ import type { UserSubscription, Group, GroupPlatform, SubscriptionType } from '@
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
-import { useWindowResetStatus } from '@/composables/useWindowResetStatus'
+import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -734,7 +759,6 @@ import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
-const { formatWindowStatus, getResetStatusClass } = useWindowResetStatus('admin.subscriptions.resetStatus')
 
 interface GroupOption {
   value: number
@@ -744,6 +768,15 @@ interface GroupOption {
   subscriptionType: SubscriptionType
   rate: number
 }
+
+// Guide modal state
+const showGuideModal = ref(false)
+
+const guideActionRows = computed(() => [
+  { action: t('admin.subscriptions.guide.actions.adjust'), desc: t('admin.subscriptions.guide.actions.adjustDesc') },
+  { action: t('admin.subscriptions.guide.actions.resetQuota'), desc: t('admin.subscriptions.guide.actions.resetQuotaDesc') },
+  { action: t('admin.subscriptions.guide.actions.revoke'), desc: t('admin.subscriptions.guide.actions.revokeDesc') }
+])
 
 // User column display mode: 'email' or 'username'
 const userColumnMode = ref<'email' | 'username'>('email')
@@ -884,6 +917,7 @@ let userSearchTimeout: ReturnType<typeof setTimeout> | null = null
 const filters = reactive({
   status: 'active',
   group_id: '',
+  platform: '',
   user_id: null as number | null
 })
 
@@ -895,20 +929,20 @@ const sortState = reactive({
 
 const pagination = reactive({
   page: 1,
-  page_size: 20,
+  page_size: getPersistedPageSize(),
   total: 0,
   pages: 0
 })
 
 const showAssignModal = ref(false)
 const showExtendModal = ref(false)
-const showTransferModal = ref(false)
 const showRevokeDialog = ref(false)
+const showResetQuotaConfirm = ref(false)
 const submitting = ref(false)
+const resettingSubscription = ref<UserSubscription | null>(null)
+const resettingQuota = ref(false)
 const extendingSubscription = ref<UserSubscription | null>(null)
-const transferringSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
-const transferUserExistingGroupIds = ref<number[]>([])
 
 const assignForm = reactive({
   user_id: null as number | null,
@@ -920,14 +954,19 @@ const extendForm = reactive({
   days: 30
 })
 
-const transferForm = reactive({
-  target_group_id: null as number | null
-})
-
 // Group options for filter (all groups)
 const groupOptions = computed(() => [
   { value: '', label: t('admin.subscriptions.allGroups') },
   ...groups.value.map((g) => ({ value: g.id.toString(), label: g.name }))
+])
+
+const platformFilterOptions = computed(() => [
+  { value: '', label: t('admin.subscriptions.allPlatforms') },
+  { value: 'anthropic', label: 'Anthropic' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'gemini', label: 'Gemini' },
+  { value: 'antigravity', label: 'Antigravity' },
+  { value: 'sora', label: 'Sora' }
 ])
 
 // Group options for assign (only subscription type groups)
@@ -943,26 +982,6 @@ const subscriptionGroupOptions = computed(() =>
       rate: g.rate_multiplier
     }))
 )
-
-// Group options for transfer (subscription type, active, exclude current group and user's existing groups)
-const transferTargetGroupOptions = computed(() => {
-  const currentGroupId = transferringSubscription.value?.group_id
-  return groups.value
-    .filter((g) =>
-      g.subscription_type === 'subscription' &&
-      g.status === 'active' &&
-      g.id !== currentGroupId &&
-      !transferUserExistingGroupIds.value.includes(g.id)
-    )
-    .map((g) => ({
-      value: g.id,
-      label: g.name,
-      description: g.description,
-      platform: g.platform,
-      subscriptionType: g.subscription_type,
-      rate: g.rate_multiplier
-    }))
-})
 
 const applyFilters = () => {
   pagination.page = 1
@@ -985,6 +1004,7 @@ const loadSubscriptions = async () => {
       {
         status: (filters.status as any) || undefined,
         group_id: filters.group_id ? parseInt(filters.group_id) : undefined,
+        platform: filters.platform || undefined,
         user_id: filters.user_id || undefined,
         sort_by: sortState.sort_by,
         sort_order: sortState.sort_order
@@ -1190,51 +1210,6 @@ const closeExtendModal = () => {
   extendingSubscription.value = null
 }
 
-const handleTransfer = async (subscription: UserSubscription) => {
-  transferringSubscription.value = subscription
-  transferForm.target_group_id = null
-  transferUserExistingGroupIds.value = []
-
-  // Load user's existing subscriptions to exclude their groups
-  try {
-    const response = await adminAPI.subscriptions.listByUser(subscription.user_id, 1, 100)
-    transferUserExistingGroupIds.value = response.items.map(s => s.group_id)
-  } catch (error) {
-    console.error('Error loading user subscriptions:', error)
-  }
-
-  showTransferModal.value = true
-}
-
-const closeTransferModal = () => {
-  showTransferModal.value = false
-  transferringSubscription.value = null
-  transferUserExistingGroupIds.value = []
-}
-
-const handleTransferSubscription = async () => {
-  if (!transferringSubscription.value) return
-  if (!transferForm.target_group_id) {
-    appStore.showError(t('admin.subscriptions.pleaseSelectGroup'))
-    return
-  }
-
-  submitting.value = true
-  try {
-    await adminAPI.subscriptions.transfer(transferringSubscription.value.id, {
-      target_group_id: transferForm.target_group_id
-    })
-    appStore.showSuccess(t('admin.subscriptions.subscriptionTransferred'))
-    closeTransferModal()
-    loadSubscriptions()
-  } catch (error: any) {
-    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToTransfer'))
-    console.error('Error transferring subscription:', error)
-  } finally {
-    submitting.value = false
-  }
-}
-
 const handleExtendSubscription = async () => {
   if (!extendingSubscription.value) return
 
@@ -1284,6 +1259,29 @@ const confirmRevoke = async () => {
   }
 }
 
+const handleResetQuota = (subscription: UserSubscription) => {
+  resettingSubscription.value = subscription
+  showResetQuotaConfirm.value = true
+}
+
+const confirmResetQuota = async () => {
+  if (!resettingSubscription.value) return
+  if (resettingQuota.value) return
+  resettingQuota.value = true
+  try {
+    await adminAPI.subscriptions.resetQuota(resettingSubscription.value.id, { daily: true, weekly: true, monthly: true })
+    appStore.showSuccess(t('admin.subscriptions.quotaResetSuccess'))
+    showResetQuotaConfirm.value = false
+    resettingSubscription.value = null
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToResetQuota'))
+    console.error('Error resetting quota:', error)
+  } finally {
+    resettingQuota.value = false
+  }
+}
+
 // Helper functions
 const getDaysRemaining = (expiresAt: string): number | null => {
   const now = new Date()
@@ -1312,6 +1310,44 @@ const getProgressClass = (used: number | null | undefined, limit: number | null)
   if (percentage >= 90) return 'bg-red-500'
   if (percentage >= 70) return 'bg-orange-500'
   return 'bg-green-500'
+}
+
+// Format reset time based on window start and period type
+const formatResetTime = (windowStart: string, period: 'daily' | 'weekly' | 'monthly'): string => {
+  if (!windowStart) return t('admin.subscriptions.windowNotActive')
+
+  const start = new Date(windowStart)
+  const now = new Date()
+
+  // Calculate reset time based on period
+  let resetTime: Date
+  switch (period) {
+    case 'daily':
+      resetTime = new Date(start.getTime() + 24 * 60 * 60 * 1000)
+      break
+    case 'weekly':
+      resetTime = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000)
+      break
+    case 'monthly':
+      resetTime = new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000)
+      break
+  }
+
+  const diffMs = resetTime.getTime() - now.getTime()
+  if (diffMs <= 0) return t('admin.subscriptions.windowNotActive')
+
+  const diffSeconds = Math.floor(diffMs / 1000)
+  const days = Math.floor(diffSeconds / 86400)
+  const hours = Math.floor((diffSeconds % 86400) / 3600)
+  const minutes = Math.floor((diffSeconds % 3600) / 60)
+
+  if (days > 0) {
+    return t('admin.subscriptions.resetInDaysHours', { days, hours })
+  } else if (hours > 0) {
+    return t('admin.subscriptions.resetInHoursMinutes', { hours, minutes })
+  } else {
+    return t('admin.subscriptions.resetInMinutes', { minutes })
+  }
 }
 
 // Handle click outside to close dropdowns

@@ -54,6 +54,10 @@ func (s *accountRepoStub) GetByCRSAccountID(ctx context.Context, crsAccountID st
 	panic("unexpected GetByCRSAccountID call")
 }
 
+func (s *accountRepoStub) FindByExtraField(ctx context.Context, key string, value any) ([]Account, error) {
+	panic("unexpected FindByExtraField call")
+}
+
 func (s *accountRepoStub) ListCRSAccountIDs(ctx context.Context) (map[string]int64, error) {
 	panic("unexpected ListCRSAccountIDs call")
 }
@@ -75,7 +79,7 @@ func (s *accountRepoStub) List(ctx context.Context, params pagination.Pagination
 	panic("unexpected List call")
 }
 
-func (s *accountRepoStub) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, accountType, status, search string, groupID int64) ([]Account, *pagination.PaginationResult, error) {
+func (s *accountRepoStub) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, *pagination.PaginationResult, error) {
 	panic("unexpected ListWithFilters call")
 }
 
@@ -103,7 +107,7 @@ func (s *accountRepoStub) SetError(ctx context.Context, id int64, errorMsg strin
 	panic("unexpected SetError call")
 }
 
-func (s *accountRepoStub) ClearError(ctx context.Context, id int64) (bool, error) {
+func (s *accountRepoStub) ClearError(ctx context.Context, id int64) error {
 	panic("unexpected ClearError call")
 }
 
@@ -143,7 +147,15 @@ func (s *accountRepoStub) ListSchedulableByGroupIDAndPlatforms(ctx context.Conte
 	panic("unexpected ListSchedulableByGroupIDAndPlatforms call")
 }
 
-func (s *accountRepoStub) SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error {
+func (s *accountRepoStub) ListSchedulableUngroupedByPlatform(ctx context.Context, platform string) ([]Account, error) {
+	panic("unexpected ListSchedulableUngroupedByPlatform call")
+}
+
+func (s *accountRepoStub) ListSchedulableUngroupedByPlatforms(ctx context.Context, platforms []string) ([]Account, error) {
+	panic("unexpected ListSchedulableUngroupedByPlatforms call")
+}
+
+func (s *accountRepoStub) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
 	panic("unexpected SetRateLimited call")
 }
 
@@ -187,7 +199,13 @@ func (s *accountRepoStub) BulkUpdate(ctx context.Context, ids []int64, updates A
 	panic("unexpected BulkUpdate call")
 }
 
-func (s *accountRepoStub) SetOnErrorCallback(fn func(accountID int64)) {}
+func (s *accountRepoStub) IncrementQuotaUsed(ctx context.Context, id int64, amount float64) error {
+	return nil
+}
+
+func (s *accountRepoStub) ResetQuotaUsed(ctx context.Context, id int64) error {
+	return nil
+}
 
 // TestAccountService_Delete_NotFound 测试删除不存在的账号时返回正确的错误。
 // 预期行为：

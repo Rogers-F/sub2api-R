@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 )
@@ -40,18 +40,88 @@ func ProvideEmailQueueService(emailService *EmailService) *EmailQueueService {
 // ProvideTokenRefreshService creates and starts TokenRefreshService
 func ProvideTokenRefreshService(
 	accountRepo AccountRepository,
+	soraAccountRepo SoraAccountRepository, // Sora 扩展表仓储，用于双表同步
 	oauthService *OAuthService,
 	openaiOAuthService *OpenAIOAuthService,
 	geminiOAuthService *GeminiOAuthService,
 	antigravityOAuthService *AntigravityOAuthService,
 	cacheInvalidator TokenCacheInvalidator,
 	schedulerCache SchedulerCache,
-	tokenCache GeminiTokenCache,
 	cfg *config.Config,
+	tempUnschedCache TempUnschedCache,
+	privacyClientFactory PrivacyClientFactory,
+	proxyRepo ProxyRepository,
+	refreshAPI *OAuthRefreshAPI,
 ) *TokenRefreshService {
-	svc := NewTokenRefreshService(accountRepo, oauthService, openaiOAuthService, geminiOAuthService, antigravityOAuthService, cacheInvalidator, schedulerCache, tokenCache, cfg)
+	svc := NewTokenRefreshService(accountRepo, oauthService, openaiOAuthService, geminiOAuthService, antigravityOAuthService, cacheInvalidator, schedulerCache, cfg, tempUnschedCache)
+	// 注入 Sora 账号扩展表仓储，用于 OpenAI Token 刷新时同步 sora_accounts 表
+	svc.SetSoraAccountRepo(soraAccountRepo)
+	// 注入 OpenAI privacy opt-out 依赖
+	svc.SetPrivacyDeps(privacyClientFactory, proxyRepo)
+	// 注入统一 OAuth 刷新 API（消除 TokenRefreshService 与 TokenProvider 之间的竞争条件）
+	svc.SetRefreshAPI(refreshAPI)
+	// 调用侧显式注入后台刷新策略，避免策略漂移
+	svc.SetRefreshPolicy(DefaultBackgroundRefreshPolicy())
 	svc.Start()
 	return svc
+}
+
+// ProvideClaudeTokenProvider creates ClaudeTokenProvider with OAuthRefreshAPI injection
+func ProvideClaudeTokenProvider(
+	accountRepo AccountRepository,
+	tokenCache GeminiTokenCache,
+	oauthService *OAuthService,
+	refreshAPI *OAuthRefreshAPI,
+) *ClaudeTokenProvider {
+	p := NewClaudeTokenProvider(accountRepo, tokenCache, oauthService)
+	executor := NewClaudeTokenRefresher(oauthService)
+	p.SetRefreshAPI(refreshAPI, executor)
+	p.SetRefreshPolicy(ClaudeProviderRefreshPolicy())
+	return p
+}
+
+// ProvideOpenAITokenProvider creates OpenAITokenProvider with OAuthRefreshAPI injection
+func ProvideOpenAITokenProvider(
+	accountRepo AccountRepository,
+	tokenCache GeminiTokenCache,
+	openaiOAuthService *OpenAIOAuthService,
+	refreshAPI *OAuthRefreshAPI,
+) *OpenAITokenProvider {
+	p := NewOpenAITokenProvider(accountRepo, tokenCache, openaiOAuthService)
+	executor := NewOpenAITokenRefresher(openaiOAuthService, accountRepo)
+	p.SetRefreshAPI(refreshAPI, executor)
+	p.SetRefreshPolicy(OpenAIProviderRefreshPolicy())
+	return p
+}
+
+// ProvideGeminiTokenProvider creates GeminiTokenProvider with OAuthRefreshAPI injection
+func ProvideGeminiTokenProvider(
+	accountRepo AccountRepository,
+	tokenCache GeminiTokenCache,
+	geminiOAuthService *GeminiOAuthService,
+	refreshAPI *OAuthRefreshAPI,
+) *GeminiTokenProvider {
+	p := NewGeminiTokenProvider(accountRepo, tokenCache, geminiOAuthService)
+	executor := NewGeminiTokenRefresher(geminiOAuthService)
+	p.SetRefreshAPI(refreshAPI, executor)
+	p.SetRefreshPolicy(GeminiProviderRefreshPolicy())
+	return p
+}
+
+// ProvideAntigravityTokenProvider creates AntigravityTokenProvider with OAuthRefreshAPI injection
+func ProvideAntigravityTokenProvider(
+	accountRepo AccountRepository,
+	tokenCache GeminiTokenCache,
+	antigravityOAuthService *AntigravityOAuthService,
+	refreshAPI *OAuthRefreshAPI,
+	tempUnschedCache TempUnschedCache,
+) *AntigravityTokenProvider {
+	p := NewAntigravityTokenProvider(accountRepo, tokenCache, antigravityOAuthService)
+	executor := NewAntigravityTokenRefresher(antigravityOAuthService)
+	p.SetRefreshAPI(refreshAPI, executor)
+	p.SetRefreshPolicy(AntigravityProviderRefreshPolicy())
+	p.SetTempUnschedCache(tempUnschedCache)
+	return p
 }
 
 // ProvideDashboardAggregationService 创建并启动仪表盘聚合服务
@@ -99,25 +169,23 @@ func ProvideDeferredService(accountRepo AccountRepository, timingWheel *TimingWh
 	return svc
 }
 
-// ProvideAccountAutoRecoveryService creates AccountAutoRecoveryService and
-// wires the SetError callback so that accounts entering error state
-// automatically trigger recovery.
-func ProvideAccountAutoRecoveryService(
-	testService *AccountTestService,
-	accountRepo AccountRepository,
-	timingWheel *TimingWheelService,
-) *AccountAutoRecoveryService {
-	svc := NewAccountAutoRecoveryService(testService, accountRepo, timingWheel)
-	accountRepo.SetOnErrorCallback(svc.TriggerRecovery)
+// ProvideConcurrencyService creates ConcurrencyService and starts slot cleanup worker.
+func ProvideConcurrencyService(cache ConcurrencyCache, accountRepo AccountRepository, cfg *config.Config) *ConcurrencyService {
+	svc := NewConcurrencyService(cache)
+	if err := svc.CleanupStaleProcessSlots(context.Background()); err != nil {
+		logger.LegacyPrintf("service.concurrency", "Warning: startup cleanup stale process slots failed: %v", err)
+	}
+	if cfg != nil {
+		svc.StartSlotCleanupWorker(accountRepo, cfg.Gateway.Scheduling.SlotCleanupInterval)
+	}
 	return svc
 }
 
-// ProvideConcurrencyService creates ConcurrencyService and starts slot cleanup workers.
-func ProvideConcurrencyService(cache ConcurrencyCache, accountRepo AccountRepository, cfg *config.Config) *ConcurrencyService {
-	svc := NewConcurrencyService(cache)
-	if cfg != nil {
-		svc.StartSlotCleanupWorker(accountRepo, cfg.Gateway.Scheduling.SlotCleanupInterval)
-		svc.StartUserSlotCleanupWorker(cfg.Gateway.Scheduling.SlotCleanupInterval)
+// ProvideUserMessageQueueService 创建用户消息串行队列服务并启动清理 worker
+func ProvideUserMessageQueueService(cache UserMsgQueueCache, rpmCache RPMCache, cfg *config.Config) *UserMessageQueueService {
+	svc := NewUserMessageQueueService(cache, rpmCache, &cfg.Gateway.UserMessageQueue)
+	if cfg.Gateway.UserMessageQueue.CleanupIntervalSeconds > 0 {
+		svc.StartCleanupWorker(time.Duration(cfg.Gateway.UserMessageQueue.CleanupIntervalSeconds) * time.Second)
 	}
 	return svc
 }
@@ -206,6 +274,97 @@ func ProvideOpsCleanupService(
 	return svc
 }
 
+func ProvideOpsSystemLogSink(opsRepo OpsRepository) *OpsSystemLogSink {
+	sink := NewOpsSystemLogSink(opsRepo)
+	sink.Start()
+	logger.SetSink(sink)
+	return sink
+}
+
+// ProvideSoraMediaStorage 初始化 Sora 媒体存储
+func ProvideSoraMediaStorage(cfg *config.Config) *SoraMediaStorage {
+	return NewSoraMediaStorage(cfg)
+}
+
+func ProvideSoraSDKClient(
+	cfg *config.Config,
+	httpUpstream HTTPUpstream,
+	tokenProvider *OpenAITokenProvider,
+	accountRepo AccountRepository,
+	soraAccountRepo SoraAccountRepository,
+) *SoraSDKClient {
+	client := NewSoraSDKClient(cfg, httpUpstream, tokenProvider)
+	client.SetAccountRepositories(accountRepo, soraAccountRepo)
+	return client
+}
+
+// ProvideSoraMediaCleanupService 创建并启动 Sora 媒体清理服务
+func ProvideSoraMediaCleanupService(storage *SoraMediaStorage, cfg *config.Config) *SoraMediaCleanupService {
+	svc := NewSoraMediaCleanupService(storage, cfg)
+	svc.Start()
+	return svc
+}
+
+func buildIdempotencyConfig(cfg *config.Config) IdempotencyConfig {
+	idempotencyCfg := DefaultIdempotencyConfig()
+	if cfg != nil {
+		if cfg.Idempotency.DefaultTTLSeconds > 0 {
+			idempotencyCfg.DefaultTTL = time.Duration(cfg.Idempotency.DefaultTTLSeconds) * time.Second
+		}
+		if cfg.Idempotency.SystemOperationTTLSeconds > 0 {
+			idempotencyCfg.SystemOperationTTL = time.Duration(cfg.Idempotency.SystemOperationTTLSeconds) * time.Second
+		}
+		if cfg.Idempotency.ProcessingTimeoutSeconds > 0 {
+			idempotencyCfg.ProcessingTimeout = time.Duration(cfg.Idempotency.ProcessingTimeoutSeconds) * time.Second
+		}
+		if cfg.Idempotency.FailedRetryBackoffSeconds > 0 {
+			idempotencyCfg.FailedRetryBackoff = time.Duration(cfg.Idempotency.FailedRetryBackoffSeconds) * time.Second
+		}
+		if cfg.Idempotency.MaxStoredResponseLen > 0 {
+			idempotencyCfg.MaxStoredResponseLen = cfg.Idempotency.MaxStoredResponseLen
+		}
+		idempotencyCfg.ObserveOnly = cfg.Idempotency.ObserveOnly
+	}
+	return idempotencyCfg
+}
+
+func ProvideIdempotencyCoordinator(repo IdempotencyRepository, cfg *config.Config) *IdempotencyCoordinator {
+	coordinator := NewIdempotencyCoordinator(repo, buildIdempotencyConfig(cfg))
+	SetDefaultIdempotencyCoordinator(coordinator)
+	return coordinator
+}
+
+func ProvideSystemOperationLockService(repo IdempotencyRepository, cfg *config.Config) *SystemOperationLockService {
+	return NewSystemOperationLockService(repo, buildIdempotencyConfig(cfg))
+}
+
+func ProvideIdempotencyCleanupService(repo IdempotencyRepository, cfg *config.Config) *IdempotencyCleanupService {
+	svc := NewIdempotencyCleanupService(repo, cfg)
+	svc.Start()
+	return svc
+}
+
+// ProvideScheduledTestService creates ScheduledTestService.
+func ProvideScheduledTestService(
+	planRepo ScheduledTestPlanRepository,
+	resultRepo ScheduledTestResultRepository,
+) *ScheduledTestService {
+	return NewScheduledTestService(planRepo, resultRepo)
+}
+
+// ProvideScheduledTestRunnerService creates and starts ScheduledTestRunnerService.
+func ProvideScheduledTestRunnerService(
+	planRepo ScheduledTestPlanRepository,
+	scheduledSvc *ScheduledTestService,
+	accountTestSvc *AccountTestService,
+	rateLimitSvc *RateLimitService,
+	cfg *config.Config,
+) *ScheduledTestRunnerService {
+	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg)
+	svc.Start()
+	return svc
+}
+
 // ProvideOpsScheduledReportService creates and starts OpsScheduledReportService.
 func ProvideOpsScheduledReportService(
 	opsService *OpsService,
@@ -226,51 +385,37 @@ func ProvideAPIKeyAuthCacheInvalidator(apiKeyService *APIKeyService) APIKeyAuthC
 	return apiKeyService
 }
 
-// ProvideAuthServiceWithReferral creates AuthService and injects ReferralService
-func ProvideAuthServiceWithReferral(
-	userRepo UserRepository,
-	redeemRepo RedeemCodeRepository,
-	refreshTokenCache RefreshTokenCache,
+// ProvideBackupService creates and starts BackupService
+func ProvideBackupService(
+	settingRepo SettingRepository,
 	cfg *config.Config,
-	settingService *SettingService,
-	emailService *EmailService,
-	turnstileService *TurnstileService,
-	emailQueueService *EmailQueueService,
-	promoService *PromoService,
-	referralService *ReferralService,
-) *AuthService {
-	svc := NewAuthService(userRepo, redeemRepo, refreshTokenCache, cfg, settingService, emailService, turnstileService, emailQueueService, promoService)
-	svc.SetReferralService(referralService)
+	encryptor SecretEncryptor,
+	storeFactory BackupObjectStoreFactory,
+	dumper DBDumper,
+) *BackupService {
+	svc := NewBackupService(settingRepo, cfg, encryptor, storeFactory, dumper)
+	svc.Start()
 	return svc
 }
 
-// ProvideRedeemServiceWithReferral creates RedeemService and injects ReferralService
-func ProvideRedeemServiceWithReferral(
-	redeemRepo RedeemCodeRepository,
-	userRepo UserRepository,
-	subscriptionService *SubscriptionService,
-	cache RedeemCache,
-	billingCacheService *BillingCacheService,
-	entClient *dbent.Client,
-	authCacheInvalidator APIKeyAuthCacheInvalidator,
-	referralService *ReferralService,
-) *RedeemService {
-	svc := NewRedeemService(redeemRepo, userRepo, subscriptionService, cache, billingCacheService, entClient, authCacheInvalidator)
-	svc.SetReferralService(referralService)
+// ProvideSettingService wires SettingService with group reader for default subscription validation.
+func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, cfg *config.Config) *SettingService {
+	svc := NewSettingService(settingRepo, cfg)
+	svc.SetDefaultSubscriptionGroupReader(groupRepo)
 	return svc
 }
 
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
-	ProvideAuthServiceWithReferral,
+	NewAuthService,
 	NewUserService,
 	NewAPIKeyService,
 	ProvideAPIKeyAuthCacheInvalidator,
 	NewGroupService,
 	NewAccountService,
 	NewProxyService,
-	ProvideRedeemServiceWithReferral,
+	NewRedeemService,
 	NewPromoService,
 	NewUsageService,
 	NewDashboardService,
@@ -280,6 +425,11 @@ var ProviderSet = wire.NewSet(
 	NewAnnouncementService,
 	NewAdminService,
 	NewGatewayService,
+	ProvideSoraMediaStorage,
+	ProvideSoraMediaCleanupService,
+	ProvideSoraSDKClient,
+	wire.Bind(new(SoraClient), new(*SoraSDKClient)),
+	NewSoraGatewayService,
 	NewOpenAIGatewayService,
 	NewOAuthService,
 	NewOpenAIOAuthService,
@@ -288,16 +438,20 @@ var ProviderSet = wire.NewSet(
 	NewCompositeTokenCacheInvalidator,
 	wire.Bind(new(TokenCacheInvalidator), new(*CompositeTokenCacheInvalidator)),
 	NewAntigravityOAuthService,
-	NewGeminiTokenProvider,
+	NewOAuthRefreshAPI,
+	ProvideGeminiTokenProvider,
 	NewGeminiMessagesCompatService,
-	NewAntigravityTokenProvider,
-	NewOpenAITokenProvider,
-	NewClaudeTokenProvider,
+	ProvideAntigravityTokenProvider,
+	ProvideOpenAITokenProvider,
+	ProvideClaudeTokenProvider,
 	NewAntigravityGatewayService,
 	ProvideRateLimitService,
 	NewAccountUsageService,
 	NewAccountTestService,
-	NewSettingService,
+	ProvideSettingService,
+	NewDataManagementService,
+	ProvideBackupService,
+	ProvideOpsSystemLogSink,
 	NewOpsService,
 	ProvideOpsMetricsCollector,
 	ProvideOpsAggregationService,
@@ -308,10 +462,12 @@ var ProviderSet = wire.NewSet(
 	ProvideEmailQueueService,
 	NewTurnstileService,
 	NewSubscriptionService,
+	wire.Bind(new(DefaultSubscriptionAssigner), new(*SubscriptionService)),
 	ProvideConcurrencyService,
+	ProvideUserMessageQueueService,
+	NewUsageRecordWorkerPool,
 	ProvideSchedulerSnapshotService,
 	NewIdentityService,
-	NewVersionService,
 	NewCRSSyncService,
 	ProvideUpdateService,
 	ProvideTokenRefreshService,
@@ -321,12 +477,16 @@ var ProviderSet = wire.NewSet(
 	ProvideDashboardAggregationService,
 	ProvideUsageCleanupService,
 	ProvideDeferredService,
-	ProvideAccountAutoRecoveryService,
 	NewAntigravityQuotaFetcher,
 	NewUserAttributeService,
 	NewUsageCache,
 	NewTotpService,
-	NewReferralService,
 	NewErrorPassthroughService,
 	NewDigestSessionStore,
+	ProvideIdempotencyCoordinator,
+	ProvideSystemOperationLockService,
+	ProvideIdempotencyCleanupService,
+	ProvideScheduledTestService,
+	ProvideScheduledTestRunnerService,
+	NewGroupCapacityService,
 )

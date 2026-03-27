@@ -11,6 +11,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	dbgroup "github.com/Wei-Shaw/sub2api/ent/group"
 	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
@@ -52,7 +53,7 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		txClient = r.client
 	}
 
-	createOp := txClient.User.Create().
+	created, err := txClient.User.Create().
 		SetEmail(userIn.Email).
 		SetUsername(userIn.Username).
 		SetNotes(userIn.Notes).
@@ -60,21 +61,9 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetRole(userIn.Role).
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
-		SetStatus(userIn.Status)
-
-	// 设置邀请系统字段
-	if userIn.ReferrerID != nil {
-		createOp = createOp.SetReferrerID(*userIn.ReferrerID)
-	}
-	if userIn.ReferralCode != nil {
-		createOp = createOp.SetReferralCode(*userIn.ReferralCode)
-	}
-	// 设置自定义佣金比例
-	if userIn.CommissionRate != nil {
-		createOp = createOp.SetCommissionRate(*userIn.CommissionRate)
-	}
-
-	created, err := createOp.Save(ctx)
+		SetStatus(userIn.Status).
+		SetSoraStorageQuotaBytes(userIn.SoraStorageQuotaBytes).
+		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, service.ErrEmailExists)
 	}
@@ -156,9 +145,8 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
-		SetNillableCommissionRate(userIn.CommissionRate).
-		SetNillableReferralCode(userIn.ReferralCode).
-		SetNillableReferrerID(userIn.ReferrerID).
+		SetSoraStorageQuotaBytes(userIn.SoraStorageQuotaBytes).
+		SetSoraStorageUsedBytes(userIn.SoraStorageUsedBytes).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)
@@ -213,6 +201,12 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 		)
 	}
 
+	if filters.GroupName != "" {
+		q = q.Where(dbuser.HasAllowedGroupsWith(
+			dbgroup.NameContainsFold(filters.GroupName),
+		))
+	}
+
 	// If attribute filters are specified, we need to filter by user IDs first
 	var allowedUserIDs []int64
 	if len(filters.Attributes) > 0 {
@@ -256,21 +250,24 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 		userMap[u.ID] = &outUsers[len(outUsers)-1]
 	}
 
-	// Batch load active subscriptions with groups to avoid N+1.
-	subs, err := r.client.UserSubscription.Query().
-		Where(
-			usersubscription.UserIDIn(userIDs...),
-			usersubscription.StatusEQ(service.SubscriptionStatusActive),
-		).
-		WithGroup().
-		All(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
+	shouldLoadSubscriptions := filters.IncludeSubscriptions == nil || *filters.IncludeSubscriptions
+	if shouldLoadSubscriptions {
+		// Batch load active subscriptions with groups to avoid N+1.
+		subs, err := r.client.UserSubscription.Query().
+			Where(
+				usersubscription.UserIDIn(userIDs...),
+				usersubscription.StatusEQ(service.SubscriptionStatusActive),
+			).
+			WithGroup().
+			All(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	for i := range subs {
-		if u, ok := userMap[subs[i].UserID]; ok {
-			u.Subscriptions = append(u.Subscriptions, *userSubscriptionEntityToService(subs[i]))
+		for i := range subs {
+			if u, ok := userMap[subs[i].UserID]; ok {
+				u.Subscriptions = append(u.Subscriptions, *userSubscriptionEntityToService(subs[i]))
+			}
 		}
 	}
 
@@ -379,8 +376,77 @@ func (r *userRepository) UpdateConcurrency(ctx context.Context, id int64, amount
 	return nil
 }
 
+// AddSoraStorageUsageWithQuota 原子累加 Sora 存储用量，并在有配额时校验不超额。
+func (r *userRepository) AddSoraStorageUsageWithQuota(ctx context.Context, userID int64, deltaBytes int64, effectiveQuota int64) (int64, error) {
+	if deltaBytes <= 0 {
+		user, err := r.GetByID(ctx, userID)
+		if err != nil {
+			return 0, err
+		}
+		return user.SoraStorageUsedBytes, nil
+	}
+	var newUsed int64
+	err := scanSingleRow(ctx, r.sql, `
+		UPDATE users
+		SET sora_storage_used_bytes = sora_storage_used_bytes + $2
+		WHERE id = $1
+		  AND ($3 = 0 OR sora_storage_used_bytes + $2 <= $3)
+		RETURNING sora_storage_used_bytes
+	`, []any{userID, deltaBytes, effectiveQuota}, &newUsed)
+	if err == nil {
+		return newUsed, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		// 区分用户不存在和配额冲突
+		exists, existsErr := r.client.User.Query().Where(dbuser.IDEQ(userID)).Exist(ctx)
+		if existsErr != nil {
+			return 0, existsErr
+		}
+		if !exists {
+			return 0, service.ErrUserNotFound
+		}
+		return 0, service.ErrSoraStorageQuotaExceeded
+	}
+	return 0, err
+}
+
+// ReleaseSoraStorageUsageAtomic 原子释放 Sora 存储用量，并保证不低于 0。
+func (r *userRepository) ReleaseSoraStorageUsageAtomic(ctx context.Context, userID int64, deltaBytes int64) (int64, error) {
+	if deltaBytes <= 0 {
+		user, err := r.GetByID(ctx, userID)
+		if err != nil {
+			return 0, err
+		}
+		return user.SoraStorageUsedBytes, nil
+	}
+	var newUsed int64
+	err := scanSingleRow(ctx, r.sql, `
+		UPDATE users
+		SET sora_storage_used_bytes = GREATEST(sora_storage_used_bytes - $2, 0)
+		WHERE id = $1
+		RETURNING sora_storage_used_bytes
+	`, []any{userID, deltaBytes}, &newUsed)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, service.ErrUserNotFound
+		}
+		return 0, err
+	}
+	return newUsed, nil
+}
+
 func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	return r.client.User.Query().Where(dbuser.EmailEQ(email)).Exist(ctx)
+}
+
+func (r *userRepository) AddGroupToAllowedGroups(ctx context.Context, userID int64, groupID int64) error {
+	client := clientFromContext(ctx, r.client)
+	return client.UserAllowedGroup.Create().
+		SetUserID(userID).
+		SetGroupID(groupID).
+		OnConflictColumns(userallowedgroup.FieldUserID, userallowedgroup.FieldGroupID).
+		DoNothing().
+		Exec(ctx)
 }
 
 func (r *userRepository) RemoveGroupFromAllowedGroups(ctx context.Context, groupID int64) (int64, error) {
@@ -392,6 +458,15 @@ func (r *userRepository) RemoveGroupFromAllowedGroups(ctx context.Context, group
 		return 0, err
 	}
 	return int64(affected), nil
+}
+
+// RemoveGroupFromUserAllowedGroups 移除单个用户的指定分组权限
+func (r *userRepository) RemoveGroupFromUserAllowedGroups(ctx context.Context, userID int64, groupID int64) error {
+	client := clientFromContext(ctx, r.client)
+	_, err := client.UserAllowedGroup.Delete().
+		Where(userallowedgroup.UserIDEQ(userID), userallowedgroup.GroupIDEQ(groupID)).
+		Exec(ctx)
+	return err
 }
 
 func (r *userRepository) GetFirstAdmin(ctx context.Context) (*service.User, error) {
@@ -524,23 +599,6 @@ func (r *userRepository) DisableTotp(ctx context.Context, userID int64) error {
 		ClearTotpEnabledAt().
 		ClearTotpSecretEncrypted().
 		Save(ctx)
-	if err != nil {
-		return translatePersistenceError(err, service.ErrUserNotFound, nil)
-	}
-	return nil
-}
-
-// UpdateCommissionRate 更新用户的自定义佣金比例
-// rate 为 nil 时清除自定义比例（使用全局设置）
-func (r *userRepository) UpdateCommissionRate(ctx context.Context, userID int64, rate *float64) error {
-	client := clientFromContext(ctx, r.client)
-	update := client.User.UpdateOneID(userID)
-	if rate == nil {
-		update = update.ClearCommissionRate()
-	} else {
-		update = update.SetCommissionRate(*rate)
-	}
-	_, err := update.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, nil)
 	}

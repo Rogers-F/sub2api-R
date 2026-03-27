@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
-	"fmt"
-	"log"
-	"log/slog"
+	"encoding/binary"
+	"os"
+	"strconv"
+	"sync/atomic"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 // ConcurrencyCache 定义并发控制的缓存接口
@@ -18,6 +20,7 @@ type ConcurrencyCache interface {
 	AcquireAccountSlot(ctx context.Context, accountID int64, maxConcurrency int, requestID string) (bool, error)
 	ReleaseAccountSlot(ctx context.Context, accountID int64, requestID string) error
 	GetAccountConcurrency(ctx context.Context, accountID int64) (int, error)
+	GetAccountConcurrencyBatch(ctx context.Context, accountIDs []int64) (map[int64]int, error)
 
 	// 账号等待队列（账号级）
 	IncrementAccountWaitCount(ctx context.Context, accountID int64, maxWait int) (bool, error)
@@ -41,20 +44,38 @@ type ConcurrencyCache interface {
 	// 清理过期槽位（后台任务）
 	CleanupExpiredAccountSlots(ctx context.Context, accountID int64) error
 
-	// ScanAndCleanupExpiredUserSlots 扫描所有用户槽位键并清理过期条目。
-	// 返回本次清理的过期条目总数。
-	ScanAndCleanupExpiredUserSlots(ctx context.Context) (int, error)
+	// 启动时清理旧进程遗留槽位与等待计数
+	CleanupStaleProcessSlots(ctx context.Context, activeRequestPrefix string) error
 }
 
-// generateRequestID generates a unique request ID for concurrency slot tracking
-// Uses 8 random bytes (16 hex chars) for uniqueness
-func generateRequestID() string {
+var (
+	requestIDPrefix  = initRequestIDPrefix()
+	requestIDCounter atomic.Uint64
+)
+
+func initRequestIDPrefix() string {
 	b := make([]byte, 8)
-	if _, err := rand.Read(b); err != nil {
-		// Fallback to nanosecond timestamp (extremely rare case)
-		return fmt.Sprintf("%x", time.Now().UnixNano())
+	if _, err := rand.Read(b); err == nil {
+		return "r" + strconv.FormatUint(binary.BigEndian.Uint64(b), 36)
 	}
-	return hex.EncodeToString(b)
+	fallback := uint64(time.Now().UnixNano()) ^ (uint64(os.Getpid()) << 16)
+	return "r" + strconv.FormatUint(fallback, 36)
+}
+
+func RequestIDPrefix() string {
+	return requestIDPrefix
+}
+
+func generateRequestID() string {
+	seq := requestIDCounter.Add(1)
+	return requestIDPrefix + "-" + strconv.FormatUint(seq, 36)
+}
+
+func (s *ConcurrencyService) CleanupStaleProcessSlots(ctx context.Context) error {
+	if s == nil || s.cache == nil {
+		return nil
+	}
+	return s.cache.CleanupStaleProcessSlots(ctx, RequestIDPrefix())
 }
 
 const (
@@ -102,40 +123,6 @@ type UserLoadInfo struct {
 	LoadRate           int // 0-100+ (percent)
 }
 
-// 并发槽位释放重试参数
-const (
-	releaseMaxAttempts    = 3                       // 1 次初始 + 2 次重试
-	releaseRetryDelay     = 200 * time.Millisecond  // 重试间隔
-	releaseAttemptTimeout = 1500 * time.Millisecond // 单次超时
-)
-
-// releaseSlotWithRetry 带重试的槽位释放。
-// 避免 Redis 瞬时抖动导致 ZREM 失败产生 ghost entry。
-func (s *ConcurrencyService) releaseSlotWithRetry(
-	slotType string, ownerID int64, requestID string,
-	release func(context.Context) error,
-) {
-	var lastErr error
-	for attempt := 1; attempt <= releaseMaxAttempts; attempt++ {
-		attemptCtx, cancel := context.WithTimeout(context.Background(), releaseAttemptTimeout)
-		err := release(attemptCtx)
-		cancel()
-		if err == nil {
-			return
-		}
-		lastErr = err
-		if attempt < releaseMaxAttempts {
-			slog.Warn("concurrency_slot_release_retry",
-				"slot_type", slotType, "owner_id", ownerID, "request_id", requestID,
-				"attempt", attempt, "max_attempts", releaseMaxAttempts, "error", err)
-			time.Sleep(releaseRetryDelay)
-		}
-	}
-	slog.Error("concurrency_slot_release_failed",
-		"slot_type", slotType, "owner_id", ownerID, "request_id", requestID,
-		"attempts", releaseMaxAttempts, "error", lastErr)
-}
-
 // AcquireAccountSlot attempts to acquire a concurrency slot for an account.
 // If the account is at max concurrency, it waits until a slot is available or timeout.
 // Returns a release function that MUST be called when the request completes.
@@ -160,9 +147,11 @@ func (s *ConcurrencyService) AcquireAccountSlot(ctx context.Context, accountID i
 		return &AcquireResult{
 			Acquired: true,
 			ReleaseFunc: func() {
-				s.releaseSlotWithRetry("account", accountID, requestID, func(ctx context.Context) error {
-					return s.cache.ReleaseAccountSlot(ctx, accountID, requestID)
-				})
+				bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if err := s.cache.ReleaseAccountSlot(bgCtx, accountID, requestID); err != nil {
+					logger.LegacyPrintf("service.concurrency", "Warning: failed to release account slot for %d (req=%s): %v", accountID, requestID, err)
+				}
 			},
 		}, nil
 	}
@@ -197,9 +186,11 @@ func (s *ConcurrencyService) AcquireUserSlot(ctx context.Context, userID int64, 
 		return &AcquireResult{
 			Acquired: true,
 			ReleaseFunc: func() {
-				s.releaseSlotWithRetry("user", userID, requestID, func(ctx context.Context) error {
-					return s.cache.ReleaseUserSlot(ctx, userID, requestID)
-				})
+				bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if err := s.cache.ReleaseUserSlot(bgCtx, userID, requestID); err != nil {
+					logger.LegacyPrintf("service.concurrency", "Warning: failed to release user slot for %d (req=%s): %v", userID, requestID, err)
+				}
 			},
 		}, nil
 	}
@@ -226,7 +217,7 @@ func (s *ConcurrencyService) IncrementWaitCount(ctx context.Context, userID int6
 	result, err := s.cache.IncrementWaitCount(ctx, userID, maxWait)
 	if err != nil {
 		// On error, allow the request to proceed (fail open)
-		log.Printf("Warning: increment wait count failed for user %d: %v", userID, err)
+		logger.LegacyPrintf("service.concurrency", "Warning: increment wait count failed for user %d: %v", userID, err)
 		return true, nil
 	}
 	return result, nil
@@ -244,7 +235,7 @@ func (s *ConcurrencyService) DecrementWaitCount(ctx context.Context, userID int6
 	defer cancel()
 
 	if err := s.cache.DecrementWaitCount(bgCtx, userID); err != nil {
-		log.Printf("Warning: decrement wait count failed for user %d: %v", userID, err)
+		logger.LegacyPrintf("service.concurrency", "Warning: decrement wait count failed for user %d: %v", userID, err)
 	}
 }
 
@@ -256,7 +247,7 @@ func (s *ConcurrencyService) IncrementAccountWaitCount(ctx context.Context, acco
 
 	result, err := s.cache.IncrementAccountWaitCount(ctx, accountID, maxWait)
 	if err != nil {
-		log.Printf("Warning: increment wait count failed for account %d: %v", accountID, err)
+		logger.LegacyPrintf("service.concurrency", "Warning: increment wait count failed for account %d: %v", accountID, err)
 		return true, nil
 	}
 	return result, nil
@@ -272,7 +263,7 @@ func (s *ConcurrencyService) DecrementAccountWaitCount(ctx context.Context, acco
 	defer cancel()
 
 	if err := s.cache.DecrementAccountWaitCount(bgCtx, accountID); err != nil {
-		log.Printf("Warning: decrement wait count failed for account %d: %v", accountID, err)
+		logger.LegacyPrintf("service.concurrency", "Warning: decrement wait count failed for account %d: %v", accountID, err)
 	}
 }
 
@@ -328,7 +319,7 @@ func (s *ConcurrencyService) StartSlotCleanupWorker(accountRepo AccountRepositor
 		accounts, err := accountRepo.ListSchedulable(listCtx)
 		cancel()
 		if err != nil {
-			log.Printf("Warning: list schedulable accounts failed: %v", err)
+			logger.LegacyPrintf("service.concurrency", "Warning: list schedulable accounts failed: %v", err)
 			return
 		}
 		for _, account := range accounts {
@@ -336,38 +327,8 @@ func (s *ConcurrencyService) StartSlotCleanupWorker(accountRepo AccountRepositor
 			err := s.cache.CleanupExpiredAccountSlots(accountCtx, account.ID)
 			accountCancel()
 			if err != nil {
-				log.Printf("Warning: cleanup expired slots failed for account %d: %v", account.ID, err)
+				logger.LegacyPrintf("service.concurrency", "Warning: cleanup expired slots failed for account %d: %v", account.ID, err)
 			}
-		}
-	}
-
-	go func() {
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-
-		runCleanup()
-		for range ticker.C {
-			runCleanup()
-		}
-	}()
-}
-
-// StartUserSlotCleanupWorker starts a background cleanup worker for expired user slots.
-// Uses SCAN to discover user slot keys and ZREMRANGEBYSCORE to remove expired entries.
-func (s *ConcurrencyService) StartUserSlotCleanupWorker(interval time.Duration) {
-	if s == nil || s.cache == nil || interval <= 0 {
-		return
-	}
-
-	runCleanup := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		cleaned, err := s.cache.ScanAndCleanupExpiredUserSlots(ctx)
-		if err != nil {
-			slog.Warn("user_slot_cleanup_worker_error", "error", err)
-		}
-		if cleaned > 0 {
-			slog.Info("user_slot_cleanup_done", "cleaned", cleaned)
 		}
 	}
 
@@ -385,16 +346,15 @@ func (s *ConcurrencyService) StartUserSlotCleanupWorker(interval time.Duration) 
 // GetAccountConcurrencyBatch gets current concurrency counts for multiple accounts
 // Returns a map of accountID -> current concurrency count
 func (s *ConcurrencyService) GetAccountConcurrencyBatch(ctx context.Context, accountIDs []int64) (map[int64]int, error) {
-	result := make(map[int64]int)
-
-	for _, accountID := range accountIDs {
-		count, err := s.cache.GetAccountConcurrency(ctx, accountID)
-		if err != nil {
-			// If key doesn't exist in Redis, count is 0
-			count = 0
-		}
-		result[accountID] = count
+	if len(accountIDs) == 0 {
+		return map[int64]int{}, nil
 	}
-
-	return result, nil
+	if s.cache == nil {
+		result := make(map[int64]int, len(accountIDs))
+		for _, accountID := range accountIDs {
+			result[accountID] = 0
+		}
+		return result, nil
+	}
+	return s.cache.GetAccountConcurrencyBatch(ctx, accountIDs)
 }

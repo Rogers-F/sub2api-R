@@ -1,85 +1,57 @@
 <script setup lang="ts">
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { onMounted, watch, ref } from 'vue'
+import { onMounted, onBeforeUnmount, watch } from 'vue'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
-import AnnouncementModal from '@/components/announcement/AnnouncementModal.vue'
-import { useAppStore, useAuthStore, useSubscriptionStore } from '@/stores'
+import { resolveDocumentTitle } from '@/router/title'
+import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
+import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore } from '@/stores'
 import { getSetupStatus } from '@/api/setup'
-import { announcementAPI } from '@/api/announcement'
-import { sanitizeUrl } from '@/utils/url'
-
-const showAnnouncementModal = ref(false)
 
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
-
-const DEFAULT_FAVICON = '/logo.png'
+const announcementStore = useAnnouncementStore()
 
 /**
- * Update favicon dynamically with URL validation
- * @param logoUrl - URL of the logo to use as favicon (will be sanitized)
+ * Update favicon dynamically
+ * @param logoUrl - URL of the logo to use as favicon
  */
 function updateFavicon(logoUrl: string) {
-  // Sanitize URL to prevent injection attacks
-  const safeUrl = sanitizeUrl(logoUrl, { allowRelative: true, allowDataUrl: true })
-  const finalUrl = safeUrl || DEFAULT_FAVICON
-
-  // Remove ALL existing favicon links to avoid browser inconsistency
-  // (Backend SSR may inject one, and we may have created another)
-  document.querySelectorAll<HTMLLinkElement>('link[rel="icon"]').forEach((el) => el.remove())
-
-  // Create a fresh favicon link
-  const link = document.createElement('link')
-  link.rel = 'icon'
-
-  // Determine MIME type: check data URI first, then file extension
-  if (finalUrl.startsWith('data:image/')) {
-    // Extract MIME type from data URI (e.g., "data:image/png;base64,...")
-    const mimeMatch = finalUrl.match(/^data:(image\/[^;,]+)/)
-    link.type = mimeMatch ? mimeMatch[1] : 'image/png'
-  } else if (finalUrl.endsWith('.svg')) {
-    link.type = 'image/svg+xml'
+  // Find existing favicon link or create new one
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
   }
-  // For other formats, don't set type - let browser auto-detect
-
-  link.href = finalUrl
-  document.head.appendChild(link)
+  link.type = logoUrl.endsWith('.svg') ? 'image/svg+xml' : 'image/x-icon'
+  link.href = logoUrl
 }
 
 // Watch for site settings changes and update favicon/title
-// Note: Backend SSR already injects the correct favicon via <link rel="icon">
-// This watch handles dynamic updates (e.g., admin changes logo while page is open)
 watch(
   () => appStore.siteLogo,
-  (newLogo, oldLogo) => {
-    // Handle both value changes and clearing (fallback to default)
-    if (newLogo !== oldLogo) {
-      updateFavicon(newLogo || '')
+  (newLogo) => {
+    if (newLogo) {
+      updateFavicon(newLogo)
     }
   },
-  { immediate: false } // Don't run immediately - backend already handled initial favicon
+  { immediate: true }
 )
 
-// Note: Backend SSR already sets the correct title via server-side replacement
-// This watch handles dynamic updates (e.g., admin changes site name while page is open)
-watch(
-  () => appStore.siteName,
-  (newName, oldName) => {
-    if (newName && newName !== oldName) {
-      document.title = `${newName} - AI API Gateway`
-    }
-  },
-  { immediate: false } // Don't run immediately - backend already handled initial title
-)
+// Watch for authentication state and manage subscription data + announcements
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible' && authStore.isAuthenticated) {
+    announcementStore.fetchAnnouncements()
+  }
+}
 
-// Watch for authentication state and manage subscription data
 watch(
   () => authStore.isAuthenticated,
-  async (isAuthenticated) => {
+  (isAuthenticated, oldValue) => {
     if (isAuthenticated) {
       // User logged in: preload subscriptions and start polling
       subscriptionStore.fetchActiveSubscriptions().catch((error) => {
@@ -87,22 +59,37 @@ watch(
       })
       subscriptionStore.startPolling()
 
-      // Check for unread announcements
-      try {
-        const announcements = await announcementAPI.getUnreadAnnouncements()
-        if (announcements.length > 0) {
-          showAnnouncementModal.value = true
-        }
-      } catch (error) {
-        console.error('Failed to check unread announcements:', error)
+      // Announcements: new login vs page refresh restore
+      if (oldValue === false) {
+        // New login: delay 3s then force fetch
+        setTimeout(() => announcementStore.fetchAnnouncements(true), 3000)
+      } else {
+        // Page refresh restore (oldValue was undefined)
+        announcementStore.fetchAnnouncements()
       }
+
+      // Register visibility change listener
+      document.addEventListener('visibilitychange', onVisibilityChange)
     } else {
       // User logged out: clear data and stop polling
       subscriptionStore.clear()
+      announcementStore.reset()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   },
   { immediate: true }
 )
+
+// Route change trigger (throttled by store)
+router.afterEach(() => {
+  if (authStore.isAuthenticated) {
+    announcementStore.fetchAnnouncements()
+  }
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 onMounted(async () => {
   // Check if setup is needed
@@ -119,25 +106,8 @@ onMounted(async () => {
   // Load public settings into appStore (will be cached for other components)
   await appStore.fetchPublicSettings()
 
-  // Fallback: If backend didn't inject favicon (non-embed mode) or injected a different one,
-  // ensure favicon matches the loaded settings
-  const existingFavicons = document.querySelectorAll<HTMLLinkElement>('link[rel="icon"]')
-  const expectedLogo = appStore.siteLogo || ''
-
-  // Check if current favicon matches expected (compare last one if multiple exist)
-  const lastFavicon = existingFavicons[existingFavicons.length - 1]
-  const currentHref = lastFavicon?.href || ''
-
-  // Update if: no favicon, multiple favicons (cleanup), default with custom expected, or mismatch
-  const needsUpdate =
-    existingFavicons.length === 0 ||
-    existingFavicons.length > 1 || // Clean up duplicate icon links (SSR + default)
-    (currentHref.endsWith('/logo.png') && expectedLogo) ||
-    (expectedLogo && !currentHref.includes(expectedLogo.slice(0, 50))) // partial match for data URIs
-
-  if (needsUpdate) {
-    updateFavicon(expectedLogo)
-  }
+  // Re-resolve document title now that siteName is available
+  document.title = resolveDocumentTitle(route.meta.title, appStore.siteName, route.meta.titleKey as string)
 })
 </script>
 
@@ -145,9 +115,5 @@ onMounted(async () => {
   <NavigationProgress />
   <RouterView />
   <Toast />
-  <AnnouncementModal
-    :show="showAnnouncementModal"
-    @close="showAnnouncementModal = false"
-    @read="showAnnouncementModal = false"
-  />
+  <AnnouncementPopup />
 </template>

@@ -22,11 +22,12 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
-	"github.com/Wei-Shaw/sub2api/ent/referralreward"
+	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -58,6 +59,8 @@ type Client struct {
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
+	// IdempotencyRecord is the client for interacting with the IdempotencyRecord builders.
+	IdempotencyRecord *IdempotencyRecordClient
 	// PromoCode is the client for interacting with the PromoCode builders.
 	PromoCode *PromoCodeClient
 	// PromoCodeUsage is the client for interacting with the PromoCodeUsage builders.
@@ -66,8 +69,8 @@ type Client struct {
 	Proxy *ProxyClient
 	// RedeemCode is the client for interacting with the RedeemCode builders.
 	RedeemCode *RedeemCodeClient
-	// ReferralReward is the client for interacting with the ReferralReward builders.
-	ReferralReward *ReferralRewardClient
+	// SecuritySecret is the client for interacting with the SecuritySecret builders.
+	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
@@ -102,11 +105,12 @@ func (c *Client) init() {
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
 	c.ErrorPassthroughRule = NewErrorPassthroughRuleClient(c.config)
 	c.Group = NewGroupClient(c.config)
+	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
 	c.PromoCode = NewPromoCodeClient(c.config)
 	c.PromoCodeUsage = NewPromoCodeUsageClient(c.config)
 	c.Proxy = NewProxyClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
-	c.ReferralReward = NewReferralRewardClient(c.config)
+	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
@@ -214,11 +218,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AnnouncementRead:        NewAnnouncementReadClient(cfg),
 		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
 		Group:                   NewGroupClient(cfg),
+		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
 		PromoCode:               NewPromoCodeClient(cfg),
 		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
 		Proxy:                   NewProxyClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
-		ReferralReward:          NewReferralRewardClient(cfg),
+		SecuritySecret:          NewSecuritySecretClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
@@ -253,11 +258,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AnnouncementRead:        NewAnnouncementReadClient(cfg),
 		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
 		Group:                   NewGroupClient(cfg),
+		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
 		PromoCode:               NewPromoCodeClient(cfg),
 		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
 		Proxy:                   NewProxyClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
-		ReferralReward:          NewReferralRewardClient(cfg),
+		SecuritySecret:          NewSecuritySecretClient(cfg),
 		Setting:                 NewSettingClient(cfg),
 		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
@@ -296,10 +302,10 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.ErrorPassthroughRule, c.Group, c.PromoCode, c.PromoCodeUsage, c.Proxy,
-		c.RedeemCode, c.ReferralReward, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserSubscription,
+		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PromoCode,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -310,10 +316,10 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.ErrorPassthroughRule, c.Group, c.PromoCode, c.PromoCodeUsage, c.Proxy,
-		c.RedeemCode, c.ReferralReward, c.Setting, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserSubscription,
+		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PromoCode,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -336,6 +342,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ErrorPassthroughRule.mutate(ctx, m)
 	case *GroupMutation:
 		return c.Group.mutate(ctx, m)
+	case *IdempotencyRecordMutation:
+		return c.IdempotencyRecord.mutate(ctx, m)
 	case *PromoCodeMutation:
 		return c.PromoCode.mutate(ctx, m)
 	case *PromoCodeUsageMutation:
@@ -344,8 +352,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Proxy.mutate(ctx, m)
 	case *RedeemCodeMutation:
 		return c.RedeemCode.mutate(ctx, m)
-	case *ReferralRewardMutation:
-		return c.ReferralReward.mutate(ctx, m)
+	case *SecuritySecretMutation:
+		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
@@ -1575,6 +1583,139 @@ func (c *GroupClient) mutate(ctx context.Context, m *GroupMutation) (Value, erro
 	}
 }
 
+// IdempotencyRecordClient is a client for the IdempotencyRecord schema.
+type IdempotencyRecordClient struct {
+	config
+}
+
+// NewIdempotencyRecordClient returns a client for the IdempotencyRecord from the given config.
+func NewIdempotencyRecordClient(c config) *IdempotencyRecordClient {
+	return &IdempotencyRecordClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `idempotencyrecord.Hooks(f(g(h())))`.
+func (c *IdempotencyRecordClient) Use(hooks ...Hook) {
+	c.hooks.IdempotencyRecord = append(c.hooks.IdempotencyRecord, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `idempotencyrecord.Intercept(f(g(h())))`.
+func (c *IdempotencyRecordClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IdempotencyRecord = append(c.inters.IdempotencyRecord, interceptors...)
+}
+
+// Create returns a builder for creating a IdempotencyRecord entity.
+func (c *IdempotencyRecordClient) Create() *IdempotencyRecordCreate {
+	mutation := newIdempotencyRecordMutation(c.config, OpCreate)
+	return &IdempotencyRecordCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IdempotencyRecord entities.
+func (c *IdempotencyRecordClient) CreateBulk(builders ...*IdempotencyRecordCreate) *IdempotencyRecordCreateBulk {
+	return &IdempotencyRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IdempotencyRecordClient) MapCreateBulk(slice any, setFunc func(*IdempotencyRecordCreate, int)) *IdempotencyRecordCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IdempotencyRecordCreateBulk{err: fmt.Errorf("calling to IdempotencyRecordClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IdempotencyRecordCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IdempotencyRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IdempotencyRecord.
+func (c *IdempotencyRecordClient) Update() *IdempotencyRecordUpdate {
+	mutation := newIdempotencyRecordMutation(c.config, OpUpdate)
+	return &IdempotencyRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IdempotencyRecordClient) UpdateOne(_m *IdempotencyRecord) *IdempotencyRecordUpdateOne {
+	mutation := newIdempotencyRecordMutation(c.config, OpUpdateOne, withIdempotencyRecord(_m))
+	return &IdempotencyRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IdempotencyRecordClient) UpdateOneID(id int64) *IdempotencyRecordUpdateOne {
+	mutation := newIdempotencyRecordMutation(c.config, OpUpdateOne, withIdempotencyRecordID(id))
+	return &IdempotencyRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IdempotencyRecord.
+func (c *IdempotencyRecordClient) Delete() *IdempotencyRecordDelete {
+	mutation := newIdempotencyRecordMutation(c.config, OpDelete)
+	return &IdempotencyRecordDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IdempotencyRecordClient) DeleteOne(_m *IdempotencyRecord) *IdempotencyRecordDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IdempotencyRecordClient) DeleteOneID(id int64) *IdempotencyRecordDeleteOne {
+	builder := c.Delete().Where(idempotencyrecord.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IdempotencyRecordDeleteOne{builder}
+}
+
+// Query returns a query builder for IdempotencyRecord.
+func (c *IdempotencyRecordClient) Query() *IdempotencyRecordQuery {
+	return &IdempotencyRecordQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIdempotencyRecord},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IdempotencyRecord entity by its id.
+func (c *IdempotencyRecordClient) Get(ctx context.Context, id int64) (*IdempotencyRecord, error) {
+	return c.Query().Where(idempotencyrecord.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IdempotencyRecordClient) GetX(ctx context.Context, id int64) *IdempotencyRecord {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *IdempotencyRecordClient) Hooks() []Hook {
+	return c.hooks.IdempotencyRecord
+}
+
+// Interceptors returns the client interceptors.
+func (c *IdempotencyRecordClient) Interceptors() []Interceptor {
+	return c.inters.IdempotencyRecord
+}
+
+func (c *IdempotencyRecordClient) mutate(ctx context.Context, m *IdempotencyRecordMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IdempotencyRecordCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IdempotencyRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IdempotencyRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IdempotencyRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IdempotencyRecord mutation op: %q", m.Op())
+	}
+}
+
 // PromoCodeClient is a client for the PromoCode schema.
 type PromoCodeClient struct {
 	config
@@ -2205,107 +2346,107 @@ func (c *RedeemCodeClient) mutate(ctx context.Context, m *RedeemCodeMutation) (V
 	}
 }
 
-// ReferralRewardClient is a client for the ReferralReward schema.
-type ReferralRewardClient struct {
+// SecuritySecretClient is a client for the SecuritySecret schema.
+type SecuritySecretClient struct {
 	config
 }
 
-// NewReferralRewardClient returns a client for the ReferralReward from the given config.
-func NewReferralRewardClient(c config) *ReferralRewardClient {
-	return &ReferralRewardClient{config: c}
+// NewSecuritySecretClient returns a client for the SecuritySecret from the given config.
+func NewSecuritySecretClient(c config) *SecuritySecretClient {
+	return &SecuritySecretClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `referralreward.Hooks(f(g(h())))`.
-func (c *ReferralRewardClient) Use(hooks ...Hook) {
-	c.hooks.ReferralReward = append(c.hooks.ReferralReward, hooks...)
+// A call to `Use(f, g, h)` equals to `securitysecret.Hooks(f(g(h())))`.
+func (c *SecuritySecretClient) Use(hooks ...Hook) {
+	c.hooks.SecuritySecret = append(c.hooks.SecuritySecret, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `referralreward.Intercept(f(g(h())))`.
-func (c *ReferralRewardClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ReferralReward = append(c.inters.ReferralReward, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `securitysecret.Intercept(f(g(h())))`.
+func (c *SecuritySecretClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SecuritySecret = append(c.inters.SecuritySecret, interceptors...)
 }
 
-// Create returns a builder for creating a ReferralReward entity.
-func (c *ReferralRewardClient) Create() *ReferralRewardCreate {
-	mutation := newReferralRewardMutation(c.config, OpCreate)
-	return &ReferralRewardCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a SecuritySecret entity.
+func (c *SecuritySecretClient) Create() *SecuritySecretCreate {
+	mutation := newSecuritySecretMutation(c.config, OpCreate)
+	return &SecuritySecretCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of ReferralReward entities.
-func (c *ReferralRewardClient) CreateBulk(builders ...*ReferralRewardCreate) *ReferralRewardCreateBulk {
-	return &ReferralRewardCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of SecuritySecret entities.
+func (c *SecuritySecretClient) CreateBulk(builders ...*SecuritySecretCreate) *SecuritySecretCreateBulk {
+	return &SecuritySecretCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *ReferralRewardClient) MapCreateBulk(slice any, setFunc func(*ReferralRewardCreate, int)) *ReferralRewardCreateBulk {
+func (c *SecuritySecretClient) MapCreateBulk(slice any, setFunc func(*SecuritySecretCreate, int)) *SecuritySecretCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &ReferralRewardCreateBulk{err: fmt.Errorf("calling to ReferralRewardClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &SecuritySecretCreateBulk{err: fmt.Errorf("calling to SecuritySecretClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*ReferralRewardCreate, rv.Len())
+	builders := make([]*SecuritySecretCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &ReferralRewardCreateBulk{config: c.config, builders: builders}
+	return &SecuritySecretCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for ReferralReward.
-func (c *ReferralRewardClient) Update() *ReferralRewardUpdate {
-	mutation := newReferralRewardMutation(c.config, OpUpdate)
-	return &ReferralRewardUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for SecuritySecret.
+func (c *SecuritySecretClient) Update() *SecuritySecretUpdate {
+	mutation := newSecuritySecretMutation(c.config, OpUpdate)
+	return &SecuritySecretUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *ReferralRewardClient) UpdateOne(_m *ReferralReward) *ReferralRewardUpdateOne {
-	mutation := newReferralRewardMutation(c.config, OpUpdateOne, withReferralReward(_m))
-	return &ReferralRewardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *SecuritySecretClient) UpdateOne(_m *SecuritySecret) *SecuritySecretUpdateOne {
+	mutation := newSecuritySecretMutation(c.config, OpUpdateOne, withSecuritySecret(_m))
+	return &SecuritySecretUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ReferralRewardClient) UpdateOneID(id int64) *ReferralRewardUpdateOne {
-	mutation := newReferralRewardMutation(c.config, OpUpdateOne, withReferralRewardID(id))
-	return &ReferralRewardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *SecuritySecretClient) UpdateOneID(id int64) *SecuritySecretUpdateOne {
+	mutation := newSecuritySecretMutation(c.config, OpUpdateOne, withSecuritySecretID(id))
+	return &SecuritySecretUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for ReferralReward.
-func (c *ReferralRewardClient) Delete() *ReferralRewardDelete {
-	mutation := newReferralRewardMutation(c.config, OpDelete)
-	return &ReferralRewardDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for SecuritySecret.
+func (c *SecuritySecretClient) Delete() *SecuritySecretDelete {
+	mutation := newSecuritySecretMutation(c.config, OpDelete)
+	return &SecuritySecretDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *ReferralRewardClient) DeleteOne(_m *ReferralReward) *ReferralRewardDeleteOne {
+func (c *SecuritySecretClient) DeleteOne(_m *SecuritySecret) *SecuritySecretDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ReferralRewardClient) DeleteOneID(id int64) *ReferralRewardDeleteOne {
-	builder := c.Delete().Where(referralreward.ID(id))
+func (c *SecuritySecretClient) DeleteOneID(id int64) *SecuritySecretDeleteOne {
+	builder := c.Delete().Where(securitysecret.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &ReferralRewardDeleteOne{builder}
+	return &SecuritySecretDeleteOne{builder}
 }
 
-// Query returns a query builder for ReferralReward.
-func (c *ReferralRewardClient) Query() *ReferralRewardQuery {
-	return &ReferralRewardQuery{
+// Query returns a query builder for SecuritySecret.
+func (c *SecuritySecretClient) Query() *SecuritySecretQuery {
+	return &SecuritySecretQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeReferralReward},
+		ctx:    &QueryContext{Type: TypeSecuritySecret},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a ReferralReward entity by its id.
-func (c *ReferralRewardClient) Get(ctx context.Context, id int64) (*ReferralReward, error) {
-	return c.Query().Where(referralreward.ID(id)).Only(ctx)
+// Get returns a SecuritySecret entity by its id.
+func (c *SecuritySecretClient) Get(ctx context.Context, id int64) (*SecuritySecret, error) {
+	return c.Query().Where(securitysecret.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ReferralRewardClient) GetX(ctx context.Context, id int64) *ReferralReward {
+func (c *SecuritySecretClient) GetX(ctx context.Context, id int64) *SecuritySecret {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -2313,60 +2454,28 @@ func (c *ReferralRewardClient) GetX(ctx context.Context, id int64) *ReferralRewa
 	return obj
 }
 
-// QueryReferrer queries the referrer edge of a ReferralReward.
-func (c *ReferralRewardClient) QueryReferrer(_m *ReferralReward) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(referralreward.Table, referralreward.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, referralreward.ReferrerTable, referralreward.ReferrerColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryReferee queries the referee edge of a ReferralReward.
-func (c *ReferralRewardClient) QueryReferee(_m *ReferralReward) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(referralreward.Table, referralreward.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, referralreward.RefereeTable, referralreward.RefereeColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
-func (c *ReferralRewardClient) Hooks() []Hook {
-	return c.hooks.ReferralReward
+func (c *SecuritySecretClient) Hooks() []Hook {
+	return c.hooks.SecuritySecret
 }
 
 // Interceptors returns the client interceptors.
-func (c *ReferralRewardClient) Interceptors() []Interceptor {
-	return c.inters.ReferralReward
+func (c *SecuritySecretClient) Interceptors() []Interceptor {
+	return c.inters.SecuritySecret
 }
 
-func (c *ReferralRewardClient) mutate(ctx context.Context, m *ReferralRewardMutation) (Value, error) {
+func (c *SecuritySecretClient) mutate(ctx context.Context, m *SecuritySecretMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&ReferralRewardCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&SecuritySecretCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&ReferralRewardUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&SecuritySecretUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&ReferralRewardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&SecuritySecretUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&ReferralRewardDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&SecuritySecretDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown ReferralReward mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown SecuritySecret mutation op: %q", m.Op())
 	}
 }
 
@@ -3014,38 +3123,6 @@ func (c *UserClient) QueryAssignedSubscriptions(_m *User) *UserSubscriptionQuery
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(usersubscription.Table, usersubscription.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.AssignedSubscriptionsTable, user.AssignedSubscriptionsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryReferralRewardsGiven queries the referral_rewards_given edge of a User.
-func (c *UserClient) QueryReferralRewardsGiven(_m *User) *ReferralRewardQuery {
-	query := (&ReferralRewardClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(referralreward.Table, referralreward.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.ReferralRewardsGivenTable, user.ReferralRewardsGivenColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryReferralRewardsReceived queries the referral_rewards_received edge of a User.
-func (c *UserClient) QueryReferralRewardsReceived(_m *User) *ReferralRewardQuery {
-	query := (&ReferralRewardClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(referralreward.Table, referralreward.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.ReferralRewardsReceivedTable, user.ReferralRewardsReceivedColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3811,15 +3888,17 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
-		ErrorPassthroughRule, Group, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
-		ReferralReward, Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Hook
+		ErrorPassthroughRule, Group, IdempotencyRecord, PromoCode, PromoCodeUsage,
+		Proxy, RedeemCode, SecuritySecret, Setting, UsageCleanupTask, UsageLog, User,
+		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
-		ErrorPassthroughRule, Group, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
-		ReferralReward, Setting, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Interceptor
+		ErrorPassthroughRule, Group, IdempotencyRecord, PromoCode, PromoCodeUsage,
+		Proxy, RedeemCode, SecuritySecret, Setting, UsageCleanupTask, UsageLog, User,
+		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserSubscription []ent.Interceptor
 	}
 )
 

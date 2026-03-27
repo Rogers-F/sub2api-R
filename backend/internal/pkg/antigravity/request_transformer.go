@@ -206,6 +206,7 @@ type modelInfo struct {
 var modelInfoMap = map[string]modelInfo{
 	"claude-opus-4-5":   {DisplayName: "Claude Opus 4.5", CanonicalID: "claude-opus-4-5-20250929"},
 	"claude-opus-4-6":   {DisplayName: "Claude Opus 4.6", CanonicalID: "claude-opus-4-6"},
+	"claude-sonnet-4-6": {DisplayName: "Claude Sonnet 4.6", CanonicalID: "claude-sonnet-4-6"},
 	"claude-sonnet-4-5": {DisplayName: "Claude Sonnet 4.5", CanonicalID: "claude-sonnet-4-5-20250929"},
 	"claude-haiku-4-5":  {DisplayName: "Claude Haiku 4.5", CanonicalID: "claude-haiku-4-5-20251001"},
 }
@@ -274,21 +275,6 @@ func filterOpenCodePrompt(text string) string {
 	return ""
 }
 
-// systemBlockFilterPrefixes 需要从 system 中过滤的文本前缀列表
-var systemBlockFilterPrefixes = []string{
-	"x-anthropic-billing-header",
-}
-
-// filterSystemBlockByPrefix 如果文本匹配过滤前缀，返回空字符串
-func filterSystemBlockByPrefix(text string) string {
-	for _, prefix := range systemBlockFilterPrefixes {
-		if strings.HasPrefix(text, prefix) {
-			return ""
-		}
-	}
-	return text
-}
-
 // buildSystemInstruction 构建 systemInstruction（与 Antigravity-Manager 保持一致）
 func buildSystemInstruction(system json.RawMessage, modelName string, opts TransformOptions, tools []ClaudeTool) *GeminiContent {
 	var parts []GeminiPart
@@ -305,8 +291,8 @@ func buildSystemInstruction(system json.RawMessage, modelName string, opts Trans
 				if strings.Contains(sysStr, "You are Antigravity") {
 					userHasAntigravityIdentity = true
 				}
-				// 过滤 OpenCode 默认提示词和黑名单前缀
-				filtered := filterSystemBlockByPrefix(filterOpenCodePrompt(sysStr))
+				// 过滤 OpenCode 默认提示词
+				filtered := filterOpenCodePrompt(sysStr)
 				if filtered != "" {
 					userSystemParts = append(userSystemParts, GeminiPart{Text: filtered})
 				}
@@ -320,8 +306,8 @@ func buildSystemInstruction(system json.RawMessage, modelName string, opts Trans
 						if strings.Contains(block.Text, "You are Antigravity") {
 							userHasAntigravityIdentity = true
 						}
-						// 过滤 OpenCode 默认提示词和黑名单前缀
-						filtered := filterSystemBlockByPrefix(filterOpenCodePrompt(block.Text))
+						// 过滤 OpenCode 默认提示词
+						filtered := filterOpenCodePrompt(block.Text)
 						if filtered != "" {
 							userSystemParts = append(userSystemParts, GeminiPart{Text: filtered})
 						}

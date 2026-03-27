@@ -112,7 +112,10 @@ func (s *AntigravityOAuthService) ExchangeCode(ctx context.Context, input *Antig
 		}
 	}
 
-	client := antigravity.NewClient(proxyURL)
+	client, err := antigravity.NewClient(proxyURL)
+	if err != nil {
+		return nil, fmt.Errorf("create antigravity client failed: %w", err)
+	}
 
 	// 交换 token
 	tokenResp, err := client.ExchangeCode(ctx, input.Code, session.CodeVerifier)
@@ -167,7 +170,10 @@ func (s *AntigravityOAuthService) RefreshToken(ctx context.Context, refreshToken
 			time.Sleep(backoff)
 		}
 
-		client := antigravity.NewClient(proxyURL)
+		client, err := antigravity.NewClient(proxyURL)
+		if err != nil {
+			return nil, fmt.Errorf("create antigravity client failed: %w", err)
+		}
 		tokenResp, err := client.RefreshToken(ctx, refreshToken)
 		if err == nil {
 			now := time.Now()
@@ -185,6 +191,10 @@ func (s *AntigravityOAuthService) RefreshToken(ctx context.Context, refreshToken
 
 		if isNonRetryableAntigravityOAuthError(err) {
 			return nil, err
+		}
+		// 代理连接错误（TCP 超时、连接拒绝、DNS 失败）不重试，立即返回
+		if antigravity.IsConnectionError(err) {
+			return nil, fmt.Errorf("proxy unavailable: %w", err)
 		}
 		lastErr = err
 	}
@@ -209,7 +219,10 @@ func (s *AntigravityOAuthService) ValidateRefreshToken(ctx context.Context, refr
 	}
 
 	// 获取用户信息（email）
-	client := antigravity.NewClient(proxyURL)
+	client, err := antigravity.NewClient(proxyURL)
+	if err != nil {
+		return nil, fmt.Errorf("create antigravity client failed: %w", err)
+	}
 	userInfo, err := client.GetUserInfo(ctx, tokenInfo.AccessToken)
 	if err != nil {
 		fmt.Printf("[AntigravityOAuth] 警告: 获取用户信息失败: %v\n", err)
@@ -309,7 +322,10 @@ func (s *AntigravityOAuthService) loadProjectIDWithRetry(ctx context.Context, ac
 			time.Sleep(backoff)
 		}
 
-		client := antigravity.NewClient(proxyURL)
+		client, err := antigravity.NewClient(proxyURL)
+		if err != nil {
+			return "", fmt.Errorf("create antigravity client failed: %w", err)
+		}
 		loadResp, loadRaw, err := client.LoadCodeAssist(ctx, accessToken)
 
 		if err == nil && loadResp != nil && loadResp.CloudAICompanionProject != "" {

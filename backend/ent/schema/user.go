@@ -73,21 +73,11 @@ func (User) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 
-		// 邀请系统字段
-		field.Int64("referrer_id").
-			Optional().
-			Nillable(),
-		field.String("referral_code").
-			MaxLen(16).
-			Optional().
-			Nillable(),
-
-		// 自定义佣金比例（作为推荐人时使用）
-		// NULL 表示使用全局设置，非 NULL 表示自定义比例
-		field.Float("commission_rate").
-			SchemaType(map[string]string{dialect.Postgres: "decimal(5,4)"}).
-			Optional().
-			Nillable(),
+		// Sora 存储配额
+		field.Int64("sora_storage_quota_bytes").
+			Default(0),
+		field.Int64("sora_storage_used_bytes").
+			Default(0),
 	}
 }
 
@@ -103,9 +93,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("usage_logs", UsageLog.Type),
 		edge.To("attribute_values", UserAttributeValue.Type),
 		edge.To("promo_code_usages", PromoCodeUsage.Type),
-		// 邀请系统相关 edges
-		edge.To("referral_rewards_given", ReferralReward.Type),
-		edge.To("referral_rewards_received", ReferralReward.Type),
 	}
 }
 
