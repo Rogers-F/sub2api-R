@@ -1,79 +1,118 @@
 <template>
-  <BaseDialog :show="show" :title="t('admin.users.commissionRate.title')" width="narrow" @close="$emit('close')">
-    <form v-if="user" id="commission-rate-form" @submit.prevent="handleSubmit" class="space-y-5">
-      <!-- User Info -->
+  <BaseDialog
+    :show="show"
+    :title="t('admin.users.commissionRate.title')"
+    width="narrow"
+    @close="emit('close')"
+  >
+    <div v-if="user" class="space-y-5">
       <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-800/30">
-          <span class="text-lg font-medium text-accent-700 dark:text-accent-300">{{ user.email.charAt(0).toUpperCase() }}</span>
+          <span class="text-lg font-medium text-accent-700 dark:text-accent-300">
+            {{ user.email.charAt(0).toUpperCase() }}
+          </span>
         </div>
         <div class="flex-1">
           <p class="font-medium text-gray-900 dark:text-white">{{ user.email }}</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">ID: {{ user.id }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ t('admin.users.commissionRate.description', { email: user.email }) }}
+          </p>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex items-center justify-center py-8">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+      <div v-if="loading" class="flex justify-center py-10">
+        <svg class="h-8 w-8 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
       </div>
 
       <template v-else>
-        <!-- Global Rate Display -->
-        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
-          <label class="input-label text-gray-500 dark:text-gray-400">{{ t('admin.users.commissionRate.globalRate') }}</label>
-          <p class="text-lg font-medium text-gray-900 dark:text-white">{{ formatPercent(rateInfo.global_commission_rate) }}%</p>
-        </div>
-
-        <!-- Use Global Setting Checkbox -->
-        <div class="flex items-center gap-3">
-          <input
-            id="use-global"
-            v-model="useGlobalRate"
-            type="checkbox"
-            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-          />
-          <label for="use-global" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ t('admin.users.commissionRate.useGlobal') }}
-          </label>
-        </div>
-
-        <!-- Custom Rate Input -->
-        <div v-if="!useGlobalRate">
-          <label class="input-label">{{ t('admin.users.commissionRate.customRate') }}</label>
-          <div class="relative">
-            <input
-              v-model.number="customRatePercent"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              required
-              class="input pr-8"
-              :placeholder="t('admin.users.commissionRate.ratePlaceholder')"
-            />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.users.commissionRate.globalRate') }}
+            </p>
+            <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+              {{ formatPercent(info?.global_commission_rate ?? null) }}
+            </p>
           </div>
-          <p class="mt-1 text-xs text-gray-500">{{ t('admin.users.commissionRate.rateHint') }}</p>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.users.commissionRate.userRate') }}
+            </p>
+            <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+              {{ info?.user_commission_rate == null ? t('admin.users.commissionRate.inherited') : formatPercent(info.user_commission_rate) }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-800/60 dark:bg-primary-900/20">
+            <p class="text-sm text-primary-700 dark:text-primary-300">
+              {{ t('admin.users.commissionRate.effectiveRate') }}
+            </p>
+            <p class="mt-2 text-lg font-semibold text-primary-700 dark:text-primary-200">
+              {{ formatPercent(info?.effective_rate ?? null) }}
+            </p>
+          </div>
         </div>
 
-        <!-- Effective Rate Preview -->
-        <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/30">
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-blue-700 dark:text-blue-300">{{ t('admin.users.commissionRate.effectiveRate') }}:</span>
-            <span class="font-bold text-blue-900 dark:text-blue-100">{{ formatPercent(effectiveRate) }}%</span>
+        <div class="rounded-xl border border-gray-200 p-4 dark:border-dark-600">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+              :class="useGlobalRate
+                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'"
+              @click="useGlobalRate = true"
+            >
+              {{ t('admin.users.commissionRate.useGlobal') }}
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+              :class="!useGlobalRate
+                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'"
+              @click="useGlobalRate = false"
+            >
+              {{ t('admin.users.commissionRate.useCustom') }}
+            </button>
+          </div>
+
+          <div v-if="!useGlobalRate" class="mt-4">
+            <label class="input-label">{{ t('admin.users.commissionRate.customRateLabel') }}</label>
+            <div class="relative">
+              <input
+                v-model="customRatePercent"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                class="input pr-8"
+                :placeholder="t('admin.users.commissionRate.customRatePlaceholder')"
+              />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+            </div>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.users.commissionRate.customRateHint') }}
+            </p>
           </div>
         </div>
       </template>
-    </form>
+    </div>
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button @click="$emit('close')" class="btn btn-secondary">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn btn-secondary" @click="emit('close')">
+          {{ t('common.cancel') }}
+        </button>
         <button
-          type="submit"
-          form="commission-rate-form"
-          :disabled="submitting || loading || loadError"
+          type="button"
           class="btn btn-primary"
+          :disabled="loading || submitting"
+          @click="handleSave"
         >
           {{ submitting ? t('common.saving') : t('common.save') }}
         </button>
@@ -83,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
@@ -105,78 +144,80 @@ const appStore = useAppStore()
 
 const loading = ref(false)
 const submitting = ref(false)
-const loadError = ref(false) // Track load failure state
+const info = ref<UserCommissionRateInfo | null>(null)
 const useGlobalRate = ref(true)
-const customRatePercent = ref(10) // Default 10%
-const rateInfo = ref<UserCommissionRateInfo>({
-  user_commission_rate: null,
-  global_commission_rate: 0,
-  effective_rate: 0
-})
+const customRatePercent = ref('')
 
-// Computed effective rate based on current selection
-const effectiveRate = computed(() => {
-  if (useGlobalRate.value) {
-    return rateInfo.value.global_commission_rate
-  }
-  return customRatePercent.value / 100
-})
-
-// Format rate as percentage
-const formatPercent = (rate: number) => {
-  return (rate * 100).toFixed(2)
-}
-
-// Load commission rate info when modal opens
-watch(() => props.show, async (show) => {
-  if (show && props.user) {
-    loading.value = true
-    loadError.value = false
-    try {
-      const info = await adminAPI.users.getCommissionRate(props.user.id)
-      rateInfo.value = info
-
-      // Set initial form values
-      if (info.user_commission_rate === null) {
-        useGlobalRate.value = true
-        customRatePercent.value = info.global_commission_rate * 100
-      } else {
-        useGlobalRate.value = false
-        customRatePercent.value = info.user_commission_rate * 100
-      }
-    } catch (e: any) {
-      console.error('Failed to load commission rate:', e)
-      appStore.showError(e.response?.data?.detail || t('common.error'))
-      loadError.value = true
-    } finally {
-      loading.value = false
+watch(
+  [() => props.show, () => props.user?.id],
+  ([show, userId]) => {
+    if (show && userId) {
+      void loadCommissionRate(userId)
     }
   }
-}, { immediate: true })
+)
 
-// Handle form submission
-const handleSubmit = async () => {
-  if (!props.user || loadError.value) return
+const formatPercent = (value: number | null | undefined) => {
+  if (value == null || Number.isNaN(value)) {
+    return '--'
+  }
+  return `${(value * 100).toFixed(2).replace(/\.?0+$/, '')}%`
+}
 
-  // Validate custom rate (including NaN check)
+const formatPercentInput = (value: number) => (value * 100).toFixed(2).replace(/\.?0+$/, '')
+
+const loadCommissionRate = async (userId: number) => {
+  loading.value = true
+  try {
+    const response = await adminAPI.users.getCommissionRate(userId)
+    info.value = response
+    useGlobalRate.value = response.user_commission_rate == null
+    customRatePercent.value =
+      response.user_commission_rate == null ? '' : formatPercentInput(response.user_commission_rate)
+  } catch (error: any) {
+    console.error('Failed to load commission rate:', error)
+    appStore.showError(error.message || t('admin.users.commissionRate.loadFailed'))
+  } finally {
+    loading.value = false
+  }
+}
+
+const parseCustomRate = () => {
+  if (customRatePercent.value.trim() === '') {
+    appStore.showError(t('admin.users.commissionRate.invalidRate'))
+    return null
+  }
+  const value = Number(customRatePercent.value)
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    appStore.showError(t('admin.users.commissionRate.invalidRate'))
+    return null
+  }
+  return value / 100
+}
+
+const handleSave = async () => {
+  if (!props.user) {
+    return
+  }
+
+  let nextRate: number | null = null
   if (!useGlobalRate.value) {
-    const rate = customRatePercent.value
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      appStore.showError(t('admin.users.commissionRate.invalidRate'))
+    nextRate = parseCustomRate()
+    if (nextRate == null) {
       return
     }
   }
 
   submitting.value = true
   try {
-    const rate = useGlobalRate.value ? null : customRatePercent.value / 100
-    await adminAPI.users.updateCommissionRate(props.user.id, rate)
-    appStore.showSuccess(t('common.success'))
+    const response = await adminAPI.users.updateCommissionRate(props.user.id, nextRate)
+    info.value = response
+    appStore.showSuccess(t('admin.users.commissionRate.saveSuccess'))
     emit('success')
     emit('close')
-  } catch (e: any) {
-    console.error('Failed to update commission rate:', e)
-    appStore.showError(e.response?.data?.detail || t('common.error'))
+  } catch (error: any) {
+    console.error('Failed to update commission rate:', error)
+    appStore.showError(error.message || t('admin.users.commissionRate.saveFailed'))
   } finally {
     submitting.value = false
   }

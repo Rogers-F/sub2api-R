@@ -62,6 +62,9 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
+		SetNillableReferrerID(userIn.ReferrerID).
+		SetNillableReferralCode(userIn.ReferralCode).
+		SetNillableCommissionRate(userIn.CommissionRate).
 		SetSoraStorageQuotaBytes(userIn.SoraStorageQuotaBytes).
 		Save(ctx)
 	if err != nil {
@@ -136,7 +139,7 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		txClient = r.client
 	}
 
-	updated, err := txClient.User.UpdateOneID(userIn.ID).
+	update := txClient.User.UpdateOneID(userIn.ID).
 		SetEmail(userIn.Email).
 		SetUsername(userIn.Username).
 		SetNotes(userIn.Notes).
@@ -146,8 +149,23 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetConcurrency(userIn.Concurrency).
 		SetStatus(userIn.Status).
 		SetSoraStorageQuotaBytes(userIn.SoraStorageQuotaBytes).
-		SetSoraStorageUsedBytes(userIn.SoraStorageUsedBytes).
-		Save(ctx)
+		SetSoraStorageUsedBytes(userIn.SoraStorageUsedBytes)
+	if userIn.ReferrerID != nil {
+		update = update.SetReferrerID(*userIn.ReferrerID)
+	} else {
+		update = update.ClearReferrerID()
+	}
+	if userIn.ReferralCode != nil {
+		update = update.SetReferralCode(*userIn.ReferralCode)
+	} else {
+		update = update.ClearReferralCode()
+	}
+	if userIn.CommissionRate != nil {
+		update = update.SetCommissionRate(*userIn.CommissionRate)
+	} else {
+		update = update.ClearCommissionRate()
+	}
+	updated, err := update.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, service.ErrEmailExists)
 	}
@@ -162,7 +180,7 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		}
 	}
 
-	userIn.UpdatedAt = updated.UpdatedAt
+	applyUserEntityToService(userIn, updated)
 	return nil
 }
 
@@ -558,6 +576,9 @@ func applyUserEntityToService(dst *service.User, src *dbent.User) {
 		return
 	}
 	dst.ID = src.ID
+	dst.ReferrerID = src.ReferrerID
+	dst.ReferralCode = src.ReferralCode
+	dst.CommissionRate = src.CommissionRate
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
 }

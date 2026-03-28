@@ -63,6 +63,7 @@ export interface RegisterRequest {
   turnstile_token?: string
   promo_code?: string
   invitation_code?: string
+  referral_code?: string
 }
 
 export interface SendVerifyCodeRequest {
@@ -158,6 +159,35 @@ export interface UpdateSubscriptionRequest {
   type?: Subscription['type']
   update_interval?: number
   is_active?: boolean
+}
+
+// ==================== Referral Types ====================
+
+export interface ReferralSettings {
+  enabled: boolean
+  register_bonus: number
+  commission_rate: number
+}
+
+export interface ReferralInfo {
+  enabled: boolean
+  referral_code?: string
+  referral_link?: string
+  total_invited?: number
+  total_reward?: number
+  register_reward?: number
+  commission_reward?: number
+  register_bonus?: number
+  commission_rate?: number
+}
+
+export interface ReferralReward {
+  id: number
+  referee_email: string
+  reward_type: 'register' | 'commission'
+  reward_amount: number
+  source_amount?: number
+  created_at: string
 }
 
 // ==================== Announcement Types ====================
@@ -362,6 +392,16 @@ export interface FilterConfig {
 export interface PaginationConfig {
   page: number
   page_size: number
+}
+
+export interface WindowResetStatus {
+  status:
+    | 'awaiting_first_use'
+    | 'active'
+    | 'active_final_window'
+    | 'expired_will_reset'
+    | 'expired_subscription'
+  reset_at?: string | null
 }
 
 // ==================== API Key & Group Types ====================
@@ -1276,6 +1316,12 @@ export interface UpdateUserRequest {
   group_rates?: Record<number, number | null>
 }
 
+export interface UserCommissionRateInfo {
+  user_commission_rate: number | null
+  global_commission_rate: number
+  effective_rate: number
+}
+
 export interface ChangePasswordRequest {
   old_password: string
   new_password: string
@@ -1294,6 +1340,9 @@ export interface UserSubscription {
   daily_window_start: string | null
   weekly_window_start: string | null
   monthly_window_start: string | null
+  daily_reset_status?: WindowResetStatus | null
+  weekly_reset_status?: WindowResetStatus | null
+  monthly_reset_status?: WindowResetStatus | null
   created_at: string
   updated_at: string
   expires_at: string | null
@@ -1339,6 +1388,10 @@ export interface BulkAssignSubscriptionRequest {
 
 export interface ExtendSubscriptionRequest {
   days: number
+}
+
+export interface TransferSubscriptionRequest {
+  target_group_id: number
 }
 
 // ==================== Query Parameters ====================

@@ -164,7 +164,7 @@ func (r *referralRepository) GetRewardStats(ctx context.Context, referrerID int6
 func (r *referralRepository) GetUserByReferralCode(ctx context.Context, code string) (*service.User, error) {
 	sqlq := r.sqlQueryerFromContext(ctx)
 	query := `
-		SELECT id, email, username, notes, password_hash, role, balance, concurrency, status, created_at, updated_at
+		SELECT id, email, username, notes, password_hash, role, balance, concurrency, status, referrer_id, referral_code, commission_rate, created_at, updated_at
 		FROM users
 		WHERE referral_code = $1 AND deleted_at IS NULL
 	`
@@ -179,6 +179,9 @@ func (r *referralRepository) GetUserByReferralCode(ctx context.Context, code str
 		&u.Balance,
 		&u.Concurrency,
 		&u.Status,
+		&u.ReferrerID,
+		&u.ReferralCode,
+		&u.CommissionRate,
 		&u.CreatedAt,
 		&u.UpdatedAt,
 	)

@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from '../client'
-import type { AdminUser, UpdateUserRequest, PaginatedResponse, ApiKey } from '@/types'
+import type { AdminUser, UpdateUserRequest, PaginatedResponse, ApiKey, UserCommissionRateInfo } from '@/types'
 
 /**
  * List all users with pagination
@@ -179,6 +179,32 @@ export async function getUserUsageStats(
 }
 
 /**
+ * Get user's commission rate settings.
+ * @param id - User ID
+ * @returns User commission rate info
+ */
+export async function getCommissionRate(id: number): Promise<UserCommissionRateInfo> {
+  const { data } = await apiClient.get<UserCommissionRateInfo>(`/admin/users/${id}/commission-rate`)
+  return data
+}
+
+/**
+ * Update user's custom commission rate.
+ * @param id - User ID
+ * @param rate - Custom commission rate (0-1), null to use global rate
+ * @returns Updated commission rate info
+ */
+export async function updateCommissionRate(
+  id: number,
+  rate: number | null
+): Promise<UserCommissionRateInfo> {
+  const { data } = await apiClient.put<UserCommissionRateInfo>(`/admin/users/${id}/commission-rate`, {
+    user_commission_rate: rate
+  })
+  return data
+}
+
+/**
  * Balance history item returned from the API
  */
 export interface BalanceHistoryItem {
@@ -253,6 +279,8 @@ export const usersAPI = {
   updateBalance,
   updateConcurrency,
   toggleStatus,
+  getCommissionRate,
+  updateCommissionRate,
   getUserApiKeys,
   getUserUsageStats,
   getUserBalanceHistory,

@@ -68,6 +68,10 @@ type UpdateBalanceRequest struct {
 	Notes     string  `json:"notes"`
 }
 
+type UpdateCommissionRateRequest struct {
+	UserCommissionRate *float64 `json:"user_commission_rate"`
+}
+
 // List handles listing all users with pagination
 // GET /api/v1/admin/users
 // Query params:
@@ -281,6 +285,51 @@ func (h *UserHandler) UpdateBalance(c *gin.Context) {
 			return nil, execErr
 		}
 		return dto.UserFromServiceAdmin(user), nil
+	})
+}
+
+// GetCommissionRate handles getting user's commission rate info
+// GET /api/v1/admin/users/:id/commission-rate
+func (h *UserHandler) GetCommissionRate(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	info, err := h.adminService.GetUserCommissionRate(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, info)
+}
+
+// UpdateCommissionRate handles updating user's custom commission rate
+// PUT /api/v1/admin/users/:id/commission-rate
+func (h *UserHandler) UpdateCommissionRate(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	var req UpdateCommissionRateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	idempotencyPayload := struct {
+		UserID int64                       `json:"user_id"`
+		Body   UpdateCommissionRateRequest `json:"body"`
+	}{
+		UserID: userID,
+		Body:   req,
+	}
+	executeAdminIdempotentJSON(c, "admin.users.commission-rate.update", idempotencyPayload, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
+		return h.adminService.UpdateUserCommissionRate(ctx, userID, req.UserCommissionRate)
 	})
 }
 

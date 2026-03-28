@@ -34,7 +34,7 @@ export function useWindowResetStatus(keyPrefix: string) {
     return `${month}/${day} ${hours}:${minutes}`
   }
 
-  function formatWindowStatus(rs?: WindowResetStatus): string | null {
+  function formatWindowStatus(rs?: WindowResetStatus | null): string | null {
     if (!rs) return null
     switch (rs.status) {
       case 'awaiting_first_use':
@@ -61,7 +61,7 @@ export function useWindowResetStatus(keyPrefix: string) {
     }
   }
 
-  function getResetStatusClass(rs?: WindowResetStatus): string {
+  function getResetStatusClass(rs?: WindowResetStatus | null): string {
     if (!rs) return ''
     switch (rs.status) {
       case 'active_final_window':

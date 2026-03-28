@@ -113,6 +113,14 @@ func (s *stubAdminService) GetUser(ctx context.Context, id int64) (*service.User
 	return &user, nil
 }
 
+func (s *stubAdminService) GetUserCommissionRate(ctx context.Context, userID int64) (*service.UserCommissionRateInfo, error) {
+	globalRate := 0.1
+	return &service.UserCommissionRateInfo{
+		GlobalCommissionRate: globalRate,
+		EffectiveRate:        globalRate,
+	}, nil
+}
+
 func (s *stubAdminService) CreateUser(ctx context.Context, input *service.CreateUserInput) (*service.User, error) {
 	user := service.User{ID: 100, Email: input.Email, Status: service.StatusActive}
 	return &user, nil
@@ -121,6 +129,19 @@ func (s *stubAdminService) CreateUser(ctx context.Context, input *service.Create
 func (s *stubAdminService) UpdateUser(ctx context.Context, id int64, input *service.UpdateUserInput) (*service.User, error) {
 	user := service.User{ID: id, Email: "updated@example.com", Status: service.StatusActive}
 	return &user, nil
+}
+
+func (s *stubAdminService) UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*service.UserCommissionRateInfo, error) {
+	globalRate := 0.1
+	effectiveRate := globalRate
+	if rate != nil {
+		effectiveRate = *rate
+	}
+	return &service.UserCommissionRateInfo{
+		UserCommissionRate:   rate,
+		GlobalCommissionRate: globalRate,
+		EffectiveRate:        effectiveRate,
+	}, nil
 }
 
 func (s *stubAdminService) DeleteUser(ctx context.Context, id int64) error {

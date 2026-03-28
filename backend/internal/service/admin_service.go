@@ -22,8 +22,10 @@ type AdminService interface {
 	// User management
 	ListUsers(ctx context.Context, page, pageSize int, filters UserListFilters) ([]User, int64, error)
 	GetUser(ctx context.Context, id int64) (*User, error)
+	GetUserCommissionRate(ctx context.Context, userID int64) (*UserCommissionRateInfo, error)
 	CreateUser(ctx context.Context, input *CreateUserInput) (*User, error)
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
+	UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*UserCommissionRateInfo, error)
 	DeleteUser(ctx context.Context, id int64) error
 	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int) ([]APIKey, int64, error)
@@ -120,6 +122,14 @@ type UpdateUserInput struct {
 	// map[groupID]*rate，nil 表示删除该分组的专属倍率
 	GroupRates            map[int64]*float64
 	SoraStorageQuotaBytes *int64
+}
+
+var ErrInvalidUserCommissionRate = infraerrors.BadRequest("INVALID_USER_COMMISSION_RATE", "commission rate must be between 0 and 1")
+
+type UserCommissionRateInfo struct {
+	UserCommissionRate   *float64 `json:"user_commission_rate"`
+	GlobalCommissionRate float64  `json:"global_commission_rate"`
+	EffectiveRate        float64  `json:"effective_rate"`
 }
 
 type CreateGroupInput struct {
@@ -561,6 +571,32 @@ func (s *adminServiceImpl) GetUser(ctx context.Context, id int64) (*User, error)
 	return user, nil
 }
 
+func (s *adminServiceImpl) GetUserCommissionRate(ctx context.Context, userID int64) (*UserCommissionRateInfo, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.buildUserCommissionRateInfo(ctx, user), nil
+}
+
+func (s *adminServiceImpl) buildUserCommissionRateInfo(ctx context.Context, user *User) *UserCommissionRateInfo {
+	globalRate := 0.0
+	if s.settingService != nil {
+		globalRate = s.settingService.GetReferralCommissionRate(ctx)
+	}
+	effectiveRate := globalRate
+	var userRate *float64
+	if user != nil && user.CommissionRate != nil {
+		userRate = user.CommissionRate
+		effectiveRate = *user.CommissionRate
+	}
+	return &UserCommissionRateInfo{
+		UserCommissionRate:   userRate,
+		GlobalCommissionRate: globalRate,
+		EffectiveRate:        effectiveRate,
+	}
+}
+
 func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
 	user := &User{
 		Email:                 input.Email,
@@ -686,6 +722,24 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 	}
 
 	return user, nil
+}
+
+func (s *adminServiceImpl) UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*UserCommissionRateInfo, error) {
+	if rate != nil && (*rate < 0 || *rate > 1) {
+		return nil, ErrInvalidUserCommissionRate
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	user.CommissionRate = rate
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return s.buildUserCommissionRateInfo(ctx, user), nil
 }
 
 func (s *adminServiceImpl) DeleteUser(ctx context.Context, id int64) error {

@@ -212,6 +212,22 @@ export async function getStats(id: number, days: number = 30): Promise<AccountUs
 }
 
 /**
+ * Get aggregated account statistics for the default stats window.
+ * The backend does not expose a dedicated "total-stats" endpoint, so this
+ * reuses the existing stats summary and maps it to the lightweight cell shape.
+ */
+export async function getTotalStats(id: number, days: number = 30): Promise<WindowStats> {
+  const stats = await getStats(id, days)
+  return {
+    requests: stats.summary.total_requests,
+    tokens: stats.summary.total_tokens,
+    cost: stats.summary.total_cost,
+    standard_cost: stats.summary.total_standard_cost,
+    user_cost: stats.summary.total_user_cost
+  }
+}
+
+/**
  * Clear account error
  * @param id - Account ID
  * @returns Updated account
@@ -639,6 +655,7 @@ export const accountsAPI = {
   testAccount,
   refreshCredentials,
   getStats,
+  getTotalStats,
   clearError,
   getUsage,
   getTodayStats,
