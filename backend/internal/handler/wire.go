@@ -84,6 +84,7 @@ func ProvideHandlers(
 	openaiGatewayHandler *OpenAIGatewayHandler,
 	soraGatewayHandler *SoraGatewayHandler,
 	soraClientHandler *SoraClientHandler,
+	referralHandler *ReferralHandler,
 	settingHandler *SettingHandler,
 	totpHandler *TotpHandler,
 	_ *service.IdempotencyCoordinator,
@@ -102,6 +103,7 @@ func ProvideHandlers(
 		OpenAIGateway: openaiGatewayHandler,
 		SoraGateway:   soraGatewayHandler,
 		SoraClient:    soraClientHandler,
+		Referral:      referralHandler,
 		Setting:       settingHandler,
 		Totp:          totpHandler,
 	}
@@ -121,6 +123,7 @@ var ProviderSet = wire.NewSet(
 	NewOpenAIGatewayHandler,
 	NewSoraGatewayHandler,
 	NewSoraClientHandler,
+	NewReferralHandler,
 	NewTotpHandler,
 	ProvideSettingHandler,
 

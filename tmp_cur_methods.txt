@@ -1,0 +1,155 @@
+func (m *UserMutation) AddAllowedGroupIDs(ids ...int64) {
+func (m *UserMutation) AddAnnouncementReadIDs(ids ...int64) {
+func (m *UserMutation) AddAPIKeyIDs(ids ...int64) {
+func (m *UserMutation) AddAssignedSubscriptionIDs(ids ...int64) {
+func (m *UserMutation) AddAttributeValueIDs(ids ...int64) {
+func (m *UserMutation) AddBalance(f float64) {
+func (m *UserMutation) AddConcurrency(i int) {
+func (m *UserMutation) AddedBalance() (r float64, exists bool) {
+func (m *UserMutation) AddedConcurrency() (r int, exists bool) {
+func (m *UserMutation) AddedEdges() []string {
+func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
+func (m *UserMutation) AddedFields() []string {
+func (m *UserMutation) AddedIDs(name string) []ent.Value {
+func (m *UserMutation) AddField(name string, value ent.Value) error {
+func (m *UserMutation) AddPromoCodeUsageIDs(ids ...int64) {
+func (m *UserMutation) AddRedeemCodeIDs(ids ...int64) {
+func (m *UserMutation) AddSubscriptionIDs(ids ...int64) {
+func (m *UserMutation) AddUsageLogIDs(ids ...int64) {
+func (m *UserMutation) AllowedGroupsCleared() bool {
+func (m *UserMutation) AllowedGroupsIDs() (ids []int64) {
+func (m *UserMutation) AnnouncementReadsCleared() bool {
+func (m *UserMutation) AnnouncementReadsIDs() (ids []int64) {
+func (m *UserMutation) APIKeysCleared() bool {
+func (m *UserMutation) APIKeysIDs() (ids []int64) {
+func (m *UserMutation) AssignedSubscriptionsCleared() bool {
+func (m *UserMutation) AssignedSubscriptionsIDs() (ids []int64) {
+func (m *UserMutation) AttributeValuesCleared() bool {
+func (m *UserMutation) AttributeValuesIDs() (ids []int64) {
+func (m *UserMutation) Balance() (r float64, exists bool) {
+func (m *UserMutation) ClearAllowedGroups() {
+func (m *UserMutation) ClearAnnouncementReads() {
+func (m *UserMutation) ClearAPIKeys() {
+func (m *UserMutation) ClearAssignedSubscriptions() {
+func (m *UserMutation) ClearAttributeValues() {
+func (m *UserMutation) ClearDeletedAt() {
+func (m *UserMutation) ClearedEdges() []string {
+func (m *UserMutation) ClearedFields() []string {
+func (m *UserMutation) ClearEdge(name string) error {
+func (m *UserMutation) ClearField(name string) error {
+func (m *UserMutation) ClearPromoCodeUsages() {
+func (m *UserMutation) ClearRedeemCodes() {
+func (m *UserMutation) ClearSubscriptions() {
+func (m *UserMutation) ClearTotpEnabledAt() {
+func (m *UserMutation) ClearTotpSecretEncrypted() {
+func (m *UserMutation) ClearUsageLogs() {
+func (m *UserMutation) Concurrency() (r int, exists bool) {
+func (m *UserMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *UserMutation) DeletedAt() (r time.Time, exists bool) {
+func (m *UserMutation) DeletedAtCleared() bool {
+func (m *UserMutation) EdgeCleared(name string) bool {
+func (m *UserMutation) Email() (r string, exists bool) {
+func (m *UserMutation) Field(name string) (ent.Value, bool) {
+func (m *UserMutation) FieldCleared(name string) bool {
+func (m *UserMutation) Fields() []string {
+func (m *UserMutation) ID() (id int64, exists bool) {
+func (m *UserMutation) IDs(ctx context.Context) ([]int64, error) {
+func (m *UserMutation) Notes() (r string, exists bool) {
+func (m *UserMutation) OldBalance(ctx context.Context) (v float64, err error) {
+func (m *UserMutation) OldConcurrency(ctx context.Context) (v int, err error) {
+func (m *UserMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *UserMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+func (m *UserMutation) OldEmail(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *UserMutation) OldNotes(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldPasswordHash(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldRole(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldStatus(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldTotpEnabled(ctx context.Context) (v bool, err error) {
+func (m *UserMutation) OldTotpEnabledAt(ctx context.Context) (v *time.Time, err error) {
+func (m *UserMutation) OldTotpSecretEncrypted(ctx context.Context) (v *string, err error) {
+func (m *UserMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *UserMutation) OldUsername(ctx context.Context) (v string, err error) {
+func (m *UserMutation) Op() Op {
+func (m *UserMutation) PasswordHash() (r string, exists bool) {
+func (m *UserMutation) PromoCodeUsagesCleared() bool {
+func (m *UserMutation) PromoCodeUsagesIDs() (ids []int64) {
+func (m *UserMutation) RedeemCodesCleared() bool {
+func (m *UserMutation) RedeemCodesIDs() (ids []int64) {
+func (m *UserMutation) RemoveAllowedGroupIDs(ids ...int64) {
+func (m *UserMutation) RemoveAnnouncementReadIDs(ids ...int64) {
+func (m *UserMutation) RemoveAPIKeyIDs(ids ...int64) {
+func (m *UserMutation) RemoveAssignedSubscriptionIDs(ids ...int64) {
+func (m *UserMutation) RemoveAttributeValueIDs(ids ...int64) {
+func (m *UserMutation) RemovedAllowedGroupsIDs() (ids []int64) {
+func (m *UserMutation) RemovedAnnouncementReadsIDs() (ids []int64) {
+func (m *UserMutation) RemovedAPIKeysIDs() (ids []int64) {
+func (m *UserMutation) RemovedAssignedSubscriptionsIDs() (ids []int64) {
+func (m *UserMutation) RemovedAttributeValuesIDs() (ids []int64) {
+func (m *UserMutation) RemovedEdges() []string {
+func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+func (m *UserMutation) RemovedPromoCodeUsagesIDs() (ids []int64) {
+func (m *UserMutation) RemovedRedeemCodesIDs() (ids []int64) {
+func (m *UserMutation) RemovedSubscriptionsIDs() (ids []int64) {
+func (m *UserMutation) RemovedUsageLogsIDs() (ids []int64) {
+func (m *UserMutation) RemovePromoCodeUsageIDs(ids ...int64) {
+func (m *UserMutation) RemoveRedeemCodeIDs(ids ...int64) {
+func (m *UserMutation) RemoveSubscriptionIDs(ids ...int64) {
+func (m *UserMutation) RemoveUsageLogIDs(ids ...int64) {
+func (m *UserMutation) ResetAllowedGroups() {
+func (m *UserMutation) ResetAnnouncementReads() {
+func (m *UserMutation) ResetAPIKeys() {
+func (m *UserMutation) ResetAssignedSubscriptions() {
+func (m *UserMutation) ResetAttributeValues() {
+func (m *UserMutation) ResetBalance() {
+func (m *UserMutation) ResetConcurrency() {
+func (m *UserMutation) ResetCreatedAt() {
+func (m *UserMutation) ResetDeletedAt() {
+func (m *UserMutation) ResetEdge(name string) error {
+func (m *UserMutation) ResetEmail() {
+func (m *UserMutation) ResetField(name string) error {
+func (m *UserMutation) ResetNotes() {
+func (m *UserMutation) ResetPasswordHash() {
+func (m *UserMutation) ResetPromoCodeUsages() {
+func (m *UserMutation) ResetRedeemCodes() {
+func (m *UserMutation) ResetRole() {
+func (m *UserMutation) ResetStatus() {
+func (m *UserMutation) ResetSubscriptions() {
+func (m *UserMutation) ResetTotpEnabled() {
+func (m *UserMutation) ResetTotpEnabledAt() {
+func (m *UserMutation) ResetTotpSecretEncrypted() {
+func (m *UserMutation) ResetUpdatedAt() {
+func (m *UserMutation) ResetUsageLogs() {
+func (m *UserMutation) ResetUsername() {
+func (m *UserMutation) Role() (r string, exists bool) {
+func (m *UserMutation) SetBalance(f float64) {
+func (m *UserMutation) SetConcurrency(i int) {
+func (m *UserMutation) SetCreatedAt(t time.Time) {
+func (m *UserMutation) SetDeletedAt(t time.Time) {
+func (m *UserMutation) SetEmail(s string) {
+func (m *UserMutation) SetField(name string, value ent.Value) error {
+func (m *UserMutation) SetNotes(s string) {
+func (m *UserMutation) SetOp(op Op) {
+func (m *UserMutation) SetPasswordHash(s string) {
+func (m *UserMutation) SetRole(s string) {
+func (m *UserMutation) SetStatus(s string) {
+func (m *UserMutation) SetTotpEnabled(b bool) {
+func (m *UserMutation) SetTotpEnabledAt(t time.Time) {
+func (m *UserMutation) SetTotpSecretEncrypted(s string) {
+func (m *UserMutation) SetUpdatedAt(t time.Time) {
+func (m *UserMutation) SetUsername(s string) {
+func (m *UserMutation) Status() (r string, exists bool) {
+func (m *UserMutation) SubscriptionsCleared() bool {
+func (m *UserMutation) SubscriptionsIDs() (ids []int64) {
+func (m *UserMutation) TotpEnabled() (r bool, exists bool) {
+func (m *UserMutation) TotpEnabledAt() (r time.Time, exists bool) {
+func (m *UserMutation) TotpEnabledAtCleared() bool {
+func (m *UserMutation) TotpSecretEncrypted() (r string, exists bool) {
+func (m *UserMutation) TotpSecretEncryptedCleared() bool {
+func (m *UserMutation) Type() string {
+func (m *UserMutation) UpdatedAt() (r time.Time, exists bool) {
+func (m *UserMutation) UsageLogsCleared() bool {
+func (m *UserMutation) UsageLogsIDs() (ids []int64) {
+func (m *UserMutation) Username() (r string, exists bool) {
+func (m *UserMutation) Where(ps ...predicate.User) {
+func (m *UserMutation) WhereP(ps ...func(*sql.Selector)) {

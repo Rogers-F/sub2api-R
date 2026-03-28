@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/google/wire"
@@ -408,15 +409,16 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
-	NewAuthService,
+	ProvideAuthServiceWithReferral,
 	NewUserService,
 	NewAPIKeyService,
 	ProvideAPIKeyAuthCacheInvalidator,
 	NewGroupService,
 	NewAccountService,
 	NewProxyService,
-	NewRedeemService,
+	ProvideRedeemServiceWithReferral,
 	NewPromoService,
+	NewReferralService,
 	NewUsageService,
 	NewDashboardService,
 	ProvidePricingService,
@@ -493,3 +495,39 @@ var ProviderSet = wire.NewSet(
 	ProvideScheduledTestRunnerService,
 	NewGroupCapacityService,
 )
+
+// ProvideAuthServiceWithReferral creates AuthService and injects ReferralService
+func ProvideAuthServiceWithReferral(
+	entClient *dbent.Client,
+	userRepo UserRepository,
+	redeemRepo RedeemCodeRepository,
+	refreshTokenCache RefreshTokenCache,
+	cfg *config.Config,
+	settingService *SettingService,
+	emailService *EmailService,
+	turnstileService *TurnstileService,
+	emailQueueService *EmailQueueService,
+	promoService *PromoService,
+	defaultSubAssigner DefaultSubscriptionAssigner,
+	referralService *ReferralService,
+) *AuthService {
+	svc := NewAuthService(entClient, userRepo, redeemRepo, refreshTokenCache, cfg, settingService, emailService, turnstileService, emailQueueService, promoService, defaultSubAssigner)
+	svc.SetReferralService(referralService)
+	return svc
+}
+
+// ProvideRedeemServiceWithReferral creates RedeemService and injects ReferralService
+func ProvideRedeemServiceWithReferral(
+	redeemRepo RedeemCodeRepository,
+	userRepo UserRepository,
+	subscriptionService *SubscriptionService,
+	cache RedeemCache,
+	billingCacheService *BillingCacheService,
+	entClient *dbent.Client,
+	authCacheInvalidator APIKeyAuthCacheInvalidator,
+	referralService *ReferralService,
+) *RedeemService {
+	svc := NewRedeemService(redeemRepo, userRepo, subscriptionService, cache, billingCacheService, entClient, authCacheInvalidator)
+	svc.SetReferralService(referralService)
+	return svc
+}

@@ -71,6 +71,7 @@ type AuthService struct {
 	emailQueueService  *EmailQueueService
 	promoService       *PromoService
 	defaultSubAssigner DefaultSubscriptionAssigner
+	referralService    *ReferralService
 }
 
 type DefaultSubscriptionAssigner interface {
@@ -104,6 +105,11 @@ func NewAuthService(
 		promoService:       promoService,
 		defaultSubAssigner: defaultSubAssigner,
 	}
+}
+
+// SetReferralService 设置邀请服务（避免循环依赖）
+func (s *AuthService) SetReferralService(referralService *ReferralService) {
+	s.referralService = referralService
 }
 
 // Register 用户注册，返回token和用户

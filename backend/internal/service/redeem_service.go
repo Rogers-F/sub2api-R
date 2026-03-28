@@ -80,6 +80,7 @@ type RedeemService struct {
 	billingCacheService  *BillingCacheService
 	entClient            *dbent.Client
 	authCacheInvalidator APIKeyAuthCacheInvalidator
+	referralService      *ReferralService
 }
 
 // NewRedeemService 创建兑换码服务实例
@@ -101,6 +102,11 @@ func NewRedeemService(
 		entClient:            entClient,
 		authCacheInvalidator: authCacheInvalidator,
 	}
+}
+
+// SetReferralService sets the referral service for commission processing
+func (s *RedeemService) SetReferralService(referralService *ReferralService) {
+	s.referralService = referralService
 }
 
 // GenerateRandomCode 生成随机兑换码
