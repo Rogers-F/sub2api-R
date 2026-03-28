@@ -298,8 +298,6 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
-	_ = user // 使用变量避免未使用错误
-
 	// 使用数据库事务保证兑换码标记与权益发放的原子性
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
@@ -325,6 +323,14 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 		// 增加用户余额
 		if err := s.userRepo.UpdateBalance(txCtx, userID, redeemCode.Value); err != nil {
 			return nil, fmt.Errorf("update user balance: %w", err)
+		}
+
+		// 处理邀请返利（在事务内执行）
+		if s.referralService != nil && user.ReferrerID != nil {
+			_, commissionErr := s.referralService.ProcessRedeemCommission(txCtx, userID, *user.ReferrerID, redeemCode.Value, redeemCode.ID)
+			if commissionErr != nil {
+				fmt.Printf("[Redeem] Failed to process referral commission for user %d: %v\n", userID, commissionErr)
+			}
 		}
 
 	case RedeemTypeConcurrency:

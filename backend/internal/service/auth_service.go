@@ -114,11 +114,11 @@ func (s *AuthService) SetReferralService(referralService *ReferralService) {
 
 // Register 用户注册，返回token和用户
 func (s *AuthService) Register(ctx context.Context, email, password string) (string, *User, error) {
-	return s.RegisterWithVerification(ctx, email, password, "", "", "")
+	return s.RegisterWithVerification(ctx, email, password, "", "", "", "")
 }
 
-// RegisterWithVerification 用户注册（支持邮件验证、优惠码和邀请码），返回token和用户
-func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string) (string, *User, error) {
+// RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码和推荐码），返回token和用户
+func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode, referralCode string) (string, *User, error) {
 	// 检查是否开放注册（默认关闭：settingService 未配置时不允许注册）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return "", nil, ErrRegDisabled
@@ -193,6 +193,30 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		defaultConcurrency = s.settingService.GetDefaultConcurrency(ctx)
 	}
 
+	// 处理推荐码 - 验证并获取邀请人
+	var referrer *User
+	if referralCode != "" && s.referralService != nil && s.referralService.IsEnabled(ctx) {
+		var refErr error
+		referrer, refErr = s.referralService.GetUserByReferralCode(ctx, referralCode)
+		if refErr != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Invalid referral code %s: %v", referralCode, refErr)
+			referrer = nil
+		}
+	}
+
+	// 生成推荐码
+	var userReferralCode *string
+	if s.referralService != nil && s.referralService.IsEnabled(ctx) {
+		code := s.referralService.GenerateReferralCode()
+		userReferralCode = &code
+	}
+
+	// 设置邀请人ID
+	var referrerID *int64
+	if referrer != nil {
+		referrerID = &referrer.ID
+	}
+
 	// 创建用户
 	user := &User{
 		Email:        email,
@@ -201,6 +225,8 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		Balance:      defaultBalance,
 		Concurrency:  defaultConcurrency,
 		Status:       StatusActive,
+		ReferrerID:   referrerID,
+		ReferralCode: userReferralCode,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -220,6 +246,18 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to mark invitation code as used for user %d: %v", user.ID, err)
 		}
 	}
+
+	// 处理推荐奖励
+	if referrer != nil && s.referralService != nil {
+		if _, refErr := s.referralService.ProcessRegistrationReferral(ctx, user.ID, referrer.ID); refErr != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Failed to process referral reward for user %d: %v", user.ID, refErr)
+		} else {
+			if updatedUser, getErr := s.userRepo.GetByID(ctx, user.ID); getErr == nil {
+				user = updatedUser
+			}
+		}
+	}
+
 	// 应用优惠码（如果提供且功能已启用）
 	if promoCode != "" && s.promoService != nil && s.settingService != nil && s.settingService.IsPromoCodeEnabled(ctx) {
 		if err := s.promoService.ApplyPromoCode(ctx, user.ID, promoCode); err != nil {
