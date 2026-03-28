@@ -34,13 +34,10 @@ type User struct {
 	TotpEnabled         bool       // 是否启用 TOTP
 	TotpEnabledAt       *time.Time // TOTP 启用时间
 
-	// 邀请系统字段
-	ReferrerID   *int64  // 邀请人ID
-	ReferralCode *string // 用户的邀请码
-
-	// 自定义佣金比例（作为推荐人时使用）
-	// nil 表示使用全局设置，非 nil 表示自定义比例 (0-1)
-	CommissionRate *float64
+	// 推荐系统字段
+	ReferrerID     *int64   // 邀请人ID
+	ReferralCode   *string  // 推荐码
+	CommissionRate *float64 // 返利比例
 
 	APIKeys       []APIKey
 	Subscriptions []UserSubscription

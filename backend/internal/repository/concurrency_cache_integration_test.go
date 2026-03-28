@@ -31,7 +31,7 @@ func TestConcurrencyCacheSuite(t *testing.T) {
 
 func (s *ConcurrencyCacheSuite) SetupTest() {
 	s.IntegrationRedisSuite.SetupTest()
-	s.cache = NewConcurrencyCache(s.rdb, testSlotTTLMinutes, testSlotTTLMinutes, int(testSlotTTL.Seconds()))
+	s.cache = NewConcurrencyCache(s.rdb, testSlotTTLMinutes, int(testSlotTTL.Seconds()))
 }
 
 func (s *ConcurrencyCacheSuite) TestAccountSlot_AcquireAndRelease() {

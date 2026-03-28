@@ -87,7 +87,7 @@ func (s *claudeUsageService) FetchUsageWithOptions(ctx context.Context, opts *se
 			return nil, fmt.Errorf("create http client failed: %w", err)
 		}
 
-		resp, err = client.Do(req) // #nosec G704 -- URL is Claude API usage endpoint
+		resp, err = client.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("request failed: %w", err)
 		}

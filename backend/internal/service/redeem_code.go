@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"time"
 )
 
@@ -31,18 +32,10 @@ func (r *RedeemCode) CanUse() bool {
 	return r.Status == StatusUnused
 }
 
-// codeAlphabet 兑换码字符集（去除易混淆字符 I, L, O）
-const codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ"
-const codeLength = 8
-
 func GenerateRedeemCode() (string, error) {
-	b := make([]byte, codeLength)
+	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	result := make([]byte, codeLength)
-	for i := 0; i < codeLength; i++ {
-		result[i] = codeAlphabet[int(b[i])%len(codeAlphabet)]
-	}
-	return string(result), nil
+	return hex.EncodeToString(b), nil
 }

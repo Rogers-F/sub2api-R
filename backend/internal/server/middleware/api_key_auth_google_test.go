@@ -187,10 +187,6 @@ func (f fakeGoogleSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context
 	return 0, errors.New("not implemented")
 }
 
-func (f fakeAPIKeyRepo) IncrementUsedUSD(ctx context.Context, id int64, delta float64) error {
-	return errors.New("not implemented")
-}
-
 type googleErrorResponse struct {
 	Error struct {
 		Code    int    `json:"code"`

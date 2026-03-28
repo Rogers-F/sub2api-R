@@ -49,6 +49,12 @@ type User struct {
 	SoraStorageQuotaBytes int64 `json:"sora_storage_quota_bytes,omitempty"`
 	// SoraStorageUsedBytes holds the value of the "sora_storage_used_bytes" field.
 	SoraStorageUsedBytes int64 `json:"sora_storage_used_bytes,omitempty"`
+	// ReferrerID holds the value of the "referrer_id" field.
+	ReferrerID *int64 `json:"referrer_id,omitempty"`
+	// ReferralCode holds the value of the "referral_code" field.
+	ReferralCode *string `json:"referral_code,omitempty"`
+	// CommissionRate holds the value of the "commission_rate" field.
+	CommissionRate *float64 `json:"commission_rate,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -75,11 +81,15 @@ type UserEdges struct {
 	AttributeValues []*UserAttributeValue `json:"attribute_values,omitempty"`
 	// PromoCodeUsages holds the value of the promo_code_usages edge.
 	PromoCodeUsages []*PromoCodeUsage `json:"promo_code_usages,omitempty"`
+	// ReferralRewardsGiven holds the value of the referral_rewards_given edge.
+	ReferralRewardsGiven []*ReferralReward `json:"referral_rewards_given,omitempty"`
+	// ReferralRewardsReceived holds the value of the referral_rewards_received edge.
+	ReferralRewardsReceived []*ReferralReward `json:"referral_rewards_received,omitempty"`
 	// UserAllowedGroups holds the value of the user_allowed_groups edge.
 	UserAllowedGroups []*UserAllowedGroup `json:"user_allowed_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [10]bool
+	loadedTypes [12]bool
 }
 
 // APIKeysOrErr returns the APIKeys value or an error if the edge
@@ -163,10 +173,28 @@ func (e UserEdges) PromoCodeUsagesOrErr() ([]*PromoCodeUsage, error) {
 	return nil, &NotLoadedError{edge: "promo_code_usages"}
 }
 
+// ReferralRewardsGivenOrErr returns the ReferralRewardsGiven value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReferralRewardsGivenOrErr() ([]*ReferralReward, error) {
+	if e.loadedTypes[9] {
+		return e.ReferralRewardsGiven, nil
+	}
+	return nil, &NotLoadedError{edge: "referral_rewards_given"}
+}
+
+// ReferralRewardsReceivedOrErr returns the ReferralRewardsReceived value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReferralRewardsReceivedOrErr() ([]*ReferralReward, error) {
+	if e.loadedTypes[10] {
+		return e.ReferralRewardsReceived, nil
+	}
+	return nil, &NotLoadedError{edge: "referral_rewards_received"}
+}
+
 // UserAllowedGroupsOrErr returns the UserAllowedGroups value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) UserAllowedGroupsOrErr() ([]*UserAllowedGroup, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[11] {
 		return e.UserAllowedGroups, nil
 	}
 	return nil, &NotLoadedError{edge: "user_allowed_groups"}
@@ -179,11 +207,11 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldTotpEnabled:
 			values[i] = new(sql.NullBool)
-		case user.FieldBalance:
+		case user.FieldBalance, user.FieldCommissionRate:
 			values[i] = new(sql.NullFloat64)
-		case user.FieldID, user.FieldConcurrency, user.FieldSoraStorageQuotaBytes, user.FieldSoraStorageUsedBytes:
+		case user.FieldID, user.FieldConcurrency, user.FieldSoraStorageQuotaBytes, user.FieldSoraStorageUsedBytes, user.FieldReferrerID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes, user.FieldTotpSecretEncrypted:
+		case user.FieldEmail, user.FieldPasswordHash, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldNotes, user.FieldTotpSecretEncrypted, user.FieldReferralCode:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldDeletedAt, user.FieldTotpEnabledAt:
 			values[i] = new(sql.NullTime)
@@ -307,6 +335,27 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SoraStorageUsedBytes = value.Int64
 			}
+		case user.FieldReferrerID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field referrer_id", values[i])
+			} else if value.Valid {
+				_m.ReferrerID = new(int64)
+				*_m.ReferrerID = value.Int64
+			}
+		case user.FieldReferralCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field referral_code", values[i])
+			} else if value.Valid {
+				_m.ReferralCode = new(string)
+				*_m.ReferralCode = value.String
+			}
+		case user.FieldCommissionRate:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field commission_rate", values[i])
+			} else if value.Valid {
+				_m.CommissionRate = new(float64)
+				*_m.CommissionRate = value.Float64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -363,6 +412,16 @@ func (_m *User) QueryAttributeValues() *UserAttributeValueQuery {
 // QueryPromoCodeUsages queries the "promo_code_usages" edge of the User entity.
 func (_m *User) QueryPromoCodeUsages() *PromoCodeUsageQuery {
 	return NewUserClient(_m.config).QueryPromoCodeUsages(_m)
+}
+
+// QueryReferralRewardsGiven queries the "referral_rewards_given" edge of the User entity.
+func (_m *User) QueryReferralRewardsGiven() *ReferralRewardQuery {
+	return NewUserClient(_m.config).QueryReferralRewardsGiven(_m)
+}
+
+// QueryReferralRewardsReceived queries the "referral_rewards_received" edge of the User entity.
+func (_m *User) QueryReferralRewardsReceived() *ReferralRewardQuery {
+	return NewUserClient(_m.config).QueryReferralRewardsReceived(_m)
 }
 
 // QueryUserAllowedGroups queries the "user_allowed_groups" edge of the User entity.
@@ -446,6 +505,21 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sora_storage_used_bytes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SoraStorageUsedBytes))
+	builder.WriteString(", ")
+	if v := _m.ReferrerID; v != nil {
+		builder.WriteString("referrer_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ReferralCode; v != nil {
+		builder.WriteString("referral_code=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.CommissionRate; v != nil {
+		builder.WriteString("commission_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

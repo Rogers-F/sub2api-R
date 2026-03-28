@@ -2,7 +2,6 @@ package service
 
 import (
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 )
@@ -16,9 +15,6 @@ func TestCalculateAnthropic429ResetTime_Only5hExceeded(t *testing.T) {
 
 	result := calculateAnthropic429ResetTime(headers)
 	assertAnthropicResult(t, result, 1770998400)
-	if result.windowType != "5h" {
-		t.Errorf("expected windowType=5h, got %q", result.windowType)
-	}
 
 	if result.fiveHourReset == nil || !result.fiveHourReset.Equal(time.Unix(1770998400, 0)) {
 		t.Errorf("expected fiveHourReset=1770998400, got %v", result.fiveHourReset)
@@ -34,9 +30,6 @@ func TestCalculateAnthropic429ResetTime_Only7dExceeded(t *testing.T) {
 
 	result := calculateAnthropic429ResetTime(headers)
 	assertAnthropicResult(t, result, 1771549200)
-	if result.windowType != "7d" {
-		t.Errorf("expected windowType=7d, got %q", result.windowType)
-	}
 
 	// fiveHourReset should still be populated for session window calculation
 	if result.fiveHourReset == nil || !result.fiveHourReset.Equal(time.Unix(1770998400, 0)) {
@@ -53,9 +46,6 @@ func TestCalculateAnthropic429ResetTime_BothExceeded(t *testing.T) {
 
 	result := calculateAnthropic429ResetTime(headers)
 	assertAnthropicResult(t, result, 1771549200)
-	if result.windowType != "7d" {
-		t.Errorf("expected windowType=7d, got %q", result.windowType)
-	}
 }
 
 func TestCalculateAnthropic429ResetTime_NoPerWindowHeaders(t *testing.T) {
@@ -84,9 +74,6 @@ func TestCalculateAnthropic429ResetTime_SurpassedThreshold(t *testing.T) {
 
 	result := calculateAnthropic429ResetTime(headers)
 	assertAnthropicResult(t, result, 1770998400)
-	if result.windowType != "5h" {
-		t.Errorf("expected windowType=5h, got %q", result.windowType)
-	}
 }
 
 func TestCalculateAnthropic429ResetTime_UtilizationExactlyOne(t *testing.T) {
@@ -127,41 +114,9 @@ func TestCalculateAnthropic429ResetTime_Only7dResetHeader(t *testing.T) {
 
 	result := calculateAnthropic429ResetTime(headers)
 	assertAnthropicResult(t, result, 1771549200)
-	if result.windowType != "7d" {
-		t.Errorf("expected windowType=7d, got %q", result.windowType)
-	}
 
 	if result.fiveHourReset != nil {
 		t.Errorf("expected fiveHourReset=nil when no 5h headers, got %v", result.fiveHourReset)
-	}
-}
-
-func TestCalculateAnthropic429ResetTime_BothExceededWithout7dReset_FallsBackTo5hWindowType(t *testing.T) {
-	headers := http.Header{}
-	headers.Set("anthropic-ratelimit-unified-5h-utilization", "1.05")
-	headers.Set("anthropic-ratelimit-unified-5h-reset", "1770998400")
-	headers.Set("anthropic-ratelimit-unified-7d-utilization", "1.02")
-
-	result := calculateAnthropic429ResetTime(headers)
-	assertAnthropicResult(t, result, 1770998400)
-	if result.windowType != "5h" {
-		t.Errorf("expected windowType=5h, got %q", result.windowType)
-	}
-}
-
-func TestBuildAnthropic429StoredDetail_PrefersStructuredUpstreamMessage(t *testing.T) {
-	body := []byte(`{"type":"error","error":{"message":"weekly limit exceeded request_id=req_abc123"}}`)
-
-	detail := buildAnthropic429StoredDetail(body, "anthropic unified reset (ts=1771549200)")
-
-	if !strings.Contains(detail, "anthropic unified reset") {
-		t.Fatalf("expected unified reset marker in detail, got %q", detail)
-	}
-	if !strings.Contains(detail, "weekly limit exceeded") {
-		t.Fatalf("expected upstream message in detail, got %q", detail)
-	}
-	if strings.Contains(detail, `{"type":"error"`) {
-		t.Fatalf("expected structured message extraction instead of raw json, got %q", detail)
 	}
 }
 

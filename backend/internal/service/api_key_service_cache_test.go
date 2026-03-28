@@ -102,10 +102,6 @@ func (s *authRepoStub) ListKeysByGroupID(ctx context.Context, groupID int64) ([]
 	return s.listKeysByGroupID(ctx, groupID)
 }
 
-func (s *authRepoStub) IncrementUsedUSD(ctx context.Context, id int64, delta float64) error {
-	panic("unexpected IncrementUsedUSD call")
-}
-
 func (s *authRepoStub) IncrementQuotaUsed(ctx context.Context, id int64, amount float64) (float64, error) {
 	panic("unexpected IncrementQuotaUsed call")
 }

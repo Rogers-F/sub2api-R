@@ -336,19 +336,6 @@ func (r *userSubscriptionRepository) ResetMonthlyUsage(ctx context.Context, id i
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
 }
 
-func (r *userSubscriptionRepository) ResetAllWindowsAndUsage(ctx context.Context, id int64) error {
-	client := clientFromContext(ctx, r.client)
-	_, err := client.UserSubscription.UpdateOneID(id).
-		ClearDailyWindowStart().
-		ClearWeeklyWindowStart().
-		ClearMonthlyWindowStart().
-		SetDailyUsageUsd(0).
-		SetWeeklyUsageUsd(0).
-		SetMonthlyUsageUsd(0).
-		Save(ctx)
-	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
-}
-
 // IncrementUsage 原子性地累加订阅用量。
 // 限额检查已在请求前由 BillingCacheService.CheckBillingEligibility 完成，
 // 此处仅负责记录实际消费，确保消费数据的完整性。
@@ -384,15 +371,6 @@ func (r *userSubscriptionRepository) IncrementUsage(ctx context.Context, id int6
 
 	// affected == 0：订阅不存在或已删除
 	return service.ErrSubscriptionNotFound
-}
-
-func (r *userSubscriptionRepository) TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error {
-	client := clientFromContext(ctx, r.client)
-	_, err := client.UserSubscription.UpdateOneID(subscriptionID).
-		SetGroupID(newGroupID).
-		SetNotes(notes).
-		Save(ctx)
-	return translatePersistenceError(err, service.ErrSubscriptionNotFound, service.ErrSubscriptionAlreadyExists)
 }
 
 func (r *userSubscriptionRepository) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {

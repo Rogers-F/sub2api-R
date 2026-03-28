@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -77,7 +80,6 @@ type RedeemService struct {
 	billingCacheService  *BillingCacheService
 	entClient            *dbent.Client
 	authCacheInvalidator APIKeyAuthCacheInvalidator
-	referralService      *ReferralService
 }
 
 // NewRedeemService 创建兑换码服务实例
@@ -101,15 +103,26 @@ func NewRedeemService(
 	}
 }
 
-// SetReferralService sets the referral service for commission processing
-// This is called after construction to avoid circular dependencies
-func (s *RedeemService) SetReferralService(referralService *ReferralService) {
-	s.referralService = referralService
-}
-
-// GenerateRandomCode 生成随机兑换码（8位大写字母短码）
+// GenerateRandomCode 生成随机兑换码
 func (s *RedeemService) GenerateRandomCode() (string, error) {
-	return GenerateRedeemCode()
+	// 生成16字节随机数据
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("generate random bytes: %w", err)
+	}
+
+	// 转换为十六进制字符串
+	code := hex.EncodeToString(bytes)
+
+	// 格式化为 XXXX-XXXX-XXXX-XXXX 格式
+	parts := []string{
+		strings.ToUpper(code[0:8]),
+		strings.ToUpper(code[8:16]),
+		strings.ToUpper(code[16:24]),
+		strings.ToUpper(code[24:32]),
+	}
+
+	return strings.Join(parts, "-"), nil
 }
 
 // GenerateCodes 批量生成兑换码
@@ -306,15 +319,6 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 		// 增加用户余额
 		if err := s.userRepo.UpdateBalance(txCtx, userID, redeemCode.Value); err != nil {
 			return nil, fmt.Errorf("update user balance: %w", err)
-		}
-
-		// 处理邀请返利（在事务内执行）
-		if s.referralService != nil && user.ReferrerID != nil {
-			_, commissionErr := s.referralService.ProcessRedeemCommission(txCtx, userID, *user.ReferrerID, redeemCode.Value, redeemCode.ID)
-			if commissionErr != nil {
-				// 返利失败不阻止兑换，只记录日志
-				fmt.Printf("[Redeem] Failed to process referral commission for user %d: %v\n", userID, commissionErr)
-			}
 		}
 
 	case RedeemTypeConcurrency:

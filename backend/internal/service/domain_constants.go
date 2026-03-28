@@ -69,34 +69,6 @@ const (
 	SubscriptionStatusSuspended = domain.SubscriptionStatusSuspended
 )
 
-// Window reset status constants
-const (
-	WindowResetStatusNoLimit             = "no_limit"
-	WindowResetStatusAwaitingFirstUse    = "awaiting_first_use"
-	WindowResetStatusActive              = "active"
-	WindowResetStatusActiveFinalWindow   = "active_final_window"
-	WindowResetStatusExpiredWillReset    = "expired_will_reset"
-	WindowResetStatusExpiredSubscription = "expired_subscription"
-)
-
-// Referral reward type constants
-const (
-	ReferralRewardTypeRegister   = "register"   // 注册奖励
-	ReferralRewardTypeCommission = "commission" // 返利奖励
-)
-
-// Referral source type constants
-const (
-	ReferralSourceTypeRedeemCode = "redeem_code" // 来自兑换码
-)
-
-// Announcement content type constants
-const (
-	AnnouncementContentTypeMarkdown = "markdown"
-	AnnouncementContentTypeHTML     = "html"
-	AnnouncementContentTypeURL      = "url"
-)
-
 // LinuxDoConnectSyntheticEmailDomain 是 LinuxDo Connect 用户的合成邮箱后缀（RFC 保留域名）。
 const LinuxDoConnectSyntheticEmailDomain = "@linuxdo-connect.invalid"
 
@@ -110,12 +82,6 @@ const (
 	SettingKeyPasswordResetEnabled             = "password_reset_enabled"              // 是否启用忘记密码功能（需要先开启邮件验证）
 	SettingKeyFrontendURL                      = "frontend_url"                        // 前端基础URL，用于生成邮件中的重置密码链接
 	SettingKeyInvitationCodeEnabled            = "invitation_code_enabled"             // 是否启用邀请码注册
-
-	// 邀请系统设置
-	SettingKeyReferralEnabled        = "referral_enabled"          // 是否启用邀请系统
-	SettingKeyReferralRegisterBonus  = "referral_register_bonus"   // 注册奖励金额（双方各得）
-	SettingKeyReferralCommissionRate = "referral_commission_rate"  // 返利比例（0-1）
-	SettingKeyReferralMaxTotalReward = "referral_max_total_reward" // 奖励上限（0=无限制）
 
 	// 邮件服务设置
 	SettingKeySMTPHost     = "smtp_host"      // SMTP服务器地址
@@ -146,6 +112,12 @@ const (
 	SettingKeySiteLogo                    = "site_logo"                     // 网站Logo (base64)
 	SettingKeySiteSubtitle                = "site_subtitle"                 // 网站副标题
 	SettingKeyAPIBaseURL                  = "api_base_url"                  // API端点地址（用于客户端配置和导入）
+
+	// Referral system settings
+	SettingKeyReferralEnabled        = "referral_enabled"
+	SettingKeyReferralRegisterBonus  = "referral_register_bonus"
+	SettingKeyReferralCommissionRate = "referral_commission_rate"
+	SettingKeyReferralMaxTotalReward = "referral_max_total_reward"
 	SettingKeyContactInfo                 = "contact_info"                  // 客服联系方式
 	SettingKeyDocURL                      = "doc_url"                       // 文档链接
 	SettingKeyHomeContent                 = "home_content"                  // 首页内容（支持 Markdown/HTML，或 URL 作为 iframe src）
@@ -273,3 +245,14 @@ const (
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).
 const AdminAPIKeyPrefix = "admin-"
+
+// Referral reward type constants
+const (
+	ReferralRewardTypeRegister   = "register"
+	ReferralRewardTypeCommission = "commission"
+)
+
+// Referral source type constants
+const (
+	ReferralSourceTypeRedeemCode = "redeem_code"
+)

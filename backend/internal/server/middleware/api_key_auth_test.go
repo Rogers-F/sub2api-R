@@ -581,10 +581,6 @@ func (r *stubApiKeyRepo) ListKeysByGroupID(ctx context.Context, groupID int64) (
 	return nil, errors.New("not implemented")
 }
 
-func (r *stubApiKeyRepo) IncrementUsedUSD(ctx context.Context, id int64, delta float64) error {
-	return errors.New("not implemented")
-}
-
 func (r *stubApiKeyRepo) IncrementQuotaUsed(ctx context.Context, id int64, amount float64) (float64, error) {
 	return 0, errors.New("not implemented")
 }
@@ -607,13 +603,12 @@ func (r *stubApiKeyRepo) GetRateLimitData(ctx context.Context, id int64) (*servi
 }
 
 type stubUserSubscriptionRepo struct {
-	getActive                  func(ctx context.Context, userID, groupID int64) (*service.UserSubscription, error)
-	updateStatus               func(ctx context.Context, subscriptionID int64, status string) error
-	activateWindow             func(ctx context.Context, id int64, start time.Time) error
-	resetDaily                 func(ctx context.Context, id int64, start time.Time) error
-	resetWeekly                func(ctx context.Context, id int64, start time.Time) error
-	resetMonthly               func(ctx context.Context, id int64, start time.Time) error
-	resetAllWindowsAndUsageFn  func(ctx context.Context, id int64) error
+	getActive      func(ctx context.Context, userID, groupID int64) (*service.UserSubscription, error)
+	updateStatus   func(ctx context.Context, subscriptionID int64, status string) error
+	activateWindow func(ctx context.Context, id int64, start time.Time) error
+	resetDaily     func(ctx context.Context, id int64, start time.Time) error
+	resetWeekly    func(ctx context.Context, id int64, start time.Time) error
+	resetMonthly   func(ctx context.Context, id int64, start time.Time) error
 }
 
 func (r *stubUserSubscriptionRepo) Create(ctx context.Context, sub *service.UserSubscription) error {
@@ -712,15 +707,4 @@ func (r *stubUserSubscriptionRepo) IncrementUsage(ctx context.Context, id int64,
 
 func (r *stubUserSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {
 	return 0, errors.New("not implemented")
-}
-
-func (r *stubUserSubscriptionRepo) ResetAllWindowsAndUsage(ctx context.Context, id int64) error {
-	if r.resetAllWindowsAndUsageFn != nil {
-		return r.resetAllWindowsAndUsageFn(ctx, id)
-	}
-	return errors.New("not implemented")
-}
-
-func (r *stubUserSubscriptionRepo) TransferGroup(ctx context.Context, subscriptionID int64, newGroupID int64, notes string) error {
-	return errors.New("not implemented")
 }

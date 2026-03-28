@@ -1048,7 +1048,7 @@ func fetchProjectIDFromResourceManager(ctx context.Context, accessToken, proxyUR
 		return "", fmt.Errorf("create http client failed: %w", err)
 	}
 
-	resp, err := client.Do(req) // #nosec G704 -- URL is Gemini resource manager API endpoint
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("resource manager request failed: %w", err)
 	}

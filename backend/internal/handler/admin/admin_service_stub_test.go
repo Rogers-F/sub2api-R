@@ -411,11 +411,6 @@ func (s *stubAdminService) ExpireRedeemCode(ctx context.Context, id int64) (*ser
 	return &code, nil
 }
 
-func (s *stubAdminService) UpdateUserCommissionRate(ctx context.Context, userID int64, rate *float64) (*service.User, error) {
-	user := service.User{ID: userID, Email: "user@example.com", Status: service.StatusActive, CommissionRate: rate}
-	return &user, nil
-}
-
 func (s *stubAdminService) GetUserBalanceHistory(ctx context.Context, userID int64, page, pageSize int, codeType string) ([]service.RedeemCode, int64, float64, error) {
 	return s.redeems, int64(len(s.redeems)), 100.0, nil
 }

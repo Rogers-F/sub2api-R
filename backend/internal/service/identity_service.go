@@ -63,13 +63,12 @@ type IdentityCache interface {
 
 // IdentityService 管理OAuth账号的请求身份指纹
 type IdentityService struct {
-	cache          IdentityCache
-	versionService *VersionService
+	cache IdentityCache
 }
 
 // NewIdentityService 创建新的IdentityService
-func NewIdentityService(cache IdentityCache, versionService *VersionService) *IdentityService {
-	return &IdentityService{cache: cache, versionService: versionService}
+func NewIdentityService(cache IdentityCache) *IdentityService {
+	return &IdentityService{cache: cache}
 }
 
 // GetOrCreateFingerprint 获取或创建账号的指纹
@@ -104,7 +103,7 @@ func (s *IdentityService) GetOrCreateFingerprint(ctx context.Context, accountID 
 	}
 
 	// 缓存不存在或解析失败，创建新指纹
-	fp := s.createFingerprintFromHeaders(ctx, accountID, headers)
+	fp := s.createFingerprintFromHeaders(headers)
 
 	// 生成随机ClientID
 	fp.ClientID = generateClientID()
@@ -120,7 +119,7 @@ func (s *IdentityService) GetOrCreateFingerprint(ctx context.Context, accountID 
 }
 
 // createFingerprintFromHeaders 从请求头创建指纹
-func (s *IdentityService) createFingerprintFromHeaders(ctx context.Context, accountID int64, headers http.Header) *Fingerprint {
+func (s *IdentityService) createFingerprintFromHeaders(headers http.Header) *Fingerprint {
 	fp := &Fingerprint{}
 
 	// 获取User-Agent
@@ -136,16 +135,7 @@ func (s *IdentityService) createFingerprintFromHeaders(ctx context.Context, acco
 	fp.StainlessOS = getHeaderOrDefault(headers, "X-Stainless-OS", defaultFingerprint.StainlessOS)
 	fp.StainlessArch = getHeaderOrDefault(headers, "X-Stainless-Arch", defaultFingerprint.StainlessArch)
 	fp.StainlessRuntime = getHeaderOrDefault(headers, "X-Stainless-Runtime", defaultFingerprint.StainlessRuntime)
-
-	// StainlessRuntimeVersion: use random Node version when falling back to default
-	if v := headers.Get("X-Stainless-Runtime-Version"); v != "" {
-		fp.StainlessRuntimeVersion = v
-	} else if s.versionService != nil {
-		accountKey := strconv.FormatInt(accountID, 10)
-		fp.StainlessRuntimeVersion = s.versionService.GetOrCreateNodeVersion(ctx, accountKey)
-	} else {
-		fp.StainlessRuntimeVersion = defaultFingerprint.StainlessRuntimeVersion
-	}
+	fp.StainlessRuntimeVersion = getHeaderOrDefault(headers, "X-Stainless-Runtime-Version", defaultFingerprint.StainlessRuntimeVersion)
 
 	return fp
 }

@@ -9,41 +9,10 @@ import (
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
-	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/imroc/req/v3"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
-
-// stubVersionCache is a simple in-memory VersionCache for tests.
-type stubVersionCache struct {
-	data map[string]string
-}
-
-func (c *stubVersionCache) GetCLIVersion(_ context.Context, key string) (string, error) {
-	if v, ok := c.data["cli:"+key]; ok {
-		return v, nil
-	}
-	return "", nil
-}
-func (c *stubVersionCache) SetCLIVersion(_ context.Context, key string, version string) error {
-	c.data["cli:"+key] = version
-	return nil
-}
-func (c *stubVersionCache) GetNodeVersion(_ context.Context, key string) (string, error) {
-	if v, ok := c.data["node:"+key]; ok {
-		return v, nil
-	}
-	return "", nil
-}
-func (c *stubVersionCache) SetNodeVersion(_ context.Context, key string, version string) error {
-	c.data["node:"+key] = version
-	return nil
-}
-
-func newTestVersionService() *service.VersionService {
-	return service.NewVersionService(&stubVersionCache{data: make(map[string]string)})
-}
 
 type ClaudeOAuthServiceSuite struct {
 	suite.Suite
@@ -118,7 +87,7 @@ func (s *ClaudeOAuthServiceSuite) TestGetOrganizationUUID() {
 				tt.handler(w, r)
 			}), nil)
 
-			client, ok := NewClaudeOAuthClient(newTestVersionService()).(*claudeOAuthService)
+			client, ok := NewClaudeOAuthClient().(*claudeOAuthService)
 			require.True(s.T(), ok, "type assertion failed")
 			s.client = client
 			s.client.baseURL = "http://in-process"
@@ -196,7 +165,7 @@ func (s *ClaudeOAuthServiceSuite) TestGetAuthorizationCode() {
 				tt.handler(w, r)
 			}), nil)
 
-			client, ok := NewClaudeOAuthClient(newTestVersionService()).(*claudeOAuthService)
+			client, ok := NewClaudeOAuthClient().(*claudeOAuthService)
 			require.True(s.T(), ok, "type assertion failed")
 			s.client = client
 			s.client.baseURL = "http://in-process"
@@ -294,28 +263,16 @@ func (s *ClaudeOAuthServiceSuite) TestExchangeCodeForToken() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			var captured requestCapture
-			var helloCount int
 
 			rt := newInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Only capture the POST token exchange request, not pre-hello GETs
-				if r.Method == http.MethodPost {
-					captured.method = r.Method
-					captured.contentType = r.Header.Get("Content-Type")
-					if r.Body != nil {
-						captured.body, _ = io.ReadAll(r.Body)
-						_ = json.Unmarshal(captured.body, &captured.bodyJSON)
-					}
-					tt.handler(w, r)
-					return
-				}
-				// Count pre-hello GET requests and verify User-Agent
-				helloCount++
-				ua := r.Header.Get("User-Agent")
-				require.Contains(s.T(), ua, "claude-cli/", "pre-hello should have claude-cli UA")
-				w.WriteHeader(http.StatusOK)
+				captured.method = r.Method
+				captured.contentType = r.Header.Get("Content-Type")
+				captured.body, _ = io.ReadAll(r.Body)
+				_ = json.Unmarshal(captured.body, &captured.bodyJSON)
+				tt.handler(w, r)
 			}), nil)
 
-			client, ok := NewClaudeOAuthClient(newTestVersionService()).(*claudeOAuthService)
+			client, ok := NewClaudeOAuthClient().(*claudeOAuthService)
 			require.True(s.T(), ok, "type assertion failed")
 			s.client = client
 			s.client.tokenURL = "http://in-process/token"
@@ -329,7 +286,6 @@ func (s *ClaudeOAuthServiceSuite) TestExchangeCodeForToken() {
 			}
 
 			require.NoError(s.T(), err)
-			require.Equal(s.T(), 2, helloCount, "expected 2 pre-hello GET requests")
 			require.Equal(s.T(), tt.wantResp.AccessToken, resp.AccessToken)
 			require.Equal(s.T(), tt.wantResp.RefreshToken, resp.RefreshToken)
 			if tt.validate != nil {
@@ -372,7 +328,6 @@ func (s *ClaudeOAuthServiceSuite) TestRefreshToken() {
 				require.Equal(s.T(), "refresh_token", captured.bodyJSON["grant_type"])
 				require.Equal(s.T(), "rt", captured.bodyJSON["refresh_token"])
 				require.Equal(s.T(), oauth.ClientID, captured.bodyJSON["client_id"])
-				require.Equal(s.T(), oauth.ScopeAPI, captured.bodyJSON["scope"], "refresh should include scope")
 			},
 		},
 		{
@@ -413,7 +368,7 @@ func (s *ClaudeOAuthServiceSuite) TestRefreshToken() {
 				tt.handler(w, r)
 			}), nil)
 
-			client, ok := NewClaudeOAuthClient(newTestVersionService()).(*claudeOAuthService)
+			client, ok := NewClaudeOAuthClient().(*claudeOAuthService)
 			require.True(s.T(), ok, "type assertion failed")
 			s.client = client
 			s.client.tokenURL = "http://in-process/token"

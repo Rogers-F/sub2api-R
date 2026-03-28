@@ -2,12 +2,6 @@ package service
 
 import "time"
 
-// WindowResetInfo describes the reset status of a single usage window (daily/weekly/monthly).
-type WindowResetInfo struct {
-	Status  string     // one of WindowResetStatus* constants
-	ResetAt *time.Time // countdown target (window end or subscription expiry)
-}
-
 type UserSubscription struct {
 	ID      int64
 	UserID  int64
@@ -24,10 +18,6 @@ type UserSubscription struct {
 	DailyUsageUSD   float64
 	WeeklyUsageUSD  float64
 	MonthlyUsageUSD float64
-
-	DailyResetInfo   WindowResetInfo
-	WeeklyResetInfo  WindowResetInfo
-	MonthlyResetInfo WindowResetInfo
 
 	AssignedBy *int64
 	AssignedAt time.Time
@@ -105,23 +95,6 @@ func (s *UserSubscription) MonthlyResetTime() *time.Time {
 	return &t
 }
 
-// ShouldAllowWindowReset 仅当订阅剩余时间 >= 窗口时长时才允许重置
-func (s *UserSubscription) ShouldAllowWindowReset(windowDuration time.Duration) bool {
-	return time.Until(s.ExpiresAt) >= windowDuration
-}
-
-func (s *UserSubscription) CanResetDailyWindow() bool {
-	return s.NeedsDailyReset()
-}
-
-func (s *UserSubscription) CanResetWeeklyWindow() bool {
-	return s.NeedsWeeklyReset()
-}
-
-func (s *UserSubscription) CanResetMonthlyWindow() bool {
-	return s.NeedsMonthlyReset() && s.ShouldAllowWindowReset(30*24*time.Hour)
-}
-
 func (s *UserSubscription) CheckDailyLimit(group *Group, additionalCost float64) bool {
 	if !group.HasDailyLimit() {
 		return true
@@ -148,40 +121,4 @@ func (s *UserSubscription) CheckAllLimits(group *Group, additionalCost float64) 
 	weekly = s.CheckWeeklyLimit(group, additionalCost)
 	monthly = s.CheckMonthlyLimit(group, additionalCost)
 	return
-}
-
-// ComputeWindowResetStatus determines the reset status for a single usage window.
-// alwaysReset: when true (daily/weekly), the window always resets when expired regardless of remaining subscription time.
-// When false (monthly), the window only resets if the subscription has enough remaining time for a full window.
-func (s *UserSubscription) ComputeWindowResetStatus(
-	now time.Time,
-	hasLimit bool,
-	windowStart *time.Time,
-	windowDuration time.Duration,
-	alwaysReset bool,
-) WindowResetInfo {
-	if !hasLimit {
-		return WindowResetInfo{Status: WindowResetStatusNoLimit}
-	}
-	if now.After(s.ExpiresAt) {
-		return WindowResetInfo{Status: WindowResetStatusExpiredSubscription}
-	}
-	if windowStart == nil {
-		return WindowResetInfo{Status: WindowResetStatusAwaitingFirstUse}
-	}
-	windowEnd := windowStart.Add(windowDuration)
-
-	if now.Before(windowEnd) {
-		if !alwaysReset && s.ExpiresAt.Sub(windowEnd) < windowDuration {
-			t := windowEnd
-			return WindowResetInfo{Status: WindowResetStatusActiveFinalWindow, ResetAt: &t}
-		}
-		return WindowResetInfo{Status: WindowResetStatusActive, ResetAt: &windowEnd}
-	}
-	// Window expired
-	if alwaysReset || s.ExpiresAt.Sub(now) >= windowDuration {
-		return WindowResetInfo{Status: WindowResetStatusExpiredWillReset}
-	}
-	t := windowEnd
-	return WindowResetInfo{Status: WindowResetStatusActiveFinalWindow, ResetAt: &t}
 }

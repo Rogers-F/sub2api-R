@@ -99,14 +99,6 @@ func (s *emailCacheStub) DeletePasswordResetToken(ctx context.Context, email str
 	return nil
 }
 
-func (s *emailCacheStub) GetAndDeletePasswordResetToken(ctx context.Context, email string) (*PasswordResetTokenData, error) {
-	return nil, nil
-}
-
-func (s *emailCacheStub) ConsumePasswordResetTokenAtomic(ctx context.Context, email, token string) (bool, error) {
-	return false, nil
-}
-
 func (s *emailCacheStub) IsPasswordResetEmailInCooldown(ctx context.Context, email string) bool {
 	return false
 }

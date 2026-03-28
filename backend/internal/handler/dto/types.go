@@ -23,8 +23,7 @@ type User struct {
 type AdminUser struct {
 	User
 
-	Notes          string   `json:"notes"`
-	CommissionRate *float64 `json:"commission_rate"` // 自定义佣金比例（nil=使用全局设置）
+	Notes string `json:"notes"`
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]rateMultiplier
 	GroupRates            map[int64]float64 `json:"group_rates,omitempty"`
@@ -156,11 +155,9 @@ type Account struct {
 
 	Schedulable bool `json:"schedulable"`
 
-	RateLimitedAt       *time.Time `json:"rate_limited_at"`
-	RateLimitResetAt    *time.Time `json:"rate_limit_reset_at"`
-	RateLimitWindowType string     `json:"rate_limit_window_type,omitempty"`
-	RateLimitDetail     string     `json:"rate_limit_detail,omitempty"`
-	OverloadUntil       *time.Time `json:"overload_until"`
+	RateLimitedAt    *time.Time `json:"rate_limited_at"`
+	RateLimitResetAt *time.Time `json:"rate_limit_reset_at"`
+	OverloadUntil    *time.Time `json:"overload_until"`
 
 	TempUnschedulableUntil  *time.Time `json:"temp_unschedulable_until"`
 	TempUnschedulableReason string     `json:"temp_unschedulable_reason"`
@@ -452,12 +449,6 @@ type Setting struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// WindowResetStatus describes the reset status of a usage window for frontend display.
-type WindowResetStatus struct {
-	Status  string     `json:"status"`
-	ResetAt *time.Time `json:"reset_at,omitempty"`
-}
-
 type UserSubscription struct {
 	ID      int64 `json:"id"`
 	UserID  int64 `json:"user_id"`
@@ -474,10 +465,6 @@ type UserSubscription struct {
 	DailyUsageUSD   float64 `json:"daily_usage_usd"`
 	WeeklyUsageUSD  float64 `json:"weekly_usage_usd"`
 	MonthlyUsageUSD float64 `json:"monthly_usage_usd"`
-
-	DailyResetStatus   *WindowResetStatus `json:"daily_reset_status,omitempty"`
-	WeeklyResetStatus  *WindowResetStatus `json:"weekly_reset_status,omitempty"`
-	MonthlyResetStatus *WindowResetStatus `json:"monthly_reset_status,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

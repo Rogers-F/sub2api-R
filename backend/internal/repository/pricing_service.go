@@ -61,7 +61,7 @@ func (c *pricingRemoteClient) FetchPricingJSON(ctx context.Context, url string) 
 		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(req) // #nosec G704 -- URL from admin-configured pricing source
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (c *pricingRemoteClient) FetchHashText(ctx context.Context, url string) (st
 		return "", err
 	}
 
-	resp, err := c.httpClient.Do(req) // #nosec G704 -- URL from admin-configured pricing source
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}

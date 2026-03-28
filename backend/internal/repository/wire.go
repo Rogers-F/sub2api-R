@@ -22,7 +22,7 @@ func ProvideConcurrencyCache(rdb *redis.Client, cfg *config.Config) service.Conc
 	if waitTTLSeconds <= 0 {
 		waitTTLSeconds = cfg.Gateway.ConcurrencySlotTTLMinutes * 60
 	}
-	return NewConcurrencyCache(rdb, cfg.Gateway.ConcurrencySlotTTLMinutes, cfg.Gateway.UserConcurrencySlotTTLMinutes, waitTTLSeconds)
+	return NewConcurrencyCache(rdb, cfg.Gateway.ConcurrencySlotTTLMinutes, waitTTLSeconds)
 }
 
 // ProvideGitHubReleaseClient 创建 GitHub Release 客户端
@@ -54,6 +54,7 @@ var ProviderSet = wire.NewSet(
 	NewGroupRepository,
 	NewAccountRepository,
 	NewSoraAccountRepository,         // Sora 账号扩展表仓储
+	NewSoraGenerationRepository,      // Sora 生成记录仓储
 	NewScheduledTestPlanRepository,   // 定时测试计划仓储
 	NewScheduledTestResultRepository, // 定时测试结果仓储
 	NewProxyRepository,
@@ -71,7 +72,6 @@ var ProviderSet = wire.NewSet(
 	NewUserSubscriptionRepository,
 	NewUserAttributeDefinitionRepository,
 	NewUserAttributeValueRepository,
-	NewReferralRepository,
 	NewUserGroupRateRepository,
 	NewErrorPassthroughRepository,
 
@@ -97,7 +97,6 @@ var ProviderSet = wire.NewSet(
 	NewTotpCache,
 	NewRefreshTokenCache,
 	NewErrorPassthroughCache,
-	NewVersionCache,
 
 	// Encryptors
 	NewAESEncryptor,

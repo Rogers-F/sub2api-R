@@ -378,7 +378,7 @@ type epTrackingRepo struct {
 	tempCalls        int
 }
 
-func (r *epTrackingRepo) SetRateLimited(_ context.Context, id int64, _ time.Time, _ string, _ string) error {
+func (r *epTrackingRepo) SetRateLimited(_ context.Context, id int64, _ time.Time) error {
 	r.rateLimitedCalls++
 	r.rateLimitedID = id
 	return nil

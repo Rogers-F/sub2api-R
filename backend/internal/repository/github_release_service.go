@@ -85,7 +85,7 @@ func (c *githubReleaseClient) FetchLatestRelease(ctx context.Context, repo strin
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	req.Header.Set("User-Agent", "Sub2API-Updater")
 
-	resp, err := c.httpClient.Do(req) // #nosec G704 -- hardcoded api.github.com URL
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (c *githubReleaseClient) DownloadFile(ctx context.Context, url, dest string
 	}
 
 	// 使用预配置的下载客户端（已包含代理配置）
-	resp, err := c.downloadHTTPClient.Do(req) // #nosec G704 -- URL from GitHub release asset
+	resp, err := c.downloadHTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (c *githubReleaseClient) FetchChecksumFile(ctx context.Context, url string)
 		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(req) // #nosec G704 -- URL from GitHub release checksum asset
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -47,6 +47,12 @@ const (
 	FieldSoraStorageQuotaBytes = "sora_storage_quota_bytes"
 	// FieldSoraStorageUsedBytes holds the string denoting the sora_storage_used_bytes field in the database.
 	FieldSoraStorageUsedBytes = "sora_storage_used_bytes"
+	// FieldReferrerID holds the string denoting the referrer_id field in the database.
+	FieldReferrerID = "referrer_id"
+	// FieldReferralCode holds the string denoting the referral_code field in the database.
+	FieldReferralCode = "referral_code"
+	// FieldCommissionRate holds the string denoting the commission_rate field in the database.
+	FieldCommissionRate = "commission_rate"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -65,6 +71,10 @@ const (
 	EdgeAttributeValues = "attribute_values"
 	// EdgePromoCodeUsages holds the string denoting the promo_code_usages edge name in mutations.
 	EdgePromoCodeUsages = "promo_code_usages"
+	// EdgeReferralRewardsGiven holds the string denoting the referral_rewards_given edge name in mutations.
+	EdgeReferralRewardsGiven = "referral_rewards_given"
+	// EdgeReferralRewardsReceived holds the string denoting the referral_rewards_received edge name in mutations.
+	EdgeReferralRewardsReceived = "referral_rewards_received"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -130,6 +140,20 @@ const (
 	PromoCodeUsagesInverseTable = "promo_code_usages"
 	// PromoCodeUsagesColumn is the table column denoting the promo_code_usages relation/edge.
 	PromoCodeUsagesColumn = "user_id"
+	// ReferralRewardsGivenTable is the table that holds the referral_rewards_given relation/edge.
+	ReferralRewardsGivenTable = "referral_rewards"
+	// ReferralRewardsGivenInverseTable is the table name for the ReferralReward entity.
+	// It exists in this package in order to avoid circular dependency with the "referralreward" package.
+	ReferralRewardsGivenInverseTable = "referral_rewards"
+	// ReferralRewardsGivenColumn is the table column denoting the referral_rewards_given relation/edge.
+	ReferralRewardsGivenColumn = "referrer_id"
+	// ReferralRewardsReceivedTable is the table that holds the referral_rewards_received relation/edge.
+	ReferralRewardsReceivedTable = "referral_rewards"
+	// ReferralRewardsReceivedInverseTable is the table name for the ReferralReward entity.
+	// It exists in this package in order to avoid circular dependency with the "referralreward" package.
+	ReferralRewardsReceivedInverseTable = "referral_rewards"
+	// ReferralRewardsReceivedColumn is the table column denoting the referral_rewards_received relation/edge.
+	ReferralRewardsReceivedColumn = "referee_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -158,6 +182,9 @@ var Columns = []string{
 	FieldTotpEnabledAt,
 	FieldSoraStorageQuotaBytes,
 	FieldSoraStorageUsedBytes,
+	FieldReferrerID,
+	FieldReferralCode,
+	FieldCommissionRate,
 }
 
 var (
@@ -218,6 +245,8 @@ var (
 	DefaultSoraStorageQuotaBytes int64
 	// DefaultSoraStorageUsedBytes holds the default value on creation for the "sora_storage_used_bytes" field.
 	DefaultSoraStorageUsedBytes int64
+	// ReferralCodeValidator is a validator for the "referral_code" field. It is called by the builders before save.
+	ReferralCodeValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -306,6 +335,21 @@ func BySoraStorageQuotaBytes(opts ...sql.OrderTermOption) OrderOption {
 // BySoraStorageUsedBytes orders the results by the sora_storage_used_bytes field.
 func BySoraStorageUsedBytes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSoraStorageUsedBytes, opts...).ToFunc()
+}
+
+// ByReferrerID orders the results by the referrer_id field.
+func ByReferrerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferrerID, opts...).ToFunc()
+}
+
+// ByReferralCode orders the results by the referral_code field.
+func ByReferralCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferralCode, opts...).ToFunc()
+}
+
+// ByCommissionRate orders the results by the commission_rate field.
+func ByCommissionRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommissionRate, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.
@@ -434,6 +478,34 @@ func ByPromoCodeUsages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByReferralRewardsGivenCount orders the results by referral_rewards_given count.
+func ByReferralRewardsGivenCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReferralRewardsGivenStep(), opts...)
+	}
+}
+
+// ByReferralRewardsGiven orders the results by referral_rewards_given terms.
+func ByReferralRewardsGiven(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferralRewardsGivenStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByReferralRewardsReceivedCount orders the results by referral_rewards_received count.
+func ByReferralRewardsReceivedCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReferralRewardsReceivedStep(), opts...)
+	}
+}
+
+// ByReferralRewardsReceived orders the results by referral_rewards_received terms.
+func ByReferralRewardsReceived(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferralRewardsReceivedStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -508,6 +580,20 @@ func newPromoCodeUsagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PromoCodeUsagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PromoCodeUsagesTable, PromoCodeUsagesColumn),
+	)
+}
+func newReferralRewardsGivenStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReferralRewardsGivenInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsGivenTable, ReferralRewardsGivenColumn),
+	)
+}
+func newReferralRewardsReceivedStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReferralRewardsReceivedInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsReceivedTable, ReferralRewardsReceivedColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

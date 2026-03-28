@@ -646,6 +646,61 @@ var (
 			},
 		},
 	}
+	// ReferralRewardsColumns holds the columns for the "referral_rewards" table.
+	ReferralRewardsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "reward_type", Type: field.TypeString, Size: 20},
+		{Name: "source_type", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "source_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "reward_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "commission_rate", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(5,4)"}},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "referrer_id", Type: field.TypeInt64},
+		{Name: "referee_id", Type: field.TypeInt64},
+	}
+	// ReferralRewardsTable holds the schema information for the "referral_rewards" table.
+	ReferralRewardsTable = &schema.Table{
+		Name:       "referral_rewards",
+		Columns:    ReferralRewardsColumns,
+		PrimaryKey: []*schema.Column{ReferralRewardsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "referral_rewards_users_referral_rewards_given",
+				Columns:    []*schema.Column{ReferralRewardsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "referral_rewards_users_referral_rewards_received",
+				Columns:    []*schema.Column{ReferralRewardsColumns[9]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralreward_referrer_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[8]},
+			},
+			{
+				Name:    "referralreward_referee_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[9]},
+			},
+			{
+				Name:    "referralreward_reward_type",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[1]},
+			},
+			{
+				Name:    "referralreward_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralRewardsColumns[7]},
+			},
+		},
+	}
 	// SecuritySecretsColumns holds the columns for the "security_secrets" table.
 	SecuritySecretsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -868,6 +923,9 @@ var (
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sora_storage_quota_bytes", Type: field.TypeInt64, Default: 0},
 		{Name: "sora_storage_used_bytes", Type: field.TypeInt64, Default: 0},
+		{Name: "referrer_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "referral_code", Type: field.TypeString, Nullable: true, Size: 16},
+		{Name: "commission_rate", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(5,4)"}},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -1109,6 +1167,7 @@ var (
 		PromoCodeUsagesTable,
 		ProxiesTable,
 		RedeemCodesTable,
+		ReferralRewardsTable,
 		SecuritySecretsTable,
 		SettingsTable,
 		UsageCleanupTasksTable,
@@ -1168,6 +1227,11 @@ func init() {
 	RedeemCodesTable.ForeignKeys[1].RefTable = UsersTable
 	RedeemCodesTable.Annotation = &entsql.Annotation{
 		Table: "redeem_codes",
+	}
+	ReferralRewardsTable.ForeignKeys[0].RefTable = UsersTable
+	ReferralRewardsTable.ForeignKeys[1].RefTable = UsersTable
+	ReferralRewardsTable.Annotation = &entsql.Annotation{
+		Table: "referral_rewards",
 	}
 	SecuritySecretsTable.Annotation = &entsql.Annotation{
 		Table: "security_secrets",

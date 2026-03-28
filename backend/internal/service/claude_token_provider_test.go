@@ -10,21 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
 )
-
-// testRefreshWindow is the refresh window used in tests (matches default config)
-const testRefreshWindow = 2 * time.Minute
-
-// testConfig returns a minimal config for ClaudeTokenProvider tests
-func claudeTestConfig() *config.Config {
-	return &config.Config{
-		TokenRefresh: config.TokenRefreshConfig{
-			RefreshWindowMinutes: 2,
-		},
-	}
-}
 
 // claudeTokenCacheStub implements ClaudeTokenCache for testing
 type claudeTokenCacheStub struct {
@@ -164,7 +151,7 @@ func (p *testClaudeTokenProvider) GetAccessToken(ctx context.Context, account *A
 
 	// 2. Check if refresh needed
 	expiresAt := account.GetCredentialAsTime("expires_at")
-	needsRefresh := expiresAt == nil || time.Until(*expiresAt) <= testRefreshWindow
+	needsRefresh := expiresAt == nil || time.Until(*expiresAt) <= claudeTokenRefreshSkew
 	refreshFailed := false
 	if needsRefresh && p.tokenCache != nil {
 		locked, err := p.tokenCache.AcquireRefreshLock(ctx, cacheKey, 30*time.Second)
@@ -182,7 +169,7 @@ func (p *testClaudeTokenProvider) GetAccessToken(ctx context.Context, account *A
 				account = fresh
 			}
 			expiresAt = account.GetCredentialAsTime("expires_at")
-			if expiresAt == nil || time.Until(*expiresAt) <= testRefreshWindow {
+			if expiresAt == nil || time.Until(*expiresAt) <= claudeTokenRefreshSkew {
 				if p.oauthService == nil {
 					refreshFailed = true // 无法刷新，标记失败
 				} else {
@@ -255,7 +242,7 @@ func TestClaudeTokenProvider_CacheHit(t *testing.T) {
 	cacheKey := ClaudeTokenCacheKey(account)
 	cache.tokens[cacheKey] = "cached-token"
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
@@ -278,7 +265,7 @@ func TestClaudeTokenProvider_CacheMiss_FromCredentials(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
@@ -366,7 +353,7 @@ func TestClaudeTokenProvider_LockRaceCondition(t *testing.T) {
 }
 
 func TestClaudeTokenProvider_NilAccount(t *testing.T) {
-	provider := NewClaudeTokenProvider(nil, nil, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, nil, nil)
 
 	token, err := provider.GetAccessToken(context.Background(), nil)
 	require.Error(t, err)
@@ -375,7 +362,7 @@ func TestClaudeTokenProvider_NilAccount(t *testing.T) {
 }
 
 func TestClaudeTokenProvider_WrongPlatform(t *testing.T) {
-	provider := NewClaudeTokenProvider(nil, nil, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, nil, nil)
 	account := &Account{
 		ID:       104,
 		Platform: PlatformOpenAI,
@@ -389,7 +376,7 @@ func TestClaudeTokenProvider_WrongPlatform(t *testing.T) {
 }
 
 func TestClaudeTokenProvider_WrongAccountType(t *testing.T) {
-	provider := NewClaudeTokenProvider(nil, nil, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, nil, nil)
 	account := &Account{
 		ID:       105,
 		Platform: PlatformAnthropic,
@@ -403,7 +390,7 @@ func TestClaudeTokenProvider_WrongAccountType(t *testing.T) {
 }
 
 func TestClaudeTokenProvider_SetupTokenType(t *testing.T) {
-	provider := NewClaudeTokenProvider(nil, nil, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, nil, nil)
 	account := &Account{
 		ID:       106,
 		Platform: PlatformAnthropic,
@@ -429,7 +416,7 @@ func TestClaudeTokenProvider_NilCache(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, nil, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, nil, nil)
 
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
@@ -452,7 +439,7 @@ func TestClaudeTokenProvider_CacheGetError(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 
 	// Should gracefully degrade and return from credentials
 	token, err := provider.GetAccessToken(context.Background(), account)
@@ -475,7 +462,7 @@ func TestClaudeTokenProvider_CacheSetError(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 
 	// Should still work even if cache set fails
 	token, err := provider.GetAccessToken(context.Background(), account)
@@ -496,7 +483,7 @@ func TestClaudeTokenProvider_MissingAccessToken(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.Error(t, err)
@@ -599,7 +586,7 @@ func TestClaudeTokenProvider_TTLCalculation(t *testing.T) {
 				},
 			}
 
-			provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+			provider := NewClaudeTokenProvider(nil, cache, nil)
 
 			_, err := provider.GetAccessToken(context.Background(), account)
 			require.NoError(t, err)
@@ -807,7 +794,7 @@ func TestClaudeTokenProvider_Real_LockFailedWait(t *testing.T) {
 		cache.mu.Unlock()
 	}()
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
@@ -838,7 +825,7 @@ func TestClaudeTokenProvider_Real_CacheHitAfterWait(t *testing.T) {
 		cache.mu.Unlock()
 	}()
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
@@ -859,7 +846,7 @@ func TestClaudeTokenProvider_Real_NoExpiresAt(t *testing.T) {
 	}
 
 	// After lock wait, return token from credentials
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
 	require.Equal(t, "no-expiry-token", token)
@@ -881,7 +868,7 @@ func TestClaudeTokenProvider_Real_WhitespaceToken(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
 	require.Equal(t, "real-token", token)
@@ -901,7 +888,7 @@ func TestClaudeTokenProvider_Real_EmptyCredentialToken(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "access_token not found")
@@ -924,7 +911,7 @@ func TestClaudeTokenProvider_Real_LockError(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.NoError(t, err)
 	require.Equal(t, "fallback-on-lock-error", token)
@@ -944,7 +931,7 @@ func TestClaudeTokenProvider_Real_NilCredentials(t *testing.T) {
 		},
 	}
 
-	provider := NewClaudeTokenProvider(nil, cache, nil, claudeTestConfig())
+	provider := NewClaudeTokenProvider(nil, cache, nil)
 	token, err := provider.GetAccessToken(context.Background(), account)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "access_token not found")

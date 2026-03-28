@@ -90,20 +90,5 @@ func RegisterUserRoutes(
 			subscriptions.GET("/progress", h.Subscription.GetProgress)
 			subscriptions.GET("/summary", h.Subscription.GetSummary)
 		}
-
-		// 邀请系统
-		referral := user.Group("/referral")
-		{
-			referral.GET("", h.Referral.GetReferralInfo)
-			referral.GET("/rewards", h.Referral.GetReferralRewards)
-		}
-	}
-}
-
-// RegisterReferralSettingsRoutes 注册公开的邀请系统设置路由
-func RegisterReferralSettingsRoutes(v1 *gin.RouterGroup, h *handler.Handlers) {
-	referral := v1.Group("/referral")
-	{
-		referral.GET("/settings", h.Referral.GetReferralSettings)
 	}
 }

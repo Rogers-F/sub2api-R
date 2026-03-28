@@ -78,6 +78,19 @@ func (User) Fields() []ent.Field {
 			Default(0),
 		field.Int64("sora_storage_used_bytes").
 			Default(0),
+
+		// 推荐系统字段
+		field.Int64("referrer_id").
+			Optional().
+			Nillable(),
+		field.String("referral_code").
+			MaxLen(16).
+			Optional().
+			Nillable(),
+		field.Float("commission_rate").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(5,4)"}).
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -93,6 +106,8 @@ func (User) Edges() []ent.Edge {
 		edge.To("usage_logs", UsageLog.Type),
 		edge.To("attribute_values", UserAttributeValue.Type),
 		edge.To("promo_code_usages", PromoCodeUsage.Type),
+		edge.To("referral_rewards_given", ReferralReward.Type),
+		edge.To("referral_rewards_received", ReferralReward.Type),
 	}
 }
 

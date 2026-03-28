@@ -23,20 +23,19 @@ type ClaudeOAuthClient interface {
 	GetAuthorizationCode(ctx context.Context, sessionKey, orgUUID, scope, codeChallenge, state, proxyURL string) (string, error)
 	ExchangeCodeForToken(ctx context.Context, code, codeVerifier, state, proxyURL string, isSetupToken bool) (*oauth.TokenResponse, error)
 	RefreshToken(ctx context.Context, refreshToken, proxyURL string) (*oauth.TokenResponse, error)
-	SendPostOAuthRequests(ctx context.Context, accessToken, accountUUID, proxyURL string)
 }
 
 // OAuthService handles OAuth authentication flows
 type OAuthService struct {
-	sessionStore oauth.SessionStore
+	sessionStore *oauth.SessionStore
 	proxyRepo    ProxyRepository
 	oauthClient  ClaudeOAuthClient
 }
 
 // NewOAuthService creates a new OAuth service
-func NewOAuthService(proxyRepo ProxyRepository, oauthClient ClaudeOAuthClient, sessionStore oauth.SessionStore) *OAuthService {
+func NewOAuthService(proxyRepo ProxyRepository, oauthClient ClaudeOAuthClient) *OAuthService {
 	return &OAuthService{
-		sessionStore: sessionStore,
+		sessionStore: oauth.NewSessionStore(),
 		proxyRepo:    proxyRepo,
 		oauthClient:  oauthClient,
 	}
@@ -96,9 +95,7 @@ func (s *OAuthService) generateAuthURLWithScope(ctx context.Context, scope strin
 		ProxyURL:     proxyURL,
 		CreatedAt:    time.Now(),
 	}
-	if err := s.sessionStore.Set(ctx, sessionID, session); err != nil {
-		return nil, fmt.Errorf("failed to store session: %w", err)
-	}
+	s.sessionStore.Set(sessionID, session)
 
 	// Build authorization URL
 	authURL := oauth.BuildAuthorizationURL(state, codeChallenge, scope)
@@ -132,9 +129,9 @@ type TokenInfo struct {
 // ExchangeCode exchanges authorization code for tokens
 func (s *OAuthService) ExchangeCode(ctx context.Context, input *ExchangeCodeInput) (*TokenInfo, error) {
 	// Get session
-	session, err := s.sessionStore.Get(ctx, input.SessionID)
-	if err != nil {
-		return nil, fmt.Errorf("session not found or expired: %w", err)
+	session, ok := s.sessionStore.Get(input.SessionID)
+	if !ok {
+		return nil, fmt.Errorf("session not found or expired")
 	}
 
 	// Get proxy URL
@@ -155,10 +152,8 @@ func (s *OAuthService) ExchangeCode(ctx context.Context, input *ExchangeCodeInpu
 		return nil, err
 	}
 
-	// Delete session after successful exchange (error is non-fatal)
-	if delErr := s.sessionStore.Delete(ctx, input.SessionID); delErr != nil {
-		log.Printf("[OAuth] Failed to delete session %s: %v", input.SessionID, delErr)
-	}
+	// Delete session after successful exchange
+	s.sessionStore.Delete(input.SessionID)
 
 	return tokenInfo, nil
 }
@@ -268,11 +263,6 @@ func (s *OAuthService) exchangeCodeForToken(ctx context.Context, code, codeVerif
 			tokenInfo.EmailAddress = tokenResp.Account.EmailAddress
 			log.Printf("[OAuth] Got email_address")
 		}
-	}
-
-	// Send post-OAuth simulation requests asynchronously (fire-and-forget, independent of request lifecycle)
-	if tokenInfo.AccountUUID != "" {
-		go s.oauthClient.SendPostOAuthRequests(context.Background(), tokenInfo.AccessToken, tokenInfo.AccountUUID, proxyURL)
 	}
 
 	return tokenInfo, nil
