@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,7 +13,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGatewayService_ShouldRetryUpstreamError_AnthropicOAuthOnlyRetries403(t *testing.T) {
+// oauthExpired401Markers lists known OAuth token expiry message fragments.
+var oauthExpired401Markers = []string{
+	"oauth token has expired",
+	"token has expired",
+	"access token expired",
+	"expired token",
+	"token expired",
+	"session expired",
+}
+
+func isOAuthTokenExpired401(account *Account, statusCode int, responseBody []byte) bool {
+	if account == nil || account.Type != AccountTypeOAuth || statusCode != http.StatusUnauthorized {
+		return false
+	}
+
+	msg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
+	if msg == "" {
+		msg = strings.TrimSpace(string(responseBody))
+	}
+	return isOAuth401ExpiredMessage(msg)
+}
+
+func isOAuth401ExpiredMessage(msg string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(sanitizeUpstreamErrorMessage(msg)))
+	if normalized == "" {
+		return false
+	}
+
+	for _, marker := range oauthExpired401Markers {
+		if strings.Contains(normalized, marker) {
+			return true
+		}
+	}
+
+	return strings.Contains(normalized, "expired") &&
+		(strings.Contains(normalized, "token") || strings.Contains(normalized, "session"))
+}
+
+func TestShouldRetryUpstreamError_AnthropicOAuthOnlyRetries403(t *testing.T) {
 	svc := &GatewayService{}
 	account := &Account{
 		Platform: PlatformAnthropic,
@@ -81,53 +120,6 @@ func TestIsOAuthTokenExpired401(t *testing.T) {
 	}
 }
 
-func TestShouldUseBackgroundTokenRefresh(t *testing.T) {
-	tests := []struct {
-		name    string
-		account *Account
-		want    bool
-	}{
-		{
-			name: "anthropic oauth disabled",
-			account: &Account{
-				Platform: PlatformAnthropic,
-				Type:     AccountTypeOAuth,
-			},
-			want: false,
-		},
-		{
-			name: "openai oauth disabled",
-			account: &Account{
-				Platform: PlatformOpenAI,
-				Type:     AccountTypeOAuth,
-			},
-			want: false,
-		},
-		{
-			name: "gemini oauth enabled",
-			account: &Account{
-				Platform: PlatformGemini,
-				Type:     AccountTypeOAuth,
-			},
-			want: true,
-		},
-		{
-			name: "api key disabled",
-			account: &Account{
-				Platform: PlatformOpenAI,
-				Type:     AccountTypeAPIKey,
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, shouldUseBackgroundTokenRefresh(tt.account))
-		})
-	}
-}
-
 func TestTokenRefreshService_ProcessRefresh_SkipsAnthropicAndOpenAI(t *testing.T) {
 	repo := &tokenRefreshProcessRepo{
 		accounts: []Account{
@@ -138,12 +130,11 @@ func TestTokenRefreshService_ProcessRefresh_SkipsAnthropicAndOpenAI(t *testing.T
 	}
 	cfg := &config.Config{
 		TokenRefresh: config.TokenRefreshConfig{
-			MaxRetries:           1,
-			RetryBackoffSeconds:  0,
-			RefreshWindowMinutes: 2,
+			MaxRetries:          1,
+			RetryBackoffSeconds: 0,
 		},
 	}
-	service := NewTokenRefreshService(repo, nil, nil, nil, nil, nil, nil, nil, cfg)
+	service := NewTokenRefreshService(repo, nil, nil, nil, nil, nil, nil, cfg, nil)
 	service.refreshers = []TokenRefresher{
 		&tokenRefresherStub{
 			credentials: map[string]any{

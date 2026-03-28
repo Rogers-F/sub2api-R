@@ -52,7 +52,7 @@ type openAIOAuthClientStub struct {
 	refreshCalls    int
 }
 
-func (s *openAIOAuthClientStub) ExchangeCode(ctx context.Context, code, codeVerifier, redirectURI, proxyURL string) (*openaipkg.TokenResponse, error) {
+func (s *openAIOAuthClientStub) ExchangeCode(ctx context.Context, code, codeVerifier, redirectURI, proxyURL, clientID string) (*openaipkg.TokenResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -62,6 +62,10 @@ func (s *openAIOAuthClientStub) RefreshToken(ctx context.Context, refreshToken, 
 		return nil, s.refreshErr
 	}
 	return s.refreshResponse, nil
+}
+
+func (s *openAIOAuthClientStub) RefreshTokenWithClientID(ctx context.Context, refreshToken, proxyURL string, clientID string) (*openaipkg.TokenResponse, error) {
+	return s.RefreshToken(ctx, refreshToken, proxyURL)
 }
 
 type openAIForwardUpstreamStub struct {

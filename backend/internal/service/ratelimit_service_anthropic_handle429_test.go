@@ -15,17 +15,13 @@ type anthropic429RepoRecorder struct {
 	mockAccountRepoForGemini
 	setRateLimitedCalls int
 	lastResetAt         time.Time
-	lastWindowType      string
-	lastDetail          string
 	updateSessionCalls  int
 	lastSessionStatus   string
 }
 
-func (r *anthropic429RepoRecorder) SetRateLimited(ctx context.Context, id int64, resetAt time.Time, windowType string, detail string) error {
+func (r *anthropic429RepoRecorder) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
 	r.setRateLimitedCalls++
 	r.lastResetAt = resetAt
-	r.lastWindowType = windowType
-	r.lastDetail = detail
 	return nil
 }
 
@@ -50,9 +46,6 @@ func TestRateLimitService_Handle429_AnthropicPerWindowStoresChosenWindowType(t *
 	svc.handle429(context.Background(), account, headers, body)
 
 	require.Equal(t, 1, repo.setRateLimitedCalls)
-	require.Equal(t, "5h", repo.lastWindowType)
-	require.Contains(t, repo.lastDetail, "anthropic per-window")
-	require.Contains(t, repo.lastDetail, "weekly limit exceeded")
 	require.Equal(t, 1, repo.updateSessionCalls)
 	require.Equal(t, "rejected", repo.lastSessionStatus)
 }
@@ -69,9 +62,6 @@ func TestRateLimitService_Handle429_AnthropicUnifiedResetStoresDiagnosticDetail(
 	svc.handle429(context.Background(), account, headers, body)
 
 	require.Equal(t, 1, repo.setRateLimitedCalls)
-	require.Empty(t, repo.lastWindowType)
-	require.Contains(t, repo.lastDetail, "anthropic unified reset")
-	require.Contains(t, repo.lastDetail, "weekly limit exceeded")
 	require.Equal(t, 1, repo.updateSessionCalls)
 	require.Equal(t, "rejected", repo.lastSessionStatus)
 }

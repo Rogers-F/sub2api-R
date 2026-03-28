@@ -107,17 +107,17 @@ const (
 	SettingKeyLinuxDoConnectRedirectURL  = "linuxdo_connect_redirect_url"
 
 	// OEM设置
-	SettingKeySoraClientEnabled           = "sora_client_enabled"           // 是否启用 Sora 客户端（管理员手动控制）
-	SettingKeySiteName                    = "site_name"                     // 网站名称
-	SettingKeySiteLogo                    = "site_logo"                     // 网站Logo (base64)
-	SettingKeySiteSubtitle                = "site_subtitle"                 // 网站副标题
-	SettingKeyAPIBaseURL                  = "api_base_url"                  // API端点地址（用于客户端配置和导入）
+	SettingKeySoraClientEnabled = "sora_client_enabled" // 是否启用 Sora 客户端（管理员手动控制）
+	SettingKeySiteName          = "site_name"           // 网站名称
+	SettingKeySiteLogo          = "site_logo"           // 网站Logo (base64)
+	SettingKeySiteSubtitle      = "site_subtitle"       // 网站副标题
+	SettingKeyAPIBaseURL        = "api_base_url"        // API端点地址（用于客户端配置和导入）
 
 	// Referral system settings
-	SettingKeyReferralEnabled        = "referral_enabled"
-	SettingKeyReferralRegisterBonus  = "referral_register_bonus"
-	SettingKeyReferralCommissionRate = "referral_commission_rate"
-	SettingKeyReferralMaxTotalReward = "referral_max_total_reward"
+	SettingKeyReferralEnabled             = "referral_enabled"
+	SettingKeyReferralRegisterBonus       = "referral_register_bonus"
+	SettingKeyReferralCommissionRate      = "referral_commission_rate"
+	SettingKeyReferralMaxTotalReward      = "referral_max_total_reward"
 	SettingKeyContactInfo                 = "contact_info"                  // 客服联系方式
 	SettingKeyDocURL                      = "doc_url"                       // 文档链接
 	SettingKeyHomeContent                 = "home_content"                  // 首页内容（支持 Markdown/HTML，或 URL 作为 iframe src）
