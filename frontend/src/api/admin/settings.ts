@@ -40,6 +40,11 @@ export interface SystemSettings {
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
+  payg_enabled: boolean
+  payg_exchange_rate: number
+  payg_fixed_amount_options: number[]
+  shouqianba_terminal_sn: string
+  shouqianba_terminal_key_configured: boolean
   sora_client_enabled: boolean
   backend_mode_enabled: boolean
   custom_menu_items: CustomMenuItem[]
@@ -110,6 +115,11 @@ export interface UpdateSettingsRequest {
   hide_ccs_import_button?: boolean
   purchase_subscription_enabled?: boolean
   purchase_subscription_url?: string
+  payg_enabled?: boolean
+  payg_exchange_rate?: number
+  payg_fixed_amount_options?: number[]
+  shouqianba_terminal_sn?: string
+  shouqianba_terminal_key?: string
   sora_client_enabled?: boolean
   backend_mode_enabled?: boolean
   custom_menu_items?: CustomMenuItem[]

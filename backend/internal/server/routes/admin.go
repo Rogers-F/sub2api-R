@@ -49,6 +49,9 @@ func RegisterAdminRoutes(
 		// 卡密管理
 		registerRedeemCodeRoutes(admin, h)
 
+		// PAYG 钱包
+		registerPaygRoutes(admin, h)
+
 		// 优惠码管理
 		registerPromoCodeRoutes(admin, h)
 
@@ -84,6 +87,13 @@ func RegisterAdminRoutes(
 
 		// 定时测试计划
 		registerScheduledTestRoutes(admin, h)
+	}
+}
+
+func registerPaygRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	payg := admin.Group("/payg")
+	{
+		payg.GET("/wallet", h.Admin.Payg.GetWallet)
 	}
 }
 

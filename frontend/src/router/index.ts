@@ -202,6 +202,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/wallet',
+    name: 'Wallet',
+    component: () => import('@/views/user/WalletView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Wallet',
+      titleKey: 'wallet.title',
+      descriptionKey: 'wallet.description'
+    }
+  },
+  {
     path: '/sora',
     name: 'Sora',
     component: () => import('@/views/user/SoraView.vue'),
@@ -348,6 +360,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Promo Code Management',
       titleKey: 'admin.promo.title',
       descriptionKey: 'admin.promo.description'
+    }
+  },
+  {
+    path: '/admin/payg',
+    name: 'AdminPayg',
+    component: () => import('@/views/admin/PaygView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'PAYG Wallet',
+      titleKey: 'admin.payg.title',
+      descriptionKey: 'admin.payg.description'
     }
   },
   {

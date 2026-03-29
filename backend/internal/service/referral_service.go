@@ -132,11 +132,17 @@ func (s *ReferralService) ProcessRegistrationReferral(ctx context.Context, newUs
 // ProcessRedeemCommission handles the commission for a balance redeem
 // Returns the commission amount given to the referrer, or 0 if no referral
 func (s *ReferralService) ProcessRedeemCommission(ctx context.Context, userID int64, referrerID int64, redeemAmount float64, sourceID int64) (float64, error) {
+	return s.ProcessCommission(ctx, userID, referrerID, ReferralSourceTypeRedeemCode, sourceID, redeemAmount)
+}
+
+// ProcessCommission handles commission rewards for a source record.
+// Returns the commission amount given to the referrer, or 0 if no referral.
+func (s *ReferralService) ProcessCommission(ctx context.Context, userID int64, referrerID int64, sourceType string, sourceID int64, sourceAmount float64) (float64, error) {
 	if !s.IsEnabled(ctx) {
 		return 0, nil
 	}
 
-	if redeemAmount <= 0 {
+	if sourceAmount <= 0 {
 		return 0, nil
 	}
 
@@ -157,7 +163,7 @@ func (s *ReferralService) ProcessRedeemCommission(ctx context.Context, userID in
 		return 0, nil
 	}
 
-	commission := redeemAmount * rate
+	commission := sourceAmount * rate
 
 	// Check if referrer has reached max reward limit
 	if settings.MaxTotalReward > 0 {
@@ -175,7 +181,6 @@ func (s *ReferralService) ProcessRedeemCommission(ctx context.Context, userID in
 		}
 	}
 
-	sourceType := ReferralSourceTypeRedeemCode
 	// Create commission reward record
 	_, err = s.referralRepo.CreateReward(ctx, &ReferralReward{
 		ReferrerID:     referrerID,
@@ -183,7 +188,7 @@ func (s *ReferralService) ProcessRedeemCommission(ctx context.Context, userID in
 		RewardType:     ReferralRewardTypeCommission,
 		SourceType:     &sourceType,
 		SourceID:       &sourceID,
-		SourceAmount:   redeemAmount,
+		SourceAmount:   sourceAmount,
 		RewardAmount:   commission,
 		CommissionRate: &rate,
 	})

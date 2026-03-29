@@ -108,6 +108,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("promo_code_usages", PromoCodeUsage.Type),
 		edge.To("referral_rewards_given", ReferralReward.Type),
 		edge.To("referral_rewards_received", ReferralReward.Type),
+		edge.To("payg_orders", PaygOrder.Type),
 	}
 }
 

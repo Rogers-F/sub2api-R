@@ -41,6 +41,12 @@ type SystemSettings struct {
 	HideCcsImportButton         bool
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
+	PaygEnabled                 bool
+	PaygExchangeRate            float64
+	PaygFixedAmountOptions      []float64
+	ShouqianbaTerminalSN        string
+	ShouqianbaTerminalKey       string
+	ShouqianbaTerminalKeyConfigured bool
 	SoraClientEnabled           bool
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
@@ -103,6 +109,9 @@ type PublicSettings struct {
 
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
+	PaygEnabled                 bool
+	PaygExchangeRate            float64
+	PaygFixedAmountOptions      []float64
 	SoraClientEnabled           bool
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints

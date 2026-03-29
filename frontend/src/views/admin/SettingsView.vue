@@ -1472,6 +1472,107 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.payg.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.payg.description') }}
+            </p>
+          </div>
+          <div class="space-y-6 p-6">
+            <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300">
+              {{ t('admin.settings.payg.builtInHint') }}
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.settings.payg.enabled')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.payg.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.payg_enabled" />
+            </div>
+
+            <div class="grid gap-5 md:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.payg.exchangeRate') }}
+                </label>
+                <input
+                  v-model.number="form.payg_exchange_rate"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  class="input"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.payg.exchangeRateHint') }}
+                </p>
+              </div>
+
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.payg.fixedAmountOptions') }}
+                </label>
+                <input
+                  v-model="paygFixedAmountOptionsInput"
+                  type="text"
+                  class="input"
+                  :placeholder="t('admin.settings.payg.fixedAmountOptionsPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.payg.fixedAmountOptionsHint') }}
+                </p>
+              </div>
+            </div>
+
+            <div class="grid gap-5 md:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.payg.terminalSn') }}
+                </label>
+                <input
+                  v-model="form.shouqianba_terminal_sn"
+                  type="text"
+                  class="input font-mono text-sm"
+                  :placeholder="t('admin.settings.payg.terminalSnPlaceholder')"
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.payg.terminalSnHint') }}
+                </p>
+              </div>
+
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.payg.terminalKey') }}
+                </label>
+                <input
+                  v-model="form.shouqianba_terminal_key"
+                  type="password"
+                  class="input font-mono text-sm"
+                  :placeholder="
+                    form.shouqianba_terminal_key_configured
+                      ? t('admin.settings.payg.terminalKeyConfiguredPlaceholder')
+                      : t('admin.settings.payg.terminalKeyPlaceholder')
+                  "
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{
+                    form.shouqianba_terminal_key_configured
+                      ? t('admin.settings.payg.terminalKeyConfiguredHint')
+                      : t('admin.settings.payg.terminalKeyHint')
+                  }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Sora Client Toggle -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -1937,6 +2038,7 @@ const smtpPasswordManuallyEdited = ref(false)
 const testEmailAddress = ref('')
 const registrationEmailSuffixWhitelistTags = ref<string[]>([])
 const registrationEmailSuffixWhitelistDraft = ref('')
+const paygFixedAmountOptionsInput = ref('')
 
 // Admin API Key 状态
 const adminApiKeyLoading = ref(true)
@@ -2000,6 +2102,7 @@ type SettingsForm = SystemSettings & {
   smtp_password: string
   turnstile_secret_key: string
   linuxdo_connect_client_secret: string
+  shouqianba_terminal_key: string
 }
 
 const form = reactive<SettingsForm>({
@@ -2025,6 +2128,12 @@ const form = reactive<SettingsForm>({
   hide_ccs_import_button: false,
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
+  payg_enabled: false,
+  payg_exchange_rate: 1,
+  payg_fixed_amount_options: [],
+  shouqianba_terminal_sn: '',
+  shouqianba_terminal_key: '',
+  shouqianba_terminal_key_configured: false,
   sora_client_enabled: false,
   custom_menu_items: [] as Array<{id: string; label: string; icon_svg: string; url: string; visibility: 'user' | 'admin'; sort_order: number}>,
   custom_endpoints: [] as Array<{name: string; endpoint: string; description: string}>,
@@ -2148,6 +2257,35 @@ function handleRegistrationEmailSuffixWhitelistPaste(event: ClipboardEvent) {
   }
 }
 
+function formatPaygFixedAmountOptions(options: number[] | undefined): string {
+  if (!Array.isArray(options) || options.length === 0) {
+    return ''
+  }
+  return options
+    .filter((item) => Number.isFinite(item) && item > 0)
+    .map((item) => String(Number(item.toFixed(2))))
+    .join(', ')
+}
+
+function parsePaygFixedAmountOptionsInput(raw: string): number[] | null {
+  const trimmed = raw.trim()
+  if (!trimmed) {
+    return []
+  }
+
+  const tokens = trimmed.split(/[\s,，]+/).filter(Boolean)
+  const parsed: number[] = []
+  for (const token of tokens) {
+    const amount = Number(token)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return null
+    }
+    parsed.push(Number(amount.toFixed(2)))
+  }
+
+  return Array.from(new Set(parsed)).sort((a, b) => a - b)
+}
+
 // LinuxDo OAuth redirect URL suggestion
 const linuxdoRedirectUrlSuggestion = computed(() => {
   if (typeof window === 'undefined') return ''
@@ -2225,10 +2363,14 @@ async function loadSettings() {
       settings.registration_email_suffix_whitelist
     )
     registrationEmailSuffixWhitelistDraft.value = ''
+    paygFixedAmountOptionsInput.value = formatPaygFixedAmountOptions(
+      settings.payg_fixed_amount_options
+    )
     form.smtp_password = ''
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.shouqianba_terminal_key = ''
   } catch (error: any) {
     loadFailed.value = true
     appStore.showError(
@@ -2269,6 +2411,30 @@ function removeDefaultSubscription(index: number) {
 async function saveSettings() {
   saving.value = true
   try {
+    const paygFixedAmountOptions = parsePaygFixedAmountOptionsInput(
+      paygFixedAmountOptionsInput.value
+    )
+    if (paygFixedAmountOptions === null) {
+      appStore.showError(t('admin.settings.payg.fixedAmountOptionsInvalid'))
+      return
+    }
+    if (!Number.isFinite(form.payg_exchange_rate) || form.payg_exchange_rate <= 0) {
+      appStore.showError(t('admin.settings.payg.exchangeRateInvalid'))
+      return
+    }
+    if (form.payg_enabled && !form.shouqianba_terminal_sn.trim()) {
+      appStore.showError(t('admin.settings.payg.terminalSnRequired'))
+      return
+    }
+    if (
+      form.payg_enabled &&
+      !form.shouqianba_terminal_key.trim() &&
+      !form.shouqianba_terminal_key_configured
+    ) {
+      appStore.showError(t('admin.settings.payg.terminalKeyRequired'))
+      return
+    }
+
     const normalizedDefaultSubscriptions = form.default_subscriptions
       .filter((item) => item.group_id > 0 && item.validity_days > 0)
       .map((item: DefaultSubscriptionSetting) => ({
@@ -2346,6 +2512,11 @@ async function saveSettings() {
       hide_ccs_import_button: form.hide_ccs_import_button,
       purchase_subscription_enabled: form.purchase_subscription_enabled,
       purchase_subscription_url: form.purchase_subscription_url,
+      payg_enabled: form.payg_enabled,
+      payg_exchange_rate: Number(form.payg_exchange_rate.toFixed(2)),
+      payg_fixed_amount_options: paygFixedAmountOptions,
+      shouqianba_terminal_sn: form.shouqianba_terminal_sn.trim(),
+      shouqianba_terminal_key: form.shouqianba_terminal_key.trim() || undefined,
       sora_client_enabled: form.sora_client_enabled,
       custom_menu_items: form.custom_menu_items,
       custom_endpoints: form.custom_endpoints,
@@ -2381,10 +2552,14 @@ async function saveSettings() {
       updated.registration_email_suffix_whitelist
     )
     registrationEmailSuffixWhitelistDraft.value = ''
+    paygFixedAmountOptionsInput.value = formatPaygFixedAmountOptions(
+      updated.payg_fixed_amount_options
+    )
     form.smtp_password = ''
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
+    form.shouqianba_terminal_key = ''
     // Refresh cached settings so sidebar/header update immediately
     await appStore.fetchPublicSettings(true)
     await adminSettingsStore.fetch(true)

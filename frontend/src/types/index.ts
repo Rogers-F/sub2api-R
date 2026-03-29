@@ -110,6 +110,9 @@ export interface PublicSettings {
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
+  payg_enabled: boolean
+  payg_exchange_rate: number
+  payg_fixed_amount_options: number[]
   custom_menu_items: CustomMenuItem[]
   custom_endpoints: CustomEndpoint[]
   linuxdo_oauth_enabled: boolean
@@ -188,6 +191,61 @@ export interface ReferralReward {
   reward_amount: number
   source_amount?: number
   created_at: string
+}
+
+export interface PaygOrder {
+  id: number
+  user_id: number
+  client_sn: string
+  sn: string
+  amount_yuan: number
+  amount_cent: number
+  credit_amount: number
+  payway: string
+  payway_name: string
+  status: string
+  created_at: string
+  updated_at: string
+  paid_at?: string
+}
+
+export interface PaygWallet {
+  enabled: boolean
+  balance: number
+  exchange_rate: number
+  fixed_amount_options: number[]
+  total_paid_amount: number
+  total_credited_amount: number
+  total_consumption: number
+  orders: PaygOrder[]
+}
+
+export interface PaygPrecreateResult {
+  order: PaygOrder
+  qr_code: string
+}
+
+export interface PaygAdminUserSummary {
+  user_id: number
+  email: string
+  order_count: number
+  total_paid_amount: number
+  total_credited_amount: number
+}
+
+export interface PaygAdminOrder extends PaygOrder {
+  email: string
+}
+
+export interface PaygAdminWallet {
+  enabled: boolean
+  total_orders: number
+  paid_orders: number
+  pending_orders: number
+  total_paid_amount: number
+  total_credited_amount: number
+  users: PaygAdminUserSummary[]
+  orders: PaygAdminOrder[]
 }
 
 // ==================== Announcement Types ====================

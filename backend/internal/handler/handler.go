@@ -19,6 +19,7 @@ type AdminHandlers struct {
 	AntigravityOAuth *admin.AntigravityOAuthHandler
 	Proxy            *admin.ProxyHandler
 	Redeem           *admin.RedeemHandler
+	Payg             *admin.PaygHandler
 	Promo            *admin.PromoHandler
 	Setting          *admin.SettingHandler
 	Ops              *admin.OpsHandler
@@ -46,6 +47,7 @@ type Handlers struct {
 	SoraGateway   *SoraGatewayHandler
 	SoraClient    *SoraClientHandler
 	Referral      *ReferralHandler
+	Payg          *PaygHandler
 	Setting       *SettingHandler
 	Totp          *TotpHandler
 }

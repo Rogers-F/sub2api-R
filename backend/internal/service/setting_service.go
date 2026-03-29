@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -148,6 +150,9 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyHideCcsImportButton,
 		SettingKeyPurchaseSubscriptionEnabled,
 		SettingKeyPurchaseSubscriptionURL,
+		SettingKeyPaygEnabled,
+		SettingKeyPaygExchangeRate,
+		SettingKeyPaygFixedAmountOptions,
 		SettingKeySoraClientEnabled,
 		SettingKeyCustomMenuItems,
 		SettingKeyCustomEndpoints,
@@ -194,6 +199,9 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		PaygEnabled:                      settings[SettingKeyPaygEnabled] == "true",
+		PaygExchangeRate:                 parsePositiveFloatSetting(settings[SettingKeyPaygExchangeRate], 1),
+		PaygFixedAmountOptions:           parsePaygFixedAmountOptions(settings[SettingKeyPaygFixedAmountOptions]),
 		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
@@ -247,6 +255,9 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		HideCcsImportButton              bool            `json:"hide_ccs_import_button"`
 		PurchaseSubscriptionEnabled      bool            `json:"purchase_subscription_enabled"`
 		PurchaseSubscriptionURL          string          `json:"purchase_subscription_url,omitempty"`
+		PaygEnabled                      bool            `json:"payg_enabled"`
+		PaygExchangeRate                 float64         `json:"payg_exchange_rate"`
+		PaygFixedAmountOptions           []float64       `json:"payg_fixed_amount_options"`
 		SoraClientEnabled                bool            `json:"sora_client_enabled"`
 		CustomMenuItems                  json.RawMessage `json:"custom_menu_items"`
 		CustomEndpoints                  json.RawMessage `json:"custom_endpoints"`
@@ -273,6 +284,9 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		HideCcsImportButton:              settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
+		PaygEnabled:                      settings.PaygEnabled,
+		PaygExchangeRate:                 settings.PaygExchangeRate,
+		PaygFixedAmountOptions:           settings.PaygFixedAmountOptions,
 		SoraClientEnabled:                settings.SoraClientEnabled,
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                  safeRawJSONArray(settings.CustomEndpoints),
@@ -468,6 +482,17 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
+	updates[SettingKeyPaygEnabled] = strconv.FormatBool(settings.PaygEnabled)
+	updates[SettingKeyPaygExchangeRate] = strconv.FormatFloat(settings.PaygExchangeRate, 'f', 8, 64)
+	paygFixedAmountOptionsJSON, err := json.Marshal(normalizePaygFixedAmountOptions(settings.PaygFixedAmountOptions))
+	if err != nil {
+		return fmt.Errorf("marshal payg fixed amount options: %w", err)
+	}
+	updates[SettingKeyPaygFixedAmountOptions] = string(paygFixedAmountOptionsJSON)
+	updates[SettingKeyShouqianbaTerminalSN] = strings.TrimSpace(settings.ShouqianbaTerminalSN)
+	if strings.TrimSpace(settings.ShouqianbaTerminalKey) != "" {
+		updates[SettingKeyShouqianbaTerminalKey] = strings.TrimSpace(settings.ShouqianbaTerminalKey)
+	}
 	updates[SettingKeySoraClientEnabled] = strconv.FormatBool(settings.SoraClientEnabled)
 	updates[SettingKeyCustomMenuItems] = settings.CustomMenuItems
 	updates[SettingKeyCustomEndpoints] = settings.CustomEndpoints
@@ -755,6 +780,9 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeySiteLogo:                         "",
 		SettingKeyPurchaseSubscriptionEnabled:      "false",
 		SettingKeyPurchaseSubscriptionURL:          "",
+		SettingKeyPaygEnabled:                      "false",
+		SettingKeyPaygExchangeRate:                 "1.00000000",
+		SettingKeyPaygFixedAmountOptions:           "[50,80,100]",
 		SettingKeySoraClientEnabled:                "false",
 		SettingKeyCustomMenuItems:                  "[]",
 		SettingKeyCustomEndpoints:                  "[]",
@@ -821,6 +849,11 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		PaygEnabled:                      settings[SettingKeyPaygEnabled] == "true",
+		PaygExchangeRate:                 parsePositiveFloatSetting(settings[SettingKeyPaygExchangeRate], 1),
+		PaygFixedAmountOptions:           parsePaygFixedAmountOptions(settings[SettingKeyPaygFixedAmountOptions]),
+		ShouqianbaTerminalSN:             strings.TrimSpace(settings[SettingKeyShouqianbaTerminalSN]),
+		ShouqianbaTerminalKeyConfigured:  strings.TrimSpace(settings[SettingKeyShouqianbaTerminalKey]) != "",
 		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
@@ -851,6 +884,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// 敏感信息直接返回，方便测试连接时使用
 	result.SMTPPassword = settings[SettingKeySMTPPassword]
 	result.TurnstileSecretKey = settings[SettingKeyTurnstileSecretKey]
+	result.ShouqianbaTerminalKey = strings.TrimSpace(settings[SettingKeyShouqianbaTerminalKey])
 
 	// LinuxDo Connect 设置：
 	// - 兼容 config.yaml/env（避免老部署因为未迁移到数据库设置而被意外关闭）
@@ -958,6 +992,51 @@ func parseDefaultSubscriptions(raw string) []DefaultSubscriptionSetting {
 	}
 
 	return normalized
+}
+
+func parsePaygFixedAmountOptions(raw string) []float64 {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []float64{50, 80, 100}
+	}
+
+	var items []float64
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return []float64{50, 80, 100}
+	}
+
+	return normalizePaygFixedAmountOptions(items)
+}
+
+func normalizePaygFixedAmountOptions(items []float64) []float64 {
+	if len(items) == 0 {
+		return []float64{}
+	}
+
+	seen := make(map[string]struct{}, len(items))
+	normalized := make([]float64, 0, len(items))
+	for _, item := range items {
+		if item <= 0 {
+			continue
+		}
+		item = math.Round(item*100) / 100
+		key := strconv.FormatFloat(item, 'f', 2, 64)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		normalized = append(normalized, item)
+	}
+
+	sort.Float64s(normalized)
+	return normalized
+}
+
+func parsePositiveFloatSetting(raw string, defaultValue float64) float64 {
+	if v, err := strconv.ParseFloat(strings.TrimSpace(raw), 64); err == nil && v > 0 {
+		return v
+	}
+	return defaultValue
 }
 
 // getStringOrDefault 获取字符串值或默认值
@@ -2157,4 +2236,30 @@ func (s *SettingService) GetAPIBaseURL(ctx context.Context) string {
 		return ""
 	}
 	return value
+}
+
+// GetPaygSettings 获取 PAYG 钱包运行时设置。
+func (s *SettingService) GetPaygSettings(ctx context.Context) *PaygSettings {
+	settings, err := s.settingRepo.GetMultiple(ctx, []string{
+		SettingKeyPaygEnabled,
+		SettingKeyPaygExchangeRate,
+		SettingKeyPaygFixedAmountOptions,
+		SettingKeyShouqianbaTerminalSN,
+		SettingKeyShouqianbaTerminalKey,
+	})
+	if err != nil {
+		return &PaygSettings{
+			Enabled:            false,
+			ExchangeRate:       1,
+			FixedAmountOptions: []float64{50, 80, 100},
+		}
+	}
+
+	return &PaygSettings{
+		Enabled:            settings[SettingKeyPaygEnabled] == "true",
+		ExchangeRate:       parsePositiveFloatSetting(settings[SettingKeyPaygExchangeRate], 1),
+		FixedAmountOptions: parsePaygFixedAmountOptions(settings[SettingKeyPaygFixedAmountOptions]),
+		TerminalSN:         strings.TrimSpace(settings[SettingKeyShouqianbaTerminalSN]),
+		TerminalKey:        strings.TrimSpace(settings[SettingKeyShouqianbaTerminalKey]),
+	}
 }

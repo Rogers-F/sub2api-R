@@ -108,6 +108,11 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		HideCcsImportButton:                  settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
+		PaygEnabled:                          settings.PaygEnabled,
+		PaygExchangeRate:                     settings.PaygExchangeRate,
+		PaygFixedAmountOptions:               settings.PaygFixedAmountOptions,
+		ShouqianbaTerminalSN:                 settings.ShouqianbaTerminalSN,
+		ShouqianbaTerminalKeyConfigured:      settings.ShouqianbaTerminalKeyConfigured,
 		SoraClientEnabled:                    settings.SoraClientEnabled,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                      dto.ParseCustomEndpoints(settings.CustomEndpoints),
@@ -175,6 +180,11 @@ type UpdateSettingsRequest struct {
 	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled *bool                 `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     *string               `json:"purchase_subscription_url"`
+	PaygEnabled                 bool                  `json:"payg_enabled"`
+	PaygExchangeRate            float64               `json:"payg_exchange_rate"`
+	PaygFixedAmountOptions      []float64             `json:"payg_fixed_amount_options"`
+	ShouqianbaTerminalSN        string                `json:"shouqianba_terminal_sn"`
+	ShouqianbaTerminalKey       string                `json:"shouqianba_terminal_key"`
 	SoraClientEnabled           bool                  `json:"sora_client_enabled"`
 	CustomMenuItems             *[]dto.CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints             *[]dto.CustomEndpoint `json:"custom_endpoints"`
@@ -345,6 +355,25 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		if err := config.ValidateAbsoluteHTTPURL(purchaseURL); err != nil {
 			response.BadRequest(c, "Purchase Subscription URL must be an absolute http(s) URL")
 			return
+		}
+	}
+
+	if req.PaygExchangeRate <= 0 {
+		req.PaygExchangeRate = 1
+	}
+	req.ShouqianbaTerminalSN = strings.TrimSpace(req.ShouqianbaTerminalSN)
+	req.ShouqianbaTerminalKey = strings.TrimSpace(req.ShouqianbaTerminalKey)
+	if req.PaygEnabled {
+		if req.ShouqianbaTerminalSN == "" {
+			response.BadRequest(c, "Shouqianba Terminal SN is required when PAYG is enabled")
+			return
+		}
+		if req.ShouqianbaTerminalKey == "" {
+			if previousSettings.ShouqianbaTerminalKey == "" {
+				response.BadRequest(c, "Shouqianba Terminal Key is required when PAYG is enabled")
+				return
+			}
+			req.ShouqianbaTerminalKey = previousSettings.ShouqianbaTerminalKey
 		}
 	}
 
@@ -560,6 +589,11 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:              req.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      purchaseEnabled,
 		PurchaseSubscriptionURL:          purchaseURL,
+		PaygEnabled:                      req.PaygEnabled,
+		PaygExchangeRate:                 req.PaygExchangeRate,
+		PaygFixedAmountOptions:           req.PaygFixedAmountOptions,
+		ShouqianbaTerminalSN:             req.ShouqianbaTerminalSN,
+		ShouqianbaTerminalKey:            req.ShouqianbaTerminalKey,
 		SoraClientEnabled:                req.SoraClientEnabled,
 		CustomMenuItems:                  customMenuJSON,
 		CustomEndpoints:                  customEndpointsJSON,
@@ -658,6 +692,11 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:                  updatedSettings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
+		PaygEnabled:                          updatedSettings.PaygEnabled,
+		PaygExchangeRate:                     updatedSettings.PaygExchangeRate,
+		PaygFixedAmountOptions:               updatedSettings.PaygFixedAmountOptions,
+		ShouqianbaTerminalSN:                 updatedSettings.ShouqianbaTerminalSN,
+		ShouqianbaTerminalKeyConfigured:      updatedSettings.ShouqianbaTerminalKeyConfigured,
 		SoraClientEnabled:                    updatedSettings.SoraClientEnabled,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(updatedSettings.CustomMenuItems),
 		CustomEndpoints:                      dto.ParseCustomEndpoints(updatedSettings.CustomEndpoints),
@@ -718,6 +757,21 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.FrontendURL != after.FrontendURL {
 		changed = append(changed, "frontend_url")
+	}
+	if before.PaygEnabled != after.PaygEnabled {
+		changed = append(changed, "payg_enabled")
+	}
+	if before.PaygExchangeRate != after.PaygExchangeRate {
+		changed = append(changed, "payg_exchange_rate")
+	}
+	if !equalFloat64Slice(before.PaygFixedAmountOptions, after.PaygFixedAmountOptions) {
+		changed = append(changed, "payg_fixed_amount_options")
+	}
+	if before.ShouqianbaTerminalSN != after.ShouqianbaTerminalSN {
+		changed = append(changed, "shouqianba_terminal_sn")
+	}
+	if req.ShouqianbaTerminalKey != "" {
+		changed = append(changed, "shouqianba_terminal_key")
 	}
 	if before.TotpEnabled != after.TotpEnabled {
 		changed = append(changed, "totp_enabled")
@@ -889,6 +943,18 @@ func equalDefaultSubscriptions(a, b []service.DefaultSubscriptionSetting) bool {
 	}
 	for i := range a {
 		if a[i].GroupID != b[i].GroupID || a[i].ValidityDays != b[i].ValidityDays {
+			return false
+		}
+	}
+	return true
+}
+
+func equalFloat64Slice(a, b []float64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
 			return false
 		}
 	}

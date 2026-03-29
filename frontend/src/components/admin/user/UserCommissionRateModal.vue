@@ -111,7 +111,7 @@
         <button
           type="button"
           class="btn btn-primary"
-          :disabled="loading || submitting"
+          :disabled="saveDisabled"
           @click="handleSave"
         >
           {{ submitting ? t('common.saving') : t('common.save') }}
@@ -122,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
@@ -147,12 +147,31 @@ const submitting = ref(false)
 const info = ref<UserCommissionRateInfo | null>(null)
 const useGlobalRate = ref(true)
 const customRatePercent = ref('')
+const loadFailed = ref(false)
+let loadSequence = 0
+let saveSequence = 0
+
+const resetCommissionRateState = () => {
+  loading.value = false
+  submitting.value = false
+  info.value = null
+  useGlobalRate.value = true
+  customRatePercent.value = ''
+  loadFailed.value = false
+}
+
+const saveDisabled = computed(() =>
+  loading.value || submitting.value || !props.user || loadFailed.value || info.value == null
+)
 
 watch(
   [() => props.show, () => props.user?.id],
   ([show, userId]) => {
+    loadSequence += 1
+    saveSequence += 1
+    resetCommissionRateState()
     if (show && userId) {
-      void loadCommissionRate(userId)
+      void loadCommissionRate(userId, loadSequence)
     }
   }
 )
@@ -166,19 +185,29 @@ const formatPercent = (value: number | null | undefined) => {
 
 const formatPercentInput = (value: number) => (value * 100).toFixed(2).replace(/\.?0+$/, '')
 
-const loadCommissionRate = async (userId: number) => {
+const loadCommissionRate = async (userId: number, sequence: number) => {
   loading.value = true
+  loadFailed.value = false
   try {
     const response = await adminAPI.users.getCommissionRate(userId)
+    if (sequence !== loadSequence || !props.show || props.user?.id !== userId) {
+      return
+    }
     info.value = response
     useGlobalRate.value = response.user_commission_rate == null
     customRatePercent.value =
       response.user_commission_rate == null ? '' : formatPercentInput(response.user_commission_rate)
   } catch (error: any) {
+    if (sequence !== loadSequence) {
+      return
+    }
+    loadFailed.value = true
     console.error('Failed to load commission rate:', error)
     appStore.showError(error.message || t('admin.users.commissionRate.loadFailed'))
   } finally {
-    loading.value = false
+    if (sequence === loadSequence) {
+      loading.value = false
+    }
   }
 }
 
@@ -199,6 +228,10 @@ const handleSave = async () => {
   if (!props.user) {
     return
   }
+  if (loadFailed.value || info.value == null) {
+    appStore.showError(t('admin.users.commissionRate.loadFailed'))
+    return
+  }
 
   let nextRate: number | null = null
   if (!useGlobalRate.value) {
@@ -208,18 +241,29 @@ const handleSave = async () => {
     }
   }
 
+  const currentUserId = props.user.id
+  const sequence = ++saveSequence
   submitting.value = true
   try {
-    const response = await adminAPI.users.updateCommissionRate(props.user.id, nextRate)
+    const response = await adminAPI.users.updateCommissionRate(currentUserId, nextRate)
+    if (sequence !== saveSequence || !props.show || props.user?.id !== currentUserId) {
+      return
+    }
     info.value = response
+    loadFailed.value = false
     appStore.showSuccess(t('admin.users.commissionRate.saveSuccess'))
     emit('success')
     emit('close')
   } catch (error: any) {
+    if (sequence !== saveSequence) {
+      return
+    }
     console.error('Failed to update commission rate:', error)
     appStore.showError(error.message || t('admin.users.commissionRate.saveFailed'))
   } finally {
-    submitting.value = false
+    if (sequence === saveSequence) {
+      submitting.value = false
+    }
   }
 }
 </script>
