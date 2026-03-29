@@ -10,6 +10,101 @@ export default {
     login: '登录',
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
+    nav: {
+      home: '首页',
+      pricing: '价格'
+    },
+    hero: {
+      tagline: '让编程 AI 接入更简单',
+      description: '无需管理多个订阅账号，一个 API 密钥即可接入 Claude、GPT、Gemini 等主流模型，适合个人开发与团队协作。',
+      cta: '立即开始',
+      tags: {
+        codeGen: '代码生成',
+        codeUnderstand: '代码理解',
+        docGen: '文档生成'
+      }
+    },
+    principles: {
+      label: '设计原则',
+      title: '稳定、透明、面向开发者的 AI 网关',
+      description: '保留熟悉的调用方式，同时把配置、计费、追踪和多模型接入收拢到一个入口里。',
+      features: {
+        simpleConfig: {
+          title: '配置简单',
+          desc: '统一 API 入口与密钥管理，减少不同平台之间的重复配置。'
+        },
+        accurateBilling: {
+          title: '计费准确',
+          desc: '按量统计输入、输出与缓存命中成本，账单明细清晰可查。'
+        },
+        transparent: {
+          title: '调用透明',
+          desc: '请求链路、用量变化与模型消耗都可追踪，排查问题更直接。'
+        },
+        devFocused: {
+          title: '专注开发',
+          desc: '兼容开发工作流和常见工具，让你把精力放回代码本身。'
+        }
+      }
+    },
+    metrics: {
+      latency: {
+        label: '请求延迟'
+      },
+      cacheSave: {
+        label: '缓存节省'
+      },
+      rate: {
+        label: '计费费率',
+        value: '透明可控'
+      },
+      note: '指标会随上游模型、缓存命中率和网络情况变化，页面展示为参考值。'
+    },
+    whyChoose: {
+      title: '为什么选择我们',
+      description: '针对高频编码与团队协作场景，提供更稳定的模型接入和更清晰的成本控制。',
+      features: {
+        ideSupport: {
+          title: '适配常见开发工具',
+          desc: '可用于代码补全、对话式编程、脚本生成与文档整理等开发场景。'
+        },
+        stable: {
+          title: '更稳定的可用性',
+          desc: '多上游接入与统一网关设计，减少单点故障对日常开发的影响。'
+        },
+        traceable: {
+          title: '可回溯的消费记录',
+          desc: '从模型维度到请求维度查看用量变化，便于审计和成本归因。'
+        }
+      }
+    },
+    pricing: {
+      title: '模型价格参考',
+      description: '按模型分别展示输入、输出和缓存价格，方便你快速评估成本。',
+      input: '输入',
+      output: '输出',
+      cachePrice: '缓存价格',
+      cacheWrite: '缓存写入',
+      cacheRead: '缓存读取',
+      note: '价格可能随上游策略调整，请以实际结算为准。',
+      cta: '进入控制台查看完整价格',
+      tags: {
+        powerful: '高性能',
+        bestValue: '性价比优选',
+        efficient: '高效'
+      },
+      models: {
+        opus: {
+          desc: '适合复杂推理、架构设计和高难度编码任务。'
+        },
+        sonnet: {
+          desc: '兼顾速度与质量，适合大多数日常开发工作流。'
+        },
+        gpt: {
+          desc: '适用于代码生成、自动化处理和高频调用场景。'
+        }
+      }
+    },
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',

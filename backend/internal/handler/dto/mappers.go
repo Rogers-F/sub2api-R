@@ -61,6 +61,7 @@ func UserFromServiceAdmin(u *service.User) *AdminUser {
 	return &AdminUser{
 		User:                  *base,
 		Notes:                 u.Notes,
+		CommissionRate:        u.CommissionRate,
 		GroupRates:            u.GroupRates,
 		SoraStorageQuotaBytes: u.SoraStorageQuotaBytes,
 		SoraStorageUsedBytes:  u.SoraStorageUsedBytes,

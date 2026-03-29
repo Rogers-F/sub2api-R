@@ -10,6 +10,101 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    nav: {
+      home: 'Home',
+      pricing: 'Pricing'
+    },
+    hero: {
+      tagline: 'makes coding AI access simple',
+      description: 'Stop juggling multiple subscriptions. Use one API key to access Claude, GPT, Gemini, and other leading models for solo and team workflows.',
+      cta: 'Get Started',
+      tags: {
+        codeGen: 'Code Generation',
+        codeUnderstand: 'Code Understanding',
+        docGen: 'Documentation'
+      }
+    },
+    principles: {
+      label: 'Principles',
+      title: 'A stable, transparent AI gateway built for developers',
+      description: 'Keep the workflow you already know while consolidating configuration, billing, tracing, and multi-model access behind one entry point.',
+      features: {
+        simpleConfig: {
+          title: 'Simple Setup',
+          desc: 'Use one API endpoint and one key instead of repeating setup work across multiple platforms.'
+        },
+        accurateBilling: {
+          title: 'Accurate Billing',
+          desc: 'Track input, output, and cache costs with line-item clarity so usage is easy to verify.'
+        },
+        transparent: {
+          title: 'Transparent Requests',
+          desc: 'Trace request flow, usage changes, and model consumption when you need to debug or audit.'
+        },
+        devFocused: {
+          title: 'Developer Focused',
+          desc: 'Fits coding workflows and common tools so you can spend less time on plumbing and more time shipping.'
+        }
+      }
+    },
+    metrics: {
+      latency: {
+        label: 'Request Latency'
+      },
+      cacheSave: {
+        label: 'Cache Savings'
+      },
+      rate: {
+        label: 'Billing Model',
+        value: 'Transparent'
+      },
+      note: 'Displayed metrics are reference values and vary with upstream model behavior, cache hits, and network conditions.'
+    },
+    whyChoose: {
+      title: 'Why Choose Us',
+      description: 'Built for frequent coding sessions and team collaboration with more stable model access and clearer cost control.',
+      features: {
+        ideSupport: {
+          title: 'Works With Dev Tools',
+          desc: 'Fits code completion, chat-based coding, scripting, and documentation workflows across common tooling.'
+        },
+        stable: {
+          title: 'More Stable Availability',
+          desc: 'Multi-upstream routing and a unified gateway reduce the impact of single-provider failures on daily work.'
+        },
+        traceable: {
+          title: 'Traceable Usage',
+          desc: 'Inspect usage from model-level summaries down to request-level changes for audits and attribution.'
+        }
+      }
+    },
+    pricing: {
+      title: 'Model Pricing Reference',
+      description: 'Review input, output, and cache pricing by model so you can estimate usage costs quickly.',
+      input: 'Input',
+      output: 'Output',
+      cachePrice: 'Cache Pricing',
+      cacheWrite: 'Cache Write',
+      cacheRead: 'Cache Read',
+      note: 'Prices may change with upstream adjustments. Actual settlement data takes precedence.',
+      cta: 'Open Dashboard For Full Pricing',
+      tags: {
+        powerful: 'High Power',
+        bestValue: 'Best Value',
+        efficient: 'Efficient'
+      },
+      models: {
+        opus: {
+          desc: 'Best for complex reasoning, architecture work, and high-difficulty coding tasks.'
+        },
+        sonnet: {
+          desc: 'Balances speed and quality for most day-to-day development workflows.'
+        },
+        gpt: {
+          desc: 'Well suited for code generation, automation, and high-frequency request scenarios.'
+        }
+      }
+    },
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
