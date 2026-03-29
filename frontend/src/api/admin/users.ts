@@ -6,6 +6,14 @@
 import { apiClient } from '../client'
 import type { AdminUser, UpdateUserRequest, PaginatedResponse, ApiKey, UserCommissionRateInfo } from '@/types'
 
+function createIdempotencyKey(scope: string): string {
+  const randomPart =
+    typeof globalThis.crypto?.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  return `${scope}-${randomPart}`
+}
+
 /**
  * List all users with pagination
  * @param page - Page number (default: 1)
@@ -120,6 +128,10 @@ export async function updateBalance(
     balance,
     operation,
     notes: notes || ''
+  }, {
+    headers: {
+      'Idempotency-Key': createIdempotencyKey(`admin-user-balance-${id}`)
+    }
   })
   return data
 }
@@ -198,9 +210,17 @@ export async function updateCommissionRate(
   id: number,
   rate: number | null
 ): Promise<UserCommissionRateInfo> {
-  const { data } = await apiClient.put<UserCommissionRateInfo>(`/admin/users/${id}/commission-rate`, {
-    user_commission_rate: rate
-  })
+  const { data } = await apiClient.put<UserCommissionRateInfo>(
+    `/admin/users/${id}/commission-rate`,
+    {
+      user_commission_rate: rate
+    },
+    {
+      headers: {
+        'Idempotency-Key': createIdempotencyKey(`admin-user-commission-rate-${id}`)
+      }
+    }
+  )
   return data
 }
 
