@@ -240,7 +240,9 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 	groups, err := q.
 		Offset(params.Offset()).
 		Limit(params.Limit()).
-		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		// Within the same sort bucket, show newer groups first so freshly created
+		// groups remain visible on the first page without changing manual sort semantics.
+		Order(dbent.Asc(group.FieldSortOrder), dbent.Desc(group.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -270,7 +272,7 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, error) {
 	groups, err := r.client.Group.Query().
 		Where(group.StatusEQ(service.StatusActive)).
-		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		Order(dbent.Asc(group.FieldSortOrder), dbent.Desc(group.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -300,7 +302,7 @@ func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, erro
 func (r *groupRepository) ListActiveByPlatform(ctx context.Context, platform string) ([]service.Group, error) {
 	groups, err := r.client.Group.Query().
 		Where(group.StatusEQ(service.StatusActive), group.PlatformEQ(platform)).
-		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		Order(dbent.Asc(group.FieldSortOrder), dbent.Desc(group.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, err

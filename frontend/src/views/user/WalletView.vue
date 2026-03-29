@@ -323,16 +323,24 @@ import type { PaygOrder, PaygWallet } from '@/types'
 import { paygAPI } from '@/api/payg'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { useAppStore } from '@/stores'
+import { useAppStore, useAuthStore } from '@/stores'
 import { useClipboard } from '@/composables/useClipboard'
 import { formatCurrency, formatDateTime } from '@/utils/format'
 
 const PAYWAY_ALIPAY = '1'
 const PAYWAY_WECHAT = '3'
 const POLL_INTERVAL_MS = 3000
+const ACTIVE_ORDER_STORAGE_KEY = 'payg_active_order'
+
+interface PersistedActiveOrderState {
+  user_id: number | null
+  order: PaygOrder
+  payment_code: string
+}
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const { copyToClipboard } = useClipboard()
 
 const loading = ref(true)
@@ -396,6 +404,90 @@ function orderPaywayLabel(code: string): string {
   return code === PAYWAY_WECHAT ? t('wallet.wechat') : t('wallet.alipay')
 }
 
+function getCurrentUserID(): number | null {
+  if (typeof authStore.user?.id === 'number' && authStore.user.id > 0) {
+    return authStore.user.id
+  }
+  try {
+    const raw = localStorage.getItem('auth_user')
+    if (!raw) {
+      return null
+    }
+    const parsed = JSON.parse(raw) as { id?: unknown }
+    return typeof parsed.id === 'number' && parsed.id > 0 ? parsed.id : null
+  } catch {
+    return null
+  }
+}
+
+function clearPersistedActiveOrder(): void {
+  try {
+    sessionStorage.removeItem(ACTIVE_ORDER_STORAGE_KEY)
+  } catch {
+    // Ignore storage failures and keep the in-memory state usable.
+  }
+}
+
+function readPersistedActiveOrder(): PersistedActiveOrderState | null {
+  try {
+    const raw = sessionStorage.getItem(ACTIVE_ORDER_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+    const parsed = JSON.parse(raw) as Partial<PersistedActiveOrderState>
+    const order = parsed.order
+    if (
+      !order ||
+      typeof order !== 'object' ||
+      typeof order.id !== 'number' ||
+      order.id <= 0 ||
+      typeof order.status !== 'string'
+    ) {
+      clearPersistedActiveOrder()
+      return null
+    }
+    const currentUserID = getCurrentUserID()
+    if (
+      currentUserID !== null &&
+      parsed.user_id != null &&
+      parsed.user_id !== currentUserID
+    ) {
+      clearPersistedActiveOrder()
+      return null
+    }
+    const paymentCode = typeof parsed.payment_code === 'string' ? parsed.payment_code.trim() : ''
+    if (!paymentCode) {
+      clearPersistedActiveOrder()
+      return null
+    }
+    return {
+      user_id: typeof parsed.user_id === 'number' ? parsed.user_id : currentUserID,
+      order,
+      payment_code: paymentCode,
+    }
+  } catch {
+    clearPersistedActiveOrder()
+    return null
+  }
+}
+
+function persistActiveOrder(): void {
+  if (!activeOrder.value || activeOrder.value.status !== 'PENDING' || !activePaymentCode.value) {
+    clearPersistedActiveOrder()
+    return
+  }
+  try {
+    const payload: PersistedActiveOrderState = {
+      user_id: getCurrentUserID(),
+      order: activeOrder.value,
+      payment_code: activePaymentCode.value,
+    }
+    sessionStorage.setItem(ACTIVE_ORDER_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // Ignore storage failures and keep the in-memory state usable.
+  }
+}
+
 function stopPolling(): void {
   if (pollTimer !== null) {
     window.clearInterval(pollTimer)
@@ -425,6 +517,34 @@ async function generateQRCode(paymentCode: string): Promise<void> {
   })
 }
 
+async function restorePersistedActiveOrder(orders: PaygOrder[]): Promise<void> {
+  if (!wallet.value?.enabled) {
+    clearPersistedActiveOrder()
+    return
+  }
+
+  const persisted = readPersistedActiveOrder()
+  if (!persisted) {
+    return
+  }
+
+  const restoredOrder = orders.find((order) => order.id === persisted.order.id) ?? persisted.order
+  activeOrder.value = restoredOrder
+
+  if (restoredOrder.status !== 'PENDING') {
+    activePaymentCode.value = ''
+    activeQRCodeDataUrl.value = ''
+    clearPersistedActiveOrder()
+    return
+  }
+
+  activePaymentCode.value = persisted.payment_code
+  await generateQRCode(persisted.payment_code)
+  persistActiveOrder()
+  startPolling(restoredOrder.id)
+  void syncOrder(restoredOrder.id, true)
+}
+
 async function loadWallet(): Promise<void> {
   loading.value = true
   try {
@@ -432,6 +552,7 @@ async function loadWallet(): Promise<void> {
     if (!selectedAmount.value && fixedAmountOptions.value.length > 0) {
       selectedAmount.value = fixedAmountOptions.value[0]
     }
+    await restorePersistedActiveOrder(wallet.value.orders)
   } catch (error: any) {
     appStore.showError(
       t('wallet.loadFailed') + ': ' + (error.message || t('common.unknownError'))
@@ -464,6 +585,7 @@ async function createOrder(): Promise<void> {
     activeOrder.value = result.order
     activePaymentCode.value = result.qr_code
     await generateQRCode(result.qr_code)
+    persistActiveOrder()
     startPolling(result.order.id)
     await loadWallet()
   } catch (error: any) {
@@ -484,8 +606,13 @@ async function syncOrder(orderID: number, silent = false): Promise<void> {
     const order = await paygAPI.queryOrder(orderID)
     activeOrder.value = order
     if (order.status !== 'PENDING') {
+      activePaymentCode.value = ''
+      activeQRCodeDataUrl.value = ''
+      clearPersistedActiveOrder()
       stopPolling()
       await loadWallet()
+    } else {
+      persistActiveOrder()
     }
     if (previousStatus === 'PENDING' && order.status === 'PAID') {
       appStore.showSuccess(t('wallet.paymentSuccess'))

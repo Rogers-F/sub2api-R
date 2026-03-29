@@ -128,6 +128,14 @@ func (s *SettingService) GetFrontendURL(ctx context.Context) string {
 	return s.cfg.Server.FrontendURL
 }
 
+// GetPaygCallbackToken returns the configured PAYG callback token.
+func (s *SettingService) GetPaygCallbackToken() string {
+	if s == nil || s.cfg == nil {
+		return ""
+	}
+	return strings.TrimSpace(s.cfg.Server.PaygCallbackToken)
+}
+
 // GetPublicSettings 获取公开设置（无需登录）
 func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings, error) {
 	keys := []string{

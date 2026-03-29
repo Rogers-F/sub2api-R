@@ -38,6 +38,7 @@ func generateMenuItemID() (string, error) {
 // SettingHandler 系统设置处理器
 type SettingHandler struct {
 	settingService   *service.SettingService
+	paygService      *service.PaygService
 	emailService     *service.EmailService
 	turnstileService *service.TurnstileService
 	opsService       *service.OpsService
@@ -45,9 +46,10 @@ type SettingHandler struct {
 }
 
 // NewSettingHandler 创建系统设置处理器
-func NewSettingHandler(settingService *service.SettingService, emailService *service.EmailService, turnstileService *service.TurnstileService, opsService *service.OpsService, soraS3Storage *service.SoraS3Storage) *SettingHandler {
+func NewSettingHandler(settingService *service.SettingService, paygService *service.PaygService, emailService *service.EmailService, turnstileService *service.TurnstileService, opsService *service.OpsService, soraS3Storage *service.SoraS3Storage) *SettingHandler {
 	return &SettingHandler{
 		settingService:   settingService,
+		paygService:      paygService,
 		emailService:     emailService,
 		turnstileService: turnstileService,
 		opsService:       opsService,
@@ -363,6 +365,23 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	}
 	req.ShouqianbaTerminalSN = strings.TrimSpace(req.ShouqianbaTerminalSN)
 	req.ShouqianbaTerminalKey = strings.TrimSpace(req.ShouqianbaTerminalKey)
+	if h.paygService != nil {
+		paygCredentialChangeRequested :=
+			(previousSettings.PaygEnabled && !req.PaygEnabled) ||
+				req.ShouqianbaTerminalSN != previousSettings.ShouqianbaTerminalSN ||
+				(req.ShouqianbaTerminalKey != "" && req.ShouqianbaTerminalKey != previousSettings.ShouqianbaTerminalKey)
+		if paygCredentialChangeRequested {
+			hasPendingOrders, err := h.paygService.HasPendingOrders(c.Request.Context())
+			if err != nil {
+				response.ErrorFrom(c, err)
+				return
+			}
+			if hasPendingOrders {
+				response.BadRequest(c, "Cannot disable PAYG or modify Shouqianba terminal credentials while pending PAYG orders exist")
+				return
+			}
+		}
+	}
 	if req.PaygEnabled {
 		if req.ShouqianbaTerminalSN == "" {
 			response.BadRequest(c, "Shouqianba Terminal SN is required when PAYG is enabled")

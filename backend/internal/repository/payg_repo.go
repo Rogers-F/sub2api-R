@@ -129,6 +129,18 @@ func (r *paygOrderRepository) UpdateProviderState(ctx context.Context, order *se
 	return nil
 }
 
+func (r *paygOrderRepository) HasPendingOrders(ctx context.Context) (bool, error) {
+	var count int
+	if err := scanSingleRow(ctx, r.sqlQueryerFromContext(ctx), `
+		SELECT COUNT(*)
+		FROM payg_orders
+		WHERE status = 'PENDING'
+	`, nil, &count); err != nil {
+		return false, fmt.Errorf("count pending payg orders: %w", err)
+	}
+	return count > 0, nil
+}
+
 func (r *paygOrderRepository) MarkPaid(ctx context.Context, order *service.PaygOrder) error {
 	query := `
 		UPDATE payg_orders

@@ -66,8 +66,8 @@ func (h *ReferralHandler) GetReferralInfo(c *gin.Context) {
 		return
 	}
 
-	apiBaseURL := h.settingService.GetAPIBaseURL(ctx)
-	info, err := h.referralService.GetReferralInfo(ctx, subject.UserID, apiBaseURL)
+	frontendBaseURL := h.settingService.GetFrontendURL(ctx)
+	info, err := h.referralService.GetReferralInfo(ctx, subject.UserID, frontendBaseURL)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

@@ -221,6 +221,7 @@ type ServerConfig struct {
 	Port               int       `mapstructure:"port"`
 	Mode               string    `mapstructure:"mode"`                  // debug/release
 	FrontendURL        string    `mapstructure:"frontend_url"`          // 前端基础 URL，用于生成邮件中的外部链接
+	PaygCallbackToken  string    `mapstructure:"payg_callback_token"`   // PAYG 回调校验令牌（建议通过 URL query/header 传入）
 	ReadHeaderTimeout  int       `mapstructure:"read_header_timeout"`   // 读取请求头超时（秒）
 	IdleTimeout        int       `mapstructure:"idle_timeout"`          // 空闲连接超时（秒）
 	TrustedProxies     []string  `mapstructure:"trusted_proxies"`       // 可信代理列表（CIDR/IP）
@@ -1019,6 +1020,7 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 		cfg.Server.Mode = "debug"
 	}
 	cfg.Server.FrontendURL = strings.TrimSpace(cfg.Server.FrontendURL)
+	cfg.Server.PaygCallbackToken = strings.TrimSpace(cfg.Server.PaygCallbackToken)
 	cfg.JWT.Secret = strings.TrimSpace(cfg.JWT.Secret)
 	cfg.LinuxDo.ClientID = strings.TrimSpace(cfg.LinuxDo.ClientID)
 	cfg.LinuxDo.ClientSecret = strings.TrimSpace(cfg.LinuxDo.ClientSecret)

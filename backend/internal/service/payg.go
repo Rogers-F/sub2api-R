@@ -22,6 +22,8 @@ var (
 	ErrPaygOrderNotFound         = infraerrors.NotFound("PAYG_ORDER_NOT_FOUND", "payg order not found")
 	ErrPaygAmountMismatch        = infraerrors.Conflict("PAYG_AMOUNT_MISMATCH", "payg order amount mismatch")
 	ErrPaygProviderNotConfigured = infraerrors.BadRequest("PAYG_PROVIDER_NOT_CONFIGURED", "payg provider is not configured")
+	ErrPaygCallbackUnauthorized  = infraerrors.Forbidden("PAYG_CALLBACK_UNAUTHORIZED", "invalid payg callback token")
+	ErrPaygCallbackUnconfigured  = infraerrors.ServiceUnavailable("PAYG_CALLBACK_UNCONFIGURED", "payg callback token is not configured")
 )
 
 type PaygSettings struct {
@@ -114,6 +116,7 @@ type PaygOrderRepository interface {
 	GetByIDForUser(ctx context.Context, orderID, userID int64) (*PaygOrder, error)
 	GetByIdentifiers(ctx context.Context, sn, clientSN string) (*PaygOrder, error)
 	GetForUpdateByIdentifiers(ctx context.Context, sn, clientSN string) (*PaygOrder, error)
+	HasPendingOrders(ctx context.Context) (bool, error)
 	UpdateProviderState(ctx context.Context, order *PaygOrder) error
 	MarkPaid(ctx context.Context, order *PaygOrder) error
 	GetUserSummary(ctx context.Context, userID int64, orderLimit int) (*PaygUserSummary, error)

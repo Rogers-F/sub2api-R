@@ -207,7 +207,7 @@ func (s *ReferralService) ProcessCommission(ctx context.Context, userID int64, r
 }
 
 // GetReferralInfo returns the referral information for a user
-func (s *ReferralService) GetReferralInfo(ctx context.Context, userID int64, apiBaseURL string) (*ReferralInfo, error) {
+func (s *ReferralService) GetReferralInfo(ctx context.Context, userID int64, frontendBaseURL string) (*ReferralInfo, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
@@ -239,9 +239,9 @@ func (s *ReferralService) GetReferralInfo(ctx context.Context, userID int64, api
 
 	// Build referral link
 	referralLink := ""
-	if referralCode != "" && apiBaseURL != "" {
+	if referralCode != "" && frontendBaseURL != "" {
 		// Remove trailing slash to prevent double slashes in URL
-		baseURL := strings.TrimSuffix(apiBaseURL, "/")
+		baseURL := strings.TrimSuffix(frontendBaseURL, "/")
 		referralLink = fmt.Sprintf("%s/register?ref=%s", baseURL, referralCode)
 	}
 

@@ -87,6 +87,15 @@ func (h *PaygHandler) QueryOrder(c *gin.Context) {
 }
 
 func (h *PaygHandler) HandleCallback(c *gin.Context) {
+	callbackToken := strings.TrimSpace(c.GetHeader("X-Payg-Callback-Token"))
+	if callbackToken == "" {
+		callbackToken = strings.TrimSpace(c.Query("token"))
+	}
+	if err := h.paygService.ValidateCallbackToken(callbackToken); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
 	var req PaygCallbackRequest
 	if err := c.ShouldBind(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())

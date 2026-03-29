@@ -5,8 +5,10 @@ import (
 	"context"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -110,6 +112,22 @@ func (s *PaygService) GetAdminWallet(ctx context.Context) (*PaygAdminWallet, err
 	}, nil
 }
 
+func (s *PaygService) HasPendingOrders(ctx context.Context) (bool, error) {
+	return s.repo.HasPendingOrders(ctx)
+}
+
+func (s *PaygService) ValidateCallbackToken(token string) error {
+	expected := strings.TrimSpace(s.settingService.GetPaygCallbackToken())
+	if expected == "" {
+		return ErrPaygCallbackUnconfigured
+	}
+	token = strings.TrimSpace(token)
+	if token == "" || subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
+		return ErrPaygCallbackUnauthorized
+	}
+	return nil
+}
+
 func (s *PaygService) Precreate(ctx context.Context, userID int64, amountYuan float64, payway string) (*PaygPrecreateResult, error) {
 	cfg := s.settingService.GetPaygSettings(ctx)
 	if !cfg.Enabled {
@@ -166,14 +184,37 @@ func (s *PaygService) QueryOrderForUser(ctx context.Context, userID, orderID int
 	if err != nil {
 		return nil, err
 	}
-	if order.Status == PaygOrderStatusPaid {
+	if order.Status != PaygOrderStatusPending {
 		return order, nil
 	}
-	return s.syncOrderByIdentifiers(ctx, order.SN, order.ClientSN)
+	syncedOrder, err := s.syncOrderByIdentifiers(ctx, order.SN, order.ClientSN)
+	if err != nil {
+		if errors.Is(err, ErrPaygAmountMismatch) {
+			return nil, err
+		}
+		log.Printf("[PAYG] query order sync failed, returning local state: order_id=%d err=%v", order.ID, err)
+		return order, nil
+	}
+	return syncedOrder, nil
 }
 
 func (s *PaygService) HandleCallback(ctx context.Context, sn, clientSN string) (*PaygOrder, error) {
-	return s.syncOrderByIdentifiers(ctx, strings.TrimSpace(sn), strings.TrimSpace(clientSN))
+	sn = strings.TrimSpace(sn)
+	clientSN = strings.TrimSpace(clientSN)
+	if sn == "" && clientSN == "" {
+		return nil, ErrPaygOrderNotFound
+	}
+
+	order, err := s.repo.GetByIdentifiers(ctx, sn, clientSN)
+	if err == nil {
+		if order.Status != PaygOrderStatusPending {
+			return order, nil
+		}
+	} else if !errors.Is(err, ErrPaygOrderNotFound) {
+		return nil, err
+	}
+
+	return s.syncOrderByIdentifiers(ctx, sn, clientSN)
 }
 
 func (s *PaygService) syncOrderByIdentifiers(ctx context.Context, sn, clientSN string) (*PaygOrder, error) {

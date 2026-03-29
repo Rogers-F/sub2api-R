@@ -2501,7 +2501,8 @@ const handleCreateGroup = async () => {
     await adminAPI.groups.create(requestData)
     appStore.showSuccess(t('admin.groups.groupCreated'))
     closeCreateModal()
-    loadGroups()
+    pagination.page = 1
+    await loadGroups()
     // Only advance tour if active, on submit step, and creation succeeded
     if (onboardingStore.isCurrentStep('[data-tour="group-form-submit"]')) {
       onboardingStore.nextStep(500)
