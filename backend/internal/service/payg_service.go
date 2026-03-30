@@ -23,6 +23,16 @@ import (
 
 const shouqianbaAPIBase = "https://vsi-api.shouqianba.com"
 
+type shouqianbaRequestMeta struct {
+	HTTPStatus int
+	Body       string
+}
+
+type paygPythonJSONField struct {
+	key string
+	raw string
+}
+
 type PaygService struct {
 	repo                 PaygOrderRepository
 	userRepo             UserRepository
@@ -152,8 +162,9 @@ func (s *PaygService) Precreate(ctx context.Context, userID int64, amountYuan fl
 	}
 
 	amountCent := int64(math.Round(amountYuan * 100))
-	subject := fmt.Sprintf("%s PAYG充值 ¥%.2f", s.settingService.GetSiteName(ctx), amountYuan)
-	qrCode, sn, err := s.shouqianbaPrecreate(ctx, cfg, clientSN, amountCent, amountYuan, payway, subject, userID)
+	amountYuanText := formatPaygAmountString(amountYuan)
+	subject := buildPaygSubject(s.settingService.GetSiteName(ctx), amountYuanText)
+	qrCode, sn, err := s.shouqianbaPrecreate(ctx, cfg, clientSN, amountCent, amountYuanText, payway, subject, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -347,24 +358,24 @@ func (s *PaygService) shouqianbaPrecreate(
 	cfg *PaygSettings,
 	clientSN string,
 	amountCent int64,
-	amountYuan float64,
+	amountYuanText string,
 	payway string,
 	subject string,
 	userID int64,
 ) (qrCode string, sn string, err error) {
-	reflectPayload, _ := json.Marshal(map[string]any{
-		"user_id":     userID,
-		"amount_yuan": roundCurrency(amountYuan),
-	})
-	body := map[string]any{
-		"terminal_sn":  cfg.TerminalSN,
-		"client_sn":    clientSN,
-		"total_amount": strconv.FormatInt(amountCent, 10),
-		"payway":       payway,
-		"subject":      subject,
-		"operator":     "system",
-		"reflect":      string(reflectPayload),
-	}
+	reflectPayload := marshalPythonStyleJSONObject(
+		paygPythonRawField("user_id", strconv.FormatInt(userID, 10)),
+		paygPythonStringField("amount_yuan", amountYuanText),
+	)
+	payload := marshalPythonStyleJSONObject(
+		paygPythonStringField("terminal_sn", cfg.TerminalSN),
+		paygPythonStringField("client_sn", clientSN),
+		paygPythonStringField("total_amount", strconv.FormatInt(amountCent, 10)),
+		paygPythonStringField("payway", payway),
+		paygPythonStringField("subject", subject),
+		paygPythonStringField("operator", "system"),
+		paygPythonStringField("reflect", reflectPayload),
+	)
 
 	var resp struct {
 		ResultCode  string `json:"result_code"`
@@ -378,24 +389,27 @@ func (s *PaygService) shouqianbaPrecreate(
 			} `json:"data"`
 		} `json:"biz_response"`
 	}
-	if err := s.shouqianbaRequest(ctx, cfg, "/upay/v2/precreate", body, &resp); err != nil {
+	meta, err := s.shouqianbaRequest(ctx, cfg, "/upay/v2/precreate", payload, &resp)
+	if err != nil {
 		return "", "", err
 	}
 	if resp.ResultCode != "200" || resp.BizResponse.ResultCode != "PRECREATE_SUCCESS" {
-		return "", "", fmt.Errorf("payg precreate failed: result_code=%s biz_result=%s err=%s %s", resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
+		logPaygProviderFailure("precreate", payload, meta, resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
+		return "", "", newPaygProviderRejectedError(meta, resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
 	}
 	return strings.TrimSpace(resp.BizResponse.Data.QRCode), strings.TrimSpace(resp.BizResponse.Data.SN), nil
 }
 
 func (s *PaygService) shouqianbaQuery(ctx context.Context, cfg *PaygSettings, sn, clientSN string) (*PaygProviderOrderStatus, error) {
-	body := map[string]any{
-		"terminal_sn": cfg.TerminalSN,
+	fields := []paygPythonJSONField{
+		paygPythonStringField("terminal_sn", cfg.TerminalSN),
 	}
 	if strings.TrimSpace(sn) != "" {
-		body["sn"] = strings.TrimSpace(sn)
+		fields = append(fields, paygPythonStringField("sn", strings.TrimSpace(sn)))
 	} else if strings.TrimSpace(clientSN) != "" {
-		body["client_sn"] = strings.TrimSpace(clientSN)
+		fields = append(fields, paygPythonStringField("client_sn", strings.TrimSpace(clientSN)))
 	}
+	payload := marshalPythonStyleJSONObject(fields...)
 
 	var resp struct {
 		ResultCode  string `json:"result_code"`
@@ -413,20 +427,17 @@ func (s *PaygService) shouqianbaQuery(ctx context.Context, cfg *PaygSettings, sn
 			} `json:"data"`
 		} `json:"biz_response"`
 	}
-	if err := s.shouqianbaRequest(ctx, cfg, "/upay/v2/query", body, &resp); err != nil {
+	meta, err := s.shouqianbaRequest(ctx, cfg, "/upay/v2/query", payload, &resp)
+	if err != nil {
 		return nil, err
 	}
 	if resp.ResultCode != "200" {
-		return nil, fmt.Errorf("payg query failed: result_code=%s err=%s", resp.ResultCode, resp.Error)
+		logPaygProviderFailure("query", payload, meta, resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
+		return nil, newPaygProviderRejectedError(meta, resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
 	}
 	if isPaygQueryBizFailure(resp.BizResponse.ResultCode) {
-		return nil, fmt.Errorf(
-			"payg query failed: result_code=%s biz_result=%s err=%s %s",
-			resp.ResultCode,
-			resp.BizResponse.ResultCode,
-			resp.Error,
-			resp.BizResponse.Error,
-		)
+		logPaygProviderFailure("query", payload, meta, resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
+		return nil, newPaygProviderRejectedError(meta, resp.ResultCode, resp.BizResponse.ResultCode, resp.Error, resp.BizResponse.Error)
 	}
 
 	totalAmountCent, _ := strconv.ParseInt(strings.TrimSpace(resp.BizResponse.Data.TotalAmount), 10, 64)
@@ -448,34 +459,32 @@ func isPaygQueryBizFailure(resultCode string) bool {
 	return strings.Contains(code, "FAIL") || strings.Contains(code, "ERROR")
 }
 
-func (s *PaygService) shouqianbaRequest(ctx context.Context, cfg *PaygSettings, path string, body any, out any) error {
-	payload, err := json.Marshal(body)
+func (s *PaygService) shouqianbaRequest(ctx context.Context, cfg *PaygSettings, path string, payload string, out any) (*shouqianbaRequestMeta, error) {
+	meta := &shouqianbaRequestMeta{}
+	sum := md5.Sum([]byte(payload + cfg.TerminalKey))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, shouqianbaAPIBase+path, bytes.NewReader([]byte(payload)))
 	if err != nil {
-		return fmt.Errorf("marshal shouqianba request: %w", err)
-	}
-
-	sum := md5.Sum(append(payload, []byte(cfg.TerminalKey)...))
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, shouqianbaAPIBase+path, bytes.NewReader(payload))
-	if err != nil {
-		return fmt.Errorf("create shouqianba request: %w", err)
+		return nil, fmt.Errorf("create shouqianba request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", cfg.TerminalSN+" "+hex.EncodeToString(sum[:]))
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("send shouqianba request: %w", err)
+		return nil, fmt.Errorf("send shouqianba request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
+	meta.HTTPStatus = resp.StatusCode
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("read shouqianba response: %w", err)
+		return meta, fmt.Errorf("read shouqianba response: %w", err)
 	}
+	meta.Body = strings.TrimSpace(string(respBody))
 	if err := json.Unmarshal(respBody, out); err != nil {
-		return fmt.Errorf("decode shouqianba response: %w", err)
+		return meta, fmt.Errorf("decode shouqianba response: status=%d body=%q: %w", meta.HTTPStatus, truncateForLog(meta.Body, 512), err)
 	}
-	return nil
+	return meta, nil
 }
 
 func generatePaygClientSN() (string, error) {
@@ -483,7 +492,7 @@ func generatePaygClientSN() (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("PG%d%s", time.Now().UnixMilli(), hex.EncodeToString(b)), nil
+	return fmt.Sprintf("XS%d%s", time.Now().UnixMilli(), hex.EncodeToString(b)[:6]), nil
 }
 
 func paywayNameFromCode(payway string) string {
@@ -517,4 +526,110 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func buildPaygSubject(siteName, amountYuanText string) string {
+	name := strings.TrimSpace(siteName)
+	if name == "" {
+		name = "Sub2API"
+	}
+	return name + "充值 ¥" + amountYuanText
+}
+
+func formatPaygAmountString(amountYuan float64) string {
+	return strconv.FormatFloat(roundCurrency(amountYuan), 'f', -1, 64)
+}
+
+func paygPythonStringField(key, value string) paygPythonJSONField {
+	return paygPythonJSONField{
+		key: key,
+		raw: strconv.QuoteToASCII(value),
+	}
+}
+
+func paygPythonRawField(key, raw string) paygPythonJSONField {
+	return paygPythonJSONField{
+		key: key,
+		raw: raw,
+	}
+}
+
+func marshalPythonStyleJSONObject(fields ...paygPythonJSONField) string {
+	var builder strings.Builder
+	builder.Grow(len(fields) * 24)
+	builder.WriteByte('{')
+	for i, field := range fields {
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(strconv.Quote(field.key))
+		builder.WriteString(": ")
+		builder.WriteString(field.raw)
+	}
+	builder.WriteByte('}')
+	return builder.String()
+}
+
+func logPaygProviderFailure(action, payload string, meta *shouqianbaRequestMeta, resultCode, bizResult, providerErr, providerBizErr string) {
+	httpStatus := 0
+	responseBody := ""
+	if meta != nil {
+		httpStatus = meta.HTTPStatus
+		responseBody = meta.Body
+	}
+	log.Printf(
+		"[PAYG] shouqianba %s rejected: http_status=%d result_code=%s biz_result=%s err=%q biz_err=%q request=%s response=%s",
+		action,
+		httpStatus,
+		strings.TrimSpace(resultCode),
+		strings.TrimSpace(bizResult),
+		strings.TrimSpace(providerErr),
+		strings.TrimSpace(providerBizErr),
+		truncateForLog(payload, 512),
+		truncateForLog(responseBody, 1024),
+	)
+}
+
+func newPaygProviderRejectedError(meta *shouqianbaRequestMeta, resultCode, bizResult, providerErr, providerBizErr string) error {
+	metadata := map[string]string{}
+	if meta != nil && meta.HTTPStatus > 0 {
+		metadata["provider_http_status"] = strconv.Itoa(meta.HTTPStatus)
+	}
+	if trimmed := strings.TrimSpace(resultCode); trimmed != "" {
+		metadata["provider_result_code"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(bizResult); trimmed != "" {
+		metadata["provider_biz_result_code"] = trimmed
+	}
+	combinedError := strings.TrimSpace(strings.Join(filterNonEmptyStrings(providerErr, providerBizErr), " | "))
+	if combinedError != "" {
+		metadata["provider_error"] = truncateForLog(combinedError, 200)
+	}
+	if len(metadata) == 0 {
+		return ErrPaygProviderRejected
+	}
+	return ErrPaygProviderRejected.WithMetadata(metadata)
+}
+
+func filterNonEmptyStrings(values ...string) []string {
+	filtered := make([]string, 0, len(values))
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			filtered = append(filtered, trimmed)
+		}
+	}
+	return filtered
+}
+
+func truncateForLog(value string, limit int) string {
+	if limit <= 0 {
+		return ""
+	}
+	if len(value) <= limit {
+		return value
+	}
+	if limit <= 3 {
+		return value[:limit]
+	}
+	return value[:limit-3] + "..."
 }

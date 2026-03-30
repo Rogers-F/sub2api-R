@@ -22,6 +22,7 @@ var (
 	ErrPaygOrderNotFound         = infraerrors.NotFound("PAYG_ORDER_NOT_FOUND", "payg order not found")
 	ErrPaygAmountMismatch        = infraerrors.Conflict("PAYG_AMOUNT_MISMATCH", "payg order amount mismatch")
 	ErrPaygProviderNotConfigured = infraerrors.BadRequest("PAYG_PROVIDER_NOT_CONFIGURED", "payg provider is not configured")
+	ErrPaygProviderRejected      = infraerrors.ServiceUnavailable("PAYG_PROVIDER_REJECTED", "payg provider rejected request")
 	ErrPaygCallbackUnauthorized  = infraerrors.Forbidden("PAYG_CALLBACK_UNAUTHORIZED", "invalid payg callback token")
 	ErrPaygCallbackUnconfigured  = infraerrors.ServiceUnavailable("PAYG_CALLBACK_UNCONFIGURED", "payg callback token is not configured")
 )
