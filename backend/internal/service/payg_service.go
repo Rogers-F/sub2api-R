@@ -482,7 +482,7 @@ func (s *PaygService) shouqianbaRequest(ctx context.Context, cfg *PaygSettings, 
 	}
 	meta.Body = strings.TrimSpace(string(respBody))
 	if err := json.Unmarshal(respBody, out); err != nil {
-		return meta, fmt.Errorf("decode shouqianba response: status=%d body=%q: %w", meta.HTTPStatus, truncateForLog(meta.Body, 512), err)
+		return meta, fmt.Errorf("decode shouqianba response: status=%d body=%q: %w", meta.HTTPStatus, truncateForLog([]byte(meta.Body), 512), err)
 	}
 	return meta, nil
 }
@@ -585,8 +585,8 @@ func logPaygProviderFailure(action, payload string, meta *shouqianbaRequestMeta,
 		strings.TrimSpace(bizResult),
 		strings.TrimSpace(providerErr),
 		strings.TrimSpace(providerBizErr),
-		truncateForLog(payload, 512),
-		truncateForLog(responseBody, 1024),
+		truncateForLog([]byte(payload), 512),
+		truncateForLog([]byte(responseBody), 1024),
 	)
 }
 
@@ -603,7 +603,7 @@ func newPaygProviderRejectedError(meta *shouqianbaRequestMeta, resultCode, bizRe
 	}
 	combinedError := strings.TrimSpace(strings.Join(filterNonEmptyStrings(providerErr, providerBizErr), " | "))
 	if combinedError != "" {
-		metadata["provider_error"] = truncateForLog(combinedError, 200)
+		metadata["provider_error"] = truncateForLog([]byte(combinedError), 200)
 	}
 	if len(metadata) == 0 {
 		return ErrPaygProviderRejected
@@ -619,17 +619,4 @@ func filterNonEmptyStrings(values ...string) []string {
 		}
 	}
 	return filtered
-}
-
-func truncateForLog(value string, limit int) string {
-	if limit <= 0 {
-		return ""
-	}
-	if len(value) <= limit {
-		return value
-	}
-	if limit <= 3 {
-		return value[:limit]
-	}
-	return value[:limit-3] + "..."
 }
