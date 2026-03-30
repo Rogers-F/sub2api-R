@@ -31,25 +31,25 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool
 	LinuxDoConnectRedirectURL            string
 
-	SiteName                    string
-	SiteLogo                    string
-	SiteSubtitle                string
-	APIBaseURL                  string
-	ContactInfo                 string
-	DocURL                      string
-	HomeContent                 string
-	HideCcsImportButton         bool
-	PurchaseSubscriptionEnabled bool
-	PurchaseSubscriptionURL     string
-	PaygEnabled                 bool
-	PaygExchangeRate            float64
-	PaygFixedAmountOptions      []float64
-	ShouqianbaTerminalSN        string
-	ShouqianbaTerminalKey       string
+	SiteName                        string
+	SiteLogo                        string
+	SiteSubtitle                    string
+	APIBaseURL                      string
+	ContactInfo                     string
+	DocURL                          string
+	HomeContent                     string
+	HideCcsImportButton             bool
+	PurchaseSubscriptionEnabled     bool
+	PurchaseSubscriptionURL         string
+	PaygEnabled                     bool
+	PaygExchangeRate                float64
+	PaygFixedAmountOptions          []float64
+	ShouqianbaTerminalSN            string
+	ShouqianbaTerminalKey           string
 	ShouqianbaTerminalKeyConfigured bool
-	SoraClientEnabled           bool
-	CustomMenuItems             string // JSON array of custom menu items
-	CustomEndpoints             string // JSON array of custom endpoints
+	SoraClientEnabled               bool
+	CustomMenuItems                 string // JSON array of custom menu items
+	CustomEndpoints                 string // JSON array of custom endpoints
 
 	DefaultConcurrency   int
 	DefaultBalance       float64

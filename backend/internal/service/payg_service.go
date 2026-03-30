@@ -557,16 +557,16 @@ func paygPythonRawField(key, raw string) paygPythonJSONField {
 func marshalPythonStyleJSONObject(fields ...paygPythonJSONField) string {
 	var builder strings.Builder
 	builder.Grow(len(fields) * 24)
-	builder.WriteByte('{')
+	mustWriteBuilderByte(&builder, '{')
 	for i, field := range fields {
 		if i > 0 {
-			builder.WriteString(", ")
+			mustWriteBuilderString(&builder, ", ")
 		}
-		builder.WriteString(strconv.Quote(field.key))
-		builder.WriteString(": ")
-		builder.WriteString(field.raw)
+		mustWriteBuilderString(&builder, strconv.Quote(field.key))
+		mustWriteBuilderString(&builder, ": ")
+		mustWriteBuilderString(&builder, field.raw)
 	}
-	builder.WriteByte('}')
+	mustWriteBuilderByte(&builder, '}')
 	return builder.String()
 }
 
@@ -619,4 +619,16 @@ func filterNonEmptyStrings(values ...string) []string {
 		}
 	}
 	return filtered
+}
+
+func mustWriteBuilderString(builder *strings.Builder, value string) {
+	if _, err := builder.WriteString(value); err != nil {
+		panic(err)
+	}
+}
+
+func mustWriteBuilderByte(builder *strings.Builder, value byte) {
+	if err := builder.WriteByte(value); err != nil {
+		panic(err)
+	}
 }
