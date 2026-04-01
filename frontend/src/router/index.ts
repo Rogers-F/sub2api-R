@@ -214,6 +214,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/support',
+    name: 'Support',
+    component: () => import('@/views/user/SupportView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Contact Support',
+      titleKey: 'support.title',
+      descriptionKey: 'support.description'
+    }
+  },
+  {
     path: '/sora',
     name: 'Sora',
     component: () => import('@/views/user/SoraView.vue'),

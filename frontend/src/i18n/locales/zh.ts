@@ -616,8 +616,21 @@ export default {
     generateNewKey: '生成新的 API 密钥',
     viewUsage: '查看使用记录',
     checkDetailedLogs: '查看详细的使用日志',
+    contactUs: '联系客服',
     redeemCode: '兑换码',
     addBalanceWithCode: '使用兑换码充值'
+  },
+
+  support: {
+    title: '联系客服',
+    description: '查看站点联系方式，支持逐条复制或一键整体复制。',
+    quickCopyTitle: '联系方式汇总',
+    quickCopyDescription: '适合直接发给客户，或快速复制去联系管理员。',
+    contactBlockTitle: '当前联系方式',
+    copyAll: '复制全部联系方式',
+    copyAllSuccess: '已复制全部联系方式',
+    notConfiguredTitle: '暂未配置联系方式',
+    notConfiguredDescription: '请先在系统设置中填写联系方式，前台才会展示。'
   },
 
   // Groups (shared)
@@ -1127,9 +1140,11 @@ export default {
       totalPaidAmount: '累计支付金额',
       totalCreditedAmount: '累计入账余额',
       userRanking: '用户充值排行',
+      rankingSummary: '共 {count} 位用户，按累计充值金额排序',
       noUsers: '暂无充值用户',
       orderCount: '订单数',
       recentOrders: '最近订单',
+      ordersSummary: '共 {count} 笔订单，按创建时间倒序展示',
       noOrders: '暂无订单记录',
       orderNo: '订单号',
       paymentMethod: '支付方式',

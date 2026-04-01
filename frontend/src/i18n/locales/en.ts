@@ -616,8 +616,21 @@ export default {
     generateNewKey: 'Generate a new API key',
     viewUsage: 'View Usage',
     checkDetailedLogs: 'Check detailed usage logs',
+    contactUs: 'Contact Support',
     redeemCode: 'Redeem Code',
     addBalanceWithCode: 'Add balance with a code'
+  },
+
+  support: {
+    title: 'Contact Support',
+    description: 'View the site contact details and copy them line by line or all at once.',
+    quickCopyTitle: 'Contact Summary',
+    quickCopyDescription: 'Useful for sharing with customers or quickly reaching the administrator.',
+    contactBlockTitle: 'Current Contact Details',
+    copyAll: 'Copy All Contact Details',
+    copyAllSuccess: 'All contact details copied',
+    notConfiguredTitle: 'Contact details not configured',
+    notConfiguredDescription: 'Fill in the contact details in system settings before showing this page.'
   },
 
   // Groups (shared)
@@ -1105,9 +1118,11 @@ export default {
       totalPaidAmount: 'Total Paid Amount',
       totalCreditedAmount: 'Total Credited Amount',
       userRanking: 'Top Recharge Users',
+      rankingSummary: '{count} users ranked by total recharge amount',
       noUsers: 'No recharge users yet',
       orderCount: 'Orders',
       recentOrders: 'Recent Orders',
+      ordersSummary: '{count} orders sorted by creation time',
       noOrders: 'No orders yet',
       orderNo: 'Order No.',
       paymentMethod: 'Payment Method',
