@@ -302,7 +302,7 @@
                       </span>
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
-                      {{ formatDateTime(order.created_at) }}
+                      {{ formatPaygDateTime(order.created_at) }}
                     </td>
                   </tr>
                 </tbody>
@@ -325,12 +325,13 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useAppStore, useAuthStore } from '@/stores'
 import { useClipboard } from '@/composables/useClipboard'
-import { formatCurrency, formatDateTime } from '@/utils/format'
+import { formatCurrency, formatDateTimeInTimezone } from '@/utils/format'
 
 const PAYWAY_ALIPAY = '1'
 const PAYWAY_WECHAT = '3'
 const POLL_INTERVAL_MS = 3000
 const ACTIVE_ORDER_STORAGE_KEY = 'payg_active_order'
+const PAYG_DISPLAY_TIMEZONE = 'Asia/Shanghai'
 
 interface PersistedActiveOrderState {
   user_id: number | null
@@ -352,6 +353,10 @@ const customAmount = ref('')
 const payway = ref<string>(PAYWAY_ALIPAY)
 const activeOrder = ref<PaygOrder | null>(null)
 const activePaymentCode = ref('')
+
+function formatPaygDateTime(date: string | Date | null | undefined): string {
+  return formatDateTimeInTimezone(date, PAYG_DISPLAY_TIMEZONE)
+}
 const activeQRCodeDataUrl = ref('')
 
 let pollTimer: number | null = null

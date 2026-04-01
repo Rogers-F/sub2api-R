@@ -5,6 +5,16 @@
 
 import { i18n, getLocale } from '@/i18n'
 
+const DEFAULT_DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false
+}
+
 /**
  * 格式化相对时间
  * @param date 日期字符串或 Date 对象
@@ -101,15 +111,7 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
  */
 export function formatDate(
   date: string | Date | null | undefined,
-  options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  },
+  options: Intl.DateTimeFormatOptions = DEFAULT_DATE_TIME_OPTIONS,
   localeOverride?: string
 ): string {
   if (!date) return ''
@@ -147,6 +149,35 @@ export function formatDateTime(
   localeOverride?: string
 ): string {
   return formatDate(date, options, localeOverride)
+}
+
+/**
+ * 按指定时区格式化日期时间
+ * @param date 日期字符串或 Date 对象
+ * @param timeZone IANA 时区名称，例如 Asia/Shanghai
+ * @param options Intl.DateTimeFormatOptions
+ * @param localeOverride 可选 locale 覆盖
+ * @returns 指定时区下的日期时间字符串
+ */
+export function formatDateTimeInTimezone(
+  date: string | Date | null | undefined,
+  timeZone: string,
+  options?: Intl.DateTimeFormatOptions,
+  localeOverride?: string
+): string {
+  if (!date) return ''
+
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return ''
+
+  const locale = localeOverride ?? getLocale()
+  const formatterOptions = { ...(options ?? DEFAULT_DATE_TIME_OPTIONS), timeZone }
+
+  try {
+    return new Intl.DateTimeFormat(locale, formatterOptions).format(d)
+  } catch {
+    return formatDate(d, options, localeOverride)
+  }
 }
 
 /**

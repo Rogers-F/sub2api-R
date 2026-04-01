@@ -185,7 +185,7 @@
                             {{ orderStatusLabel(order.status) }}
                           </span>
                         </td>
-                        <td class="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">{{ formatDateTime(order.created_at) }}</td>
+                        <td class="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">{{ formatPaygDateTime(order.created_at) }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -218,7 +218,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import { useAppStore } from '@/stores'
-import { formatCurrency, formatDateTime } from '@/utils/format'
+import { formatCurrency, formatDateTimeInTimezone } from '@/utils/format'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -226,6 +226,7 @@ const appStore = useAppStore()
 const loading = ref(true)
 const wallet = ref<PaygAdminWallet | null>(null)
 const pageSizeOptions = [10, 20, 50]
+const PAYG_DISPLAY_TIMEZONE = 'Asia/Shanghai'
 
 const rankingPage = ref(1)
 const rankingPageSize = ref(normalizePageSize(getPersistedPageSize(10)))
@@ -284,6 +285,10 @@ function formatUsd(value: number): string {
 
 function formatCny(value: number): string {
   return formatCurrency(value, 'CNY')
+}
+
+function formatPaygDateTime(date: string | Date | null | undefined): string {
+  return formatDateTimeInTimezone(date, PAYG_DISPLAY_TIMEZONE)
 }
 
 function orderStatusLabel(status: string): string {
