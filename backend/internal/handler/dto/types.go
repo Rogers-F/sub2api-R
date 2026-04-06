@@ -92,8 +92,9 @@ type Group struct {
 	SoraVideoPricePerRequestHD *float64 `json:"sora_video_price_per_request_hd"`
 
 	// Claude Code 客户端限制
-	ClaudeCodeOnly  bool   `json:"claude_code_only"`
-	FallbackGroupID *int64 `json:"fallback_group_id"`
+	ClaudeCodeOnly             bool   `json:"claude_code_only"`
+	ClaudePromptCachingEnabled bool   `json:"claude_prompt_caching_enabled"`
+	FallbackGroupID            *int64 `json:"fallback_group_id"`
 	// 无效请求兜底分组
 	FallbackGroupIDOnInvalidRequest *int64 `json:"fallback_group_id_on_invalid_request"`
 

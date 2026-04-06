@@ -152,6 +152,7 @@ type CreateGroupInput struct {
 	SoraVideoPricePerRequest   *float64
 	SoraVideoPricePerRequestHD *float64
 	ClaudeCodeOnly             bool   // 仅允许 Claude Code 客户端
+	ClaudePromptCachingEnabled *bool  // 是否启用 Claude prompt cache
 	FallbackGroupID            *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
@@ -191,6 +192,7 @@ type UpdateGroupInput struct {
 	SoraVideoPricePerRequest   *float64
 	SoraVideoPricePerRequestHD *float64
 	ClaudeCodeOnly             *bool  // 仅允许 Claude Code 客户端
+	ClaudePromptCachingEnabled *bool  // 是否启用 Claude prompt cache
 	FallbackGroupID            *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
@@ -930,6 +932,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if input.MCPXMLInject != nil {
 		mcpXMLInject = *input.MCPXMLInject
 	}
+	claudePromptCachingEnabled := true
+	if input.ClaudePromptCachingEnabled != nil {
+		claudePromptCachingEnabled = *input.ClaudePromptCachingEnabled
+	}
 
 	// 如果指定了复制账号的源分组，先获取账号 ID 列表
 	var accountIDsToCopy []int64
@@ -982,6 +988,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		SoraVideoPricePerRequest:        soraVideoPrice,
 		SoraVideoPricePerRequestHD:      soraVideoPriceHD,
 		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:      claudePromptCachingEnabled,
 		FallbackGroupID:                 input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
 		ModelRouting:                    input.ModelRouting,
@@ -1154,6 +1161,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	// Claude Code 客户端限制
 	if input.ClaudeCodeOnly != nil {
 		group.ClaudeCodeOnly = *input.ClaudeCodeOnly
+	}
+	if input.ClaudePromptCachingEnabled != nil {
+		group.ClaudePromptCachingEnabled = *input.ClaudePromptCachingEnabled
 	}
 	if input.FallbackGroupID != nil {
 		// 校验降级分组

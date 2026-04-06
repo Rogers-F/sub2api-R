@@ -70,3 +70,13 @@ func TestEnforceCacheControlLimit_PreservesTopLevelFieldOrder(t *testing.T) {
 	assertJSONTokenOrder(t, resultStr, `"alpha"`, `"system"`, `"messages"`, `"omega"`)
 	require.Equal(t, 4, strings.Count(resultStr, `"cache_control"`))
 }
+
+func TestEnforceCacheControlPolicy_DisabledStripsAllCacheControlAndPreservesTopLevelFieldOrder(t *testing.T) {
+	body := []byte(`{"alpha":1,"system":[{"type":"text","text":"s1","cache_control":{"type":"ephemeral"}},{"type":"text","text":"s2","cache_control":{"type":"ephemeral"}}],"messages":[{"role":"user","content":[{"type":"text","text":"m1","cache_control":{"type":"ephemeral"}},{"type":"text","text":"m2","cache_control":{"type":"ephemeral"}}]}],"omega":2}`)
+
+	result := enforceCacheControlPolicy(body, false)
+	resultStr := string(result)
+
+	assertJSONTokenOrder(t, resultStr, `"alpha"`, `"system"`, `"messages"`, `"omega"`)
+	require.Zero(t, strings.Count(resultStr, `"cache_control"`))
+}

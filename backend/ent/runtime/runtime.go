@@ -13,6 +13,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
+	"github.com/Wei-Shaw/sub2api/ent/paygorder"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
@@ -438,28 +439,32 @@ func init() {
 	groupDescClaudeCodeOnly := groupFields[19].Descriptor()
 	// group.DefaultClaudeCodeOnly holds the default value on creation for the claude_code_only field.
 	group.DefaultClaudeCodeOnly = groupDescClaudeCodeOnly.Default.(bool)
+	// groupDescClaudePromptCachingEnabled is the schema descriptor for claude_prompt_caching_enabled field.
+	groupDescClaudePromptCachingEnabled := groupFields[20].Descriptor()
+	// group.DefaultClaudePromptCachingEnabled holds the default value on creation for the claude_prompt_caching_enabled field.
+	group.DefaultClaudePromptCachingEnabled = groupDescClaudePromptCachingEnabled.Default.(bool)
 	// groupDescModelRoutingEnabled is the schema descriptor for model_routing_enabled field.
-	groupDescModelRoutingEnabled := groupFields[23].Descriptor()
+	groupDescModelRoutingEnabled := groupFields[24].Descriptor()
 	// group.DefaultModelRoutingEnabled holds the default value on creation for the model_routing_enabled field.
 	group.DefaultModelRoutingEnabled = groupDescModelRoutingEnabled.Default.(bool)
 	// groupDescMcpXMLInject is the schema descriptor for mcp_xml_inject field.
-	groupDescMcpXMLInject := groupFields[24].Descriptor()
+	groupDescMcpXMLInject := groupFields[25].Descriptor()
 	// group.DefaultMcpXMLInject holds the default value on creation for the mcp_xml_inject field.
 	group.DefaultMcpXMLInject = groupDescMcpXMLInject.Default.(bool)
 	// groupDescSupportedModelScopes is the schema descriptor for supported_model_scopes field.
-	groupDescSupportedModelScopes := groupFields[25].Descriptor()
+	groupDescSupportedModelScopes := groupFields[26].Descriptor()
 	// group.DefaultSupportedModelScopes holds the default value on creation for the supported_model_scopes field.
 	group.DefaultSupportedModelScopes = groupDescSupportedModelScopes.Default.([]string)
 	// groupDescSortOrder is the schema descriptor for sort_order field.
-	groupDescSortOrder := groupFields[26].Descriptor()
+	groupDescSortOrder := groupFields[27].Descriptor()
 	// group.DefaultSortOrder holds the default value on creation for the sort_order field.
 	group.DefaultSortOrder = groupDescSortOrder.Default.(int)
 	// groupDescAllowMessagesDispatch is the schema descriptor for allow_messages_dispatch field.
-	groupDescAllowMessagesDispatch := groupFields[27].Descriptor()
+	groupDescAllowMessagesDispatch := groupFields[28].Descriptor()
 	// group.DefaultAllowMessagesDispatch holds the default value on creation for the allow_messages_dispatch field.
 	group.DefaultAllowMessagesDispatch = groupDescAllowMessagesDispatch.Default.(bool)
 	// groupDescDefaultMappedModel is the schema descriptor for default_mapped_model field.
-	groupDescDefaultMappedModel := groupFields[28].Descriptor()
+	groupDescDefaultMappedModel := groupFields[29].Descriptor()
 	// group.DefaultDefaultMappedModel holds the default value on creation for the default_mapped_model field.
 	group.DefaultDefaultMappedModel = groupDescDefaultMappedModel.Default.(string)
 	// group.DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
@@ -499,6 +504,47 @@ func init() {
 	idempotencyrecordDescErrorReason := idempotencyrecordFields[6].Descriptor()
 	// idempotencyrecord.ErrorReasonValidator is a validator for the "error_reason" field. It is called by the builders before save.
 	idempotencyrecord.ErrorReasonValidator = idempotencyrecordDescErrorReason.Validators[0].(func(string) error)
+	paygorderMixin := schema.PaygOrder{}.Mixin()
+	paygorderMixinFields0 := paygorderMixin[0].Fields()
+	_ = paygorderMixinFields0
+	paygorderFields := schema.PaygOrder{}.Fields()
+	_ = paygorderFields
+	// paygorderDescCreatedAt is the schema descriptor for created_at field.
+	paygorderDescCreatedAt := paygorderMixinFields0[0].Descriptor()
+	// paygorder.DefaultCreatedAt holds the default value on creation for the created_at field.
+	paygorder.DefaultCreatedAt = paygorderDescCreatedAt.Default.(func() time.Time)
+	// paygorderDescUpdatedAt is the schema descriptor for updated_at field.
+	paygorderDescUpdatedAt := paygorderMixinFields0[1].Descriptor()
+	// paygorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	paygorder.DefaultUpdatedAt = paygorderDescUpdatedAt.Default.(func() time.Time)
+	// paygorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	paygorder.UpdateDefaultUpdatedAt = paygorderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// paygorderDescClientSn is the schema descriptor for client_sn field.
+	paygorderDescClientSn := paygorderFields[1].Descriptor()
+	// paygorder.ClientSnValidator is a validator for the "client_sn" field. It is called by the builders before save.
+	paygorder.ClientSnValidator = paygorderDescClientSn.Validators[0].(func(string) error)
+	// paygorderDescSn is the schema descriptor for sn field.
+	paygorderDescSn := paygorderFields[2].Descriptor()
+	// paygorder.SnValidator is a validator for the "sn" field. It is called by the builders before save.
+	paygorder.SnValidator = paygorderDescSn.Validators[0].(func(string) error)
+	// paygorderDescPayway is the schema descriptor for payway field.
+	paygorderDescPayway := paygorderFields[6].Descriptor()
+	// paygorder.DefaultPayway holds the default value on creation for the payway field.
+	paygorder.DefaultPayway = paygorderDescPayway.Default.(string)
+	// paygorder.PaywayValidator is a validator for the "payway" field. It is called by the builders before save.
+	paygorder.PaywayValidator = paygorderDescPayway.Validators[0].(func(string) error)
+	// paygorderDescPaywayName is the schema descriptor for payway_name field.
+	paygorderDescPaywayName := paygorderFields[7].Descriptor()
+	// paygorder.DefaultPaywayName holds the default value on creation for the payway_name field.
+	paygorder.DefaultPaywayName = paygorderDescPaywayName.Default.(string)
+	// paygorder.PaywayNameValidator is a validator for the "payway_name" field. It is called by the builders before save.
+	paygorder.PaywayNameValidator = paygorderDescPaywayName.Validators[0].(func(string) error)
+	// paygorderDescStatus is the schema descriptor for status field.
+	paygorderDescStatus := paygorderFields[8].Descriptor()
+	// paygorder.DefaultStatus holds the default value on creation for the status field.
+	paygorder.DefaultStatus = paygorderDescStatus.Default.(string)
+	// paygorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	paygorder.StatusValidator = paygorderDescStatus.Validators[0].(func(string) error)
 	promocodeFields := schema.PromoCode{}.Fields()
 	_ = promocodeFields
 	// promocodeDescCode is the schema descriptor for code field.

@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/paygorder"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
@@ -524,6 +525,21 @@ func (_u *UserUpdate) AddReferralRewardsReceived(v ...*ReferralReward) *UserUpda
 	return _u.AddReferralRewardsReceivedIDs(ids...)
 }
 
+// AddPaygOrderIDs adds the "payg_orders" edge to the PaygOrder entity by IDs.
+func (_u *UserUpdate) AddPaygOrderIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddPaygOrderIDs(ids...)
+	return _u
+}
+
+// AddPaygOrders adds the "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdate) AddPaygOrders(v ...*PaygOrder) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPaygOrderIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -758,6 +774,27 @@ func (_u *UserUpdate) RemoveReferralRewardsReceived(v ...*ReferralReward) *UserU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReferralRewardsReceivedIDs(ids...)
+}
+
+// ClearPaygOrders clears all "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdate) ClearPaygOrders() *UserUpdate {
+	_u.mutation.ClearPaygOrders()
+	return _u
+}
+
+// RemovePaygOrderIDs removes the "payg_orders" edge to PaygOrder entities by IDs.
+func (_u *UserUpdate) RemovePaygOrderIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemovePaygOrderIDs(ids...)
+	return _u
+}
+
+// RemovePaygOrders removes "payg_orders" edges to PaygOrder entities.
+func (_u *UserUpdate) RemovePaygOrders(v ...*PaygOrder) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePaygOrderIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1446,6 +1483,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPaygOrdersIDs(); len(nodes) > 0 && !_u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PaygOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -1953,6 +2035,21 @@ func (_u *UserUpdateOne) AddReferralRewardsReceived(v ...*ReferralReward) *UserU
 	return _u.AddReferralRewardsReceivedIDs(ids...)
 }
 
+// AddPaygOrderIDs adds the "payg_orders" edge to the PaygOrder entity by IDs.
+func (_u *UserUpdateOne) AddPaygOrderIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddPaygOrderIDs(ids...)
+	return _u
+}
+
+// AddPaygOrders adds the "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdateOne) AddPaygOrders(v ...*PaygOrder) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPaygOrderIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -2187,6 +2284,27 @@ func (_u *UserUpdateOne) RemoveReferralRewardsReceived(v ...*ReferralReward) *Us
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReferralRewardsReceivedIDs(ids...)
+}
+
+// ClearPaygOrders clears all "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdateOne) ClearPaygOrders() *UserUpdateOne {
+	_u.mutation.ClearPaygOrders()
+	return _u
+}
+
+// RemovePaygOrderIDs removes the "payg_orders" edge to PaygOrder entities by IDs.
+func (_u *UserUpdateOne) RemovePaygOrderIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemovePaygOrderIDs(ids...)
+	return _u
+}
+
+// RemovePaygOrders removes "payg_orders" edges to PaygOrder entities.
+func (_u *UserUpdateOne) RemovePaygOrders(v ...*PaygOrder) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePaygOrderIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -2898,6 +3016,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPaygOrdersIDs(); len(nodes) > 0 && !_u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PaygOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -142,6 +143,10 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		h.responsesErrorResponse(c, status, code, message)
 		return
 	}
+	if apiKey.Group != nil {
+		ctx := context.WithValue(c.Request.Context(), ctxkey.Group, apiKey.Group)
+		c.Request = c.Request.WithContext(ctx)
+	}
 
 	// Parse request for session hash
 	parsedReq, _ := service.ParseGatewayRequest(body, "responses")
@@ -153,7 +158,7 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		UserAgent: c.GetHeader("User-Agent"),
 		APIKeyID:  apiKey.ID,
 	}
-	sessionHash := h.gatewayService.GenerateSessionHash(parsedReq)
+	sessionHash := h.gatewayService.GenerateSessionHashForGroup(parsedReq, apiKey.Group)
 
 	// 3. Account selection + failover loop
 	fs := NewFailoverState(h.maxAccountSwitches, false)

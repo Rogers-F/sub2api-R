@@ -23,6 +23,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
+	"github.com/Wei-Shaw/sub2api/ent/paygorder"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
@@ -62,6 +63,8 @@ type Client struct {
 	Group *GroupClient
 	// IdempotencyRecord is the client for interacting with the IdempotencyRecord builders.
 	IdempotencyRecord *IdempotencyRecordClient
+	// PaygOrder is the client for interacting with the PaygOrder builders.
+	PaygOrder *PaygOrderClient
 	// PromoCode is the client for interacting with the PromoCode builders.
 	PromoCode *PromoCodeClient
 	// PromoCodeUsage is the client for interacting with the PromoCodeUsage builders.
@@ -109,6 +112,7 @@ func (c *Client) init() {
 	c.ErrorPassthroughRule = NewErrorPassthroughRuleClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
+	c.PaygOrder = NewPaygOrderClient(c.config)
 	c.PromoCode = NewPromoCodeClient(c.config)
 	c.PromoCodeUsage = NewPromoCodeUsageClient(c.config)
 	c.Proxy = NewProxyClient(c.config)
@@ -223,6 +227,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
 		Group:                   NewGroupClient(cfg),
 		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
+		PaygOrder:               NewPaygOrderClient(cfg),
 		PromoCode:               NewPromoCodeClient(cfg),
 		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
 		Proxy:                   NewProxyClient(cfg),
@@ -264,6 +269,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
 		Group:                   NewGroupClient(cfg),
 		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
+		PaygOrder:               NewPaygOrderClient(cfg),
 		PromoCode:               NewPromoCodeClient(cfg),
 		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
 		Proxy:                   NewProxyClient(cfg),
@@ -308,7 +314,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PromoCode,
+		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PaygOrder, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ReferralReward, c.SecuritySecret,
 		c.Setting, c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
 		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
@@ -322,7 +328,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PromoCode,
+		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PaygOrder, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ReferralReward, c.SecuritySecret,
 		c.Setting, c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
 		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
@@ -350,6 +356,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Group.mutate(ctx, m)
 	case *IdempotencyRecordMutation:
 		return c.IdempotencyRecord.mutate(ctx, m)
+	case *PaygOrderMutation:
+		return c.PaygOrder.mutate(ctx, m)
 	case *PromoCodeMutation:
 		return c.PromoCode.mutate(ctx, m)
 	case *PromoCodeUsageMutation:
@@ -1721,6 +1729,155 @@ func (c *IdempotencyRecordClient) mutate(ctx context.Context, m *IdempotencyReco
 		return (&IdempotencyRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown IdempotencyRecord mutation op: %q", m.Op())
+	}
+}
+
+// PaygOrderClient is a client for the PaygOrder schema.
+type PaygOrderClient struct {
+	config
+}
+
+// NewPaygOrderClient returns a client for the PaygOrder from the given config.
+func NewPaygOrderClient(c config) *PaygOrderClient {
+	return &PaygOrderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `paygorder.Hooks(f(g(h())))`.
+func (c *PaygOrderClient) Use(hooks ...Hook) {
+	c.hooks.PaygOrder = append(c.hooks.PaygOrder, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `paygorder.Intercept(f(g(h())))`.
+func (c *PaygOrderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PaygOrder = append(c.inters.PaygOrder, interceptors...)
+}
+
+// Create returns a builder for creating a PaygOrder entity.
+func (c *PaygOrderClient) Create() *PaygOrderCreate {
+	mutation := newPaygOrderMutation(c.config, OpCreate)
+	return &PaygOrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PaygOrder entities.
+func (c *PaygOrderClient) CreateBulk(builders ...*PaygOrderCreate) *PaygOrderCreateBulk {
+	return &PaygOrderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PaygOrderClient) MapCreateBulk(slice any, setFunc func(*PaygOrderCreate, int)) *PaygOrderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PaygOrderCreateBulk{err: fmt.Errorf("calling to PaygOrderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PaygOrderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PaygOrderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PaygOrder.
+func (c *PaygOrderClient) Update() *PaygOrderUpdate {
+	mutation := newPaygOrderMutation(c.config, OpUpdate)
+	return &PaygOrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PaygOrderClient) UpdateOne(_m *PaygOrder) *PaygOrderUpdateOne {
+	mutation := newPaygOrderMutation(c.config, OpUpdateOne, withPaygOrder(_m))
+	return &PaygOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PaygOrderClient) UpdateOneID(id int64) *PaygOrderUpdateOne {
+	mutation := newPaygOrderMutation(c.config, OpUpdateOne, withPaygOrderID(id))
+	return &PaygOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PaygOrder.
+func (c *PaygOrderClient) Delete() *PaygOrderDelete {
+	mutation := newPaygOrderMutation(c.config, OpDelete)
+	return &PaygOrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PaygOrderClient) DeleteOne(_m *PaygOrder) *PaygOrderDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PaygOrderClient) DeleteOneID(id int64) *PaygOrderDeleteOne {
+	builder := c.Delete().Where(paygorder.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PaygOrderDeleteOne{builder}
+}
+
+// Query returns a query builder for PaygOrder.
+func (c *PaygOrderClient) Query() *PaygOrderQuery {
+	return &PaygOrderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePaygOrder},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PaygOrder entity by its id.
+func (c *PaygOrderClient) Get(ctx context.Context, id int64) (*PaygOrder, error) {
+	return c.Query().Where(paygorder.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PaygOrderClient) GetX(ctx context.Context, id int64) *PaygOrder {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a PaygOrder.
+func (c *PaygOrderClient) QueryUser(_m *PaygOrder) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(paygorder.Table, paygorder.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, paygorder.UserTable, paygorder.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PaygOrderClient) Hooks() []Hook {
+	return c.hooks.PaygOrder
+}
+
+// Interceptors returns the client interceptors.
+func (c *PaygOrderClient) Interceptors() []Interceptor {
+	return c.inters.PaygOrder
+}
+
+func (c *PaygOrderClient) mutate(ctx context.Context, m *PaygOrderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PaygOrderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PaygOrderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PaygOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PaygOrderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PaygOrder mutation op: %q", m.Op())
 	}
 }
 
@@ -3415,6 +3572,22 @@ func (c *UserClient) QueryReferralRewardsReceived(_m *User) *ReferralRewardQuery
 	return query
 }
 
+// QueryPaygOrders queries the payg_orders edge of a User.
+func (c *UserClient) QueryPaygOrders(_m *User) *PaygOrderQuery {
+	query := (&PaygOrderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(paygorder.Table, paygorder.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PaygOrdersTable, user.PaygOrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUserAllowedGroups queries the user_allowed_groups edge of a User.
 func (c *UserClient) QueryUserAllowedGroups(_m *User) *UserAllowedGroupQuery {
 	query := (&UserAllowedGroupClient{config: c.config}).Query()
@@ -4093,17 +4266,17 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
-		ErrorPassthroughRule, Group, IdempotencyRecord, PromoCode, PromoCodeUsage,
-		Proxy, RedeemCode, ReferralReward, SecuritySecret, Setting, UsageCleanupTask,
-		UsageLog, User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserSubscription []ent.Hook
+		ErrorPassthroughRule, Group, IdempotencyRecord, PaygOrder, PromoCode,
+		PromoCodeUsage, Proxy, RedeemCode, ReferralReward, SecuritySecret, Setting,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
-		ErrorPassthroughRule, Group, IdempotencyRecord, PromoCode, PromoCodeUsage,
-		Proxy, RedeemCode, ReferralReward, SecuritySecret, Setting, UsageCleanupTask,
-		UsageLog, User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserSubscription []ent.Interceptor
+		ErrorPassthroughRule, Group, IdempotencyRecord, PaygOrder, PromoCode,
+		PromoCodeUsage, Proxy, RedeemCode, ReferralReward, SecuritySecret, Setting,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserSubscription []ent.Interceptor
 	}
 )
 

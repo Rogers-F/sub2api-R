@@ -1812,6 +1812,13 @@ export default {
         fallbackHint: 'Non-Claude Code requests will use this group. Leave empty to reject directly.',
         noFallback: 'No Fallback (Reject)'
       },
+      promptCaching: {
+        title: 'Claude Prompt Cache',
+        tooltip: 'When disabled, cache_control is removed from Anthropic requests so Claude prompt cache is neither created nor read.',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        hint: 'Disables both cache creation and cache reads.'
+      },
       openaiMessages: {
         title: 'OpenAI Messages Dispatch',
         allowDispatch: 'Allow /v1/messages dispatch',

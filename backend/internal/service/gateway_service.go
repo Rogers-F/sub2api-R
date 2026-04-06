@@ -635,6 +635,12 @@ func NewGatewayService(
 
 // GenerateSessionHash 从预解析请求计算粘性会话 hash
 func (s *GatewayService) GenerateSessionHash(parsed *ParsedRequest) string {
+	return s.GenerateSessionHashForGroup(parsed, nil)
+}
+
+// GenerateSessionHashForGroup computes the sticky-session hash while honoring
+// group-level Claude prompt cache settings.
+func (s *GatewayService) GenerateSessionHashForGroup(parsed *ParsedRequest, group *Group) string {
 	if parsed == nil {
 		return ""
 	}
@@ -647,9 +653,12 @@ func (s *GatewayService) GenerateSessionHash(parsed *ParsedRequest) string {
 	}
 
 	// 2. 提取带 cache_control: {type: "ephemeral"} 的内容
-	cacheableContent := s.extractCacheableContent(parsed)
-	if cacheableContent != "" {
-		return s.hashContent(cacheableContent)
+	cacheableContentEnabled := group == nil || group.ClaudePromptCachingEnabled
+	if cacheableContentEnabled {
+		cacheableContent := s.extractCacheableContent(parsed)
+		if cacheableContent != "" {
+			return s.hashContent(cacheableContent)
+		}
 	}
 
 	// 3. 最后 fallback: 使用 session上下文 + system + 所有消息的完整摘要串
@@ -3930,7 +3939,7 @@ func collectCacheControlPaths(body []byte) (invalidThinking []cacheControlPath, 
 
 // enforceCacheControlLimit 强制执行 cache_control 块数量限制（最多 4 个）
 // 超限时优先从 messages 中移除 cache_control，保护 system 中的缓存控制
-func enforceCacheControlLimit(body []byte) []byte {
+func enforceCacheControlPolicy(body []byte, promptCachingEnabled bool) []byte {
 	if len(body) == 0 {
 		return body
 	}
@@ -3951,6 +3960,35 @@ func enforceCacheControlLimit(body []byte) []byte {
 		out = next
 		modified = true
 		logger.LegacyPrintf("service.gateway", "%s", item.log)
+	}
+
+	if !promptCachingEnabled {
+		for _, path := range systemPaths {
+			if !gjson.GetBytes(out, path).Exists() {
+				continue
+			}
+			next, ok := deleteJSONPathBytes(out, path)
+			if !ok {
+				continue
+			}
+			out = next
+			modified = true
+		}
+		for _, path := range messagePaths {
+			if !gjson.GetBytes(out, path).Exists() {
+				continue
+			}
+			next, ok := deleteJSONPathBytes(out, path)
+			if !ok {
+				continue
+			}
+			out = next
+			modified = true
+		}
+		if modified {
+			return out
+		}
+		return body
 	}
 
 	count := len(messagePaths) + len(systemPaths)
@@ -3997,6 +4035,18 @@ func enforceCacheControlLimit(body []byte) []byte {
 		return out
 	}
 	return body
+}
+
+func enforceCacheControlLimit(body []byte) []byte {
+	return enforceCacheControlPolicy(body, true)
+}
+
+func anthropicPromptCachingEnabledFromContext(ctx context.Context) bool {
+	group, ok := ctx.Value(ctxkey.Group).(*Group)
+	if !ok || !IsGroupContextValid(group) {
+		return true
+	}
+	return group.ClaudePromptCachingEnabled
 }
 
 // Forward 转发请求到Claude API
@@ -4076,8 +4126,8 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		body, reqModel = normalizeClaudeOAuthRequestBody(body, reqModel, normalizeOpts)
 	}
 
-	// 强制执行 cache_control 块数量限制（最多 4 个）
-	body = enforceCacheControlLimit(body)
+	// 按分组策略处理 Claude prompt cache，并保留 Anthropic 的块数量限制。
+	body = enforceCacheControlPolicy(body, anthropicPromptCachingEnabledFromContext(ctx))
 
 	// 应用模型映射：
 	// - APIKey 账号：使用账号级别的显式映射（如果配置），否则透传原始模型名

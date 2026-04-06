@@ -170,6 +170,11 @@ func ClaudeCodeOnly(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudeCodeOnly, v))
 }
 
+// ClaudePromptCachingEnabled applies equality check predicate on the "claude_prompt_caching_enabled" field. It's identical to ClaudePromptCachingEnabledEQ.
+func ClaudePromptCachingEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldClaudePromptCachingEnabled, v))
+}
+
 // FallbackGroupID applies equality check predicate on the "fallback_group_id" field. It's identical to FallbackGroupIDEQ.
 func FallbackGroupID(v int64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldFallbackGroupID, v))
@@ -1308,6 +1313,16 @@ func ClaudeCodeOnlyEQ(v bool) predicate.Group {
 // ClaudeCodeOnlyNEQ applies the NEQ predicate on the "claude_code_only" field.
 func ClaudeCodeOnlyNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldClaudeCodeOnly, v))
+}
+
+// ClaudePromptCachingEnabledEQ applies the EQ predicate on the "claude_prompt_caching_enabled" field.
+func ClaudePromptCachingEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldClaudePromptCachingEnabled, v))
+}
+
+// ClaudePromptCachingEnabledNEQ applies the NEQ predicate on the "claude_prompt_caching_enabled" field.
+func ClaudePromptCachingEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldClaudePromptCachingEnabled, v))
 }
 
 // FallbackGroupIDEQ applies the EQ predicate on the "fallback_group_id" field.

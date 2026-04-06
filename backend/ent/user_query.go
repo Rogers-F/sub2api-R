@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/paygorder"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
@@ -45,6 +46,7 @@ type UserQuery struct {
 	withPromoCodeUsages         *PromoCodeUsageQuery
 	withReferralRewardsGiven    *ReferralRewardQuery
 	withReferralRewardsReceived *ReferralRewardQuery
+	withPaygOrders              *PaygOrderQuery
 	withUserAllowedGroups       *UserAllowedGroupQuery
 	modifiers                   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -325,6 +327,28 @@ func (_q *UserQuery) QueryReferralRewardsReceived() *ReferralRewardQuery {
 	return query
 }
 
+// QueryPaygOrders chains the current query on the "payg_orders" edge.
+func (_q *UserQuery) QueryPaygOrders() *PaygOrderQuery {
+	query := (&PaygOrderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(paygorder.Table, paygorder.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PaygOrdersTable, user.PaygOrdersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryUserAllowedGroups chains the current query on the "user_allowed_groups" edge.
 func (_q *UserQuery) QueryUserAllowedGroups() *UserAllowedGroupQuery {
 	query := (&UserAllowedGroupClient{config: _q.config}).Query()
@@ -550,6 +574,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withPromoCodeUsages:         _q.withPromoCodeUsages.Clone(),
 		withReferralRewardsGiven:    _q.withReferralRewardsGiven.Clone(),
 		withReferralRewardsReceived: _q.withReferralRewardsReceived.Clone(),
+		withPaygOrders:              _q.withPaygOrders.Clone(),
 		withUserAllowedGroups:       _q.withUserAllowedGroups.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -678,6 +703,17 @@ func (_q *UserQuery) WithReferralRewardsReceived(opts ...func(*ReferralRewardQue
 	return _q
 }
 
+// WithPaygOrders tells the query-builder to eager-load the nodes that are connected to
+// the "payg_orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithPaygOrders(opts ...func(*PaygOrderQuery)) *UserQuery {
+	query := (&PaygOrderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPaygOrders = query
+	return _q
+}
+
 // WithUserAllowedGroups tells the query-builder to eager-load the nodes that are connected to
 // the "user_allowed_groups" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *UserQuery) WithUserAllowedGroups(opts ...func(*UserAllowedGroupQuery)) *UserQuery {
@@ -767,7 +803,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [12]bool{
+		loadedTypes = [13]bool{
 			_q.withAPIKeys != nil,
 			_q.withRedeemCodes != nil,
 			_q.withSubscriptions != nil,
@@ -779,6 +815,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withPromoCodeUsages != nil,
 			_q.withReferralRewardsGiven != nil,
 			_q.withReferralRewardsReceived != nil,
+			_q.withPaygOrders != nil,
 			_q.withUserAllowedGroups != nil,
 		}
 	)
@@ -883,6 +920,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			func(n *User, e *ReferralReward) {
 				n.Edges.ReferralRewardsReceived = append(n.Edges.ReferralRewardsReceived, e)
 			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPaygOrders; query != nil {
+		if err := _q.loadPaygOrders(ctx, query, nodes,
+			func(n *User) { n.Edges.PaygOrders = []*PaygOrder{} },
+			func(n *User, e *PaygOrder) { n.Edges.PaygOrders = append(n.Edges.PaygOrders, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1258,6 +1302,36 @@ func (_q *UserQuery) loadReferralRewardsReceived(ctx context.Context, query *Ref
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "referee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadPaygOrders(ctx context.Context, query *PaygOrderQuery, nodes []*User, init func(*User), assign func(*User, *PaygOrder)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(paygorder.FieldUserID)
+	}
+	query.Where(predicate.PaygOrder(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.PaygOrdersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

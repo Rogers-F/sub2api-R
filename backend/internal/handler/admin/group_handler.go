@@ -100,6 +100,7 @@ type CreateGroupRequest struct {
 	SoraVideoPricePerRequest        *float64 `json:"sora_video_price_per_request"`
 	SoraVideoPricePerRequestHD      *float64 `json:"sora_video_price_per_request_hd"`
 	ClaudeCodeOnly                  bool     `json:"claude_code_only"`
+	ClaudePromptCachingEnabled      *bool    `json:"claude_prompt_caching_enabled"`
 	FallbackGroupID                 *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64   `json:"fallback_group_id_on_invalid_request"`
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -138,6 +139,7 @@ type UpdateGroupRequest struct {
 	SoraVideoPricePerRequest        *float64 `json:"sora_video_price_per_request"`
 	SoraVideoPricePerRequestHD      *float64 `json:"sora_video_price_per_request_hd"`
 	ClaudeCodeOnly                  *bool    `json:"claude_code_only"`
+	ClaudePromptCachingEnabled      *bool    `json:"claude_prompt_caching_enabled"`
 	FallbackGroupID                 *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64   `json:"fallback_group_id_on_invalid_request"`
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -259,6 +261,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		SoraVideoPricePerRequest:        req.SoraVideoPricePerRequest,
 		SoraVideoPricePerRequestHD:      req.SoraVideoPricePerRequestHD,
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:      req.ClaudePromptCachingEnabled,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
 		ModelRouting:                    req.ModelRouting,
@@ -312,6 +315,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		SoraVideoPricePerRequest:        req.SoraVideoPricePerRequest,
 		SoraVideoPricePerRequestHD:      req.SoraVideoPricePerRequestHD,
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:      req.ClaudePromptCachingEnabled,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
 		ModelRouting:                    req.ModelRouting,

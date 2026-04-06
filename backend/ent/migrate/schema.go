@@ -401,6 +401,7 @@ var (
 		{Name: "sora_video_price_per_request_hd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "sora_storage_quota_bytes", Type: field.TypeInt64, Default: 0},
 		{Name: "claude_code_only", Type: field.TypeBool, Default: false},
+		{Name: "claude_prompt_caching_enabled", Type: field.TypeBool, Default: true},
 		{Name: "fallback_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "fallback_group_id_on_invalid_request", Type: field.TypeInt64, Nullable: true},
 		{Name: "model_routing", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
@@ -445,7 +446,7 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[30]},
+				Columns: []*schema.Column{GroupsColumns[31]},
 			},
 		},
 	}
@@ -484,6 +485,48 @@ var (
 				Name:    "idempotencyrecord_status_locked_until",
 				Unique:  false,
 				Columns: []*schema.Column{IdempotencyRecordsColumns[6], IdempotencyRecordsColumns[10]},
+			},
+		},
+	}
+	// PaygOrdersColumns holds the columns for the "payg_orders" table.
+	PaygOrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "client_sn", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "sn", Type: field.TypeString, Unique: true, Nullable: true, Size: 64},
+		{Name: "amount_yuan", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "amount_cent", Type: field.TypeInt64},
+		{Name: "credit_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "payway", Type: field.TypeString, Size: 32, Default: ""},
+		{Name: "payway_name", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "PENDING"},
+		{Name: "paid_at", Type: field.TypeTime, Nullable: true},
+		{Name: "user_id", Type: field.TypeInt64},
+	}
+	// PaygOrdersTable holds the schema information for the "payg_orders" table.
+	PaygOrdersTable = &schema.Table{
+		Name:       "payg_orders",
+		Columns:    PaygOrdersColumns,
+		PrimaryKey: []*schema.Column{PaygOrdersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "payg_orders_users_payg_orders",
+				Columns:    []*schema.Column{PaygOrdersColumns[12]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "paygorder_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{PaygOrdersColumns[12], PaygOrdersColumns[1]},
+			},
+			{
+				Name:    "paygorder_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{PaygOrdersColumns[10], PaygOrdersColumns[1]},
 			},
 		},
 	}
@@ -1163,6 +1206,7 @@ var (
 		ErrorPassthroughRulesTable,
 		GroupsTable,
 		IdempotencyRecordsTable,
+		PaygOrdersTable,
 		PromoCodesTable,
 		PromoCodeUsagesTable,
 		ProxiesTable,
@@ -1211,6 +1255,10 @@ func init() {
 	}
 	IdempotencyRecordsTable.Annotation = &entsql.Annotation{
 		Table: "idempotency_records",
+	}
+	PaygOrdersTable.ForeignKeys[0].RefTable = UsersTable
+	PaygOrdersTable.Annotation = &entsql.Annotation{
+		Table: "payg_orders",
 	}
 	PromoCodesTable.Annotation = &entsql.Annotation{
 		Table: "promo_codes",

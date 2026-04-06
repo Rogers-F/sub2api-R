@@ -36,8 +36,9 @@ type Group struct {
 	SoraStorageQuotaBytes int64
 
 	// Claude Code 客户端限制
-	ClaudeCodeOnly  bool
-	FallbackGroupID *int64
+	ClaudeCodeOnly             bool
+	ClaudePromptCachingEnabled bool
+	FallbackGroupID            *int64
 	// 无效请求兜底分组（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 

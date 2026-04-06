@@ -498,6 +498,20 @@ func (_u *GroupUpdate) SetNillableClaudeCodeOnly(v *bool) *GroupUpdate {
 	return _u
 }
 
+// SetClaudePromptCachingEnabled sets the "claude_prompt_caching_enabled" field.
+func (_u *GroupUpdate) SetClaudePromptCachingEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetClaudePromptCachingEnabled(v)
+	return _u
+}
+
+// SetNillableClaudePromptCachingEnabled sets the "claude_prompt_caching_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableClaudePromptCachingEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetClaudePromptCachingEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdate) SetFallbackGroupID(v int64) *GroupUpdate {
 	_u.mutation.ResetFallbackGroupID()
@@ -1098,6 +1112,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudePromptCachingEnabled(); ok {
+		_spec.SetField(group.FieldClaudePromptCachingEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1926,6 +1943,20 @@ func (_u *GroupUpdateOne) SetNillableClaudeCodeOnly(v *bool) *GroupUpdateOne {
 	return _u
 }
 
+// SetClaudePromptCachingEnabled sets the "claude_prompt_caching_enabled" field.
+func (_u *GroupUpdateOne) SetClaudePromptCachingEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetClaudePromptCachingEnabled(v)
+	return _u
+}
+
+// SetNillableClaudePromptCachingEnabled sets the "claude_prompt_caching_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableClaudePromptCachingEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetClaudePromptCachingEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdateOne) SetFallbackGroupID(v int64) *GroupUpdateOne {
 	_u.mutation.ResetFallbackGroupID()
@@ -2556,6 +2587,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudePromptCachingEnabled(); ok {
+		_spec.SetField(group.FieldClaudePromptCachingEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)

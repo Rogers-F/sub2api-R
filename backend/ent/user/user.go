@@ -75,6 +75,8 @@ const (
 	EdgeReferralRewardsGiven = "referral_rewards_given"
 	// EdgeReferralRewardsReceived holds the string denoting the referral_rewards_received edge name in mutations.
 	EdgeReferralRewardsReceived = "referral_rewards_received"
+	// EdgePaygOrders holds the string denoting the payg_orders edge name in mutations.
+	EdgePaygOrders = "payg_orders"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -154,6 +156,13 @@ const (
 	ReferralRewardsReceivedInverseTable = "referral_rewards"
 	// ReferralRewardsReceivedColumn is the table column denoting the referral_rewards_received relation/edge.
 	ReferralRewardsReceivedColumn = "referee_id"
+	// PaygOrdersTable is the table that holds the payg_orders relation/edge.
+	PaygOrdersTable = "payg_orders"
+	// PaygOrdersInverseTable is the table name for the PaygOrder entity.
+	// It exists in this package in order to avoid circular dependency with the "paygorder" package.
+	PaygOrdersInverseTable = "payg_orders"
+	// PaygOrdersColumn is the table column denoting the payg_orders relation/edge.
+	PaygOrdersColumn = "user_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -506,6 +515,20 @@ func ByReferralRewardsReceived(term sql.OrderTerm, terms ...sql.OrderTerm) Order
 	}
 }
 
+// ByPaygOrdersCount orders the results by payg_orders count.
+func ByPaygOrdersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPaygOrdersStep(), opts...)
+	}
+}
+
+// ByPaygOrders orders the results by payg_orders terms.
+func ByPaygOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPaygOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -594,6 +617,13 @@ func newReferralRewardsReceivedStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReferralRewardsReceivedInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsReceivedTable, ReferralRewardsReceivedColumn),
+	)
+}
+func newPaygOrdersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PaygOrdersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PaygOrdersTable, PaygOrdersColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

@@ -797,6 +797,52 @@ func TestGenerateSessionHash_CacheControlOverridesSessionContext(t *testing.T) {
 	require.Equal(t, h1, h2, "cache_control ephemeral has higher priority, SessionContext should not affect result")
 }
 
+func TestGenerateSessionHashForGroup_DisabledPromptCachingFallsBackToSessionContext(t *testing.T) {
+	svc := &GatewayService{}
+
+	parsed1 := &ParsedRequest{
+		System: []any{
+			map[string]any{
+				"type":          "text",
+				"text":          "You are a tool-specific assistant.",
+				"cache_control": map[string]any{"type": "ephemeral"},
+			},
+		},
+		HasSystem: true,
+		Messages: []any{
+			map[string]any{"role": "user", "content": "hello"},
+		},
+		SessionContext: &SessionContext{
+			ClientIP:  "1.1.1.1",
+			UserAgent: "ua1",
+			APIKeyID:  100,
+		},
+	}
+	parsed2 := &ParsedRequest{
+		System: []any{
+			map[string]any{
+				"type":          "text",
+				"text":          "You are a tool-specific assistant.",
+				"cache_control": map[string]any{"type": "ephemeral"},
+			},
+		},
+		HasSystem: true,
+		Messages: []any{
+			map[string]any{"role": "user", "content": "hello"},
+		},
+		SessionContext: &SessionContext{
+			ClientIP:  "2.2.2.2",
+			UserAgent: "ua2",
+			APIKeyID:  200,
+		},
+	}
+	group := &Group{ID: 1, Hydrated: true, Platform: PlatformAnthropic, Status: StatusActive, ClaudePromptCachingEnabled: false}
+
+	h1 := svc.GenerateSessionHashForGroup(parsed1, group)
+	h2 := svc.GenerateSessionHashForGroup(parsed2, group)
+	require.NotEqual(t, h1, h2, "disabled group-level prompt caching should stop cache_control from overriding session context")
+}
+
 // ============ 边界情况 ============
 
 func TestGenerateSessionHash_EmptyMessages(t *testing.T) {

@@ -1,0 +1,2 @@
+ALTER TABLE groups
+  ADD COLUMN IF NOT EXISTS claude_prompt_caching_enabled BOOLEAN NOT NULL DEFAULT TRUE;

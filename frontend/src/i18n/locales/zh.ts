@@ -1899,6 +1899,13 @@ export default {
         fallbackHint: '非 Claude Code 请求将使用此分组，留空则直接拒绝',
         noFallback: '不降级（直接拒绝）'
       },
+      promptCaching: {
+        title: 'Claude Prompt Cache',
+        tooltip: '关闭后会移除 Anthropic 请求中的 cache_control，不再创建或读取 Claude prompt cache。',
+        enabled: '已启用缓存',
+        disabled: '已关闭缓存',
+        hint: '关闭后会同时禁用缓存创建和缓存读取。'
+      },
       openaiMessages: {
         title: 'OpenAI Messages 调度配置',
         allowDispatch: '允许 /v1/messages 调度',

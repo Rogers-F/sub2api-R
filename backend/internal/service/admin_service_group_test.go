@@ -153,6 +153,42 @@ func TestAdminService_CreateGroup_WithImagePricing(t *testing.T) {
 	require.InDelta(t, 0.30, *repo.created.ImagePrice4K, 0.0001)
 }
 
+func TestAdminService_CreateGroup_DefaultsClaudePromptCachingEnabled(t *testing.T) {
+	repo := &groupRepoStubForAdmin{}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:           "test-group",
+		Platform:       PlatformAnthropic,
+		RateMultiplier: 1.0,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.created)
+	require.True(t, repo.created.ClaudePromptCachingEnabled)
+}
+
+func TestAdminService_UpdateGroup_ClaudePromptCachingEnabled(t *testing.T) {
+	existingGroup := &Group{
+		ID:                         1,
+		Name:                       "existing-group",
+		Platform:                   PlatformAnthropic,
+		Status:                     StatusActive,
+		ClaudePromptCachingEnabled: true,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existingGroup}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	disabled := false
+	group, err := svc.UpdateGroup(context.Background(), 1, &UpdateGroupInput{
+		ClaudePromptCachingEnabled: &disabled,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.updated)
+	require.False(t, repo.updated.ClaudePromptCachingEnabled)
+}
+
 // TestAdminService_CreateGroup_NilImagePricing 测试 ImagePrice 为 nil 时正常创建
 func TestAdminService_CreateGroup_NilImagePricing(t *testing.T) {
 	repo := &groupRepoStubForAdmin{}

@@ -495,6 +495,7 @@ export interface Group {
   sora_storage_quota_bytes: number
   // Claude Code 客户端限制
   claude_code_only: boolean
+  claude_prompt_caching_enabled: boolean
   fallback_group_id: number | null
   fallback_group_id_on_invalid_request: number | null
   // OpenAI Messages 调度开关（用户侧需要此字段判断是否展示 Claude Code 教程）
@@ -605,6 +606,7 @@ export interface CreateGroupRequest {
   sora_video_price_per_request_hd?: number | null
   sora_storage_quota_bytes?: number
   claude_code_only?: boolean
+  claude_prompt_caching_enabled?: boolean
   fallback_group_id?: number | null
   fallback_group_id_on_invalid_request?: number | null
   mcp_xml_inject?: boolean
@@ -634,6 +636,7 @@ export interface UpdateGroupRequest {
   sora_video_price_per_request_hd?: number | null
   sora_storage_quota_bytes?: number
   claude_code_only?: boolean
+  claude_prompt_caching_enabled?: boolean
   fallback_group_id?: number | null
   fallback_group_id_on_invalid_request?: number | null
   mcp_xml_inject?: boolean

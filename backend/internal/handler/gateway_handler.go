@@ -244,6 +244,10 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 		h.handleStreamingAwareError(c, status, code, message, streamStarted)
 		return
 	}
+	if apiKey.Group != nil {
+		ctx := context.WithValue(c.Request.Context(), ctxkey.Group, apiKey.Group)
+		c.Request = c.Request.WithContext(ctx)
+	}
 
 	// 计算粘性会话hash
 	parsedReq.SessionContext = &service.SessionContext{
@@ -251,7 +255,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 		UserAgent: c.GetHeader("User-Agent"),
 		APIKeyID:  apiKey.ID,
 	}
-	sessionHash := h.gatewayService.GenerateSessionHash(parsedReq)
+	sessionHash := h.gatewayService.GenerateSessionHashForGroup(parsedReq, apiKey.Group)
 
 	// 获取平台：优先使用强制平台（/antigravity 路由，中间件已设置 request.Context），否则使用分组平台
 	platform := ""

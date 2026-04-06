@@ -61,6 +61,8 @@ const (
 	FieldSoraStorageQuotaBytes = "sora_storage_quota_bytes"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
 	FieldClaudeCodeOnly = "claude_code_only"
+	// FieldClaudePromptCachingEnabled holds the string denoting the claude_prompt_caching_enabled field in the database.
+	FieldClaudePromptCachingEnabled = "claude_prompt_caching_enabled"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
 	FieldFallbackGroupID = "fallback_group_id"
 	// FieldFallbackGroupIDOnInvalidRequest holds the string denoting the fallback_group_id_on_invalid_request field in the database.
@@ -177,6 +179,7 @@ var Columns = []string{
 	FieldSoraVideoPricePerRequestHd,
 	FieldSoraStorageQuotaBytes,
 	FieldClaudeCodeOnly,
+	FieldClaudePromptCachingEnabled,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
 	FieldModelRouting,
@@ -245,6 +248,8 @@ var (
 	DefaultSoraStorageQuotaBytes int64
 	// DefaultClaudeCodeOnly holds the default value on creation for the "claude_code_only" field.
 	DefaultClaudeCodeOnly bool
+	// DefaultClaudePromptCachingEnabled holds the default value on creation for the "claude_prompt_caching_enabled" field.
+	DefaultClaudePromptCachingEnabled bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
 	DefaultModelRoutingEnabled bool
 	// DefaultMcpXMLInject holds the default value on creation for the "mcp_xml_inject" field.
@@ -382,6 +387,11 @@ func BySoraStorageQuotaBytes(opts ...sql.OrderTermOption) OrderOption {
 // ByClaudeCodeOnly orders the results by the claude_code_only field.
 func ByClaudeCodeOnly(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClaudeCodeOnly, opts...).ToFunc()
+}
+
+// ByClaudePromptCachingEnabled orders the results by the claude_prompt_caching_enabled field.
+func ByClaudePromptCachingEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClaudePromptCachingEnabled, opts...).ToFunc()
 }
 
 // ByFallbackGroupID orders the results by the fallback_group_id field.

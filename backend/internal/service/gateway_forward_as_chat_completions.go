@@ -96,8 +96,8 @@ func (s *GatewayService) ForwardAsChatCompletions(
 		}
 	}
 
-	// 7. Enforce cache_control block limit
-	anthropicBody = enforceCacheControlLimit(anthropicBody)
+	// 7. Apply group-level Claude prompt cache policy
+	anthropicBody = enforceCacheControlPolicy(anthropicBody, anthropicPromptCachingEnabledFromContext(ctx))
 
 	// 8. Get access token
 	token, tokenType, err := s.GetAccessToken(ctx, account)
