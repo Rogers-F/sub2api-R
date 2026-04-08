@@ -205,11 +205,6 @@ func TestAPIContracts(t *testing.T) {
 						"image_price_1k": null,
 						"image_price_2k": null,
 						"image_price_4k": null,
-							"sora_image_price_360": null,
-							"sora_image_price_540": null,
-						"sora_storage_quota_bytes": 0,
-						"sora_video_price_per_request": null,
-						"sora_video_price_per_request_hd": null,
 						"claude_code_only": false,
 						"claude_prompt_caching_enabled": true,
 						"allow_messages_dispatch": false,
@@ -433,7 +428,6 @@ func TestAPIContracts(t *testing.T) {
 							"first_token_ms": 50,
 							"image_count": 0,
 							"image_size": null,
-							"media_type": null,
 							"cache_ttl_overridden": false,
 							"created_at": "2025-01-02T03:04:05Z",
 							"user_agent": null
@@ -538,7 +532,6 @@ func TestAPIContracts(t *testing.T) {
 						"payg_fixed_amount_options": [50, 80, 100],
 						"shouqianba_terminal_sn": "",
 						"shouqianba_terminal_key_configured": false,
-						"sora_client_enabled": false,
 						"invitation_code_enabled": false,
 						"home_content": "",
 						"hide_ccs_import_button": false,
@@ -657,11 +650,11 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingRepo := newStubSettingRepo()
 	settingService := service.NewSettingService(settingRepo, cfg)
 
-	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, nil, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, redeemService, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)
-	adminSettingHandler := adminhandler.NewSettingHandler(settingService, nil, nil, nil, nil, nil)
+	adminSettingHandler := adminhandler.NewSettingHandler(settingService, nil, nil, nil, nil)
 	adminAccountHandler := adminhandler.NewAccountHandler(adminService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 	jwtAuth := func(c *gin.Context) {

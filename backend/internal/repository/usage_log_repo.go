@@ -28,7 +28,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, media_type, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, created_at"
 
 // usageLogInsertArgTypes must stay in the same order as:
 //  1. prepareUsageLogInsert().args
@@ -71,7 +71,6 @@ var usageLogInsertArgTypes = [...]string{
 	"text",        // ip_address
 	"integer",     // image_count
 	"text",        // image_size
-	"text",        // media_type
 	"text",        // service_tier
 	"text",        // reasoning_effort
 	"text",        // inbound_endpoint
@@ -344,7 +343,6 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			ip_address,
 			image_count,
 			image_size,
-			media_type,
 			service_tier,
 			reasoning_effort,
 			inbound_endpoint,
@@ -357,7 +355,7 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			$10, $11, $12, $13,
 			$14, $15,
 			$16, $17, $18, $19, $20, $21,
-			$22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
+			$22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 		RETURNING id, created_at
@@ -776,7 +774,6 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 			ip_address,
 			image_count,
 			image_size,
-			media_type,
 			service_tier,
 			reasoning_effort,
 			inbound_endpoint,
@@ -847,7 +844,6 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				ip_address,
 				image_count,
 				image_size,
-				media_type,
 				service_tier,
 				reasoning_effort,
 				inbound_endpoint,
@@ -889,7 +885,6 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				ip_address,
 				image_count,
 				image_size,
-				media_type,
 				service_tier,
 				reasoning_effort,
 				inbound_endpoint,
@@ -971,7 +966,6 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			ip_address,
 			image_count,
 			image_size,
-			media_type,
 			service_tier,
 			reasoning_effort,
 			inbound_endpoint,
@@ -1039,7 +1033,6 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			ip_address,
 			image_count,
 			image_size,
-			media_type,
 			service_tier,
 			reasoning_effort,
 			inbound_endpoint,
@@ -1081,7 +1074,6 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			ip_address,
 			image_count,
 			image_size,
-			media_type,
 			service_tier,
 			reasoning_effort,
 			inbound_endpoint,
@@ -1131,7 +1123,6 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			ip_address,
 			image_count,
 			image_size,
-			media_type,
 			service_tier,
 			reasoning_effort,
 			inbound_endpoint,
@@ -1144,7 +1135,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			$10, $11, $12, $13,
 			$14, $15,
 			$16, $17, $18, $19, $20, $21,
-			$22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
+			$22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`, prepared.args...)
@@ -1171,7 +1162,6 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 	userAgent := nullString(log.UserAgent)
 	ipAddress := nullString(log.IPAddress)
 	imageSize := nullString(log.ImageSize)
-	mediaType := nullString(log.MediaType)
 	serviceTier := nullString(log.ServiceTier)
 	reasoningEffort := nullString(log.ReasoningEffort)
 	inboundEndpoint := nullString(log.InboundEndpoint)
@@ -1226,7 +1216,6 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 			ipAddress,
 			log.ImageCount,
 			imageSize,
-			mediaType,
 			serviceTier,
 			reasoningEffort,
 			inboundEndpoint,
@@ -3953,7 +3942,6 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		ipAddress             sql.NullString
 		imageCount            int
 		imageSize             sql.NullString
-		mediaType             sql.NullString
 		serviceTier           sql.NullString
 		reasoningEffort       sql.NullString
 		inboundEndpoint       sql.NullString
@@ -3997,7 +3985,6 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&ipAddress,
 		&imageCount,
 		&imageSize,
-		&mediaType,
 		&serviceTier,
 		&reasoningEffort,
 		&inboundEndpoint,
@@ -4068,9 +4055,6 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 	}
 	if imageSize.Valid {
 		log.ImageSize = &imageSize.String
-	}
-	if mediaType.Valid {
-		log.MediaType = &mediaType.String
 	}
 	if serviceTier.Valid {
 		log.ServiceTier = &serviceTier.String

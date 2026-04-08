@@ -136,10 +136,13 @@ func TestTokenRefreshService_ProcessRefresh_SkipsAnthropicAndOpenAI(t *testing.T
 	}
 	service := NewTokenRefreshService(repo, nil, nil, nil, nil, nil, nil, cfg, nil)
 	service.refreshers = []TokenRefresher{
-		&tokenRefresherStub{
-			credentials: map[string]any{
-				"access_token": "new-token",
+		&platformTokenRefresherStub{
+			tokenRefresherStub: tokenRefresherStub{
+				credentials: map[string]any{
+					"access_token": "new-token",
+				},
 			},
+			platform: PlatformGemini,
 		},
 	}
 
@@ -148,6 +151,15 @@ func TestTokenRefreshService_ProcessRefresh_SkipsAnthropicAndOpenAI(t *testing.T
 	require.Equal(t, 1, repo.updateCalls)
 	require.NotNil(t, repo.lastAccount)
 	require.Equal(t, PlatformGemini, repo.lastAccount.Platform)
+}
+
+type platformTokenRefresherStub struct {
+	tokenRefresherStub
+	platform string
+}
+
+func (r *platformTokenRefresherStub) CanRefresh(account *Account) bool {
+	return account != nil && account.Platform == r.platform
 }
 
 type tokenRefreshProcessRepo struct {

@@ -21,6 +21,26 @@ import (
 
 func f64p(v float64) *float64 { return &v }
 
+type openAIWSRateLimitSignalRepo struct {
+	stubOpenAIAccountRepo
+	rateLimitCalls []time.Time
+	updateExtra    []map[string]any
+}
+
+func (r *openAIWSRateLimitSignalRepo) SetRateLimited(_ context.Context, _ int64, resetAt time.Time) error {
+	r.rateLimitCalls = append(r.rateLimitCalls, resetAt)
+	return nil
+}
+
+func (r *openAIWSRateLimitSignalRepo) UpdateExtra(_ context.Context, _ int64, updates map[string]any) error {
+	copied := make(map[string]any, len(updates))
+	for k, v := range updates {
+		copied[k] = v
+	}
+	r.updateExtra = append(r.updateExtra, copied)
+	return nil
+}
+
 type httpUpstreamRecorder struct {
 	lastReq  *http.Request
 	lastBody []byte

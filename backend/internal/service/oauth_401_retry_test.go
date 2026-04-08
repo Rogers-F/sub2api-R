@@ -21,10 +21,13 @@ import (
 
 type openAIForwardRepoStub struct {
 	mockAccountRepoForGemini
-	account       *Account
-	updateCalls   int
-	setErrorCalls int
-	lastErrorMsg  string
+	account              *Account
+	updateCalls          int
+	setErrorCalls        int
+	tempUnschedCalls     int
+	lastErrorMsg         string
+	lastTempUnschedUntil time.Time
+	lastTempUnschedMsg   string
 }
 
 func (r *openAIForwardRepoStub) GetByID(ctx context.Context, id int64) (*Account, error) {
@@ -43,6 +46,13 @@ func (r *openAIForwardRepoStub) Update(ctx context.Context, account *Account) er
 func (r *openAIForwardRepoStub) SetError(ctx context.Context, id int64, errorMsg string) error {
 	r.setErrorCalls++
 	r.lastErrorMsg = errorMsg
+	return nil
+}
+
+func (r *openAIForwardRepoStub) SetTempUnschedulable(ctx context.Context, id int64, until time.Time, reason string) error {
+	r.tempUnschedCalls++
+	r.lastTempUnschedUntil = until
+	r.lastTempUnschedMsg = reason
 	return nil
 }
 
@@ -104,7 +114,7 @@ func newOpenAITestContext(body []byte) (*gin.Context, *httptest.ResponseRecorder
 	return c, rec
 }
 
-func TestOpenAIGatewayService_Forward_ExpiredOAuth401RefreshesAndRetries(t *testing.T) {
+func TestOpenAIGatewayService_Forward_ExpiredOAuth401MarksAccountForRefresh(t *testing.T) {
 	requestBody := []byte(`{"model":"gpt-4.1","stream":false}`)
 	account := &Account{
 		ID:       201,
@@ -119,6 +129,7 @@ func TestOpenAIGatewayService_Forward_ExpiredOAuth401RefreshesAndRetries(t *test
 	}
 	repo := &openAIForwardRepoStub{account: account}
 	tokenCache := newOpenAITokenCacheStub()
+	tokenCache.tokens[OpenAITokenCacheKey(account)] = "stale-token"
 	oauthClient := &openAIOAuthClientStub{
 		refreshResponse: &openaipkg.TokenResponse{
 			AccessToken:  "fresh-token",
@@ -128,18 +139,13 @@ func TestOpenAIGatewayService_Forward_ExpiredOAuth401RefreshesAndRetries(t *test
 	}
 	oauthService := NewOpenAIOAuthService(nil, oauthClient)
 	provider := NewOpenAITokenProvider(repo, tokenCache, oauthService)
+	rateLimitService := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
+	rateLimitService.SetTokenCacheInvalidator(NewCompositeTokenCacheInvalidator(tokenCache))
 	upstream := &openAIForwardUpstreamStub{
 		responder: func(call int, req *http.Request) (*http.Response, error) {
-			switch call {
-			case 1:
-				require.Equal(t, "Bearer stale-token", req.Header.Get("authorization"))
-				return newOpenAITestResponse(http.StatusUnauthorized, `{"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired. Please obtain a new token or refresh your existing token."}}`), nil
-			case 2:
-				require.Equal(t, "Bearer fresh-token", req.Header.Get("authorization"))
-				return newOpenAITestResponse(http.StatusOK, `{"usage":{"input_tokens":3,"output_tokens":5,"input_tokens_details":{"cached_tokens":1}}}`), nil
-			default:
-				return nil, errors.New("unexpected call")
-			}
+			require.Equal(t, 1, call)
+			require.Equal(t, "Bearer stale-token", req.Header.Get("authorization"))
+			return newOpenAITestResponse(http.StatusUnauthorized, `{"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired. Please obtain a new token or refresh your existing token."}}`), nil
 		},
 	}
 	svc := &OpenAIGatewayService{
@@ -147,28 +153,32 @@ func TestOpenAIGatewayService_Forward_ExpiredOAuth401RefreshesAndRetries(t *test
 		cfg:                 &config.Config{},
 		httpUpstream:        upstream,
 		openAITokenProvider: provider,
-		rateLimitService:    NewRateLimitService(repo, nil, &config.Config{}, nil, nil),
+		rateLimitService:    rateLimitService,
 	}
-	c, rec := newOpenAITestContext(requestBody)
+	c, _ := newOpenAITestContext(requestBody)
 
 	result, err := svc.Forward(context.Background(), c, account, requestBody)
 
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	require.Equal(t, 2, upstream.calls)
-	require.Equal(t, []string{"Bearer stale-token", "Bearer fresh-token"}, upstream.auths)
-	require.Equal(t, 1, oauthClient.refreshCalls)
-	require.Equal(t, "fresh-token", repo.account.GetOpenAIAccessToken())
-	// 委托给 TokenProvider 后，updateCalls 可能为 2（provider 内部 + Forward 流程各一次）
+	require.Nil(t, result)
+	var failoverErr *UpstreamFailoverError
+	require.ErrorAs(t, err, &failoverErr)
+	require.Equal(t, http.StatusUnauthorized, failoverErr.StatusCode)
+	require.Equal(t, 1, upstream.calls)
+	require.Equal(t, []string{"Bearer stale-token"}, upstream.auths)
+	require.Equal(t, 0, oauthClient.refreshCalls)
+	require.Equal(t, "stale-token", repo.account.GetOpenAIAccessToken())
 	require.GreaterOrEqual(t, repo.updateCalls, 1)
-	require.Equal(t, 200, rec.Code)
-	require.Equal(t, 3, result.Usage.InputTokens)
-	require.Equal(t, 5, result.Usage.OutputTokens)
-	// 通过 TokenProvider 刷新后 token 会被缓存（预期行为变化）
-	require.Equal(t, "fresh-token", tokenCache.tokens[OpenAITokenCacheKey(account)])
+	require.Equal(t, 0, repo.setErrorCalls)
+	require.Equal(t, 1, repo.tempUnschedCalls)
+	require.Contains(t, strings.ToLower(repo.lastTempUnschedMsg), "oauth token has expired")
+	expiresAt := repo.account.GetCredentialAsTime("expires_at")
+	require.NotNil(t, expiresAt)
+	require.WithinDuration(t, time.Now(), *expiresAt, 5*time.Second)
+	_, cacheStillPresent := tokenCache.tokens[OpenAITokenCacheKey(account)]
+	require.False(t, cacheStillPresent)
 }
 
-func TestOpenAIGatewayService_Forward_ExpiredOAuth401FinalFailoverDoesNotSetError(t *testing.T) {
+func TestOpenAIGatewayService_Forward_ExpiredOAuth401DoesNotSetError(t *testing.T) {
 	requestBody := []byte(`{"model":"gpt-4.1","stream":false}`)
 	account := &Account{
 		ID:       202,
@@ -197,15 +207,9 @@ func TestOpenAIGatewayService_Forward_ExpiredOAuth401FinalFailoverDoesNotSetErro
 	rateLimitService.SetTokenCacheInvalidator(invalidator)
 	upstream := &openAIForwardUpstreamStub{
 		responder: func(call int, req *http.Request) (*http.Response, error) {
-			switch call {
-			case 1:
-				return newOpenAITestResponse(http.StatusUnauthorized, `{"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired. Please obtain a new token or refresh your existing token."}}`), nil
-			case 2:
-				require.Equal(t, "Bearer fresh-token", req.Header.Get("authorization"))
-				return newOpenAITestResponse(http.StatusUnauthorized, `{"type":"error","error":{"type":"authentication_error","message":"Access token expired"}}`), nil
-			default:
-				return nil, errors.New("unexpected call")
-			}
+			require.Equal(t, 1, call)
+			require.Equal(t, "Bearer stale-token", req.Header.Get("authorization"))
+			return newOpenAITestResponse(http.StatusUnauthorized, `{"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired. Please obtain a new token or refresh your existing token."}}`), nil
 		},
 	}
 	svc := &OpenAIGatewayService{
@@ -222,11 +226,14 @@ func TestOpenAIGatewayService_Forward_ExpiredOAuth401FinalFailoverDoesNotSetErro
 	require.Nil(t, result)
 	var failoverErr *UpstreamFailoverError
 	require.ErrorAs(t, err, &failoverErr)
-	require.Equal(t, 2, upstream.calls)
-	require.Equal(t, 1, oauthClient.refreshCalls)
+	require.Equal(t, http.StatusUnauthorized, failoverErr.StatusCode)
+	require.Equal(t, 1, upstream.calls)
+	require.Equal(t, 0, oauthClient.refreshCalls)
 	require.Equal(t, 0, repo.setErrorCalls)
-	require.GreaterOrEqual(t, repo.updateCalls, 2)
+	require.GreaterOrEqual(t, repo.updateCalls, 1)
+	require.Equal(t, 1, repo.tempUnschedCalls)
 	require.Len(t, invalidator.accounts, 1)
+	require.Equal(t, account.ID, invalidator.accounts[0].ID)
 }
 
 func TestOpenAIGatewayService_Forward_PermanentOAuth401DoesNotRefresh(t *testing.T) {

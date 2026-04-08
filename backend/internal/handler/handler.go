@@ -44,8 +44,6 @@ type Handlers struct {
 	Admin         *AdminHandlers
 	Gateway       *GatewayHandler
 	OpenAIGateway *OpenAIGatewayHandler
-	SoraGateway   *SoraGatewayHandler
-	SoraClient    *SoraClientHandler
 	Referral      *ReferralHandler
 	Payg          *PaygHandler
 	Setting       *SettingHandler

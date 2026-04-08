@@ -1,3 +1,5 @@
+//go:build unit
+
 package service
 
 import (
@@ -17,12 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type openAIWSRateLimitSignalRepo struct {
-	stubOpenAIAccountRepo
-	rateLimitCalls []time.Time
-	updateExtra    []map[string]any
-}
-
 type openAICodexSnapshotAsyncRepo struct {
 	stubOpenAIAccountRepo
 	updateExtraCh chan map[string]any
@@ -32,20 +28,6 @@ type openAICodexSnapshotAsyncRepo struct {
 type openAICodexExtraListRepo struct {
 	stubOpenAIAccountRepo
 	rateLimitCh chan time.Time
-}
-
-func (r *openAIWSRateLimitSignalRepo) SetRateLimited(_ context.Context, _ int64, resetAt time.Time) error {
-	r.rateLimitCalls = append(r.rateLimitCalls, resetAt)
-	return nil
-}
-
-func (r *openAIWSRateLimitSignalRepo) UpdateExtra(_ context.Context, _ int64, updates map[string]any) error {
-	copied := make(map[string]any, len(updates))
-	for k, v := range updates {
-		copied[k] = v
-	}
-	r.updateExtra = append(r.updateExtra, copied)
-	return nil
 }
 
 func (r *openAICodexSnapshotAsyncRepo) SetRateLimited(_ context.Context, _ int64, resetAt time.Time) error {
