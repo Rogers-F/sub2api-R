@@ -167,6 +167,8 @@ type CreateGroupInput struct {
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch bool
 	DefaultMappedModel    string
+	RequireOAuthOnly      bool
+	RequirePrivacySet     bool
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -207,6 +209,8 @@ type UpdateGroupInput struct {
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch *bool
 	DefaultMappedModel    *string
+	RequireOAuthOnly      *bool
+	RequirePrivacySet     *bool
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -996,10 +1000,20 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		SupportedModelScopes:            input.SupportedModelScopes,
 		SoraStorageQuotaBytes:           input.SoraStorageQuotaBytes,
 		AllowMessagesDispatch:           input.AllowMessagesDispatch,
+		RequireOAuthOnly:                input.RequireOAuthOnly,
+		RequirePrivacySet:               input.RequirePrivacySet,
 		DefaultMappedModel:              input.DefaultMappedModel,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
+	}
+
+	if group.RequireOAuthOnly && SupportsGroupAccountFilters(group.Platform) && len(accountIDsToCopy) > 0 {
+		filtered, err := s.filterNonAPIKeyAccountIDs(ctx, accountIDsToCopy)
+		if err != nil {
+			return nil, err
+		}
+		accountIDsToCopy = filtered
 	}
 
 	// 如果有需要复制的账号，绑定到新分组
@@ -1027,6 +1041,42 @@ func normalizePrice(price *float64) *float64 {
 		return nil
 	}
 	return price
+}
+
+func (s *adminServiceImpl) filterNonAPIKeyAccountIDs(ctx context.Context, accountIDs []int64) ([]int64, error) {
+	accounts, err := s.accountRepo.GetByIDs(ctx, accountIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch accounts for oauth filter: %w", err)
+	}
+	oauthIDs := make(map[int64]struct{}, len(accounts))
+	for _, account := range accounts {
+		if account != nil && account.Type != AccountTypeAPIKey {
+			oauthIDs[account.ID] = struct{}{}
+		}
+	}
+	filtered := make([]int64, 0, len(accountIDs))
+	for _, accountID := range accountIDs {
+		if _, ok := oauthIDs[accountID]; ok {
+			filtered = append(filtered, accountID)
+		}
+	}
+	return filtered, nil
+}
+
+func (s *adminServiceImpl) validateGroupOAuthRequirement(ctx context.Context, accountType string, groupIDs []int64) error {
+	if accountType != AccountTypeAPIKey || len(groupIDs) == 0 {
+		return nil
+	}
+	for _, groupID := range groupIDs {
+		group, err := s.groupRepo.GetByID(ctx, groupID)
+		if err != nil {
+			return err
+		}
+		if group.RequireOAuthOnly && SupportsGroupAccountFilters(group.Platform) {
+			return fmt.Errorf("分组 [%s] 仅允许 OAuth 账号，apikey 类型账号无法加入", group.Name)
+		}
+	}
+	return nil
 }
 
 // validateFallbackGroup 校验降级分组的有效性
@@ -1212,6 +1262,12 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if input.AllowMessagesDispatch != nil {
 		group.AllowMessagesDispatch = *input.AllowMessagesDispatch
 	}
+	if input.RequireOAuthOnly != nil {
+		group.RequireOAuthOnly = *input.RequireOAuthOnly
+	}
+	if input.RequirePrivacySet != nil {
+		group.RequirePrivacySet = *input.RequirePrivacySet
+	}
 	if input.DefaultMappedModel != nil {
 		group.DefaultMappedModel = *input.DefaultMappedModel
 	}
@@ -1257,6 +1313,14 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		// 先清空当前分组的所有账号绑定
 		if _, err := s.groupRepo.DeleteAccountGroupsByGroupID(ctx, id); err != nil {
 			return nil, fmt.Errorf("failed to clear existing account bindings: %w", err)
+		}
+
+		if group.RequireOAuthOnly && SupportsGroupAccountFilters(group.Platform) && len(accountIDsToCopy) > 0 {
+			filtered, err := s.filterNonAPIKeyAccountIDs(ctx, accountIDsToCopy)
+			if err != nil {
+				return nil, err
+			}
+			accountIDsToCopy = filtered
 		}
 
 		// 再绑定源分组的账号
@@ -1568,6 +1632,9 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 			return nil, err
 		}
 	}
+	if err := s.validateGroupOAuthRequirement(ctx, input.Type, groupIDs); err != nil {
+		return nil, err
+	}
 
 	// Sora apikey 账号的 base_url 必填校验
 	if input.Platform == PlatformSora && input.Type == AccountTypeAPIKey {
@@ -1765,6 +1832,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 				return nil, err
 			}
 		}
+		if err := s.validateGroupOAuthRequirement(ctx, account.Type, *input.GroupIDs); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.accountRepo.Update(ctx, account); err != nil {
@@ -1801,6 +1871,18 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 	if input.GroupIDs != nil {
 		if err := s.validateGroupIDsExist(ctx, *input.GroupIDs); err != nil {
 			return nil, err
+		}
+		accounts, err := s.accountRepo.GetByIDs(ctx, input.AccountIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, account := range accounts {
+			if account == nil {
+				continue
+			}
+			if err := s.validateGroupOAuthRequirement(ctx, account.Type, *input.GroupIDs); err != nil {
+				return nil, err
+			}
 		}
 	}
 

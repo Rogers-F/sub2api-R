@@ -141,6 +141,21 @@ func (a *Account) IsOAuth() bool {
 	return a.Type == AccountTypeOAuth || a.Type == AccountTypeSetupToken
 }
 
+// IsPrivacySet 检查账号的 privacy 是否已成功设置。
+// OpenAI: privacy_mode == "training_off"
+// Antigravity: privacy_mode == "privacy_set"
+// 其他平台: 无 privacy 概念，始终返回 true
+func (a *Account) IsPrivacySet() bool {
+	switch a.Platform {
+	case PlatformOpenAI:
+		return a.getExtraString("privacy_mode") == PrivacyModeTrainingOff
+	case PlatformAntigravity:
+		return a.getExtraString("privacy_mode") == "privacy_set"
+	default:
+		return true
+	}
+}
+
 func (a *Account) IsGemini() bool {
 	return a.Platform == PlatformGemini
 }
@@ -1204,6 +1219,28 @@ func (a *Account) IsSessionIDMaskingEnabled() bool {
 	return false
 }
 
+// IsCustomBaseURLEnabled 检查是否启用自定义 base URL 中继转发。
+// 仅适用于 Anthropic OAuth/SetupToken 类型账号。
+func (a *Account) IsCustomBaseURLEnabled() bool {
+	if !a.IsAnthropicOAuthOrSetupToken() {
+		return false
+	}
+	if a.Extra == nil {
+		return false
+	}
+	if v, ok := a.Extra["custom_base_url_enabled"]; ok {
+		if enabled, ok := v.(bool); ok {
+			return enabled
+		}
+	}
+	return false
+}
+
+// GetCustomBaseURL 返回自定义中继服务的 base URL。
+func (a *Account) GetCustomBaseURL() string {
+	return a.GetExtraString("custom_base_url")
+}
+
 // IsCacheTTLOverrideEnabled 检查是否启用缓存 TTL 强制替换
 // 仅适用于 Anthropic OAuth/SetupToken 类型账号
 // 启用后将所有 cache creation tokens 归入指定的 TTL 类型（5m 或 1h）
@@ -1679,8 +1716,8 @@ func (a *Account) GetRPMStrategy() string {
 	return "tiered"
 }
 
-// GetRPMStickyBuffer 获取 RPM 粘性缓冲数量
-// tiered 模式下的黄区大小，默认为 base_rpm 的 20%（至少 1）
+// GetRPMStickyBuffer 获取 RPM 粘性缓冲数量。
+// 默认公式使用 concurrency + max_sessions，并保留 base_rpm/5 作为下限兼容旧行为。
 func (a *Account) GetRPMStickyBuffer() int {
 	if a.Extra == nil {
 		return 0
@@ -1692,10 +1729,28 @@ func (a *Account) GetRPMStickyBuffer() int {
 		}
 	}
 	base := a.GetBaseRPM()
-	buffer := base / 5
-	if buffer < 1 && base > 0 {
-		buffer = 1
+	if base <= 0 {
+		return 0
 	}
+
+	concurrency := a.Concurrency
+	if concurrency < 0 {
+		concurrency = 0
+	}
+	maxSessions := a.GetMaxSessions()
+	if maxSessions < 0 {
+		maxSessions = 0
+	}
+
+	buffer := concurrency + maxSessions
+	floor := base / 5
+	if floor < 1 {
+		floor = 1
+	}
+	if buffer < floor {
+		buffer = floor
+	}
+
 	return buffer
 }
 

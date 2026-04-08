@@ -25,6 +25,7 @@ type mockAccountRepoForPlatform struct {
 	accountsByID     map[int64]*Account
 	listPlatformFunc func(ctx context.Context, platform string) ([]Account, error)
 	getByIDCalls     int
+	setErrors        map[int64]string
 }
 
 func (m *mockAccountRepoForPlatform) GetByID(ctx context.Context, id int64) (*Account, error) {
@@ -111,6 +112,10 @@ func (m *mockAccountRepoForPlatform) BatchUpdateLastUsed(ctx context.Context, up
 	return nil
 }
 func (m *mockAccountRepoForPlatform) SetError(ctx context.Context, id int64, errorMsg string) error {
+	if m.setErrors == nil {
+		m.setErrors = make(map[int64]string)
+	}
+	m.setErrors[id] = errorMsg
 	return nil
 }
 func (m *mockAccountRepoForPlatform) ClearError(ctx context.Context, id int64) error {
@@ -3139,7 +3144,7 @@ func TestGatewayService_GroupResolution_ReusesContextGroup(t *testing.T) {
 	account, err := svc.SelectAccountForModelWithExclusions(ctx, &groupID, "", "claude-3-5-sonnet-20241022", nil)
 	require.NoError(t, err)
 	require.NotNil(t, account)
-	require.Equal(t, 0, groupRepo.getByIDCalls)
+	require.Equal(t, 1, groupRepo.getByIDCalls)
 	require.Equal(t, 0, groupRepo.getByIDLiteCalls)
 }
 
@@ -3182,7 +3187,7 @@ func TestGatewayService_GroupResolution_IgnoresInvalidContextGroup(t *testing.T)
 	account, err := svc.SelectAccountForModelWithExclusions(ctx, &groupID, "", "claude-3-5-sonnet-20241022", nil)
 	require.NoError(t, err)
 	require.NotNil(t, account)
-	require.Equal(t, 0, groupRepo.getByIDCalls)
+	require.Equal(t, 1, groupRepo.getByIDCalls)
 	require.Equal(t, 1, groupRepo.getByIDLiteCalls)
 }
 
@@ -3252,8 +3257,47 @@ func TestGatewayService_GroupResolution_FallbackUsesLiteOnce(t *testing.T) {
 	account, err := svc.SelectAccountForModelWithExclusions(ctx, &groupID, "", "claude-3-5-sonnet-20241022", nil)
 	require.NoError(t, err)
 	require.NotNil(t, account)
-	require.Equal(t, 0, groupRepo.getByIDCalls)
+	require.Equal(t, 1, groupRepo.getByIDCalls)
 	require.Equal(t, 1, groupRepo.getByIDLiteCalls)
+}
+
+func TestGatewayService_SelectAccountForModelWithExclusions_RequirePrivacySetSkipsOpenAIAccount(t *testing.T) {
+	ctx := context.Background()
+	groupID := int64(88)
+	repo := &mockAccountRepoForPlatform{
+		accounts: []Account{
+			{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Priority: 1, Status: StatusActive, Schedulable: true},
+			{ID: 2, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Priority: 2, Status: StatusActive, Schedulable: true, Extra: map[string]any{"privacy_mode": PrivacyModeTrainingOff}},
+		},
+		accountsByID: map[int64]*Account{},
+	}
+	for i := range repo.accounts {
+		repo.accountsByID[repo.accounts[i].ID] = &repo.accounts[i]
+	}
+
+	groupRepo := &mockGroupRepoForGateway{
+		groups: map[int64]*Group{
+			groupID: {
+				ID:                groupID,
+				Name:              "strict-openai",
+				Platform:          PlatformOpenAI,
+				Status:            StatusActive,
+				Hydrated:          true,
+				RequirePrivacySet: true,
+			},
+		},
+	}
+	svc := &GatewayService{
+		accountRepo: repo,
+		groupRepo:   groupRepo,
+		cfg:         testConfig(),
+	}
+
+	account, err := svc.SelectAccountForModelWithExclusions(ctx, &groupID, "", "", nil)
+	require.NoError(t, err)
+	require.NotNil(t, account)
+	require.Equal(t, int64(2), account.ID)
+	require.Equal(t, PrivacyRequiredByGroupError("strict-openai"), repo.setErrors[1])
 }
 
 func TestGatewayService_ResolveGatewayGroup_DetectsFallbackCycle(t *testing.T) {

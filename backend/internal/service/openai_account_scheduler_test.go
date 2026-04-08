@@ -139,6 +139,55 @@ func TestOpenAIGatewayService_SelectAccountForModelWithExclusions_DBRuntimeReche
 	require.Equal(t, int64(34002), account.ID)
 }
 
+func TestOpenAIGatewayService_SelectAccountWithScheduler_RequirePrivacySetSkipsSnapshotCandidate(t *testing.T) {
+	ctx := context.Background()
+	groupID := int64(10105)
+	stalePrimary := &Account{ID: 35001, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Concurrency: 1, Priority: 0}
+	staleSecondary := &Account{ID: 35002, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Concurrency: 1, Priority: 5, Extra: map[string]any{"privacy_mode": PrivacyModeTrainingOff}}
+	snapshotCache := &openAISnapshotCacheStub{
+		snapshotAccounts: []*Account{stalePrimary, staleSecondary},
+		accountsByID:     map[int64]*Account{35001: stalePrimary, 35002: staleSecondary},
+	}
+	groupRepo := &mockGroupRepoForGateway{
+		groups: map[int64]*Group{
+			groupID: {
+				ID:                groupID,
+				Name:              "strict-openai",
+				Platform:          PlatformOpenAI,
+				Status:            StatusActive,
+				RequirePrivacySet: true,
+			},
+		},
+	}
+	repo := stubOpenAIAccountRepo{
+		accounts:  []Account{*stalePrimary, *staleSecondary},
+		setErrors: map[int64]string{},
+	}
+	snapshotService := &SchedulerSnapshotService{cache: snapshotCache, groupRepo: groupRepo}
+	svc := &OpenAIGatewayService{
+		accountRepo:        repo,
+		cfg:                &config.Config{},
+		schedulerSnapshot:  snapshotService,
+		concurrencyService: NewConcurrencyService(stubConcurrencyCache{}),
+	}
+
+	selection, decision, err := svc.SelectAccountWithScheduler(
+		ctx,
+		&groupID,
+		"",
+		"privacy-strict",
+		"",
+		nil,
+		OpenAIUpstreamTransportAny,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, selection)
+	require.NotNil(t, selection.Account)
+	require.Equal(t, openAIAccountScheduleLayerLoadBalance, decision.Layer)
+	require.Equal(t, int64(35002), selection.Account.ID)
+	require.Equal(t, PrivacyRequiredByGroupError("strict-openai"), repo.setErrors[35001])
+}
+
 func TestOpenAIGatewayService_SelectAccountWithScheduler_PreviousResponseSticky(t *testing.T) {
 	ctx := context.Background()
 	groupID := int64(9)

@@ -148,6 +148,9 @@ func (s *AccountService) Create(ctx context.Context, req CreateAccountRequest) (
 		if err := s.validateGroupIDsExist(ctx, req.GroupIDs); err != nil {
 			return nil, err
 		}
+		if err := s.validateGroupOAuthRequirement(ctx, req.Type, req.GroupIDs); err != nil {
+			return nil, err
+		}
 	}
 
 	// 创建账号
@@ -270,6 +273,9 @@ func (s *AccountService) Update(ctx context.Context, id int64, req UpdateAccount
 		if err := s.validateGroupIDsExist(ctx, *req.GroupIDs); err != nil {
 			return nil, err
 		}
+		if err := s.validateGroupOAuthRequirement(ctx, account.Type, *req.GroupIDs); err != nil {
+			return nil, err
+		}
 	}
 
 	// 执行更新
@@ -336,6 +342,25 @@ func (s *AccountService) validateGroupIDsExist(ctx context.Context, groupIDs []i
 		_, err := s.groupRepo.GetByID(ctx, groupID)
 		if err != nil {
 			return fmt.Errorf("get group: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *AccountService) validateGroupOAuthRequirement(ctx context.Context, accountType string, groupIDs []int64) error {
+	if accountType != AccountTypeAPIKey || len(groupIDs) == 0 {
+		return nil
+	}
+	if s.groupRepo == nil {
+		return fmt.Errorf("group repository not configured")
+	}
+	for _, groupID := range groupIDs {
+		group, err := s.groupRepo.GetByID(ctx, groupID)
+		if err != nil {
+			return fmt.Errorf("get group: %w", err)
+		}
+		if group.RequireOAuthOnly && SupportsGroupAccountFilters(group.Platform) {
+			return fmt.Errorf("分组 [%s] 仅允许 OAuth 账号，apikey 类型账号无法加入", group.Name)
 		}
 	}
 	return nil

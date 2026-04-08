@@ -90,28 +90,34 @@ func TestCheckRPMSchedulability(t *testing.T) {
 
 func TestGetRPMStickyBuffer(t *testing.T) {
 	tests := []struct {
-		name     string
-		extra    map[string]any
-		expected int
+		name        string
+		concurrency int
+		extra       map[string]any
+		expected    int
 	}{
-		{"nil extra", nil, 0},
-		{"no keys", map[string]any{}, 0},
-		{"base_rpm=0", map[string]any{"base_rpm": 0}, 0},
-		{"base_rpm=1 min buffer 1", map[string]any{"base_rpm": 1}, 1},
-		{"base_rpm=4 min buffer 1", map[string]any{"base_rpm": 4}, 1},
-		{"base_rpm=5 buffer 1", map[string]any{"base_rpm": 5}, 1},
-		{"base_rpm=10 buffer 2", map[string]any{"base_rpm": 10}, 2},
-		{"base_rpm=15 buffer 3", map[string]any{"base_rpm": 15}, 3},
-		{"base_rpm=100 buffer 20", map[string]any{"base_rpm": 100}, 20},
-		{"custom buffer=5", map[string]any{"base_rpm": 10, "rpm_sticky_buffer": 5}, 5},
-		{"custom buffer=0 fallback to default", map[string]any{"base_rpm": 10, "rpm_sticky_buffer": 0}, 2},
-		{"custom buffer negative fallback", map[string]any{"base_rpm": 10, "rpm_sticky_buffer": -1}, 2},
-		{"custom buffer with float", map[string]any{"base_rpm": 10, "rpm_sticky_buffer": float64(7)}, 7},
-		{"json.Number base_rpm", map[string]any{"base_rpm": json.Number("10")}, 2},
+		{"nil extra", 0, nil, 0},
+		{"no keys", 0, map[string]any{}, 0},
+		{"base_rpm=0", 0, map[string]any{"base_rpm": 0}, 0},
+		{"conc=3 sess=10", 3, map[string]any{"base_rpm": 15, "max_sessions": 10}, 13},
+		{"conc=2 sess=5", 2, map[string]any{"base_rpm": 10, "max_sessions": 5}, 7},
+		{"conc=3 sess=15", 3, map[string]any{"base_rpm": 30, "max_sessions": 15}, 18},
+		{"floor base=15", 0, map[string]any{"base_rpm": 15}, 3},
+		{"floor base=10", 0, map[string]any{"base_rpm": 10}, 2},
+		{"floor base=1", 0, map[string]any{"base_rpm": 1}, 1},
+		{"floor base=4", 0, map[string]any{"base_rpm": 4}, 1},
+		{"floor beats conc", 1, map[string]any{"base_rpm": 15}, 3},
+		{"custom buffer=5", 3, map[string]any{"base_rpm": 10, "rpm_sticky_buffer": 5, "max_sessions": 10}, 5},
+		{"custom buffer=0 fallback", 3, map[string]any{"base_rpm": 10, "rpm_sticky_buffer": 0, "max_sessions": 10}, 13},
+		{"custom buffer negative fallback", 3, map[string]any{"base_rpm": 10, "rpm_sticky_buffer": -1, "max_sessions": 10}, 13},
+		{"custom buffer with float", 3, map[string]any{"base_rpm": 10, "rpm_sticky_buffer": float64(7)}, 7},
+		{"negative concurrency clamped", -5, map[string]any{"base_rpm": 15, "max_sessions": 10}, 10},
+		{"negative maxSessions clamped", 3, map[string]any{"base_rpm": 15, "max_sessions": -5}, 3},
+		{"conc=10 sess=5", 10, map[string]any{"base_rpm": 10, "max_sessions": 5}, 15},
+		{"json.Number base_rpm", 3, map[string]any{"base_rpm": json.Number("10"), "max_sessions": json.Number("5")}, 8},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := &Account{Extra: tt.extra}
+			a := &Account{Concurrency: tt.concurrency, Extra: tt.extra}
 			if got := a.GetRPMStickyBuffer(); got != tt.expected {
 				t.Errorf("GetRPMStickyBuffer() = %d, want %d", got, tt.expected)
 			}

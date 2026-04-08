@@ -266,3 +266,63 @@ func TestOpenAITokenRefresher_CanRefresh(t *testing.T) {
 		})
 	}
 }
+
+func TestOpenAITokenRefresher_NeedsRefresh(t *testing.T) {
+	refresher := &OpenAITokenRefresher{}
+	refreshWindow := 30 * time.Minute
+	resetAt := time.Now().Add(7 * 24 * time.Hour)
+
+	tests := []struct {
+		name        string
+		account     *Account
+		wantRefresh bool
+	}{
+		{
+			name: "expires_at within refresh window",
+			account: &Account{
+				Platform: PlatformOpenAI,
+				Type:     AccountTypeOAuth,
+				Credentials: map[string]any{
+					"expires_at": time.Now().Add(15 * time.Minute).UTC().Format(time.RFC3339),
+				},
+			},
+			wantRefresh: true,
+		},
+		{
+			name: "expires_at outside refresh window",
+			account: &Account{
+				Platform: PlatformOpenAI,
+				Type:     AccountTypeOAuth,
+				Credentials: map[string]any{
+					"expires_at": time.Now().Add(2 * time.Hour).UTC().Format(time.RFC3339),
+				},
+			},
+			wantRefresh: false,
+		},
+		{
+			name: "missing expires_at while rate-limited",
+			account: &Account{
+				Platform:         PlatformOpenAI,
+				Type:             AccountTypeOAuth,
+				Credentials:      map[string]any{},
+				RateLimitResetAt: &resetAt,
+			},
+			wantRefresh: true,
+		},
+		{
+			name: "missing expires_at without rate limit",
+			account: &Account{
+				Platform:    PlatformOpenAI,
+				Type:        AccountTypeOAuth,
+				Credentials: map[string]any{},
+			},
+			wantRefresh: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.wantRefresh, refresher.NeedsRefresh(tt.account, refreshWindow))
+		})
+	}
+}

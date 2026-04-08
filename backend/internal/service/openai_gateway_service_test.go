@@ -26,7 +26,8 @@ var _ GatewayCache = (*stubGatewayCache)(nil)
 
 type stubOpenAIAccountRepo struct {
 	AccountRepository
-	accounts []Account
+	accounts  []Account
+	setErrors map[int64]string
 }
 
 type snapshotUpdateAccountRepo struct {
@@ -76,6 +77,14 @@ func (r stubOpenAIAccountRepo) ListSchedulableByPlatform(ctx context.Context, pl
 
 func (r stubOpenAIAccountRepo) ListSchedulableUngroupedByPlatform(ctx context.Context, platform string) ([]Account, error) {
 	return r.ListSchedulableByPlatform(ctx, platform)
+}
+
+func (r stubOpenAIAccountRepo) SetError(ctx context.Context, id int64, errorMsg string) error {
+	if r.setErrors == nil {
+		return nil
+	}
+	r.setErrors[id] = errorMsg
+	return nil
 }
 
 type stubConcurrencyCache struct {

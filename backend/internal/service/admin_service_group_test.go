@@ -16,6 +16,16 @@ type groupRepoStubForAdmin struct {
 	updated *Group // 记录 Update 调用的参数
 	getByID *Group // GetByID 返回值
 	getErr  error  // GetByID 返回的错误
+	groups  map[int64]*Group
+
+	accountIDsByGroupIDs     []int64
+	accountIDsByGroupIDsErr  error
+	getAccountIDsByGroupArgs []int64
+	boundGroupID             int64
+	boundAccountIDs          []int64
+	bindAccountsErr          error
+	deletedAccountGroupID    int64
+	deleteAccountGroupsErr   error
 
 	listWithFiltersCalls       int
 	listWithFiltersParams      pagination.PaginationParams
@@ -30,6 +40,9 @@ type groupRepoStubForAdmin struct {
 
 func (s *groupRepoStubForAdmin) Create(_ context.Context, g *Group) error {
 	s.created = g
+	if g.ID == 0 {
+		g.ID = 100
+	}
 	return nil
 }
 
@@ -38,16 +51,26 @@ func (s *groupRepoStubForAdmin) Update(_ context.Context, g *Group) error {
 	return nil
 }
 
-func (s *groupRepoStubForAdmin) GetByID(_ context.Context, _ int64) (*Group, error) {
+func (s *groupRepoStubForAdmin) GetByID(_ context.Context, id int64) (*Group, error) {
 	if s.getErr != nil {
 		return nil, s.getErr
+	}
+	if s.groups != nil {
+		if g, ok := s.groups[id]; ok {
+			return g, nil
+		}
 	}
 	return s.getByID, nil
 }
 
-func (s *groupRepoStubForAdmin) GetByIDLite(_ context.Context, _ int64) (*Group, error) {
+func (s *groupRepoStubForAdmin) GetByIDLite(_ context.Context, id int64) (*Group, error) {
 	if s.getErr != nil {
 		return nil, s.getErr
+	}
+	if s.groups != nil {
+		if g, ok := s.groups[id]; ok {
+			return g, nil
+		}
 	}
 	return s.getByID, nil
 }
@@ -104,20 +127,64 @@ func (s *groupRepoStubForAdmin) GetAccountCount(_ context.Context, _ int64) (int
 	panic("unexpected GetAccountCount call")
 }
 
-func (s *groupRepoStubForAdmin) DeleteAccountGroupsByGroupID(_ context.Context, _ int64) (int64, error) {
-	panic("unexpected DeleteAccountGroupsByGroupID call")
+func (s *groupRepoStubForAdmin) DeleteAccountGroupsByGroupID(_ context.Context, groupID int64) (int64, error) {
+	s.deletedAccountGroupID = groupID
+	if s.deleteAccountGroupsErr != nil {
+		return 0, s.deleteAccountGroupsErr
+	}
+	return 0, nil
 }
 
-func (s *groupRepoStubForAdmin) BindAccountsToGroup(_ context.Context, _ int64, _ []int64) error {
-	panic("unexpected BindAccountsToGroup call")
+func (s *groupRepoStubForAdmin) BindAccountsToGroup(_ context.Context, groupID int64, accountIDs []int64) error {
+	s.boundGroupID = groupID
+	s.boundAccountIDs = append([]int64{}, accountIDs...)
+	return s.bindAccountsErr
 }
 
-func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, _ []int64) ([]int64, error) {
-	panic("unexpected GetAccountIDsByGroupIDs call")
+func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, groupIDs []int64) ([]int64, error) {
+	s.getAccountIDsByGroupArgs = append([]int64{}, groupIDs...)
+	if s.accountIDsByGroupIDsErr != nil {
+		return nil, s.accountIDsByGroupIDsErr
+	}
+	return append([]int64{}, s.accountIDsByGroupIDs...), nil
 }
 
 func (s *groupRepoStubForAdmin) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
 	return nil
+}
+
+type accountRepoStubForAdminGroupFilters struct {
+	accountRepoStub
+	createCalls     int
+	updateCalls     int
+	bindGroupsCalls int
+	getByIDAccount  *Account
+	getByIDErr      error
+}
+
+func (s *accountRepoStubForAdminGroupFilters) Create(_ context.Context, account *Account) error {
+	s.createCalls++
+	if account.ID == 0 {
+		account.ID = 200
+	}
+	return nil
+}
+
+func (s *accountRepoStubForAdminGroupFilters) Update(_ context.Context, _ *Account) error {
+	s.updateCalls++
+	return nil
+}
+
+func (s *accountRepoStubForAdminGroupFilters) BindGroups(_ context.Context, _ int64, _ []int64) error {
+	s.bindGroupsCalls++
+	return nil
+}
+
+func (s *accountRepoStubForAdminGroupFilters) GetByID(_ context.Context, _ int64) (*Account, error) {
+	if s.getByIDErr != nil {
+		return nil, s.getByIDErr
+	}
+	return s.getByIDAccount, nil
 }
 
 // TestAdminService_CreateGroup_WithImagePricing 测试创建分组时 ImagePrice 字段正确传递
@@ -279,6 +346,102 @@ func TestAdminService_UpdateGroup_PartialImagePricing(t *testing.T) {
 	require.NotNil(t, repo.updated.ImagePrice2K)
 	require.InDelta(t, 0.15, *repo.updated.ImagePrice2K, 0.0001) // 原值保持
 	require.Nil(t, repo.updated.ImagePrice4K)
+}
+
+func TestAdminService_CreateGroup_CopyAccountsFiltersAPIKeysWhenRequireOAuthOnly(t *testing.T) {
+	repo := &groupRepoStubForAdmin{
+		groups: map[int64]*Group{
+			11: {ID: 11, Name: "source", Platform: PlatformOpenAI, Status: StatusActive},
+		},
+		accountIDsByGroupIDs: []int64{1, 2},
+	}
+	accountRepo := &accountRepoStubForBulkUpdate{
+		getByIDsAccounts: []*Account{
+			{ID: 1, Type: AccountTypeAPIKey},
+			{ID: 2, Type: AccountTypeOAuth},
+		},
+	}
+	svc := &adminServiceImpl{groupRepo: repo, accountRepo: accountRepo}
+
+	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:                     "strict-openai",
+		Platform:                 PlatformOpenAI,
+		RateMultiplier:           1.0,
+		RequireOAuthOnly:         true,
+		RequirePrivacySet:        true,
+		CopyAccountsFromGroupIDs: []int64{11},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.created)
+	require.True(t, repo.created.RequireOAuthOnly)
+	require.True(t, repo.created.RequirePrivacySet)
+	require.Equal(t, []int64{11}, repo.getAccountIDsByGroupArgs)
+	require.Equal(t, []int64{2}, repo.boundAccountIDs)
+	require.Equal(t, int64(1), group.AccountCount)
+}
+
+func TestAdminService_UpdateGroup_CopyAccountsFiltersAPIKeysWhenRequireOAuthOnly(t *testing.T) {
+	repo := &groupRepoStubForAdmin{
+		getByID: &Group{
+			ID:               7,
+			Name:             "strict-openai",
+			Platform:         PlatformOpenAI,
+			Status:           StatusActive,
+			RequireOAuthOnly: true,
+		},
+		groups: map[int64]*Group{
+			11: {ID: 11, Name: "source", Platform: PlatformOpenAI, Status: StatusActive},
+		},
+		accountIDsByGroupIDs: []int64{1, 2},
+	}
+	accountRepo := &accountRepoStubForBulkUpdate{
+		getByIDsAccounts: []*Account{
+			{ID: 1, Type: AccountTypeAPIKey},
+			{ID: 2, Type: AccountTypeOAuth},
+		},
+	}
+	svc := &adminServiceImpl{groupRepo: repo, accountRepo: accountRepo}
+
+	group, err := svc.UpdateGroup(context.Background(), 7, &UpdateGroupInput{
+		CopyAccountsFromGroupIDs: []int64{11},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.Equal(t, int64(7), repo.deletedAccountGroupID)
+	require.Equal(t, []int64{2}, repo.boundAccountIDs)
+}
+
+func TestAdminService_CreateAccount_RejectsAPIKeyBindingForRequireOAuthOnlyGroup(t *testing.T) {
+	groupRepo := &groupRepoStubForAdmin{
+		groups: map[int64]*Group{
+			10: {
+				ID:               10,
+				Name:             "strict-openai",
+				Platform:         PlatformOpenAI,
+				Status:           StatusActive,
+				RequireOAuthOnly: true,
+			},
+		},
+	}
+	accountRepo := &accountRepoStubForAdminGroupFilters{}
+	svc := &adminServiceImpl{
+		accountRepo: accountRepo,
+		groupRepo:   groupRepo,
+	}
+
+	_, err := svc.CreateAccount(context.Background(), &CreateAccountInput{
+		Name:                  "api-key",
+		Platform:              PlatformOpenAI,
+		Type:                  AccountTypeAPIKey,
+		Concurrency:           1,
+		GroupIDs:              []int64{10},
+		SkipMixedChannelCheck: true,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "仅允许 OAuth 账号")
+	require.Equal(t, 0, accountRepo.createCalls)
+	require.Equal(t, 0, accountRepo.bindGroupsCalls)
 }
 
 func TestAdminService_ListGroups_WithSearch(t *testing.T) {

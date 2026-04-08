@@ -60,6 +60,8 @@ type Group struct {
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch bool
+	RequireOAuthOnly      bool
+	RequirePrivacySet     bool
 	DefaultMappedModel    string
 
 	CreatedAt time.Time
@@ -138,6 +140,19 @@ func IsGroupContextValid(group *Group) bool {
 		return false
 	}
 	return true
+}
+
+func SupportsGroupAccountFilters(platform string) bool {
+	switch platform {
+	case PlatformOpenAI, PlatformAntigravity, PlatformAnthropic, PlatformGemini:
+		return true
+	default:
+		return false
+	}
+}
+
+func PrivacyRequiredByGroupError(groupName string) string {
+	return "Privacy not set, required by group [" + groupName + "]"
 }
 
 // GetRoutingAccountIDs 根据请求模型获取路由账号 ID 列表

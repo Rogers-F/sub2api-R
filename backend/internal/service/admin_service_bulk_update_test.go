@@ -170,3 +170,37 @@ func TestAdminService_BulkUpdateAccounts_MixedChannelPreCheckBlocksOnExistingCon
 	// No BindGroups should have been called since the check runs before any write.
 	require.Empty(t, repo.bindGroupsCalls)
 }
+
+func TestAdminService_BulkUpdateAccounts_RejectsAPIKeyBindingForRequireOAuthOnlyGroup(t *testing.T) {
+	repo := &accountRepoStubForBulkUpdate{
+		getByIDsAccounts: []*Account{
+			{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey},
+		},
+	}
+	svc := &adminServiceImpl{
+		accountRepo: repo,
+		groupRepo: &groupRepoStubForAdmin{
+			groups: map[int64]*Group{
+				10: {
+					ID:               10,
+					Name:             "strict-openai",
+					Platform:         PlatformOpenAI,
+					Status:           StatusActive,
+					RequireOAuthOnly: true,
+				},
+			},
+		},
+	}
+
+	groupIDs := []int64{10}
+	input := &BulkUpdateAccountsInput{
+		AccountIDs: []int64{1},
+		GroupIDs:   &groupIDs,
+	}
+
+	result, err := svc.BulkUpdateAccounts(context.Background(), input)
+	require.Nil(t, result)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "仅允许 OAuth 账号")
+	require.Empty(t, repo.bindGroupsCalls)
+}
