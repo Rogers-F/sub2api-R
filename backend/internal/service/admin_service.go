@@ -99,13 +99,13 @@ type AdminService interface {
 
 // CreateUserInput represents input for creating a new user via admin operations.
 type CreateUserInput struct {
-	Email                 string
-	Password              string
-	Username              string
-	Notes                 string
-	Balance               float64
-	Concurrency           int
-	AllowedGroups         []int64
+	Email         string
+	Password      string
+	Username      string
+	Notes         string
+	Balance       float64
+	Concurrency   int
+	AllowedGroups []int64
 }
 
 type UpdateUserInput struct {
@@ -141,9 +141,9 @@ type CreateGroupInput struct {
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K *float64
-	ImagePrice2K *float64
-	ImagePrice4K *float64
+	ImagePrice1K               *float64
+	ImagePrice2K               *float64
+	ImagePrice4K               *float64
 	ClaudeCodeOnly             bool   // 仅允许 Claude Code 客户端
 	ClaudePromptCachingEnabled *bool  // 是否启用 Claude prompt cache
 	FallbackGroupID            *int64 // 降级分组 ID
@@ -176,9 +176,9 @@ type UpdateGroupInput struct {
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K *float64
-	ImagePrice2K *float64
-	ImagePrice4K *float64
+	ImagePrice1K               *float64
+	ImagePrice2K               *float64
+	ImagePrice4K               *float64
 	ClaudeCodeOnly             *bool  // 仅允许 Claude Code 客户端
 	ClaudePromptCachingEnabled *bool  // 是否启用 Claude prompt cache
 	FallbackGroupID            *int64 // 降级分组 ID
@@ -578,14 +578,14 @@ func (s *adminServiceImpl) buildUserCommissionRateInfo(ctx context.Context, user
 
 func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
 	user := &User{
-		Email:                 input.Email,
-		Username:              input.Username,
-		Notes:                 input.Notes,
-		Role:                  RoleUser, // Always create as regular user, never admin
-		Balance:               input.Balance,
-		Concurrency:           input.Concurrency,
-		Status:                StatusActive,
-		AllowedGroups:         input.AllowedGroups,
+		Email:         input.Email,
+		Username:      input.Username,
+		Notes:         input.Notes,
+		Role:          RoleUser, // Always create as regular user, never admin
+		Balance:       input.Balance,
+		Concurrency:   input.Concurrency,
+		Status:        StatusActive,
+		AllowedGroups: input.AllowedGroups,
 	}
 	if err := user.SetPassword(input.Password); err != nil {
 		return nil, err
