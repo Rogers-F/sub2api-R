@@ -3755,7 +3755,7 @@ func (s *OpenAIGatewayService) handleOAuthSSEToJSON(resp *http.Response, c *gin.
 
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 
-	contentType := applicationJSONContentType
+	var contentType string
 	if !ok {
 		contentType = resp.Header.Get("Content-Type")
 		if contentType == "" {
