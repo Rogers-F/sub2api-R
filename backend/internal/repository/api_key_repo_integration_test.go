@@ -81,6 +81,30 @@ func (s *APIKeyRepoSuite) TestGetByKey() {
 	s.Require().Equal(group.ID, got.Group.ID)
 }
 
+func (s *APIKeyRepoSuite) TestGetByKeyForAuth_IncludesForceApplicationJSONForNonStream() {
+	user := s.mustCreateUser("getbykeyauth@test.com")
+	group := s.mustCreateGroup("g-auth")
+
+	_, err := s.client.Group.UpdateOneID(group.ID).
+		SetForceApplicationJSONForNonStream(true).
+		Save(s.ctx)
+	s.Require().NoError(err, "update group force_application_json_for_non_stream")
+
+	key := &service.APIKey{
+		UserID:  user.ID,
+		Key:     "sk-getbykey-auth",
+		Name:    "Auth Key",
+		GroupID: &group.ID,
+		Status:  service.StatusActive,
+	}
+	s.Require().NoError(s.repo.Create(s.ctx, key))
+
+	got, err := s.repo.GetByKeyForAuth(s.ctx, key.Key)
+	s.Require().NoError(err, "GetByKeyForAuth")
+	s.Require().NotNil(got.Group, "expected Group preload")
+	s.Require().True(got.Group.ForceApplicationJSONForNonStream, "expected auth query to include non-stream json flag")
+}
+
 func (s *APIKeyRepoSuite) TestGetByKey_NotFound() {
 	_, err := s.repo.GetByKey(s.ctx, "non-existent-key")
 	s.Require().Error(err, "expected error for non-existent key")

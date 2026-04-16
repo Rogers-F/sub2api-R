@@ -200,14 +200,15 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 				Concurrency: 3,
 			},
 			Group: &APIKeyAuthGroupSnapshot{
-				ID:                         groupID,
-				Name:                       "g",
-				Platform:                   PlatformAnthropic,
-				Status:                     StatusActive,
-				SubscriptionType:           SubscriptionTypeStandard,
-				RateMultiplier:             1,
-				ClaudePromptCachingEnabled: true,
-				ModelRoutingEnabled:        true,
+				ID:                               groupID,
+				Name:                             "g",
+				Platform:                         PlatformAnthropic,
+				Status:                           StatusActive,
+				SubscriptionType:                 SubscriptionTypeStandard,
+				RateMultiplier:                   1,
+				ClaudePromptCachingEnabled:       true,
+				ModelRoutingEnabled:              true,
+				ForceApplicationJSONForNonStream: true,
 				ModelRouting: map[string][]int64{
 					"claude-opus-*": {1, 2},
 				},
@@ -225,6 +226,7 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 	require.Equal(t, groupID, apiKey.Group.ID)
 	require.True(t, apiKey.Group.ClaudePromptCachingEnabled)
 	require.True(t, apiKey.Group.ModelRoutingEnabled)
+	require.True(t, apiKey.Group.ForceApplicationJSONForNonStream)
 	require.Equal(t, map[string][]int64{"claude-opus-*": {1, 2}}, apiKey.Group.ModelRouting)
 }
 

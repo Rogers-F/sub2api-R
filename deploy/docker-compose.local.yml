@@ -24,7 +24,7 @@ services:
   # Sub2API Application
   # ===========================================================================
   sub2api:
-    image: ghcr.io/rogers-f/sub2api:0.2.108
+    image: ghcr.io/rogers-f/sub2api:0.2.109
     container_name: sub2api
     restart: unless-stopped
     ulimits:
