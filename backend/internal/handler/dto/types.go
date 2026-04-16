@@ -91,9 +91,10 @@ type Group struct {
 	FallbackGroupIDOnInvalidRequest *int64 `json:"fallback_group_id_on_invalid_request"`
 
 	// OpenAI Messages 调度开关（用户侧需要此字段判断是否展示 Claude Code 教程）
-	AllowMessagesDispatch bool `json:"allow_messages_dispatch"`
-	RequireOAuthOnly      bool `json:"require_oauth_only"`
-	RequirePrivacySet     bool `json:"require_privacy_set"`
+	AllowMessagesDispatch            bool `json:"allow_messages_dispatch"`
+	RequireOAuthOnly                 bool `json:"require_oauth_only"`
+	RequirePrivacySet                bool `json:"require_privacy_set"`
+	ForceApplicationJSONForNonStream bool `json:"force_application_json_for_non_stream"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

@@ -491,6 +491,7 @@ export interface Group {
   allow_messages_dispatch?: boolean
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  force_application_json_for_non_stream?: boolean
   created_at: string
   updated_at: string
 }
@@ -598,6 +599,7 @@ export interface CreateGroupRequest {
   allow_messages_dispatch?: boolean
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  force_application_json_for_non_stream?: boolean
   default_mapped_model?: string
   mcp_xml_inject?: boolean
   simulate_claude_max_enabled?: boolean
@@ -627,6 +629,7 @@ export interface UpdateGroupRequest {
   allow_messages_dispatch?: boolean
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  force_application_json_for_non_stream?: boolean
   default_mapped_model?: string
   mcp_xml_inject?: boolean
   simulate_claude_max_enabled?: boolean

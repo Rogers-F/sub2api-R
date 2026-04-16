@@ -160,6 +160,8 @@ type CreateGroupInput struct {
 	DefaultMappedModel    string
 	RequireOAuthOnly      bool
 	RequirePrivacySet     bool
+	// 非流式响应头控制
+	ForceApplicationJSONForNonStream bool
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -195,6 +197,8 @@ type UpdateGroupInput struct {
 	DefaultMappedModel    *string
 	RequireOAuthOnly      *bool
 	RequirePrivacySet     *bool
+	// 非流式响应头控制
+	ForceApplicationJSONForNonStream *bool
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -938,30 +942,31 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 
 	group := &Group{
-		Name:                            input.Name,
-		Description:                     input.Description,
-		Platform:                        platform,
-		RateMultiplier:                  input.RateMultiplier,
-		IsExclusive:                     input.IsExclusive,
-		Status:                          StatusActive,
-		SubscriptionType:                subscriptionType,
-		DailyLimitUSD:                   dailyLimit,
-		WeeklyLimitUSD:                  weeklyLimit,
-		MonthlyLimitUSD:                 monthlyLimit,
-		ImagePrice1K:                    imagePrice1K,
-		ImagePrice2K:                    imagePrice2K,
-		ImagePrice4K:                    imagePrice4K,
-		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
-		ClaudePromptCachingEnabled:      claudePromptCachingEnabled,
-		FallbackGroupID:                 input.FallbackGroupID,
-		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
-		ModelRouting:                    input.ModelRouting,
-		MCPXMLInject:                    mcpXMLInject,
-		SupportedModelScopes:            input.SupportedModelScopes,
-		AllowMessagesDispatch:           input.AllowMessagesDispatch,
-		RequireOAuthOnly:                input.RequireOAuthOnly,
-		RequirePrivacySet:               input.RequirePrivacySet,
-		DefaultMappedModel:              input.DefaultMappedModel,
+		Name:                             input.Name,
+		Description:                      input.Description,
+		Platform:                         platform,
+		RateMultiplier:                   input.RateMultiplier,
+		IsExclusive:                      input.IsExclusive,
+		Status:                           StatusActive,
+		SubscriptionType:                 subscriptionType,
+		DailyLimitUSD:                    dailyLimit,
+		WeeklyLimitUSD:                   weeklyLimit,
+		MonthlyLimitUSD:                  monthlyLimit,
+		ImagePrice1K:                     imagePrice1K,
+		ImagePrice2K:                     imagePrice2K,
+		ImagePrice4K:                     imagePrice4K,
+		ClaudeCodeOnly:                   input.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:       claudePromptCachingEnabled,
+		FallbackGroupID:                  input.FallbackGroupID,
+		FallbackGroupIDOnInvalidRequest:  fallbackOnInvalidRequest,
+		ModelRouting:                     input.ModelRouting,
+		MCPXMLInject:                     mcpXMLInject,
+		SupportedModelScopes:             input.SupportedModelScopes,
+		AllowMessagesDispatch:            input.AllowMessagesDispatch,
+		RequireOAuthOnly:                 input.RequireOAuthOnly,
+		RequirePrivacySet:                input.RequirePrivacySet,
+		DefaultMappedModel:               input.DefaultMappedModel,
+		ForceApplicationJSONForNonStream: input.ForceApplicationJSONForNonStream,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
@@ -1214,6 +1219,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.DefaultMappedModel != nil {
 		group.DefaultMappedModel = *input.DefaultMappedModel
+	}
+	if input.ForceApplicationJSONForNonStream != nil {
+		group.ForceApplicationJSONForNonStream = *input.ForceApplicationJSONForNonStream
 	}
 
 	if err := s.groupRepo.Update(ctx, group); err != nil {

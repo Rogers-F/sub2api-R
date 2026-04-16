@@ -408,6 +408,7 @@ var (
 		{Name: "require_oauth_only", Type: field.TypeBool, Default: false},
 		{Name: "require_privacy_set", Type: field.TypeBool, Default: false},
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "force_application_json_for_non_stream", Type: field.TypeBool, Default: false},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{

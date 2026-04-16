@@ -764,6 +764,32 @@
           </div>
         </div>
 
+        <div v-if="['openai', 'antigravity', 'anthropic', 'gemini'].includes(createForm.platform)" class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4">
+          <div class="mb-3">
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.groups.nonStreamContentType.title') }}</h4>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.nonStreamContentType.hint') }}</p>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.groups.nonStreamContentType.label') }}</label>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ createForm.force_application_json_for_non_stream ? t('admin.groups.nonStreamContentType.enabled') : t('admin.groups.nonStreamContentType.disabled') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="createForm.force_application_json_for_non_stream = !createForm.force_application_json_for_non_stream"
+              class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="createForm.force_application_json_for_non_stream ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="createForm.force_application_json_for_non_stream ? 'translate-x-6' : 'translate-x-1'"
+              />
+            </button>
+          </div>
+        </div>
+
         <div v-if="['openai', 'antigravity', 'anthropic', 'gemini'].includes(createForm.platform)" class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4 space-y-4">
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">账号过滤控制</h4>
 
@@ -1515,6 +1541,32 @@
           </div>
         </div>
 
+        <div v-if="['openai', 'antigravity', 'anthropic', 'gemini'].includes(editForm.platform)" class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4">
+          <div class="mb-3">
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.groups.nonStreamContentType.title') }}</h4>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.nonStreamContentType.hint') }}</p>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.groups.nonStreamContentType.label') }}</label>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ editForm.force_application_json_for_non_stream ? t('admin.groups.nonStreamContentType.enabled') : t('admin.groups.nonStreamContentType.disabled') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="editForm.force_application_json_for_non_stream = !editForm.force_application_json_for_non_stream"
+              class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="editForm.force_application_json_for_non_stream ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="editForm.force_application_json_for_non_stream ? 'translate-x-6' : 'translate-x-1'"
+              />
+            </button>
+          </div>
+        </div>
+
         <div v-if="['openai', 'antigravity', 'anthropic', 'gemini'].includes(editForm.platform)" class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4 space-y-4">
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">账号过滤控制</h4>
 
@@ -2091,6 +2143,7 @@ const createForm = reactive({
   // 账号过滤控制
   require_oauth_only: false,
   require_privacy_set: false,
+  force_application_json_for_non_stream: false,
   // 模型路由开关
   model_routing_enabled: false,
   // 支持的模型系列（仅 antigravity 平台）
@@ -2333,6 +2386,7 @@ const editForm = reactive({
   // 账号过滤控制
   require_oauth_only: false,
   require_privacy_set: false,
+  force_application_json_for_non_stream: false,
   // 模型路由开关
   model_routing_enabled: false,
   // 支持的模型系列（仅 antigravity 平台）
@@ -2476,6 +2530,7 @@ const closeCreateModal = () => {
   createForm.allow_messages_dispatch = false
   createForm.require_oauth_only = false
   createForm.require_privacy_set = false
+  createForm.force_application_json_for_non_stream = false
   createForm.default_mapped_model = 'gpt-5.4'
   createForm.supported_model_scopes = ['claude', 'gemini_text', 'gemini_image']
   createForm.mcp_xml_inject = true
@@ -2560,6 +2615,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.allow_messages_dispatch = group.allow_messages_dispatch || false
   editForm.require_oauth_only = group.require_oauth_only ?? false
   editForm.require_privacy_set = group.require_privacy_set ?? false
+  editForm.force_application_json_for_non_stream = group.force_application_json_for_non_stream ?? false
   editForm.default_mapped_model = group.default_mapped_model || ''
   editForm.model_routing_enabled = group.model_routing_enabled || false
   editForm.supported_model_scopes = group.supported_model_scopes || ['claude', 'gemini_text', 'gemini_image']

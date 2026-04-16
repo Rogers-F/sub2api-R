@@ -78,6 +78,8 @@ type Group struct {
 	RequirePrivacySet bool `json:"require_privacy_set,omitempty"`
 	// 默认映射模型 ID，当账号级映射找不到时使用此值
 	DefaultMappedModel string `json:"default_mapped_model,omitempty"`
+	// 启用后，stream=false 的 JSON 响应统一返回 application/json Content-Type
+	ForceApplicationJSONForNonStream bool `json:"force_application_json_for_non_stream,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -186,7 +188,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
 			values[i] = new(sql.NullFloat64)
@@ -411,6 +413,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DefaultMappedModel = value.String
 			}
+		case group.FieldForceApplicationJSONForNonStream:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field force_application_json_for_non_stream", values[i])
+			} else if value.Valid {
+				_m.ForceApplicationJSONForNonStream = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -596,6 +604,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("default_mapped_model=")
 	builder.WriteString(_m.DefaultMappedModel)
+	builder.WriteString(", ")
+	builder.WriteString("force_application_json_for_non_stream=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ForceApplicationJSONForNonStream))
 	builder.WriteByte(')')
 	return builder.String()
 }

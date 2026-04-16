@@ -312,6 +312,7 @@ func (s *GatewayService) handleCCBufferedFromAnthropic(
 	if s.responseHeaderFilter != nil {
 		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	}
+	applyForcedApplicationJSONHeaderForNonStream(c)
 	c.JSON(http.StatusOK, ccResp)
 
 	return &ForwardResult{

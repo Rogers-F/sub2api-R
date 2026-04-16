@@ -1,8 +1,11 @@
 package service
 
 import (
+	"context"
 	"strings"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 )
 
 type Group struct {
@@ -54,6 +57,9 @@ type Group struct {
 	RequireOAuthOnly      bool
 	RequirePrivacySet     bool
 	DefaultMappedModel    string
+
+	// 非流式响应头控制
+	ForceApplicationJSONForNonStream bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -119,6 +125,22 @@ func IsGroupContextValid(group *Group) bool {
 		return false
 	}
 	return true
+}
+
+func GroupFromContext(ctx context.Context) (*Group, bool) {
+	if ctx == nil {
+		return nil, false
+	}
+	group, ok := ctx.Value(ctxkey.Group).(*Group)
+	if !ok || group == nil || !IsGroupContextValid(group) {
+		return nil, false
+	}
+	return group, true
+}
+
+func ForceApplicationJSONForNonStreamFromContext(ctx context.Context) bool {
+	group, ok := GroupFromContext(ctx)
+	return ok && group.ForceApplicationJSONForNonStream
 }
 
 func SupportsGroupAccountFilters(platform string) bool {

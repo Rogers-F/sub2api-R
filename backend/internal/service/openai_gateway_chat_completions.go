@@ -289,6 +289,7 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 	if s.responseHeaderFilter != nil {
 		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	}
+	applyForcedApplicationJSONHeaderForNonStream(c)
 	c.JSON(http.StatusOK, chatResp)
 
 	return &OpenAIForwardResult{

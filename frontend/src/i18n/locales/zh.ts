@@ -1836,6 +1836,13 @@ export default {
       groupDeleted: '分组删除成功',
       failedToCreate: '创建分组失败',
       failedToUpdate: '更新分组失败',
+      nonStreamContentType: {
+        title: '非流响应 Content-Type',
+        label: 'stream: false 强制返回 application/json',
+        hint: '开启后，该分组在非流模式下返回 JSON 时，会显式使用 application/json 响应头，避免客户端被识别为 SSE。',
+        enabled: '已启用',
+        disabled: '未启用'
+      },
       nameRequired: '请输入分组名称',
       rateMultipliers: '专属倍率',
       rateMultipliersTitle: '分组专属倍率管理',

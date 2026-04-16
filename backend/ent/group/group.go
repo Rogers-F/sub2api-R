@@ -75,6 +75,8 @@ const (
 	FieldRequirePrivacySet = "require_privacy_set"
 	// FieldDefaultMappedModel holds the string denoting the default_mapped_model field in the database.
 	FieldDefaultMappedModel = "default_mapped_model"
+	// FieldForceApplicationJSONForNonStream holds the string denoting the force_application_json_for_non_stream field in the database.
+	FieldForceApplicationJSONForNonStream = "force_application_json_for_non_stream"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -180,6 +182,7 @@ var Columns = []string{
 	FieldRequireOauthOnly,
 	FieldRequirePrivacySet,
 	FieldDefaultMappedModel,
+	FieldForceApplicationJSONForNonStream,
 }
 
 var (
@@ -257,6 +260,8 @@ var (
 	DefaultDefaultMappedModel string
 	// DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	DefaultMappedModelValidator func(string) error
+	// DefaultForceApplicationJSONForNonStream holds the default value on creation for the "force_application_json_for_non_stream" field.
+	DefaultForceApplicationJSONForNonStream bool
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -405,6 +410,11 @@ func ByRequirePrivacySet(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultMappedModel orders the results by the default_mapped_model field.
 func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultMappedModel, opts...).ToFunc()
+}
+
+// ByForceApplicationJSONForNonStream orders the results by the force_application_json_for_non_stream field.
+func ByForceApplicationJSONForNonStream(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldForceApplicationJSONForNonStream, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

@@ -195,6 +195,11 @@ func DefaultMappedModel(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDefaultMappedModel, v))
 }
 
+// ForceApplicationJSONForNonStream applies equality check predicate on the "force_application_json_for_non_stream" field. It's identical to ForceApplicationJSONForNonStreamEQ.
+func ForceApplicationJSONForNonStream(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldForceApplicationJSONForNonStream, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1333,6 +1338,16 @@ func DefaultMappedModelEqualFold(v string) predicate.Group {
 // DefaultMappedModelContainsFold applies the ContainsFold predicate on the "default_mapped_model" field.
 func DefaultMappedModelContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDefaultMappedModel, v))
+}
+
+// ForceApplicationJSONForNonStreamEQ applies the EQ predicate on the "force_application_json_for_non_stream" field.
+func ForceApplicationJSONForNonStreamEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldForceApplicationJSONForNonStream, v))
+}
+
+// ForceApplicationJSONForNonStreamNEQ applies the NEQ predicate on the "force_application_json_for_non_stream" field.
+func ForceApplicationJSONForNonStreamNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldForceApplicationJSONForNonStream, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

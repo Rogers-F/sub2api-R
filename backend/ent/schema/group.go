@@ -144,6 +144,9 @@ func (Group) Fields() []ent.Field {
 			MaxLen(100).
 			Default("").
 			Comment("默认映射模型 ID，当账号级映射找不到时使用此值"),
+		field.Bool("force_application_json_for_non_stream").
+			Default(false).
+			Comment("启用后，stream=false 的 JSON 响应统一返回 application/json Content-Type"),
 	}
 }
 

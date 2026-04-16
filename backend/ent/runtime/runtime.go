@@ -473,6 +473,10 @@ func init() {
 	group.DefaultDefaultMappedModel = groupDescDefaultMappedModel.Default.(string)
 	// group.DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	group.DefaultMappedModelValidator = groupDescDefaultMappedModel.Validators[0].(func(string) error)
+	// groupDescForceApplicationJSONForNonStream is the schema descriptor for force_application_json_for_non_stream field.
+	groupDescForceApplicationJSONForNonStream := groupFields[27].Descriptor()
+	// group.DefaultForceApplicationJSONForNonStream holds the default value on creation for the force_application_json_for_non_stream field.
+	group.DefaultForceApplicationJSONForNonStream = groupDescForceApplicationJSONForNonStream.Default.(bool)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0

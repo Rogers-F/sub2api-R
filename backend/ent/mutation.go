@@ -8249,6 +8249,7 @@ type GroupMutation struct {
 	require_oauth_only                      *bool
 	require_privacy_set                     *bool
 	default_mapped_model                    *string
+	force_application_json_for_non_stream   *bool
 	clearedFields                           map[string]struct{}
 	api_keys                                map[int64]struct{}
 	removedapi_keys                         map[int64]struct{}
@@ -9837,6 +9838,42 @@ func (m *GroupMutation) ResetDefaultMappedModel() {
 	m.default_mapped_model = nil
 }
 
+// SetForceApplicationJSONForNonStream sets the "force_application_json_for_non_stream" field.
+func (m *GroupMutation) SetForceApplicationJSONForNonStream(b bool) {
+	m.force_application_json_for_non_stream = &b
+}
+
+// ForceApplicationJSONForNonStream returns the value of the "force_application_json_for_non_stream" field in the mutation.
+func (m *GroupMutation) ForceApplicationJSONForNonStream() (r bool, exists bool) {
+	v := m.force_application_json_for_non_stream
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldForceApplicationJSONForNonStream returns the old "force_application_json_for_non_stream" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldForceApplicationJSONForNonStream(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldForceApplicationJSONForNonStream is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldForceApplicationJSONForNonStream requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldForceApplicationJSONForNonStream: %w", err)
+	}
+	return oldValue.ForceApplicationJSONForNonStream, nil
+}
+
+// ResetForceApplicationJSONForNonStream resets all changes to the "force_application_json_for_non_stream" field.
+func (m *GroupMutation) ResetForceApplicationJSONForNonStream() {
+	m.force_application_json_for_non_stream = nil
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -10195,7 +10232,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 30)
+	fields := make([]string, 0, 31)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -10286,6 +10323,9 @@ func (m *GroupMutation) Fields() []string {
 	if m.default_mapped_model != nil {
 		fields = append(fields, group.FieldDefaultMappedModel)
 	}
+	if m.force_application_json_for_non_stream != nil {
+		fields = append(fields, group.FieldForceApplicationJSONForNonStream)
+	}
 	return fields
 }
 
@@ -10354,6 +10394,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.RequirePrivacySet()
 	case group.FieldDefaultMappedModel:
 		return m.DefaultMappedModel()
+	case group.FieldForceApplicationJSONForNonStream:
+		return m.ForceApplicationJSONForNonStream()
 	}
 	return nil, false
 }
@@ -10423,6 +10465,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldRequirePrivacySet(ctx)
 	case group.FieldDefaultMappedModel:
 		return m.OldDefaultMappedModel(ctx)
+	case group.FieldForceApplicationJSONForNonStream:
+		return m.OldForceApplicationJSONForNonStream(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -10641,6 +10685,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDefaultMappedModel(v)
+		return nil
+	case group.FieldForceApplicationJSONForNonStream:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetForceApplicationJSONForNonStream(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -10984,6 +11035,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldDefaultMappedModel:
 		m.ResetDefaultMappedModel()
+		return nil
+	case group.FieldForceApplicationJSONForNonStream:
+		m.ResetForceApplicationJSONForNonStream()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)

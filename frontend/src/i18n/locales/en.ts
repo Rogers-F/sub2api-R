@@ -1738,6 +1738,13 @@ export default {
       failedToCreate: 'Failed to create group',
       failedToUpdate: 'Failed to update group',
       failedToDelete: 'Failed to delete group',
+      nonStreamContentType: {
+        title: 'Non-stream Content-Type',
+        label: 'Force application/json when stream=false',
+        hint: 'When enabled, this group will explicitly return application/json for non-stream JSON responses so clients do not treat them as SSE.',
+        enabled: 'Enabled',
+        disabled: 'Disabled'
+      },
       nameRequired: 'Please enter group name',
       rateMultipliers: 'Rate Multipliers',
       rateMultipliersTitle: 'Group Rate Multipliers',

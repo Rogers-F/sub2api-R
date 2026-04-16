@@ -5026,10 +5026,7 @@ func (s *GatewayService) handleNonStreamingResponseAnthropicAPIKeyPassthrough(
 	usage := parseClaudeUsageFromResponseBody(body)
 
 	writeAnthropicPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
-	contentType := strings.TrimSpace(resp.Header.Get("Content-Type"))
-	if contentType == "" {
-		contentType = "application/json"
-	}
+	contentType := resolveNonStreamJSONContentType(c, resp.Header.Get("Content-Type"), "application/json")
 	c.Data(resp.StatusCode, contentType, body)
 	return usage, nil
 }
@@ -7063,6 +7060,7 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 			contentType = upstreamType
 		}
 	}
+	contentType = resolveNonStreamJSONContentType(c, contentType, "application/json")
 
 	// 写入响应
 	c.Data(resp.StatusCode, contentType, body)
