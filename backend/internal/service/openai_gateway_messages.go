@@ -40,7 +40,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		return nil, fmt.Errorf("parse anthropic request: %w", err)
 	}
 	originalModel := anthropicReq.Model
-	clientStream := anthropicReq.Stream // client's original stream preference
+	clientStream := resolveClientStreamingPreference(c, anthropicReq.Stream)
 
 	// 2. Convert Anthropic → Responses
 	responsesReq, err := apicompat.AnthropicToResponses(&anthropicReq)

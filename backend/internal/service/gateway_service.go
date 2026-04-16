@@ -3884,7 +3884,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 
 	body := parsed.Body
 	reqModel := parsed.Model
-	reqStream := parsed.Stream
+	reqStream := resolveClientStreamingPreference(c, parsed.Stream)
 	originalModel := reqModel
 
 	// === DEBUG: 打印客户端原始请求 body ===
@@ -3962,6 +3962,10 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		account.ID, account.Name, account.Platform, account.Type, account.IsTLSFingerprintEnabled(), proxyURL)
 	// Pre-filter: strip empty text blocks (including nested in tool_result) to prevent upstream 400.
 	body = StripEmptyTextBlocks(body)
+	body, _, err = enforceNonStreamingRequestBody(c, body)
+	if err != nil {
+		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
+	}
 
 	// 重试间复用同一请求体，避免每次 string(body) 产生额外分配。
 	setOpsUpstreamRequestBody(c, body)
@@ -4434,6 +4438,8 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	account *Account,
 	input anthropicPassthroughForwardInput,
 ) (*ForwardResult, error) {
+	input.RequestStream = resolveClientStreamingPreference(c, input.RequestStream)
+
 	token, tokenType, err := s.GetAccessToken(ctx, account)
 	if err != nil {
 		return nil, err
@@ -4457,6 +4463,10 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	input.Body = enforceCacheControlPolicy(input.Body, anthropicPromptCachingEnabledFromContext(ctx))
 	// Pre-filter: strip empty text blocks (including nested in tool_result) to prevent upstream 400.
 	input.Body = StripEmptyTextBlocks(input.Body)
+	input.Body, _, err = enforceNonStreamingRequestBody(c, input.Body)
+	if err != nil {
+		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
+	}
 
 	// 重试间复用同一请求体，避免每次 string(body) 产生额外分配。
 	setOpsUpstreamRequestBody(c, input.Body)

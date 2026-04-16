@@ -43,7 +43,7 @@ func (s *GatewayService) ForwardAsResponses(
 		return nil, fmt.Errorf("parse responses request: %w", err)
 	}
 	originalModel := responsesReq.Model
-	clientStream := responsesReq.Stream
+	clientStream := resolveClientStreamingPreference(c, responsesReq.Stream)
 
 	// 2. Convert Responses → Anthropic
 	anthropicReq, err := apicompat.ResponsesToAnthropicRequest(&responsesReq)

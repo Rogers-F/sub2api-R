@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -308,6 +309,66 @@ func TestOpenAIGatewayService_OAuthPassthrough_CompactUsesJSONAndKeepsNonStreami
 	require.Equal(t, "chatgpt.com", upstream.lastReq.Host)
 	require.Equal(t, "chatgpt-acc", upstream.lastReq.Header.Get("chatgpt-account-id"))
 	require.Contains(t, rec.Body.String(), `"id":"cmp_123"`)
+}
+
+func TestOpenAIGatewayService_OAuthPassthrough_GroupFlagForcesNonStreaming(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/responses", bytes.NewReader(nil))
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               124,
+		Name:                             "openai-force-json",
+		Platform:                         PlatformOpenAI,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ForceApplicationJSONForNonStream: true,
+	}))
+	c.Request = req
+
+	originalBody := []byte(`{"model":"gpt-5.2","stream":true,"store":true,"instructions":"local-test-instructions","input":[{"type":"text","text":"hi"}]}`)
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid-force-json"}},
+		Body: io.NopCloser(strings.NewReader(
+			`{"id":"resp_force_json","model":"gpt-5.2","usage":{"input_tokens":1,"output_tokens":2},"output":[]}`,
+		)),
+	}
+	upstream := &httpUpstreamRecorder{resp: resp}
+
+	svc := &OpenAIGatewayService{
+		cfg:                  &config.Config{Gateway: config.GatewayConfig{ForceCodexCLI: false}},
+		httpUpstream:         upstream,
+		openAITokenProvider:  nil,
+		responseHeaderFilter: compileResponseHeaderFilter(&config.Config{}),
+	}
+
+	account := &Account{
+		ID:          123,
+		Name:        "acc",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"access_token":       "oauth-token",
+			"chatgpt_account_id": "chatgpt-acc",
+		},
+		Extra: map[string]any{
+			"openai_passthrough": true,
+		},
+		Status:         StatusActive,
+		Schedulable:    true,
+		RateMultiplier: f64p(1),
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, originalBody)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.False(t, result.Stream)
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("accept"))
+	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
 }
 
 func TestOpenAIGatewayService_OAuthPassthrough_CodexMissingInstructionsRejectedBeforeUpstream(t *testing.T) {

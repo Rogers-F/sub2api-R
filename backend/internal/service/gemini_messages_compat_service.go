@@ -583,8 +583,9 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 
 	var requestIDHeader string
 	var buildReq func(ctx context.Context) (*http.Request, string, error)
-	useUpstreamStream := req.Stream
-	if account.Type == AccountTypeOAuth && !req.Stream && strings.TrimSpace(account.GetCredential("project_id")) != "" {
+	clientStream := resolveClientStreamingPreference(c, req.Stream)
+	useUpstreamStream := clientStream
+	if account.Type == AccountTypeOAuth && !clientStream && strings.TrimSpace(account.GetCredential("project_id")) != "" {
 		// Code Assist's non-streaming generateContent may return no content; use streaming upstream and aggregate.
 		useUpstreamStream = true
 	}
@@ -604,11 +605,11 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 			}
 
 			action := "generateContent"
-			if req.Stream {
+			if useUpstreamStream {
 				action = "streamGenerateContent"
 			}
 			fullURL := fmt.Sprintf("%s/v1beta/models/%s:%s", strings.TrimRight(normalizedBaseURL, "/"), mappedModel, action)
-			if req.Stream {
+			if useUpstreamStream {
 				fullURL += "?alt=sse"
 			}
 
@@ -992,7 +993,7 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 
 	var usage *ClaudeUsage
 	var firstTokenMs *int
-	if req.Stream {
+	if clientStream {
 		streamRes, err := s.handleStreamingResponse(c, resp, startTime, originalModel)
 		if err != nil {
 			return nil, err
@@ -1032,7 +1033,7 @@ func (s *GeminiMessagesCompatService) Forward(ctx context.Context, c *gin.Contex
 		Usage:         *usage,
 		Model:         originalModel,
 		UpstreamModel: mappedModel,
-		Stream:        req.Stream,
+		Stream:        clientStream,
 		Duration:      time.Since(startTime),
 		FirstTokenMs:  firstTokenMs,
 		ImageCount:    imageCount,
@@ -1087,9 +1088,13 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 		proxyURL = account.Proxy.URL()
 	}
 
-	useUpstreamStream := stream
+	clientStream := resolveClientStreamingPreference(c, stream)
 	upstreamAction := action
-	if account.Type == AccountTypeOAuth && !stream && action == "generateContent" && strings.TrimSpace(account.GetCredential("project_id")) != "" {
+	if action == "streamGenerateContent" && !clientStream {
+		upstreamAction = "generateContent"
+	}
+	useUpstreamStream := upstreamAction == "streamGenerateContent"
+	if account.Type == AccountTypeOAuth && !clientStream && action != "countTokens" && strings.TrimSpace(account.GetCredential("project_id")) != "" {
 		// Code Assist's non-streaming generateContent may return no content; use streaming upstream and aggregate.
 		useUpstreamStream = true
 		upstreamAction = "streamGenerateContent"
@@ -1494,7 +1499,7 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 	var usage *ClaudeUsage
 	var firstTokenMs *int
 
-	if stream {
+	if clientStream {
 		streamRes, err := s.handleNativeStreamingResponse(c, resp, startTime, isOAuth)
 		if err != nil {
 			return nil, err
@@ -1535,7 +1540,7 @@ func (s *GeminiMessagesCompatService) ForwardNative(ctx context.Context, c *gin.
 		Usage:         *usage,
 		Model:         originalModel,
 		UpstreamModel: mappedModel,
-		Stream:        stream,
+		Stream:        clientStream,
 		Duration:      time.Since(startTime),
 		FirstTokenMs:  firstTokenMs,
 		ImageCount:    imageCount,

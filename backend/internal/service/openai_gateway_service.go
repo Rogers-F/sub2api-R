@@ -1696,6 +1696,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 
 	originalBody := body
 	reqModel, reqStream, promptCacheKey := extractOpenAIRequestMetaFromBody(body)
+	reqStream = resolveClientStreamingPreference(c, reqStream)
 	originalModel := reqModel
 
 	isCodexCLI := openai.IsCodexOfficialClientByHeaders(c.GetHeader("User-Agent"), c.GetHeader("originator")) || (s.cfg != nil && s.cfg.Gateway.ForceCodexCLI)
@@ -1747,7 +1748,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		originalModel = reqModel
 	}
 	if v, ok := reqBody["stream"].(bool); ok {
-		reqStream = v
+		reqStream = resolveClientStreamingPreference(c, v)
 	}
 	if promptCacheKey == "" {
 		if v, ok := reqBody["prompt_cache_key"].(string); ok {
@@ -1783,6 +1784,15 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			return
 		}
 		patchValue = value
+	}
+	if shouldForceApplicationJSONForNonStream(c) {
+		if current, ok := reqBody["stream"]; ok {
+			if stream, ok := current.(bool); !ok || stream {
+				reqBody["stream"] = false
+				bodyModified = true
+				markPatchSet("stream", false)
+			}
+		}
 	}
 	markPatchDelete := func(path string) {
 		if strings.TrimSpace(path) == "" {
@@ -2324,6 +2334,8 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	reqStream bool,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
+	var err error
+
 	if account != nil && account.Type == AccountTypeOAuth {
 		if rejectReason := detectOpenAIPassthroughInstructionsRejectReason(reqModel, body); rejectReason != "" {
 			rejectMsg := "OpenAI codex passthrough requires a non-empty instructions field"
@@ -2357,6 +2369,11 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		}
 		reqStream = gjson.GetBytes(body, "stream").Bool()
 	}
+	reqStream = resolveClientStreamingPreference(c, reqStream)
+	body, _, err = enforceNonStreamingRequestBody(c, body)
+	if err != nil {
+		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
+	}
 
 	logger.LegacyPrintf("service.openai_gateway",
 		"[OpenAI 自动透传] 命中自动透传分支: account=%d name=%s type=%s model=%s stream=%v",
@@ -2388,7 +2405,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	}
 
 	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream)
-	upstreamReq, err := s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token)
+	upstreamReq, err := s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token, reqStream)
 	releaseUpstreamCtx()
 	if err != nil {
 		return nil, err
@@ -2508,6 +2525,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	account *Account,
 	body []byte,
 	token string,
+	isStream bool,
 ) (*http.Request, error) {
 	targetURL := openaiPlatformAPIURL
 	switch account.Type {
@@ -2549,6 +2567,9 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	req.Header.Del("x-api-key")
 	req.Header.Del("x-goog-api-key")
 	req.Header.Set("authorization", "Bearer "+token)
+	if !isStream {
+		req.Header.Set("accept", "application/json")
+	}
 
 	// OAuth 透传到 ChatGPT internal API 时补齐必要头。
 	if account.Type == AccountTypeOAuth {
@@ -2569,6 +2590,8 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 			if clientSessionID == "" {
 				clientSessionID = resolveOpenAICompactSessionID(c)
 			}
+		} else if !isStream {
+			req.Header.Set("accept", "application/json")
 		} else if req.Header.Get("accept") == "" {
 			req.Header.Set("accept", "text/event-stream")
 		}
@@ -2849,10 +2872,7 @@ func (s *OpenAIGatewayService) handleNonStreamingResponsePassthrough(
 
 	writeOpenAIPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/json"
-	}
+	contentType := resolveNonStreamJSONContentType(c, resp.Header.Get("Content-Type"), "application/json")
 	c.Data(resp.StatusCode, contentType, body)
 	return usage, nil
 }
@@ -2972,6 +2992,8 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 			}
 			compactSession := resolveOpenAICompactSessionID(c)
 			req.Header.Set("session_id", isolateOpenAISessionID(apiKeyID, compactSession))
+		} else if !isStream {
+			req.Header.Set("accept", "application/json")
 		} else {
 			req.Header.Set("accept", "text/event-stream")
 		}
@@ -2986,6 +3008,9 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 	customUA := account.GetOpenAIUserAgent()
 	if customUA != "" {
 		req.Header.Set("user-agent", customUA)
+	}
+	if !isStream {
+		req.Header.Set("accept", "application/json")
 	}
 
 	// 若开启 ForceCodexCLI，则强制将上游 User-Agent 伪装为 Codex CLI。

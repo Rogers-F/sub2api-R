@@ -48,12 +48,17 @@ func newAnthropicAPIKeyAccountForTest() *Account {
 }
 
 func newAnthropicGroupContextForTest(promptCachingEnabled bool) context.Context {
+	return newAnthropicGroupContextForTestWithFlags(promptCachingEnabled, false)
+}
+
+func newAnthropicGroupContextForTestWithFlags(promptCachingEnabled bool, forceApplicationJSONForNonStream bool) context.Context {
 	return context.WithValue(context.Background(), ctxkey.Group, &Group{
-		ID:                         901,
-		Platform:                   PlatformAnthropic,
-		Status:                     StatusActive,
-		Hydrated:                   true,
-		ClaudePromptCachingEnabled: promptCachingEnabled,
+		ID:                               901,
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ClaudePromptCachingEnabled:       promptCachingEnabled,
+		ForceApplicationJSONForNonStream: forceApplicationJSONForNonStream,
 	})
 }
 
@@ -274,6 +279,56 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardCountTokensPreservesBo
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.JSONEq(t, upstreamRespBody, rec.Body.String())
 	require.Empty(t, rec.Header().Get("Set-Cookie"))
+}
+
+func TestGatewayService_AnthropicAPIKeyPassthrough_GroupFlagForcesNonStreaming(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	groupCtx := newAnthropicGroupContextForTestWithFlags(false, true)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+	c.Request = req.WithContext(groupCtx)
+
+	body := []byte(`{"model":"claude-3-7-sonnet-20250219","stream":true,"messages":[{"role":"user","content":[{"type":"text","text":"hello"}]}]}`)
+	parsed := &ParsedRequest{
+		Body:   body,
+		Model:  "claude-3-7-sonnet-20250219",
+		Stream: true,
+	}
+
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+				"x-request-id": []string{"rid-anthropic-force-json"},
+			},
+			Body: io.NopCloser(strings.NewReader(
+				`{"id":"msg_123","type":"message","model":"claude-3-7-sonnet-20250219","role":"assistant","content":[{"type":"text","text":"hello"}],"usage":{"input_tokens":9,"output_tokens":3}}`,
+			)),
+		},
+	}
+
+	cfg := &config.Config{
+		Gateway: config.GatewayConfig{
+			MaxLineSize: defaultMaxLineSize,
+		},
+	}
+	svc := &GatewayService{
+		cfg:                  cfg,
+		responseHeaderFilter: compileResponseHeaderFilter(cfg),
+		httpUpstream:         upstream,
+		rateLimitService:     &RateLimitService{},
+	}
+
+	result, err := svc.Forward(groupCtx, c, newAnthropicAPIKeyAccountForTest(), parsed)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.False(t, result.Stream)
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
 }
 
 func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardStripsCacheControlWhenPromptCachingDisabled(t *testing.T) {
