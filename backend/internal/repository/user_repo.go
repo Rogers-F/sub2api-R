@@ -65,9 +65,22 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 		SetNillableReferrerID(userIn.ReferrerID).
 		SetNillableReferralCode(userIn.ReferralCode).
 		SetNillableCommissionRate(userIn.CommissionRate).
+		SetBalanceNotifyEnabled(userIn.BalanceNotifyEnabled).
+		SetBalanceNotifyThresholdType(userIn.BalanceNotifyThresholdType).
+		SetBalanceNotifyExtraEmails(service.MarshalNotifyEmails(userIn.BalanceNotifyExtraEmails)).
+		SetTotalRecharged(userIn.TotalRecharged).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, service.ErrEmailExists)
+	}
+	if userIn.BalanceNotifyThreshold != nil {
+		updated, err := txClient.User.UpdateOneID(created.ID).
+			SetBalanceNotifyThreshold(*userIn.BalanceNotifyThreshold).
+			Save(ctx)
+		if err != nil {
+			return translatePersistenceError(err, nil, service.ErrEmailExists)
+		}
+		created = updated
 	}
 
 	if err := r.syncUserAllowedGroupsWithClient(ctx, txClient, created.ID, userIn.AllowedGroups); err != nil {
@@ -146,7 +159,11 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		SetRole(userIn.Role).
 		SetBalance(userIn.Balance).
 		SetConcurrency(userIn.Concurrency).
-		SetStatus(userIn.Status)
+		SetStatus(userIn.Status).
+		SetBalanceNotifyEnabled(userIn.BalanceNotifyEnabled).
+		SetBalanceNotifyThresholdType(userIn.BalanceNotifyThresholdType).
+		SetBalanceNotifyExtraEmails(service.MarshalNotifyEmails(userIn.BalanceNotifyExtraEmails)).
+		SetTotalRecharged(userIn.TotalRecharged)
 	if userIn.ReferrerID != nil {
 		update = update.SetReferrerID(*userIn.ReferrerID)
 	} else {
@@ -161,6 +178,11 @@ func (r *userRepository) Update(ctx context.Context, userIn *service.User) error
 		update = update.SetCommissionRate(*userIn.CommissionRate)
 	} else {
 		update = update.ClearCommissionRate()
+	}
+	if userIn.BalanceNotifyThreshold != nil {
+		update = update.SetBalanceNotifyThreshold(*userIn.BalanceNotifyThreshold)
+	} else {
+		update = update.ClearBalanceNotifyThreshold()
 	}
 	updated, err := update.Save(ctx)
 	if err != nil {
@@ -351,7 +373,11 @@ func (r *userRepository) filterUsersByAttributes(ctx context.Context, attrs map[
 
 func (r *userRepository) UpdateBalance(ctx context.Context, id int64, amount float64) error {
 	client := clientFromContext(ctx, r.client)
-	n, err := client.User.Update().Where(dbuser.IDEQ(id)).AddBalance(amount).Save(ctx)
+	update := client.User.Update().Where(dbuser.IDEQ(id)).AddBalance(amount)
+	if amount > 0 {
+		update = update.AddTotalRecharged(amount)
+	}
+	n, err := update.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, service.ErrUserNotFound, nil)
 	}
@@ -517,6 +543,11 @@ func applyUserEntityToService(dst *service.User, src *dbent.User) {
 	dst.ReferrerID = src.ReferrerID
 	dst.ReferralCode = src.ReferralCode
 	dst.CommissionRate = src.CommissionRate
+	dst.BalanceNotifyEnabled = src.BalanceNotifyEnabled
+	dst.BalanceNotifyThresholdType = src.BalanceNotifyThresholdType
+	dst.BalanceNotifyThreshold = src.BalanceNotifyThreshold
+	dst.BalanceNotifyExtraEmails = service.ParseNotifyEmails(src.BalanceNotifyExtraEmails)
+	dst.TotalRecharged = src.TotalRecharged
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
 }

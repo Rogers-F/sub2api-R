@@ -84,13 +84,19 @@ type DefaultSubscriptionGroupReader interface {
 	GetByID(ctx context.Context, id int64) (*Group, error)
 }
 
+// WebSearchManagerBuilder creates and wires a websearch.Manager from saved config.
+// proxyURLs maps provider proxy ID to its resolved URL.
+type WebSearchManagerBuilder func(cfg *WebSearchEmulationConfig, proxyURLs map[int64]string)
+
 // SettingService 系统设置服务
 type SettingService struct {
-	settingRepo           SettingRepository
-	defaultSubGroupReader DefaultSubscriptionGroupReader
-	cfg                   *config.Config
-	onUpdate              func() // Callback when settings are updated (for cache invalidation)
-	version               string // Application version
+	settingRepo             SettingRepository
+	defaultSubGroupReader   DefaultSubscriptionGroupReader
+	proxyRepo               ProxyRepository
+	cfg                     *config.Config
+	onUpdate                func() // Callback when settings are updated (for cache invalidation)
+	version                 string // Application version
+	webSearchManagerBuilder WebSearchManagerBuilder
 }
 
 // NewSettingService 创建系统设置服务实例
@@ -104,6 +110,10 @@ func NewSettingService(settingRepo SettingRepository, cfg *config.Config) *Setti
 // SetDefaultSubscriptionGroupReader injects an optional group reader for default subscription validation.
 func (s *SettingService) SetDefaultSubscriptionGroupReader(reader DefaultSubscriptionGroupReader) {
 	s.defaultSubGroupReader = reader
+}
+
+func (s *SettingService) SetProxyRepository(repo ProxyRepository) {
+	s.proxyRepo = repo
 }
 
 // GetAllSettings 获取所有系统设置
@@ -158,10 +168,15 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyPaygEnabled,
 		SettingKeyPaygExchangeRate,
 		SettingKeyPaygFixedAmountOptions,
+		SettingPaymentEnabled,
 		SettingKeyCustomMenuItems,
 		SettingKeyCustomEndpoints,
 		SettingKeyLinuxDoConnectEnabled,
 		SettingKeyBackendModeEnabled,
+		SettingKeyBalanceLowNotifyEnabled,
+		SettingKeyBalanceLowNotifyThreshold,
+		SettingKeyBalanceLowNotifyRechargeURL,
+		SettingKeyAccountQuotaNotifyEnabled,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -182,6 +197,10 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 	registrationEmailSuffixWhitelist := ParseRegistrationEmailSuffixWhitelist(
 		settings[SettingKeyRegistrationEmailSuffixWhitelist],
 	)
+	balanceLowNotifyThreshold := 0.0
+	if v, err := strconv.ParseFloat(settings[SettingKeyBalanceLowNotifyThreshold], 64); err == nil && v >= 0 {
+		balanceLowNotifyThreshold = v
+	}
 
 	return &PublicSettings{
 		RegistrationEnabled:              settings[SettingKeyRegistrationEnabled] == "true",
@@ -206,10 +225,15 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		PaygEnabled:                      settings[SettingKeyPaygEnabled] == "true",
 		PaygExchangeRate:                 parsePositiveFloatSetting(settings[SettingKeyPaygExchangeRate], 1),
 		PaygFixedAmountOptions:           parsePaygFixedAmountOptions(settings[SettingKeyPaygFixedAmountOptions]),
+		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
 		LinuxDoOAuthEnabled:              linuxDoEnabled,
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
+		BalanceLowNotifyEnabled:          settings[SettingKeyBalanceLowNotifyEnabled] == "true",
+		AccountQuotaNotifyEnabled:        settings[SettingKeyAccountQuotaNotifyEnabled] == "true",
+		BalanceLowNotifyThreshold:        balanceLowNotifyThreshold,
+		BalanceLowNotifyRechargeURL:      strings.TrimSpace(settings[SettingKeyBalanceLowNotifyRechargeURL]),
 	}, nil
 }
 
@@ -256,10 +280,15 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		PaygEnabled                      bool            `json:"payg_enabled"`
 		PaygExchangeRate                 float64         `json:"payg_exchange_rate"`
 		PaygFixedAmountOptions           []float64       `json:"payg_fixed_amount_options"`
+		PaymentEnabled                   bool            `json:"payment_enabled"`
 		CustomMenuItems                  json.RawMessage `json:"custom_menu_items"`
 		CustomEndpoints                  json.RawMessage `json:"custom_endpoints"`
 		LinuxDoOAuthEnabled              bool            `json:"linuxdo_oauth_enabled"`
 		BackendModeEnabled               bool            `json:"backend_mode_enabled"`
+		BalanceLowNotifyEnabled          bool            `json:"balance_low_notify_enabled"`
+		AccountQuotaNotifyEnabled        bool            `json:"account_quota_notify_enabled"`
+		BalanceLowNotifyThreshold        float64         `json:"balance_low_notify_threshold"`
+		BalanceLowNotifyRechargeURL      string          `json:"balance_low_notify_recharge_url,omitempty"`
 		Version                          string          `json:"version,omitempty"`
 	}{
 		RegistrationEnabled:              settings.RegistrationEnabled,
@@ -284,10 +313,15 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		PaygEnabled:                      settings.PaygEnabled,
 		PaygExchangeRate:                 settings.PaygExchangeRate,
 		PaygFixedAmountOptions:           settings.PaygFixedAmountOptions,
+		PaymentEnabled:                   settings.PaymentEnabled,
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                  safeRawJSONArray(settings.CustomEndpoints),
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		BackendModeEnabled:               settings.BackendModeEnabled,
+		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
+		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
+		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,
+		BalanceLowNotifyRechargeURL:      settings.BalanceLowNotifyRechargeURL,
 		Version:                          s.version,
 	}, nil
 }
@@ -529,6 +563,11 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 
 	// Backend Mode
 	updates[SettingKeyBackendModeEnabled] = strconv.FormatBool(settings.BackendModeEnabled)
+	updates[SettingKeyBalanceLowNotifyEnabled] = strconv.FormatBool(settings.BalanceLowNotifyEnabled)
+	updates[SettingKeyBalanceLowNotifyThreshold] = strconv.FormatFloat(settings.BalanceLowNotifyThreshold, 'f', 8, 64)
+	updates[SettingKeyBalanceLowNotifyRechargeURL] = strings.TrimSpace(settings.BalanceLowNotifyRechargeURL)
+	updates[SettingKeyAccountQuotaNotifyEnabled] = strconv.FormatBool(settings.AccountQuotaNotifyEnabled)
+	updates[SettingKeyAccountQuotaNotifyEmails] = MarshalNotifyEmails(settings.AccountQuotaNotifyEmails)
 
 	err = s.settingRepo.SetMultiple(ctx, updates)
 	if err == nil {
@@ -778,6 +817,26 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyPaygEnabled:                      "false",
 		SettingKeyPaygExchangeRate:                 "1.00000000",
 		SettingKeyPaygFixedAmountOptions:           "[50,80,100]",
+		SettingPaymentEnabled:                      "false",
+		SettingMinRechargeAmount:                   "1",
+		SettingMaxRechargeAmount:                   "0",
+		SettingDailyRechargeLimit:                  "0",
+		SettingOrderTimeoutMinutes:                 "30",
+		SettingMaxPendingOrders:                    "3",
+		SettingEnabledPaymentTypes:                 "",
+		SettingBalancePayDisabled:                  "false",
+		SettingBalanceRechargeMult:                 "1",
+		SettingRechargeFeeRate:                     "0",
+		SettingLoadBalanceStrategy:                 "round-robin",
+		SettingProductNamePrefix:                   "",
+		SettingProductNameSuffix:                   "",
+		SettingHelpImageURL:                        "",
+		SettingHelpText:                            "",
+		SettingCancelRateLimitOn:                   "false",
+		SettingCancelRateLimitMax:                  "10",
+		SettingCancelWindowSize:                    "1",
+		SettingCancelWindowUnit:                    "",
+		SettingCancelWindowMode:                    "",
 		SettingKeyCustomMenuItems:                  "[]",
 		SettingKeyCustomEndpoints:                  "[]",
 		SettingKeyDefaultConcurrency:               strconv.Itoa(s.cfg.Default.UserConcurrency),
@@ -815,6 +874,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 // parseSettings 解析设置到结构体
 func (s *SettingService) parseSettings(settings map[string]string) *SystemSettings {
 	emailVerifyEnabled := settings[SettingKeyEmailVerifyEnabled] == "true"
+	paymentCfg := (&PaymentConfigService{}).parsePaymentConfig(settings)
 	result := &SystemSettings{
 		RegistrationEnabled:              settings[SettingKeyRegistrationEnabled] == "true",
 		EmailVerifyEnabled:               emailVerifyEnabled,
@@ -846,11 +906,33 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		PaygEnabled:                      settings[SettingKeyPaygEnabled] == "true",
 		PaygExchangeRate:                 parsePositiveFloatSetting(settings[SettingKeyPaygExchangeRate], 1),
 		PaygFixedAmountOptions:           parsePaygFixedAmountOptions(settings[SettingKeyPaygFixedAmountOptions]),
+		PaymentEnabled:                   paymentCfg.Enabled,
+		PaymentMinAmount:                 paymentCfg.MinAmount,
+		PaymentMaxAmount:                 paymentCfg.MaxAmount,
+		PaymentDailyLimit:                paymentCfg.DailyLimit,
+		PaymentOrderTimeoutMin:           paymentCfg.OrderTimeoutMin,
+		PaymentMaxPendingOrders:          paymentCfg.MaxPendingOrders,
+		PaymentEnabledTypes:              paymentCfg.EnabledTypes,
+		PaymentBalanceDisabled:           paymentCfg.BalanceDisabled,
+		PaymentBalanceRechargeMultiplier: paymentCfg.BalanceRechargeMultiplier,
+		PaymentRechargeFeeRate:           paymentCfg.RechargeFeeRate,
+		PaymentLoadBalanceStrat:          paymentCfg.LoadBalanceStrategy,
+		PaymentProductNamePrefix:         paymentCfg.ProductNamePrefix,
+		PaymentProductNameSuffix:         paymentCfg.ProductNameSuffix,
+		PaymentHelpImageURL:              paymentCfg.HelpImageURL,
+		PaymentHelpText:                  paymentCfg.HelpText,
+		PaymentCancelRateLimitEnabled:    paymentCfg.CancelRateLimitEnabled,
+		PaymentCancelRateLimitMax:        paymentCfg.CancelRateLimitMax,
+		PaymentCancelRateLimitWindow:     paymentCfg.CancelRateLimitWindow,
+		PaymentCancelRateLimitUnit:       paymentCfg.CancelRateLimitUnit,
+		PaymentCancelRateLimitMode:       paymentCfg.CancelRateLimitMode,
 		ShouqianbaTerminalSN:             strings.TrimSpace(settings[SettingKeyShouqianbaTerminalSN]),
 		ShouqianbaTerminalKeyConfigured:  strings.TrimSpace(settings[SettingKeyShouqianbaTerminalKey]) != "",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
+		BalanceLowNotifyEnabled:          settings[SettingKeyBalanceLowNotifyEnabled] == "true",
+		AccountQuotaNotifyEnabled:        settings[SettingKeyAccountQuotaNotifyEnabled] == "true",
 	}
 
 	// 解析整数类型
@@ -949,6 +1031,11 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 
 	// 分组隔离
 	result.AllowUngroupedKeyScheduling = settings[SettingKeyAllowUngroupedKeyScheduling] == "true"
+	if threshold, err := strconv.ParseFloat(settings[SettingKeyBalanceLowNotifyThreshold], 64); err == nil && threshold >= 0 {
+		result.BalanceLowNotifyThreshold = threshold
+	}
+	result.BalanceLowNotifyRechargeURL = strings.TrimSpace(settings[SettingKeyBalanceLowNotifyRechargeURL])
+	result.AccountQuotaNotifyEmails = ParseNotifyEmails(settings[SettingKeyAccountQuotaNotifyEmails])
 
 	return result
 }

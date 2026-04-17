@@ -31,24 +31,44 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool
 	LinuxDoConnectRedirectURL            string
 
-	SiteName                        string
-	SiteLogo                        string
-	SiteSubtitle                    string
-	APIBaseURL                      string
-	ContactInfo                     string
-	DocURL                          string
-	HomeContent                     string
-	HideCcsImportButton             bool
-	PurchaseSubscriptionEnabled     bool
-	PurchaseSubscriptionURL         string
-	PaygEnabled                     bool
-	PaygExchangeRate                float64
-	PaygFixedAmountOptions          []float64
-	ShouqianbaTerminalSN            string
-	ShouqianbaTerminalKey           string
-	ShouqianbaTerminalKeyConfigured bool
-	CustomMenuItems                 string // JSON array of custom menu items
-	CustomEndpoints                 string // JSON array of custom endpoints
+	SiteName                         string
+	SiteLogo                         string
+	SiteSubtitle                     string
+	APIBaseURL                       string
+	ContactInfo                      string
+	DocURL                           string
+	HomeContent                      string
+	HideCcsImportButton              bool
+	PurchaseSubscriptionEnabled      bool
+	PurchaseSubscriptionURL          string
+	PaygEnabled                      bool
+	PaygExchangeRate                 float64
+	PaygFixedAmountOptions           []float64
+	PaymentEnabled                   bool
+	PaymentMinAmount                 float64
+	PaymentMaxAmount                 float64
+	PaymentDailyLimit                float64
+	PaymentOrderTimeoutMin           int
+	PaymentMaxPendingOrders          int
+	PaymentEnabledTypes              []string
+	PaymentBalanceDisabled           bool
+	PaymentBalanceRechargeMultiplier float64
+	PaymentRechargeFeeRate           float64
+	PaymentLoadBalanceStrat          string
+	PaymentProductNamePrefix         string
+	PaymentProductNameSuffix         string
+	PaymentHelpImageURL              string
+	PaymentHelpText                  string
+	PaymentCancelRateLimitEnabled    bool
+	PaymentCancelRateLimitMax        int
+	PaymentCancelRateLimitWindow     int
+	PaymentCancelRateLimitUnit       string
+	PaymentCancelRateLimitMode       string
+	ShouqianbaTerminalSN             string
+	ShouqianbaTerminalKey            string
+	ShouqianbaTerminalKeyConfigured  bool
+	CustomMenuItems                  string // JSON array of custom menu items
+	CustomEndpoints                  string // JSON array of custom endpoints
 
 	DefaultConcurrency   int
 	DefaultBalance       float64
@@ -80,6 +100,12 @@ type SystemSettings struct {
 
 	// Backend 模式：禁用用户注册和自助服务，仅管理员可登录
 	BackendModeEnabled bool
+
+	BalanceLowNotifyEnabled     bool
+	BalanceLowNotifyThreshold   float64
+	BalanceLowNotifyRechargeURL string
+	AccountQuotaNotifyEnabled   bool
+	AccountQuotaNotifyEmails    []NotifyEmailEntry
 }
 
 type DefaultSubscriptionSetting struct {
@@ -111,12 +137,18 @@ type PublicSettings struct {
 	PaygEnabled                 bool
 	PaygExchangeRate            float64
 	PaygFixedAmountOptions      []float64
+	PaymentEnabled              bool
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
 
 	LinuxDoOAuthEnabled bool
 	BackendModeEnabled  bool
 	Version             string
+
+	BalanceLowNotifyEnabled     bool
+	AccountQuotaNotifyEnabled   bool
+	BalanceLowNotifyThreshold   float64
+	BalanceLowNotifyRechargeURL string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

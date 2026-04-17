@@ -22,6 +22,12 @@ export interface FetchOptions {
   signal?: AbortSignal
 }
 
+export interface NotifyEmailEntry {
+  email: string
+  disabled: boolean
+  verified: boolean
+}
+
 // ==================== User & Auth Types ====================
 
 export interface User {
@@ -33,6 +39,11 @@ export interface User {
   concurrency: number // Allowed concurrent requests
   status: 'active' | 'disabled' // Account status
   allowed_groups: number[] | null // Allowed group IDs (null = all non-exclusive groups)
+  balance_notify_enabled?: boolean
+  balance_notify_threshold_type?: string
+  balance_notify_threshold?: number | null
+  balance_notify_extra_emails?: NotifyEmailEntry[] | null
+  total_recharged?: number
   subscriptions?: UserSubscription[] // User's active subscriptions
   created_at: string
   updated_at: string
@@ -107,6 +118,7 @@ export interface PublicSettings {
   doc_url: string
   home_content: string
   hide_ccs_import_button: boolean
+  payment_enabled: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
   payg_enabled: boolean
@@ -117,6 +129,9 @@ export interface PublicSettings {
   linuxdo_oauth_enabled: boolean
   backend_mode_enabled: boolean
   version: string
+  balance_low_notify_enabled?: boolean
+  balance_low_notify_threshold?: number
+  account_quota_notify_enabled?: boolean
 }
 
 export interface AuthResponse {
@@ -1734,3 +1749,14 @@ export interface UpdateScheduledTestPlanRequest {
   max_results?: number
   auto_recover?: boolean
 }
+
+export type {
+  SubscriptionPlan,
+  PaymentOrder,
+  CheckoutInfoResponse,
+  PaymentConfig,
+  ProviderInstance,
+  PaymentType,
+  OrderType,
+  OrderStatus
+} from './payment'

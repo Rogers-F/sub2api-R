@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -159,7 +160,7 @@ func ResponsesEventToChatChunks(evt *ResponsesStreamEvent, state *ResponsesEvent
 		return resToChatHandleReasoningDelta(evt, state)
 	case "response.reasoning_summary_text.done":
 		return nil
-	case "response.completed", "response.incomplete", "response.failed":
+	case "response.completed", "response.done", "response.incomplete", "response.failed":
 		return resToChatHandleCompleted(evt, state)
 	default:
 		return nil
@@ -371,4 +372,100 @@ func generateChatCmplID() string {
 	b := make([]byte, 12)
 	_, _ = rand.Read(b)
 	return "chatcmpl-" + hex.EncodeToString(b)
+}
+
+type bufferedFuncCall struct {
+	CallID string
+	Name   string
+	Args   strings.Builder
+}
+
+// BufferedResponseAccumulator rebuilds buffered JSON responses from SSE deltas
+// when the terminal event arrives with an empty output array.
+type BufferedResponseAccumulator struct {
+	text                 strings.Builder
+	reasoning            strings.Builder
+	funcCalls            []bufferedFuncCall
+	outputIndexToFuncIdx map[int]int
+}
+
+func NewBufferedResponseAccumulator() *BufferedResponseAccumulator {
+	return &BufferedResponseAccumulator{
+		outputIndexToFuncIdx: make(map[int]int),
+	}
+}
+
+func (a *BufferedResponseAccumulator) ProcessEvent(event *ResponsesStreamEvent) {
+	switch event.Type {
+	case "response.output_text.delta":
+		if event.Delta != "" {
+			_, _ = a.text.WriteString(event.Delta)
+		}
+	case "response.output_item.added":
+		if event.Item != nil && event.Item.Type == "function_call" {
+			idx := len(a.funcCalls)
+			a.outputIndexToFuncIdx[event.OutputIndex] = idx
+			a.funcCalls = append(a.funcCalls, bufferedFuncCall{
+				CallID: event.Item.CallID,
+				Name:   event.Item.Name,
+			})
+		}
+	case "response.function_call_arguments.delta":
+		if event.Delta != "" {
+			if idx, ok := a.outputIndexToFuncIdx[event.OutputIndex]; ok {
+				_, _ = a.funcCalls[idx].Args.WriteString(event.Delta)
+			}
+		}
+	case "response.reasoning_summary_text.delta":
+		if event.Delta != "" {
+			_, _ = a.reasoning.WriteString(event.Delta)
+		}
+	}
+}
+
+func (a *BufferedResponseAccumulator) HasContent() bool {
+	return a.text.Len() > 0 || a.reasoning.Len() > 0 || len(a.funcCalls) > 0
+}
+
+func (a *BufferedResponseAccumulator) BuildOutput() []ResponsesOutput {
+	var out []ResponsesOutput
+
+	if a.reasoning.Len() > 0 {
+		out = append(out, ResponsesOutput{
+			Type: "reasoning",
+			Summary: []ResponsesSummary{{
+				Type: "summary_text",
+				Text: a.reasoning.String(),
+			}},
+		})
+	}
+
+	if a.text.Len() > 0 {
+		out = append(out, ResponsesOutput{
+			Type: "message",
+			Role: "assistant",
+			Content: []ResponsesContentPart{{
+				Type: "output_text",
+				Text: a.text.String(),
+			}},
+		})
+	}
+
+	for i := range a.funcCalls {
+		out = append(out, ResponsesOutput{
+			Type:      "function_call",
+			CallID:    a.funcCalls[i].CallID,
+			Name:      a.funcCalls[i].Name,
+			Arguments: a.funcCalls[i].Args.String(),
+		})
+	}
+
+	return out
+}
+
+func (a *BufferedResponseAccumulator) SupplementResponseOutput(resp *ResponsesResponse) {
+	if resp == nil || len(resp.Output) > 0 || !a.HasContent() {
+		return
+	}
+	resp.Output = a.BuildOutput()
 }

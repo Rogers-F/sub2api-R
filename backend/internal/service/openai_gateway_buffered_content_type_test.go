@@ -11,6 +11,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestHandleChatBufferedStreamingResponse_GroupFlagForcesApplicationJSON(t *testing.T) {
@@ -45,6 +46,41 @@ func TestHandleChatBufferedStreamingResponse_GroupFlagForcesApplicationJSON(t *t
 	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
 }
 
+func TestHandleChatBufferedStreamingResponse_ReconstructsContentFromDeltasOnResponseDone(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               111,
+		Name:                             "chat-group",
+		Platform:                         PlatformOpenAI,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ForceApplicationJSONForNonStream: true,
+	}))
+	c.Request = req
+
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+		Body: ioNopCloserString(strings.Join([]string{
+			`data: {"type":"response.output_text.delta","delta":"hel"}`,
+			`data: {"type":"response.output_text.delta","delta":"lo"}`,
+			`data: {"type":"response.done","response":{"id":"resp_chat_done","model":"gpt-5.4","status":"completed","output":[],"usage":{"input_tokens":3,"output_tokens":5,"input_tokens_details":{"cached_tokens":0}}}}`,
+			`data: [DONE]`,
+		}, "\n")),
+	}
+
+	svc := &OpenAIGatewayService{}
+	result, err := svc.handleChatBufferedStreamingResponse(resp, c, "gpt-5.4", "gpt-5.4", time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+	require.Equal(t, "hello", gjson.Get(rec.Body.String(), "choices.0.message.content").String())
+}
+
 func TestHandleAnthropicBufferedStreamingResponse_GroupFlagForcesApplicationJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -75,6 +111,41 @@ func TestHandleAnthropicBufferedStreamingResponse_GroupFlagForcesApplicationJSON
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+}
+
+func TestHandleAnthropicBufferedStreamingResponse_ReconstructsContentFromDeltasOnResponseDone(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               222,
+		Name:                             "claude-group",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ForceApplicationJSONForNonStream: true,
+	}))
+	c.Request = req
+
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+		Body: ioNopCloserString(strings.Join([]string{
+			`data: {"type":"response.output_text.delta","delta":"hel"}`,
+			`data: {"type":"response.output_text.delta","delta":"lo"}`,
+			`data: {"type":"response.done","response":{"id":"resp_msg_done","model":"gpt-5.4","status":"completed","output":[],"usage":{"input_tokens":4,"output_tokens":6,"input_tokens_details":{"cached_tokens":0}}}}`,
+			`data: [DONE]`,
+		}, "\n")),
+	}
+
+	svc := &OpenAIGatewayService{}
+	result, err := svc.handleAnthropicBufferedStreamingResponse(resp, c, "claude-opus-4-6", "gpt-5.4", time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+	require.Equal(t, "hello", gjson.Get(rec.Body.String(), "content.0.text").String())
 }
 
 func ioNopCloserString(body string) *readCloserString {

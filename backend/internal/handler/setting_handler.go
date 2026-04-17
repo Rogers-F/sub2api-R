@@ -54,10 +54,15 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		PaygEnabled:                      settings.PaygEnabled,
 		PaygExchangeRate:                 settings.PaygExchangeRate,
 		PaygFixedAmountOptions:           settings.PaygFixedAmountOptions,
+		PaymentEnabled:                   settings.PaymentEnabled,
 		CustomMenuItems:                  dto.ParseUserVisibleMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                  dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		BackendModeEnabled:               settings.BackendModeEnabled,
+		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
+		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
+		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,
+		BalanceLowNotifyRechargeURL:      settings.BalanceLowNotifyRechargeURL,
 		Version:                          h.version,
 	})
 }

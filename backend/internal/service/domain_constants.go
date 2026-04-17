@@ -223,6 +223,16 @@ const (
 
 	// SettingKeyBackendModeEnabled Backend 模式：禁用用户注册和自助服务，仅管理员可登录
 	SettingKeyBackendModeEnabled = "backend_mode_enabled"
+
+	// 通知设置
+	SettingKeyBalanceLowNotifyEnabled     = "balance_low_notify_enabled"
+	SettingKeyBalanceLowNotifyThreshold   = "balance_low_notify_threshold"
+	SettingKeyBalanceLowNotifyRechargeURL = "balance_low_notify_recharge_url"
+	SettingKeyAccountQuotaNotifyEnabled   = "account_quota_notify_enabled"
+	SettingKeyAccountQuotaNotifyEmails    = "account_quota_notify_emails"
+
+	// Web Search 模拟配置
+	SettingKeyWebSearchEmulationConfig = "web_search_emulation_config"
 )
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).

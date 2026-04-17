@@ -327,6 +327,7 @@ export const useAppStore = defineStore('app', () => {
         doc_url: docUrl.value,
         home_content: '',
         hide_ccs_import_button: false,
+        payment_enabled: false,
         purchase_subscription_enabled: false,
         purchase_subscription_url: '',
         payg_enabled: false,

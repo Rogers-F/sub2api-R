@@ -150,6 +150,18 @@ describe('BulkEditAccountModal', () => {
     })
   })
 
+  it('OpenAI OAuth 批量编辑显示 ctx_pool WS mode 选项', async () => {
+    const wrapper = mountModal({
+      selectedPlatforms: ['openai'],
+      selectedTypes: ['oauth']
+    })
+
+    await wrapper.get('#bulk-edit-openai-ws-mode-enabled').setValue(true)
+
+    const select = wrapper.get('[data-testid="bulk-edit-openai-ws-mode-select"]')
+    expect(select.html()).toContain('admin.accounts.openai.wsModeCtxPool')
+  })
+
   it('OpenAI API Key 批量编辑不显示 WS mode 入口', () => {
     const wrapper = mountModal({
       selectedPlatforms: ['openai'],

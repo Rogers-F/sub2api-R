@@ -85,6 +85,21 @@ func (User) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(5,4)"}).
 			Optional().
 			Nillable(),
+		field.Bool("balance_notify_enabled").
+			Default(true),
+		field.String("balance_notify_threshold_type").
+			MaxLen(10).
+			Default("fixed"),
+		field.Float("balance_notify_threshold").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Optional().
+			Nillable(),
+		field.String("balance_notify_extra_emails").
+			SchemaType(map[string]string{dialect.Postgres: "text"}).
+			Default("[]"),
+		field.Float("total_recharged").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0),
 	}
 }
 
@@ -102,6 +117,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("promo_code_usages", PromoCodeUsage.Type),
 		edge.To("referral_rewards_given", ReferralReward.Type),
 		edge.To("referral_rewards_received", ReferralReward.Type),
+		edge.To("payment_orders", PaymentOrder.Type),
 		edge.To("payg_orders", PaygOrder.Type),
 	}
 }

@@ -111,6 +111,26 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PaygEnabled:                          settings.PaygEnabled,
 		PaygExchangeRate:                     settings.PaygExchangeRate,
 		PaygFixedAmountOptions:               settings.PaygFixedAmountOptions,
+		PaymentEnabled:                       settings.PaymentEnabled,
+		PaymentMinAmount:                     settings.PaymentMinAmount,
+		PaymentMaxAmount:                     settings.PaymentMaxAmount,
+		PaymentDailyLimit:                    settings.PaymentDailyLimit,
+		PaymentOrderTimeoutMin:               settings.PaymentOrderTimeoutMin,
+		PaymentMaxPendingOrders:              settings.PaymentMaxPendingOrders,
+		PaymentEnabledTypes:                  settings.PaymentEnabledTypes,
+		PaymentBalanceDisabled:               settings.PaymentBalanceDisabled,
+		PaymentBalanceRechargeMultiplier:     settings.PaymentBalanceRechargeMultiplier,
+		PaymentRechargeFeeRate:               settings.PaymentRechargeFeeRate,
+		PaymentLoadBalanceStrat:              settings.PaymentLoadBalanceStrat,
+		PaymentProductNamePrefix:             settings.PaymentProductNamePrefix,
+		PaymentProductNameSuffix:             settings.PaymentProductNameSuffix,
+		PaymentHelpImageURL:                  settings.PaymentHelpImageURL,
+		PaymentHelpText:                      settings.PaymentHelpText,
+		PaymentCancelRateLimitEnabled:        settings.PaymentCancelRateLimitEnabled,
+		PaymentCancelRateLimitMax:            settings.PaymentCancelRateLimitMax,
+		PaymentCancelRateLimitWindow:         settings.PaymentCancelRateLimitWindow,
+		PaymentCancelRateLimitUnit:           settings.PaymentCancelRateLimitUnit,
+		PaymentCancelRateLimitMode:           settings.PaymentCancelRateLimitMode,
 		ShouqianbaTerminalSN:                 settings.ShouqianbaTerminalSN,
 		ShouqianbaTerminalKeyConfigured:      settings.ShouqianbaTerminalKeyConfigured,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(settings.CustomMenuItems),
@@ -133,6 +153,11 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		MaxClaudeCodeVersion:                 settings.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:          settings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                   settings.BackendModeEnabled,
+		BalanceLowNotifyEnabled:              settings.BalanceLowNotifyEnabled,
+		BalanceLowNotifyThreshold:            settings.BalanceLowNotifyThreshold,
+		BalanceLowNotifyRechargeURL:          settings.BalanceLowNotifyRechargeURL,
+		AccountQuotaNotifyEnabled:            settings.AccountQuotaNotifyEnabled,
+		AccountQuotaNotifyEmails:             dto.NotifyEmailEntriesFromService(settings.AccountQuotaNotifyEmails),
 	})
 }
 
@@ -217,6 +242,12 @@ type UpdateSettingsRequest struct {
 
 	// Backend Mode
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
+
+	BalanceLowNotifyEnabled     bool                    `json:"balance_low_notify_enabled"`
+	BalanceLowNotifyThreshold   float64                 `json:"balance_low_notify_threshold"`
+	BalanceLowNotifyRechargeURL string                  `json:"balance_low_notify_recharge_url"`
+	AccountQuotaNotifyEnabled   bool                    `json:"account_quota_notify_enabled"`
+	AccountQuotaNotifyEmails    *[]dto.NotifyEmailEntry `json:"account_quota_notify_emails"`
 }
 
 // UpdateSettings 更新系统设置
@@ -625,6 +656,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		MaxClaudeCodeVersion:             req.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:      req.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:               req.BackendModeEnabled,
+		BalanceLowNotifyEnabled:          req.BalanceLowNotifyEnabled,
+		BalanceLowNotifyThreshold:        req.BalanceLowNotifyThreshold,
+		BalanceLowNotifyRechargeURL:      req.BalanceLowNotifyRechargeURL,
+		AccountQuotaNotifyEnabled:        req.AccountQuotaNotifyEnabled,
+		AccountQuotaNotifyEmails: func() []service.NotifyEmailEntry {
+			if req.AccountQuotaNotifyEmails != nil {
+				return dto.NotifyEmailEntriesToService(*req.AccountQuotaNotifyEmails)
+			}
+			return previousSettings.AccountQuotaNotifyEmails
+		}(),
 		OpsMonitoringEnabled: func() bool {
 			if req.OpsMonitoringEnabled != nil {
 				return *req.OpsMonitoringEnabled
@@ -731,6 +772,11 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		MaxClaudeCodeVersion:                 updatedSettings.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:          updatedSettings.AllowUngroupedKeyScheduling,
 		BackendModeEnabled:                   updatedSettings.BackendModeEnabled,
+		BalanceLowNotifyEnabled:              updatedSettings.BalanceLowNotifyEnabled,
+		BalanceLowNotifyThreshold:            updatedSettings.BalanceLowNotifyThreshold,
+		BalanceLowNotifyRechargeURL:          updatedSettings.BalanceLowNotifyRechargeURL,
+		AccountQuotaNotifyEnabled:            updatedSettings.AccountQuotaNotifyEnabled,
+		AccountQuotaNotifyEmails:             dto.NotifyEmailEntriesFromService(updatedSettings.AccountQuotaNotifyEmails),
 	})
 }
 
@@ -1452,4 +1498,79 @@ func (h *SettingHandler) UpdateStreamTimeoutSettings(c *gin.Context) {
 		ThresholdCount:         updatedSettings.ThresholdCount,
 		ThresholdWindowMinutes: updatedSettings.ThresholdWindowMinutes,
 	})
+}
+
+// GetWebSearchEmulationConfig 获取 Web Search 模拟配置
+// GET /api/v1/admin/settings/web-search-emulation
+func (h *SettingHandler) GetWebSearchEmulationConfig(c *gin.Context) {
+	cfg, err := h.settingService.GetWebSearchEmulationConfig(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, service.PopulateWebSearchUsage(c.Request.Context(), cfg))
+}
+
+// UpdateWebSearchEmulationConfig 更新 Web Search 模拟配置
+// PUT /api/v1/admin/settings/web-search-emulation
+func (h *SettingHandler) UpdateWebSearchEmulationConfig(c *gin.Context) {
+	var cfg service.WebSearchEmulationConfig
+	if err := c.ShouldBindJSON(&cfg); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if err := h.settingService.SaveWebSearchEmulationConfig(c.Request.Context(), &cfg); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	updated, err := h.settingService.GetWebSearchEmulationConfig(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, service.PopulateWebSearchUsage(c.Request.Context(), updated))
+}
+
+// ResetWebSearchUsage 重置指定 provider 的配额用量
+// POST /api/v1/admin/settings/web-search-emulation/reset-usage
+func (h *SettingHandler) ResetWebSearchUsage(c *gin.Context) {
+	var req struct {
+		ProviderType string `json:"provider_type"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if req.ProviderType == "" {
+		response.BadRequest(c, "provider_type is required")
+		return
+	}
+	if err := service.ResetWebSearchUsage(c.Request.Context(), req.ProviderType); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, nil)
+}
+
+// TestWebSearchEmulation 测试 Web Search 搜索
+// POST /api/v1/admin/settings/web-search-emulation/test
+func (h *SettingHandler) TestWebSearchEmulation(c *gin.Context) {
+	var req struct {
+		Query string `json:"query"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if strings.TrimSpace(req.Query) == "" {
+		req.Query = "搜索今年世界大事件"
+	}
+
+	result, err := service.TestWebSearch(c.Request.Context(), req.Query)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
 }

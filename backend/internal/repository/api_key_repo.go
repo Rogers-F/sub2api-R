@@ -617,6 +617,13 @@ func userEntityToService(u *dbent.User) *service.User {
 		ReferrerID:          u.ReferrerID,
 		ReferralCode:        u.ReferralCode,
 		CommissionRate:      u.CommissionRate,
+		BalanceNotifyEnabled: func() bool {
+			return u.BalanceNotifyEnabled
+		}(),
+		BalanceNotifyThresholdType: u.BalanceNotifyThresholdType,
+		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
+		BalanceNotifyExtraEmails:   service.ParseNotifyEmails(u.BalanceNotifyExtraEmails),
+		TotalRecharged:             u.TotalRecharged,
 		CreatedAt:           u.CreatedAt,
 		UpdatedAt:           u.UpdatedAt,
 	}

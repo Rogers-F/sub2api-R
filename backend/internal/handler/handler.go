@@ -20,6 +20,7 @@ type AdminHandlers struct {
 	Proxy            *admin.ProxyHandler
 	Redeem           *admin.RedeemHandler
 	Payg             *admin.PaygHandler
+	Payment          *admin.PaymentHandler
 	Promo            *admin.PromoHandler
 	Setting          *admin.SettingHandler
 	Ops              *admin.OpsHandler
@@ -34,20 +35,22 @@ type AdminHandlers struct {
 
 // Handlers contains all HTTP handlers
 type Handlers struct {
-	Auth          *AuthHandler
-	User          *UserHandler
-	APIKey        *APIKeyHandler
-	Usage         *UsageHandler
-	Redeem        *RedeemHandler
-	Subscription  *SubscriptionHandler
-	Announcement  *AnnouncementHandler
-	Admin         *AdminHandlers
-	Gateway       *GatewayHandler
-	OpenAIGateway *OpenAIGatewayHandler
-	Referral      *ReferralHandler
-	Payg          *PaygHandler
-	Setting       *SettingHandler
-	Totp          *TotpHandler
+	Auth           *AuthHandler
+	User           *UserHandler
+	APIKey         *APIKeyHandler
+	Usage          *UsageHandler
+	Redeem         *RedeemHandler
+	Subscription   *SubscriptionHandler
+	Announcement   *AnnouncementHandler
+	Admin          *AdminHandlers
+	Gateway        *GatewayHandler
+	OpenAIGateway  *OpenAIGatewayHandler
+	Referral       *ReferralHandler
+	Payg           *PaygHandler
+	Payment        *PaymentHandler
+	PaymentWebhook *PaymentWebhookHandler
+	Setting        *SettingHandler
+	Totp           *TotpHandler
 }
 
 // BuildInfo contains build-time information

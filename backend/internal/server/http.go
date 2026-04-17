@@ -2,12 +2,15 @@
 package server
 
 import (
+	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/websearch"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -55,6 +58,52 @@ func ProvideRouter(
 			log.Printf("Warning: server.trusted_proxies is empty in release mode; client IP trust chain is disabled")
 		}
 	}
+
+	settingService.SetWebSearchManagerBuilder(context.Background(), func(
+		cfg *service.WebSearchEmulationConfig,
+		proxyURLs map[int64]string,
+	) {
+		if cfg == nil || !cfg.Enabled || len(cfg.Providers) == 0 {
+			service.SetWebSearchManager(nil)
+			return
+		}
+
+		configs := make([]websearch.ProviderConfig, 0, len(cfg.Providers))
+		for _, provider := range cfg.Providers {
+			if provider.APIKey == "" {
+				continue
+			}
+
+			pc := websearch.ProviderConfig{
+				Type:      provider.Type,
+				APIKey:    provider.APIKey,
+				ExpiresAt: provider.ExpiresAt,
+			}
+			if provider.QuotaLimit != nil {
+				pc.QuotaLimit = *provider.QuotaLimit
+			}
+			if provider.SubscribedAt != nil {
+				pc.SubscribedAt = provider.SubscribedAt
+			}
+			if provider.ProxyID != nil {
+				pc.ProxyID = *provider.ProxyID
+				if u, ok := proxyURLs[*provider.ProxyID]; ok {
+					pc.ProxyURL = u
+				} else {
+					slog.Warn(
+						"websearch: proxy not found for provider, skipping",
+						"provider", provider.Type,
+						"proxy_id", *provider.ProxyID,
+					)
+					continue
+				}
+			}
+
+			configs = append(configs, pc)
+		}
+
+		service.SetWebSearchManager(websearch.NewManager(configs, redisClient))
+	})
 
 	return SetupRouter(r, handlers, jwtAuth, adminAuth, apiKeyAuth, apiKeyService, subscriptionService, opsService, settingService, cfg, redisClient)
 }

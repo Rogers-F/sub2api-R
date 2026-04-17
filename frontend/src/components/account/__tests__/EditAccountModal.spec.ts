@@ -1,11 +1,18 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 
-const { updateAccountMock, checkMixedChannelRiskMock } = vi.hoisted(() => ({
+const { updateAccountMock, checkMixedChannelRiskMock, getWebSearchEmulationConfigMock } = vi.hoisted(() => ({
   updateAccountMock: vi.fn(),
-  checkMixedChannelRiskMock: vi.fn()
+  checkMixedChannelRiskMock: vi.fn(),
+  getWebSearchEmulationConfigMock: vi.fn()
 }))
+
+vi.stubGlobal('localStorage', {
+  getItem: vi.fn(() => null),
+  setItem: vi.fn(),
+  removeItem: vi.fn()
+})
 
 vi.mock('@/stores/app', () => ({
   useAppStore: () => ({
@@ -26,12 +33,20 @@ vi.mock('@/api/admin', () => ({
     accounts: {
       update: updateAccountMock,
       checkMixedChannelRisk: checkMixedChannelRiskMock
+    },
+    settings: {
+      getWebSearchEmulationConfig: getWebSearchEmulationConfigMock
     }
   }
 }))
 
 vi.mock('@/api/admin/accounts', () => ({
   getAntigravityDefaultModelMapping: vi.fn()
+}))
+
+vi.mock('@/utils/format', () => ({
+  formatDateTimeLocalInput: vi.fn(() => ''),
+  parseDateTimeLocalInput: vi.fn(() => null)
 }))
 
 vi.mock('vue-i18n', async () => {
@@ -119,7 +134,21 @@ function mountModal(account = buildAccount()) {
     global: {
       stubs: {
         BaseDialog: BaseDialogStub,
-        Select: true,
+        Select: {
+          props: ['modelValue', 'options'],
+          emits: ['update:modelValue'],
+          template: `
+            <select
+              v-bind="$attrs"
+              :value="modelValue"
+              @change="$emit('update:modelValue', $event.target.value)"
+            >
+              <option v-for="option in options" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          `
+        },
         Icon: true,
         ProxySelector: true,
         GroupSelector: true,
@@ -130,11 +159,28 @@ function mountModal(account = buildAccount()) {
 }
 
 describe('EditAccountModal', () => {
+  beforeEach(() => {
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    getWebSearchEmulationConfigMock.mockReset()
+
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    getWebSearchEmulationConfigMock.mockResolvedValue({
+      enabled: true,
+      providers: [{ provider: 'brave' }]
+    })
+  })
+
   it('reopening the same account rehydrates the OpenAI whitelist from props', async () => {
     const account = buildAccount()
     updateAccountMock.mockReset()
     checkMixedChannelRiskMock.mockReset()
+    getWebSearchEmulationConfigMock.mockReset()
     checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    getWebSearchEmulationConfigMock.mockResolvedValue({
+      enabled: true,
+      providers: [{ provider: 'brave' }]
+    })
     updateAccountMock.mockResolvedValue(account)
 
     const wrapper = mountModal(account)
@@ -155,5 +201,71 @@ describe('EditAccountModal', () => {
     expect(updateAccountMock.mock.calls[0]?.[1]?.credentials?.model_mapping).toEqual({
       'gpt-5.2': 'gpt-5.2'
     })
+  })
+
+  it('显示 ctx_pool WS mode 选项', () => {
+    const wrapper = mountModal()
+    expect(wrapper.html()).toContain('admin.accounts.openai.wsModeCtxPool')
+  })
+
+  it('Anthropic API Key 编辑表单显示 Web Search 覆盖选项', async () => {
+    const wrapper = mountModal({
+      ...buildAccount(),
+      platform: 'anthropic',
+      credentials: {
+        api_key: 'sk-ant-test',
+        base_url: 'https://api.anthropic.com'
+      }
+    } as any)
+
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="web-search-emulation-mode"]').exists()).toBe(true)
+  })
+
+  it('Anthropic API Key 编辑表单兼容旧 bool 配置回填 enabled', async () => {
+    const wrapper = mountModal({
+      ...buildAccount(),
+      platform: 'anthropic',
+      credentials: {
+        api_key: 'sk-ant-test',
+        base_url: 'https://api.anthropic.com'
+      },
+      extra: {
+        web_search_emulation: true
+      }
+    } as any)
+
+    await flushPromises()
+
+    expect((wrapper.get('[data-testid="web-search-emulation-mode"]').element as HTMLSelectElement).value).toBe('enabled')
+  })
+
+  it('Anthropic API Key 编辑时写入 extra.web_search_emulation', async () => {
+    updateAccountMock.mockResolvedValue({
+      ...buildAccount(),
+      platform: 'anthropic',
+      credentials: {
+        api_key: 'sk-ant-test',
+        base_url: 'https://api.anthropic.com'
+      }
+    })
+
+    const wrapper = mountModal({
+      ...buildAccount(),
+      platform: 'anthropic',
+      credentials: {
+        api_key: 'sk-ant-test',
+        base_url: 'https://api.anthropic.com'
+      }
+    } as any)
+
+    await flushPromises()
+    await wrapper.get('[data-testid="web-search-emulation-mode"]').setValue('disabled')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.web_search_emulation).toBe('disabled')
   })
 })

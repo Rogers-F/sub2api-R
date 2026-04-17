@@ -674,6 +674,21 @@ func TestResponsesEventToChatChunks_Completed(t *testing.T) {
 	assert.Equal(t, 30, chunks[1].Usage.PromptTokensDetails.CachedTokens)
 }
 
+func TestResponsesEventToChatChunks_Done(t *testing.T) {
+	state := NewResponsesEventToChatState()
+	state.Model = "gpt-4o"
+
+	chunks := ResponsesEventToChatChunks(&ResponsesStreamEvent{
+		Type: "response.done",
+		Response: &ResponsesResponse{
+			Status: "completed",
+		},
+	}, state)
+	require.Len(t, chunks, 1)
+	require.NotNil(t, chunks[0].Choices[0].FinishReason)
+	assert.Equal(t, "stop", *chunks[0].Choices[0].FinishReason)
+}
+
 func TestResponsesEventToChatChunks_CompletedWithToolCalls(t *testing.T) {
 	state := NewResponsesEventToChatState()
 	state.Model = "gpt-4o"
@@ -802,6 +817,72 @@ func TestChatChunkToSSE(t *testing.T) {
 	assert.Contains(t, sse, "chatcmpl-test")
 	assert.Contains(t, sse, "assistant")
 	assert.True(t, len(sse) > 10)
+}
+
+func TestBufferedResponseAccumulator_SupplementsEmptyTerminalOutput(t *testing.T) {
+	acc := NewBufferedResponseAccumulator()
+	acc.ProcessEvent(&ResponsesStreamEvent{
+		Type:  "response.reasoning_summary_text.delta",
+		Delta: "think",
+	})
+	acc.ProcessEvent(&ResponsesStreamEvent{
+		Type:  "response.output_text.delta",
+		Delta: "hel",
+	})
+	acc.ProcessEvent(&ResponsesStreamEvent{
+		Type:  "response.output_text.delta",
+		Delta: "lo",
+	})
+	acc.ProcessEvent(&ResponsesStreamEvent{
+		Type:        "response.output_item.added",
+		OutputIndex: 1,
+		Item: &ResponsesOutput{
+			Type:   "function_call",
+			CallID: "call_1",
+			Name:   "ping",
+		},
+	})
+	acc.ProcessEvent(&ResponsesStreamEvent{
+		Type:        "response.function_call_arguments.delta",
+		OutputIndex: 1,
+		Delta:       `{"host":"example.com"}`,
+	})
+
+	resp := &ResponsesResponse{Status: "completed"}
+	acc.SupplementResponseOutput(resp)
+
+	require.Len(t, resp.Output, 3)
+	assert.Equal(t, "reasoning", resp.Output[0].Type)
+	assert.Equal(t, "think", resp.Output[0].Summary[0].Text)
+	assert.Equal(t, "message", resp.Output[1].Type)
+	assert.Equal(t, "hello", resp.Output[1].Content[0].Text)
+	assert.Equal(t, "function_call", resp.Output[2].Type)
+	assert.Equal(t, "call_1", resp.Output[2].CallID)
+	assert.Equal(t, "ping", resp.Output[2].Name)
+	assert.Equal(t, `{"host":"example.com"}`, resp.Output[2].Arguments)
+}
+
+func TestBufferedResponseAccumulator_DoesNotOverrideExistingOutput(t *testing.T) {
+	acc := NewBufferedResponseAccumulator()
+	acc.ProcessEvent(&ResponsesStreamEvent{
+		Type:  "response.output_text.delta",
+		Delta: "hello",
+	})
+
+	resp := &ResponsesResponse{
+		Status: "completed",
+		Output: []ResponsesOutput{{
+			Type: "message",
+			Content: []ResponsesContentPart{{
+				Type: "output_text",
+				Text: "existing",
+			}},
+		}},
+	}
+	acc.SupplementResponseOutput(resp)
+
+	require.Len(t, resp.Output, 1)
+	assert.Equal(t, "existing", resp.Output[0].Content[0].Text)
 }
 
 // ---------------------------------------------------------------------------

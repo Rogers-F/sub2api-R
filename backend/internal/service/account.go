@@ -1346,6 +1346,66 @@ func (a *Account) getExtraString(key string) string {
 	return ""
 }
 
+func (a *Account) getExtraStringDefault(key, defaultValue string) string {
+	if value := a.getExtraString(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func (a *Account) getExtraBool(key string) bool {
+	if a.Extra == nil {
+		return false
+	}
+	value, ok := a.Extra[key]
+	if !ok || value == nil {
+		return false
+	}
+	switch v := value.(type) {
+	case bool:
+		return v
+	case string:
+		return strings.EqualFold(strings.TrimSpace(v), "true")
+	default:
+		return false
+	}
+}
+
+func (a *Account) GetWebSearchEmulationMode() string {
+	if a == nil || a.Platform != PlatformAnthropic || a.Type != AccountTypeAPIKey {
+		return WebSearchModeDefault
+	}
+	if a.Extra == nil {
+		return WebSearchModeDefault
+	}
+
+	raw, ok := a.Extra[featureKeyWebSearchEmulation]
+	if !ok || raw == nil {
+		return WebSearchModeDefault
+	}
+
+	switch v := raw.(type) {
+	case string:
+		switch strings.ToLower(strings.TrimSpace(v)) {
+		case WebSearchModeEnabled:
+			return WebSearchModeEnabled
+		case WebSearchModeDisabled:
+			return WebSearchModeDisabled
+		case WebSearchModeDefault, "":
+			return WebSearchModeDefault
+		default:
+			return WebSearchModeDefault
+		}
+	case bool:
+		if v {
+			return WebSearchModeEnabled
+		}
+		return WebSearchModeDefault
+	default:
+		return WebSearchModeDefault
+	}
+}
+
 // getExtraInt 从 Extra 中读取指定 key 的 int 值
 func (a *Account) getExtraInt(key string) int {
 	if a.Extra == nil {
@@ -1400,6 +1460,58 @@ func (a *Account) GetQuotaResetTimezone() string {
 		return tz
 	}
 	return "UTC"
+}
+
+func (a *Account) QuotaNotifyConfig(dim string) (enabled bool, threshold float64, thresholdType string) {
+	enabled = a.getExtraBool("quota_notify_" + dim + "_enabled")
+	threshold = a.getExtraFloat64("quota_notify_" + dim + "_threshold")
+	thresholdType = a.getExtraStringDefault("quota_notify_"+dim+"_threshold_type", thresholdTypeFixed)
+	return
+}
+
+func (a *Account) GetQuotaNotifyDailyEnabled() bool {
+	enabled, _, _ := a.QuotaNotifyConfig(quotaDimDaily)
+	return enabled
+}
+
+func (a *Account) GetQuotaNotifyDailyThreshold() float64 {
+	_, threshold, _ := a.QuotaNotifyConfig(quotaDimDaily)
+	return threshold
+}
+
+func (a *Account) GetQuotaNotifyDailyThresholdType() string {
+	_, _, thresholdType := a.QuotaNotifyConfig(quotaDimDaily)
+	return thresholdType
+}
+
+func (a *Account) GetQuotaNotifyWeeklyEnabled() bool {
+	enabled, _, _ := a.QuotaNotifyConfig(quotaDimWeekly)
+	return enabled
+}
+
+func (a *Account) GetQuotaNotifyWeeklyThreshold() float64 {
+	_, threshold, _ := a.QuotaNotifyConfig(quotaDimWeekly)
+	return threshold
+}
+
+func (a *Account) GetQuotaNotifyWeeklyThresholdType() string {
+	_, _, thresholdType := a.QuotaNotifyConfig(quotaDimWeekly)
+	return thresholdType
+}
+
+func (a *Account) GetQuotaNotifyTotalEnabled() bool {
+	enabled, _, _ := a.QuotaNotifyConfig(quotaDimTotal)
+	return enabled
+}
+
+func (a *Account) GetQuotaNotifyTotalThreshold() float64 {
+	_, threshold, _ := a.QuotaNotifyConfig(quotaDimTotal)
+	return threshold
+}
+
+func (a *Account) GetQuotaNotifyTotalThresholdType() string {
+	_, _, thresholdType := a.QuotaNotifyConfig(quotaDimTotal)
+	return thresholdType
 }
 
 // nextFixedDailyReset 计算在 after 之后的下一个每日固定重置时间点

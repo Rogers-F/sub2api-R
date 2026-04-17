@@ -51,23 +51,43 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool   `json:"linuxdo_connect_client_secret_configured"`
 	LinuxDoConnectRedirectURL            string `json:"linuxdo_connect_redirect_url"`
 
-	SiteName                        string           `json:"site_name"`
-	SiteLogo                        string           `json:"site_logo"`
-	SiteSubtitle                    string           `json:"site_subtitle"`
-	APIBaseURL                      string           `json:"api_base_url"`
-	ContactInfo                     string           `json:"contact_info"`
-	DocURL                          string           `json:"doc_url"`
-	HomeContent                     string           `json:"home_content"`
-	HideCcsImportButton             bool             `json:"hide_ccs_import_button"`
-	PurchaseSubscriptionEnabled     bool             `json:"purchase_subscription_enabled"`
-	PurchaseSubscriptionURL         string           `json:"purchase_subscription_url"`
-	PaygEnabled                     bool             `json:"payg_enabled"`
-	PaygExchangeRate                float64          `json:"payg_exchange_rate"`
-	PaygFixedAmountOptions          []float64        `json:"payg_fixed_amount_options"`
-	ShouqianbaTerminalSN            string           `json:"shouqianba_terminal_sn"`
-	ShouqianbaTerminalKeyConfigured bool             `json:"shouqianba_terminal_key_configured"`
-	CustomMenuItems                 []CustomMenuItem `json:"custom_menu_items"`
-	CustomEndpoints                 []CustomEndpoint `json:"custom_endpoints"`
+	SiteName                         string           `json:"site_name"`
+	SiteLogo                         string           `json:"site_logo"`
+	SiteSubtitle                     string           `json:"site_subtitle"`
+	APIBaseURL                       string           `json:"api_base_url"`
+	ContactInfo                      string           `json:"contact_info"`
+	DocURL                           string           `json:"doc_url"`
+	HomeContent                      string           `json:"home_content"`
+	HideCcsImportButton              bool             `json:"hide_ccs_import_button"`
+	PurchaseSubscriptionEnabled      bool             `json:"purchase_subscription_enabled"`
+	PurchaseSubscriptionURL          string           `json:"purchase_subscription_url"`
+	PaygEnabled                      bool             `json:"payg_enabled"`
+	PaygExchangeRate                 float64          `json:"payg_exchange_rate"`
+	PaygFixedAmountOptions           []float64        `json:"payg_fixed_amount_options"`
+	PaymentEnabled                   bool             `json:"payment_enabled"`
+	PaymentMinAmount                 float64          `json:"payment_min_amount"`
+	PaymentMaxAmount                 float64          `json:"payment_max_amount"`
+	PaymentDailyLimit                float64          `json:"payment_daily_limit"`
+	PaymentOrderTimeoutMin           int              `json:"payment_order_timeout_minutes"`
+	PaymentMaxPendingOrders          int              `json:"payment_max_pending_orders"`
+	PaymentEnabledTypes              []string         `json:"payment_enabled_types"`
+	PaymentBalanceDisabled           bool             `json:"payment_balance_disabled"`
+	PaymentBalanceRechargeMultiplier float64          `json:"payment_balance_recharge_multiplier"`
+	PaymentRechargeFeeRate           float64          `json:"payment_recharge_fee_rate"`
+	PaymentLoadBalanceStrat          string           `json:"payment_load_balance_strategy"`
+	PaymentProductNamePrefix         string           `json:"payment_product_name_prefix"`
+	PaymentProductNameSuffix         string           `json:"payment_product_name_suffix"`
+	PaymentHelpImageURL              string           `json:"payment_help_image_url"`
+	PaymentHelpText                  string           `json:"payment_help_text"`
+	PaymentCancelRateLimitEnabled    bool             `json:"payment_cancel_rate_limit_enabled"`
+	PaymentCancelRateLimitMax        int              `json:"payment_cancel_rate_limit_max"`
+	PaymentCancelRateLimitWindow     int              `json:"payment_cancel_rate_limit_window"`
+	PaymentCancelRateLimitUnit       string           `json:"payment_cancel_rate_limit_unit"`
+	PaymentCancelRateLimitMode       string           `json:"payment_cancel_rate_limit_window_mode"`
+	ShouqianbaTerminalSN             string           `json:"shouqianba_terminal_sn"`
+	ShouqianbaTerminalKeyConfigured  bool             `json:"shouqianba_terminal_key_configured"`
+	CustomMenuItems                  []CustomMenuItem `json:"custom_menu_items"`
+	CustomEndpoints                  []CustomEndpoint `json:"custom_endpoints"`
 
 	DefaultConcurrency   int                          `json:"default_concurrency"`
 	DefaultBalance       float64                      `json:"default_balance"`
@@ -98,6 +118,12 @@ type SystemSettings struct {
 
 	// Backend Mode
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
+
+	BalanceLowNotifyEnabled     bool               `json:"balance_low_notify_enabled"`
+	BalanceLowNotifyThreshold   float64            `json:"balance_low_notify_threshold"`
+	BalanceLowNotifyRechargeURL string             `json:"balance_low_notify_recharge_url"`
+	AccountQuotaNotifyEnabled   bool               `json:"account_quota_notify_enabled"`
+	AccountQuotaNotifyEmails    []NotifyEmailEntry `json:"account_quota_notify_emails"`
 }
 
 type DefaultSubscriptionSetting struct {
@@ -128,11 +154,17 @@ type PublicSettings struct {
 	PaygEnabled                      bool             `json:"payg_enabled"`
 	PaygExchangeRate                 float64          `json:"payg_exchange_rate"`
 	PaygFixedAmountOptions           []float64        `json:"payg_fixed_amount_options"`
+	PaymentEnabled                   bool             `json:"payment_enabled"`
 	CustomMenuItems                  []CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints                  []CustomEndpoint `json:"custom_endpoints"`
 	LinuxDoOAuthEnabled              bool             `json:"linuxdo_oauth_enabled"`
 	BackendModeEnabled               bool             `json:"backend_mode_enabled"`
 	Version                          string           `json:"version"`
+
+	BalanceLowNotifyEnabled     bool    `json:"balance_low_notify_enabled"`
+	AccountQuotaNotifyEnabled   bool    `json:"account_quota_notify_enabled"`
+	BalanceLowNotifyThreshold   float64 `json:"balance_low_notify_threshold"`
+	BalanceLowNotifyRechargeURL string  `json:"balance_low_notify_recharge_url"`
 }
 
 // OverloadCooldownSettings 529过载冷却配置 DTO

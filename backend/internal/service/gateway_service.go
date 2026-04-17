@@ -557,9 +557,16 @@ type GatewayService struct {
 	modelsListCache       *gocache.Cache
 	modelsListCacheTTL    time.Duration
 	settingService        *SettingService
+	channelService        *ChannelService
+	balanceNotifier       balanceNotifier
 	responseHeaderFilter  *responseheaders.CompiledHeaderFilter
 	debugModelRouting     atomic.Bool
 	debugClaudeMimic      atomic.Bool
+}
+
+type balanceNotifier interface {
+	CheckBalanceAfterDeduction(ctx context.Context, user *User, oldBalance, cost float64)
+	CheckAccountQuotaAfterIncrement(ctx context.Context, account *Account, cost float64, quotaState *AccountQuotaState)
 }
 
 // NewGatewayService creates a new GatewayService
@@ -586,9 +593,14 @@ func NewGatewayService(
 	rpmCache RPMCache,
 	digestStore *DigestSessionStore,
 	settingService *SettingService,
+	balanceNotifyService *BalanceNotifyService,
 ) *GatewayService {
 	userGroupRateTTL := resolveUserGroupRateCacheTTL(cfg)
 	modelsListTTL := resolveModelsListCacheTTL(cfg)
+	var notifier balanceNotifier
+	if balanceNotifyService != nil {
+		notifier = balanceNotifyService
+	}
 
 	svc := &GatewayService{
 		accountRepo:          accountRepo,
@@ -614,6 +626,7 @@ func NewGatewayService(
 		rpmCache:             rpmCache,
 		userGroupRateCache:   gocache.New(userGroupRateTTL, time.Minute),
 		settingService:       settingService,
+		balanceNotifier:      notifier,
 		modelsListCache:      gocache.New(modelsListTTL, time.Minute),
 		modelsListCacheTTL:   modelsListTTL,
 		responseHeaderFilter: compileResponseHeaderFilter(cfg),
@@ -3843,6 +3856,10 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	startTime := time.Now()
 	if parsed == nil {
 		return nil, fmt.Errorf("parse request: empty request")
+	}
+
+	if account != nil && s.shouldEmulateWebSearch(ctx, account, parsed.GroupID, parsed.Body) {
+		return s.handleWebSearchEmulation(ctx, c, account, parsed)
 	}
 
 	if account != nil && account.IsAnthropicAPIKeyPassthroughEnabled() {
@@ -7339,6 +7356,39 @@ func finalizePostUsageBilling(p *postUsageBillingParams, deps *billingDeps) {
 	}
 
 	deps.deferredService.ScheduleLastUsedUpdate(p.Account.ID)
+
+	go notifyBalanceLow(p, deps)
+	go notifyAccountQuota(p, deps)
+}
+
+func notifyBalanceLow(p *postUsageBillingParams, deps *billingDeps) {
+	if p == nil || p.Cost == nil || deps == nil || !hasBalanceNotifier(deps.balanceNotifier) {
+		return
+	}
+	if p.IsSubscriptionBill || p.Cost.ActualCost <= 0 || p.User == nil {
+		return
+	}
+	deps.balanceNotifier.CheckBalanceAfterDeduction(context.Background(), p.User, p.User.Balance, p.Cost.ActualCost)
+}
+
+func notifyAccountQuota(p *postUsageBillingParams, deps *billingDeps) {
+	if p == nil || p.Cost == nil || deps == nil || !hasBalanceNotifier(deps.balanceNotifier) {
+		return
+	}
+	if p.Cost.TotalCost <= 0 || p.Account == nil || !p.Account.IsAPIKeyOrBedrock() {
+		return
+	}
+	deps.balanceNotifier.CheckAccountQuotaAfterIncrement(context.Background(), p.Account, p.Cost.TotalCost*p.AccountRateMultiplier, nil)
+}
+
+func hasBalanceNotifier(notifier balanceNotifier) bool {
+	if notifier == nil {
+		return false
+	}
+	if svc, ok := notifier.(*BalanceNotifyService); ok && svc == nil {
+		return false
+	}
+	return true
 }
 
 func detachedBillingContext(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -7366,6 +7416,7 @@ type billingDeps struct {
 	userSubRepo         UserSubscriptionRepository
 	billingCacheService *BillingCacheService
 	deferredService     *DeferredService
+	balanceNotifier     balanceNotifier
 }
 
 func (s *GatewayService) billingDeps() *billingDeps {
@@ -7375,6 +7426,7 @@ func (s *GatewayService) billingDeps() *billingDeps {
 		userSubRepo:         s.userSubRepo,
 		billingCacheService: s.billingCacheService,
 		deferredService:     s.deferredService,
+		balanceNotifier:     s.balanceNotifier,
 	}
 }
 

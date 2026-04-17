@@ -66,6 +66,7 @@ type ParsedRequest struct {
 	Body            []byte          // 原始请求体（保留用于转发）
 	Model           string          // 请求的模型名称
 	Stream          bool            // 是否为流式请求
+	GroupID         *int64          // 可选：当前 API Key 所属分组 ID
 	MetadataUserID  string          // metadata.user_id（用于会话亲和）
 	System          any             // system 字段内容
 	Messages        []any           // messages 数组

@@ -35,6 +35,13 @@ type User struct {
 	ReferralCode   *string  // 推荐码
 	CommissionRate *float64 // 返利比例
 
+	// 余额不足通知
+	BalanceNotifyEnabled       bool
+	BalanceNotifyThresholdType string
+	BalanceNotifyThreshold     *float64
+	BalanceNotifyExtraEmails   []NotifyEmailEntry
+	TotalRecharged             float64
+
 	APIKeys       []APIKey
 	Subscriptions []UserSubscription
 }

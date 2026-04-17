@@ -36,6 +36,14 @@
         </div>
       </div>
       <ProfileEditForm :initial-username="user?.username || ''" />
+      <ProfileBalanceNotifyCard
+        v-if="user && balanceLowNotifyEnabled"
+        :enabled="user.balance_notify_enabled ?? false"
+        :threshold="user.balance_notify_threshold ?? null"
+        :extra-emails="user.balance_notify_extra_emails ?? []"
+        :system-default-threshold="systemDefaultThreshold"
+        :user-email="user.email"
+      />
       <ProfilePasswordForm />
       <ProfileTotpCard />
     </div>
@@ -52,6 +60,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import ProfileInfoCard from '@/components/user/profile/ProfileInfoCard.vue'
 import ProfileEditForm from '@/components/user/profile/ProfileEditForm.vue'
+import ProfileBalanceNotifyCard from '@/components/user/profile/ProfileBalanceNotifyCard.vue'
 import ProfilePasswordForm from '@/components/user/profile/ProfilePasswordForm.vue'
 import ProfileTotpCard from '@/components/user/profile/ProfileTotpCard.vue'
 import { Icon } from '@/components/icons'
@@ -60,6 +69,8 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const contactInfo = ref('')
+const balanceLowNotifyEnabled = ref(false)
+const systemDefaultThreshold = ref(0)
 
 const WalletIcon = {
   render: () =>
@@ -92,6 +103,8 @@ async function loadContactInfo(): Promise<void> {
   try {
     const settings = await authAPI.getPublicSettings()
     contactInfo.value = settings.contact_info || ''
+    balanceLowNotifyEnabled.value = settings.balance_low_notify_enabled ?? false
+    systemDefaultThreshold.value = settings.balance_low_notify_threshold ?? 0
   } catch (error) {
     console.error('Failed to load contact info:', error)
   }

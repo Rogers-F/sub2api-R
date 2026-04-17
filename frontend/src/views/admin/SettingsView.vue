@@ -665,6 +665,274 @@
           </div>
         </div>
 
+        <!-- Web Search Emulation -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.webSearchEmulation.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.webSearchEmulation.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.webSearchEmulation.enabled') }}
+                </label>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.webSearchEmulation.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="webSearchConfig.enabled" />
+            </div>
+
+            <div v-if="webSearchConfig.enabled" class="space-y-4">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.webSearchEmulation.providers') }}
+                </label>
+                <button type="button" class="btn btn-secondary btn-sm" @click="addWebSearchProvider">
+                  {{ t('admin.settings.webSearchEmulation.addProvider') }}
+                </button>
+              </div>
+
+              <div
+                v-if="webSearchConfig.providers.length === 0"
+                class="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-400 dark:border-dark-600"
+              >
+                {{ t('admin.settings.webSearchEmulation.noProviders') }}
+              </div>
+
+              <div
+                v-for="(provider, pIdx) in webSearchConfig.providers"
+                :key="pIdx"
+                class="rounded-lg border border-gray-200 dark:border-dark-600"
+              >
+                <div
+                  class="flex cursor-pointer items-center justify-between px-4 py-3"
+                  @click="toggleProviderExpand(pIdx)"
+                >
+                  <div class="flex items-center gap-3">
+                    <svg
+                      class="h-4 w-4 text-gray-400 transition-transform"
+                      :class="{ 'rotate-90': expandedProviders[pIdx] }"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <Select
+                      v-model="provider.type"
+                      :options="[
+                        { value: 'brave', label: 'Brave Search' },
+                        { value: 'tavily', label: 'Tavily' },
+                      ]"
+                      class="w-36"
+                      @click.stop
+                    />
+                    <span class="text-xs text-gray-400">
+                      {{ provider.quota_used ?? 0 }} /
+                      {{ provider.quota_limit != null && provider.quota_limit > 0 ? provider.quota_limit : '∞' }}
+                    </span>
+                    <span
+                      v-if="!expandedProviders[pIdx] && provider.api_key_configured"
+                      class="text-xs text-green-500"
+                    >
+                      {{ t('admin.settings.webSearchEmulation.apiKeyConfigured') }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="text-xs text-red-500 hover:text-red-700"
+                    @click.stop="removeWebSearchProvider(pIdx)"
+                  >
+                    {{ t('admin.settings.webSearchEmulation.removeProvider') }}
+                  </button>
+                </div>
+
+                <div
+                  v-if="expandedProviders[pIdx]"
+                  class="space-y-3 border-t border-gray-100 px-4 pb-4 pt-3 dark:border-dark-700"
+                >
+                  <div>
+                    <label class="text-xs text-gray-500">{{ t('admin.settings.webSearchEmulation.apiKey') }}</label>
+                    <div class="relative">
+                      <input
+                        v-model="provider.api_key"
+                        :type="apiKeyVisible[pIdx] ? 'text' : 'password'"
+                        class="input w-full text-sm"
+                        :class="(provider.api_key || provider.api_key_configured) ? 'pr-16' : ''"
+                        :placeholder="provider.api_key_configured ? '••••••••' : t('admin.settings.webSearchEmulation.apiKeyPlaceholder')"
+                      />
+                      <div
+                        v-if="provider.api_key || provider.api_key_configured"
+                        class="absolute inset-y-0 right-0 flex items-center pr-1.5"
+                      >
+                        <button
+                          type="button"
+                          class="rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          :title="apiKeyVisible[pIdx] ? t('admin.settings.webSearchEmulation.hideApiKey') : t('admin.settings.webSearchEmulation.showApiKey')"
+                          @click="apiKeyVisible[pIdx] = !apiKeyVisible[pIdx]"
+                        >
+                          <svg v-if="!apiKeyVisible[pIdx]" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <svg v-else class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          :class="{ 'cursor-not-allowed opacity-30': !provider.api_key }"
+                          :title="t('admin.settings.webSearchEmulation.copyApiKey')"
+                          :disabled="!provider.api_key"
+                          @click="copyApiKey(pIdx)"
+                        >
+                          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs text-gray-500">{{ t('admin.settings.webSearchEmulation.quotaLimit') }}</label>
+                      <input
+                        v-model="provider.quota_limit"
+                        type="number"
+                        min="1"
+                        class="input text-sm"
+                        placeholder="∞"
+                      />
+                      <p class="mt-0.5 text-xs text-gray-400">
+                        {{ t('admin.settings.webSearchEmulation.quotaLimitHint') }}
+                      </p>
+                    </div>
+                    <div>
+                      <label class="text-xs text-gray-500">{{ t('admin.settings.webSearchEmulation.subscribedAt') }}</label>
+                      <input
+                        :value="formatSubscribedAt(provider.subscribed_at)"
+                        type="date"
+                        class="input text-sm"
+                        @input="provider.subscribed_at = parseSubscribedAt(($event.target as HTMLInputElement).value)"
+                      />
+                      <p class="mt-0.5 text-xs text-gray-400">
+                        {{ t('admin.settings.webSearchEmulation.subscribedAtHint') }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-500">{{ t('admin.settings.webSearchEmulation.quotaUsage') }}:</span>
+                    <div
+                      v-if="provider.quota_limit != null && provider.quota_limit > 0"
+                      class="flex-1 rounded-full bg-gray-200 dark:bg-dark-600"
+                      style="height: 6px"
+                    >
+                      <div
+                        class="h-full rounded-full transition-all"
+                        :class="quotaPercentage(provider) > 90 ? 'bg-red-500' : quotaPercentage(provider) > 70 ? 'bg-yellow-500' : 'bg-green-500'"
+                        :style="{ width: Math.min(quotaPercentage(provider), 100) + '%' }"
+                      />
+                    </div>
+                    <div v-else class="flex-1" />
+                    <span class="text-xs text-gray-500">
+                      {{ provider.quota_used ?? 0 }} /
+                      {{ provider.quota_limit != null && provider.quota_limit > 0 ? provider.quota_limit : '∞' }}
+                    </span>
+                    <button
+                      v-if="(provider.quota_used ?? 0) > 0"
+                      type="button"
+                      class="text-xs text-primary-600 hover:text-primary-700"
+                      @click="resetWebSearchUsage(pIdx)"
+                    >
+                      {{ t('admin.settings.webSearchEmulation.resetUsage') }}
+                    </button>
+                  </div>
+
+                  <div class="flex items-end gap-3">
+                    <div class="flex-1">
+                      <label class="text-xs text-gray-500">{{ t('admin.settings.webSearchEmulation.proxy') }}</label>
+                      <ProxySelector v-model="provider.proxy_id" :proxies="webSearchProxies" />
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm whitespace-nowrap" @click="openTestDialog()">
+                      {{ t('admin.settings.webSearchEmulation.test') }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="wsTestDialogOpen"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          @click.self="wsTestDialogOpen = false"
+        >
+          <div class="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-dark-800">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.webSearchEmulation.testResultTitle') }}
+            </h3>
+            <div class="flex items-center gap-2">
+              <input
+                v-model="wsTestQuery"
+                type="text"
+                class="input flex-1 text-sm"
+                :placeholder="t('admin.settings.webSearchEmulation.testDefaultQuery')"
+                @keyup.enter="testWebSearchProvider()"
+              />
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                :disabled="wsTestLoading"
+                @click="testWebSearchProvider()"
+              >
+                {{ wsTestLoading ? t('admin.settings.webSearchEmulation.testing') : t('admin.settings.webSearchEmulation.test') }}
+              </button>
+            </div>
+
+            <div
+              v-if="wsTestResult"
+              class="mt-4 max-h-80 overflow-y-auto rounded-lg bg-gray-50 p-4 dark:bg-dark-700"
+            >
+              <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.webSearchEmulation.testResultProvider') }}: {{ wsTestResult.provider }}
+              </p>
+              <div v-if="wsTestResult.results.length === 0" class="text-sm text-gray-400">
+                {{ t('admin.settings.webSearchEmulation.testNoResults') }}
+              </div>
+              <div
+                v-for="(result, rIdx) in wsTestResult.results"
+                :key="rIdx"
+                class="mt-2 border-t border-gray-200 pt-2 first:mt-0 first:border-0 first:pt-0 dark:border-dark-600"
+              >
+                <a
+                  :href="result.url"
+                  target="_blank"
+                  class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {{ result.title }}
+                </a>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ result.snippet }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex justify-end">
+              <button type="button" class="btn btn-secondary btn-sm" @click="wsTestDialogOpen = false">
+                {{ t('common.close') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         </div><!-- /Tab: Gateway -->
 
         <!-- Tab: Security — Registration, Turnstile, LinuxDo -->
@@ -1760,6 +2028,361 @@
 
         </div><!-- /Tab: General -->
 
+        <!-- Tab: Payment -->
+        <div v-show="activeTab === 'payment'" class="space-y-6">
+
+        <!-- Payment System Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.payment.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.payment.description') }}
+              <a
+                :href="
+                  locale === 'zh'
+                    ? 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md'
+                    : 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT.md'
+                "
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ml-2 inline-flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+              >
+                <svg class="mr-0.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                {{ t('admin.settings.payment.configGuide') }}
+              </a>
+            </p>
+          </div>
+          <div class="space-y-4 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">
+                  {{ t('admin.settings.payment.enabled') }}
+                </label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.payment.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.payment_enabled" />
+            </div>
+
+            <template v-if="form.payment_enabled">
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.productNamePrefix') }}</label>
+                  <input
+                    v-model="form.payment_product_name_prefix"
+                    type="text"
+                    class="input"
+                    placeholder="Sub2API"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.productNameSuffix') }}</label>
+                  <input
+                    v-model="form.payment_product_name_suffix"
+                    type="text"
+                    class="input"
+                    placeholder="CNY"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.preview') }}</label>
+                  <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300">
+                    {{
+                      (form.payment_product_name_prefix || 'Sub2API') +
+                      ' 100 ' +
+                      (form.payment_product_name_suffix || 'CNY')
+                    }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.minAmount') }}</label>
+                  <input
+                    :value="form.payment_min_amount || ''"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input"
+                    :placeholder="t('admin.settings.payment.noLimit')"
+                    @input="form.payment_min_amount = parseFloat(($event.target as HTMLInputElement).value) || 0"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.maxAmount') }}</label>
+                  <input
+                    :value="form.payment_max_amount || ''"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input"
+                    :placeholder="t('admin.settings.payment.noLimit')"
+                    @input="form.payment_max_amount = parseFloat(($event.target as HTMLInputElement).value) || 0"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.dailyLimit') }}</label>
+                  <input
+                    :value="form.payment_daily_limit || ''"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input"
+                    :placeholder="t('admin.settings.payment.noLimit')"
+                    @input="form.payment_daily_limit = parseFloat(($event.target as HTMLInputElement).value) || 0"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">
+                    {{ t('admin.settings.payment.balanceRechargeMultiplier') }}
+                  </label>
+                  <input
+                    :value="form.payment_balance_recharge_multiplier || ''"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    class="input"
+                    @input="form.payment_balance_recharge_multiplier = parseFloat(($event.target as HTMLInputElement).value) || 1"
+                  />
+                  <p class="mt-0.5 text-xs text-gray-400">
+                    {{ t('admin.settings.payment.balanceRechargeMultiplierHint') }}
+                  </p>
+                  <p class="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                    {{
+                      t('admin.settings.payment.balanceRechargePreview', {
+                        usd: (Number(form.payment_balance_recharge_multiplier) || 1).toFixed(2)
+                      })
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.rechargeFeeRate') }}</label>
+                  <div class="relative">
+                    <input
+                      :value="form.payment_recharge_fee_rate ?? ''"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      class="input pr-8"
+                      @input="form.payment_recharge_fee_rate = Math.min(100, Math.max(0, Math.round(parseFloat(($event.target as HTMLInputElement).value || '0') * 100) / 100))"
+                    />
+                    <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">%</span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-gray-400">
+                    {{ t('admin.settings.payment.rechargeFeeRateHint') }}
+                  </p>
+                  <p
+                    v-if="(Number(form.payment_recharge_fee_rate) || 0) > 0"
+                    class="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400"
+                  >
+                    {{
+                      t('admin.settings.payment.rechargeFeePreview', {
+                        fee: (Number(form.payment_recharge_fee_rate) || 0).toFixed(2)
+                      })
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <label class="input-label">
+                    {{ t('admin.settings.payment.orderTimeout') }}
+                    <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model.number="form.payment_order_timeout_minutes"
+                    type="number"
+                    min="1"
+                    class="input"
+                    required
+                  />
+                  <p class="mt-0.5 text-xs text-gray-400">
+                    {{ t('admin.settings.payment.orderTimeoutHint') }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-end gap-4">
+                <div class="w-28">
+                  <label class="input-label">{{ t('admin.settings.payment.maxPendingOrders') }}</label>
+                  <input
+                    v-model.number="form.payment_max_pending_orders"
+                    type="number"
+                    min="1"
+                    class="input"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">
+                    {{ t('admin.settings.payment.loadBalanceStrategy') }}
+                  </label>
+                  <Select v-model="form.payment_load_balance_strategy" :options="loadBalanceOptions" class="w-40" />
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.cancelRateLimit') }}</label>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      :class="[
+                        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                        form.payment_cancel_rate_limit_enabled
+                          ? 'bg-primary-500'
+                          : 'bg-gray-300 dark:bg-dark-600'
+                      ]"
+                      @click="form.payment_cancel_rate_limit_enabled = !form.payment_cancel_rate_limit_enabled"
+                    >
+                      <span
+                        :class="[
+                          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                          form.payment_cancel_rate_limit_enabled ? 'translate-x-5' : 'translate-x-0'
+                        ]"
+                      />
+                    </button>
+                    <Select
+                      v-model="form.payment_cancel_rate_limit_window_mode"
+                      :options="cancelRateLimitModeOptions"
+                      class="w-24"
+                      :disabled="!form.payment_cancel_rate_limit_enabled"
+                    />
+                    <span
+                      :class="[
+                        'text-sm whitespace-nowrap',
+                        form.payment_cancel_rate_limit_enabled
+                          ? 'text-gray-700 dark:text-gray-300'
+                          : 'text-gray-400 dark:text-gray-600'
+                      ]"
+                    >
+                      {{ t('admin.settings.payment.cancelRateLimitEvery') }}
+                    </span>
+                    <input
+                      v-model.number="form.payment_cancel_rate_limit_window"
+                      type="number"
+                      min="1"
+                      required
+                      class="input w-14 text-center"
+                      :disabled="!form.payment_cancel_rate_limit_enabled"
+                    />
+                    <Select
+                      v-model="form.payment_cancel_rate_limit_unit"
+                      :options="cancelRateLimitUnitOptions"
+                      class="w-28"
+                      :disabled="!form.payment_cancel_rate_limit_enabled"
+                    />
+                    <span
+                      :class="[
+                        'text-sm whitespace-nowrap',
+                        form.payment_cancel_rate_limit_enabled
+                          ? 'text-gray-700 dark:text-gray-300'
+                          : 'text-gray-400 dark:text-gray-600'
+                      ]"
+                    >
+                      {{ t('admin.settings.payment.cancelRateLimitAllowMax') }}
+                    </span>
+                    <input
+                      v-model.number="form.payment_cancel_rate_limit_max"
+                      type="number"
+                      min="1"
+                      required
+                      class="input w-14 text-center"
+                      :disabled="!form.payment_cancel_rate_limit_enabled"
+                    />
+                    <span
+                      :class="[
+                        'text-sm whitespace-nowrap',
+                        form.payment_cancel_rate_limit_enabled
+                          ? 'text-gray-700 dark:text-gray-300'
+                          : 'text-gray-400 dark:text-gray-600'
+                      ]"
+                    >
+                      {{ t('admin.settings.payment.cancelRateLimitTimes') }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="input-label">{{ t('admin.settings.payment.enabledPaymentTypes') }}</label>
+                <div class="mt-1.5 flex flex-wrap gap-2">
+                  <button
+                    v-for="paymentType in allPaymentTypes"
+                    :key="paymentType.value"
+                    type="button"
+                    :class="[
+                      'rounded-lg border px-3 py-1.5 text-sm font-medium transition-all',
+                      isPaymentTypeEnabled(paymentType.value)
+                        ? 'border-primary-500 bg-primary-500 text-white shadow-sm'
+                        : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400 hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300 dark:hover:border-dark-500'
+                    ]"
+                    @click="togglePaymentType(paymentType.value)"
+                  >
+                    {{ paymentType.label }}
+                  </button>
+                </div>
+                <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                  {{ t('admin.settings.payment.enabledPaymentTypesHint') }}
+                  <a
+                    :href="
+                      locale === 'zh'
+                        ? 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md#%E6%94%AF%E6%8C%81%E7%9A%84%E6%94%AF%E4%BB%98%E6%96%B9%E5%BC%8F'
+                        : 'https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT.md#supported-payment-methods'
+                    "
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="ml-1 text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
+                  >
+                    {{ t('admin.settings.payment.findProvider') }}
+                    <svg class="mb-0.5 ml-0.5 inline h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.helpImage') }}</label>
+                  <ImageUpload
+                    v-model="form.payment_help_image_url"
+                    :placeholder="t('admin.settings.payment.helpImagePlaceholder')"
+                  />
+                </div>
+                <div>
+                  <label class="input-label">{{ t('admin.settings.payment.helpText') }}</label>
+                  <textarea
+                    v-model="form.payment_help_text"
+                    rows="3"
+                    class="input"
+                    :placeholder="t('admin.settings.payment.helpTextPlaceholder')"
+                  ></textarea>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <PaymentProviderList
+          v-if="form.payment_enabled"
+          :providers="providers"
+          :loading="providersLoading"
+          :can-create="hasAnyPaymentTypeEnabled"
+          :enabled-payment-types="form.payment_enabled_types"
+          :all-payment-types="allPaymentTypes"
+          :redirect-label="t('admin.settings.payment.easypayRedirect')"
+          @refresh="loadProviders"
+          @create="openCreateProvider"
+          @edit="openEditProvider"
+          @delete="confirmDeleteProvider"
+          @toggle-field="handleToggleField"
+          @toggle-type="handleToggleType"
+          @reorder="handleReorderProviders"
+        />
+        </div>
+
         <!-- Tab: Email -->
         <div v-show="activeTab === 'email'" class="space-y-6">
         <!-- Email disabled hint - show when email_verify_enabled is off -->
@@ -1984,6 +2607,123 @@
             </div>
           </div>
         </div>
+
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h3 class="text-base font-medium text-gray-900 dark:text-white">
+              {{ t('admin.settings.balanceNotify.title') }}
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.balanceNotify.description') }}
+            </p>
+          </div>
+          <div class="space-y-4 px-6 py-6">
+            <div class="flex items-center justify-between">
+              <label class="mb-0 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.balanceNotify.enabled') }}
+              </label>
+              <Toggle v-model="form.balance_low_notify_enabled" />
+            </div>
+            <div v-if="form.balance_low_notify_enabled">
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.balanceNotify.threshold') }}
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                <input
+                  v-model.number="form.balance_low_notify_threshold"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="input pl-7"
+                />
+              </div>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.balanceNotify.thresholdHint') }}
+              </p>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.balanceNotify.rechargeUrl') }}
+              </label>
+              <input
+                v-model="form.balance_low_notify_recharge_url"
+                type="url"
+                class="input"
+                :placeholder="currentOrigin"
+              />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.balanceNotify.rechargeUrlHint') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h3 class="text-base font-medium text-gray-900 dark:text-white">
+              {{ t('admin.settings.quotaNotify.title') }}
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.quotaNotify.description') }}
+            </p>
+          </div>
+          <div class="space-y-4 px-6 py-6">
+            <div class="flex items-center justify-between">
+              <label class="mb-0 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.quotaNotify.enabled') }}
+              </label>
+              <Toggle v-model="form.account_quota_notify_enabled" />
+            </div>
+            <div v-if="form.account_quota_notify_enabled">
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.quotaNotify.emails') }}
+              </label>
+              <div class="space-y-2">
+                <div
+                  v-for="(entry, index) in form.account_quota_notify_emails || []"
+                  :key="`${entry.email}-${index}`"
+                  class="flex items-center gap-2"
+                >
+                  <label class="relative inline-flex cursor-pointer items-center shrink-0">
+                    <input
+                      type="checkbox"
+                      class="peer sr-only"
+                      :checked="!entry.disabled"
+                      @change="entry.disabled = !entry.disabled"
+                    />
+                    <div
+                      class="h-5 w-9 rounded-full bg-gray-200 peer-checked:bg-primary-600 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:bg-gray-600 dark:after:border-gray-500"
+                    ></div>
+                  </label>
+                  <input
+                    v-model="entry.email"
+                    type="email"
+                    class="input flex-1"
+                    :placeholder="t('admin.settings.quotaNotify.emailPlaceholder')"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-secondary px-2"
+                    @click="form.account_quota_notify_emails?.splice(index, 1)"
+                  >
+                    <Icon name="x" size="xs" class="h-4 w-4" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  @click="addQuotaNotifyEmail"
+                >
+                  + {{ t('admin.settings.quotaNotify.addEmail') }}
+                </button>
+              </div>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.quotaNotify.emailsHint') }}
+              </p>
+            </div>
+          </div>
+        </div>
         </div><!-- /Tab: Email -->
 
         <!-- Tab: Backup -->
@@ -1991,10 +2731,10 @@
           <BackupSettings />
         </div>
 
-        <!-- Save Button -->
-        <div v-show="activeTab !== 'backup'" class="flex justify-end">
-          <button type="submit" :disabled="saving || loadFailed" class="btn btn-primary">
-            <svg v-if="saving" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <!-- Save Button -->
+      <div v-show="activeTab !== 'backup'" class="flex justify-end">
+        <button type="submit" :disabled="saving || loadFailed" class="btn btn-primary">
+          <svg v-if="saving" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
                 cx="12"
@@ -2008,13 +2748,35 @@
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
-            </svg>
-            {{ saving ? t('admin.settings.saving') : t('admin.settings.saveSettings') }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </AppLayout>
+          </svg>
+          {{ saving ? t('admin.settings.saving') : t('admin.settings.saveSettings') }}
+        </button>
+      </div>
+
+      <PaymentProviderDialog
+        ref="providerDialogRef"
+        :show="showProviderDialog"
+        :saving="providerSaving"
+        :editing="editingProvider"
+        :all-key-options="providerKeyOptions"
+        :enabled-key-options="enabledProviderKeyOptions"
+        :all-payment-types="allPaymentTypes"
+        :redirect-label="t('admin.settings.payment.easypayRedirect')"
+        @close="showProviderDialog = false"
+        @save="handleSaveProvider"
+      />
+      <ConfirmDialog
+        :show="showDeleteProviderDialog"
+        :title="t('admin.settings.payment.deleteProvider')"
+        :message="t('admin.settings.payment.deleteProviderConfirm')"
+        :confirm-text="t('common.delete')"
+        danger
+        @confirm="handleDeleteProvider"
+        @cancel="showDeleteProviderDialog = false"
+      />
+    </form>
+  </div>
+</AppLayout>
 </template>
 
 <script setup lang="ts">
@@ -2024,18 +2786,27 @@ import { adminAPI } from '@/api'
 import type {
   SystemSettings,
   UpdateSettingsRequest,
-  DefaultSubscriptionSetting
+  DefaultSubscriptionSetting,
+  WebSearchEmulationConfig,
+  WebSearchProviderConfig,
+  WebSearchTestResult
 } from '@/api/admin/settings'
-import type { AdminGroup } from '@/types'
+import type { AdminGroup, NotifyEmailEntry, Proxy } from '@/types'
+import type { ProviderInstance } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import Select from '@/components/common/Select.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import PaymentProviderList from '@/components/payment/PaymentProviderList.vue'
+import PaymentProviderDialog from '@/components/payment/PaymentProviderDialog.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import Toggle from '@/components/common/Toggle.vue'
+import ProxySelector from '@/components/common/ProxySelector.vue'
 import ImageUpload from '@/components/common/ImageUpload.vue'
 import BackupSettings from '@/views/admin/BackupView.vue'
 import { useClipboard } from '@/composables/useClipboard'
+import { extractApiErrorMessage } from '@/utils/apiError'
 import { useAppStore } from '@/stores'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
 import {
@@ -2045,21 +2816,23 @@ import {
   parseRegistrationEmailSuffixWhitelistInput
 } from '@/utils/registrationEmailPolicy'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const appStore = useAppStore()
 const adminSettingsStore = useAdminSettingsStore()
 
-type SettingsTab = 'general' | 'security' | 'users' | 'gateway' | 'email' | 'backup'
+type SettingsTab = 'general' | 'security' | 'users' | 'gateway' | 'payment' | 'email' | 'backup'
 const activeTab = ref<SettingsTab>('general')
 const settingsTabs = [
   { key: 'general'  as SettingsTab, icon: 'home'   as const },
   { key: 'security' as SettingsTab, icon: 'shield' as const },
   { key: 'users'    as SettingsTab, icon: 'user'   as const },
   { key: 'gateway'  as SettingsTab, icon: 'server' as const },
+  { key: 'payment'  as SettingsTab, icon: 'creditCard' as const },
   { key: 'email'    as SettingsTab, icon: 'mail'   as const },
   { key: 'backup'   as SettingsTab, icon: 'database' as const },
 ]
 const { copyToClipboard } = useClipboard()
+const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
 
 const loading = ref(true)
 const loadFailed = ref(false)
@@ -2079,6 +2852,16 @@ const adminApiKeyMasked = ref('')
 const adminApiKeyOperating = ref(false)
 const newAdminApiKey = ref('')
 const subscriptionGroups = ref<AdminGroup[]>([])
+
+// Payment provider 状态
+const providersLoading = ref(false)
+const providerSaving = ref(false)
+const providers = ref<ProviderInstance[]>([])
+const showProviderDialog = ref(false)
+const showDeleteProviderDialog = ref(false)
+const editingProvider = ref<ProviderInstance | null>(null)
+const deletingProviderId = ref<number | null>(null)
+const providerDialogRef = ref<InstanceType<typeof PaymentProviderDialog> | null>(null)
 
 // Overload Cooldown (529) 状态
 const overloadCooldownLoading = ref(true)
@@ -2160,6 +2943,26 @@ const form = reactive<SettingsForm>({
   home_content: '',
   backend_mode_enabled: false,
   hide_ccs_import_button: false,
+  payment_enabled: false,
+  payment_min_amount: 1,
+  payment_max_amount: 10000,
+  payment_daily_limit: 50000,
+  payment_order_timeout_minutes: 30,
+  payment_max_pending_orders: 3,
+  payment_enabled_types: [] as string[],
+  payment_balance_disabled: false,
+  payment_balance_recharge_multiplier: 1,
+  payment_recharge_fee_rate: 0,
+  payment_load_balance_strategy: 'round-robin',
+  payment_product_name_prefix: '',
+  payment_product_name_suffix: '',
+  payment_help_image_url: '',
+  payment_help_text: '',
+  payment_cancel_rate_limit_enabled: false,
+  payment_cancel_rate_limit_max: 10,
+  payment_cancel_rate_limit_window: 1,
+  payment_cancel_rate_limit_unit: 'day',
+  payment_cancel_rate_limit_window_mode: 'rolling',
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
   payg_enabled: false,
@@ -2208,8 +3011,161 @@ const form = reactive<SettingsForm>({
   min_claude_code_version: '',
   max_claude_code_version: '',
   // 分组隔离
-  allow_ungrouped_key_scheduling: false
+  allow_ungrouped_key_scheduling: false,
+  balance_low_notify_enabled: false,
+  balance_low_notify_threshold: 0,
+  balance_low_notify_recharge_url: '',
+  account_quota_notify_enabled: false,
+  account_quota_notify_emails: [] as NotifyEmailEntry[]
 })
+
+const webSearchProxies = ref<Proxy[]>([])
+const DEFAULT_WEB_SEARCH_QUOTA_LIMIT = 1000
+
+const webSearchConfig = reactive<WebSearchEmulationConfig>({
+  enabled: false,
+  providers: [],
+})
+
+const expandedProviders = reactive<Record<number, boolean>>({})
+const apiKeyVisible = reactive<Record<number, boolean>>({})
+const wsTestQuery = ref('')
+const wsTestLoading = ref(false)
+const wsTestResult = ref<WebSearchTestResult | null>(null)
+const wsTestDialogOpen = ref(false)
+
+function openTestDialog() {
+  wsTestResult.value = null
+  wsTestDialogOpen.value = true
+}
+
+function toggleProviderExpand(idx: number) {
+  expandedProviders[idx] = !expandedProviders[idx]
+}
+
+function removeWebSearchProvider(idx: number) {
+  webSearchConfig.providers.splice(idx, 1)
+  const newExpanded: Record<number, boolean> = {}
+  const newVisible: Record<number, boolean> = {}
+  for (let i = 0; i < webSearchConfig.providers.length; i++) {
+    const oldIdx = i >= idx ? i + 1 : i
+    newExpanded[i] = expandedProviders[oldIdx] ?? false
+    newVisible[i] = apiKeyVisible[oldIdx] ?? false
+  }
+  Object.keys(expandedProviders).forEach((key) => delete expandedProviders[Number(key)])
+  Object.keys(apiKeyVisible).forEach((key) => delete apiKeyVisible[Number(key)])
+  Object.assign(expandedProviders, newExpanded)
+  Object.assign(apiKeyVisible, newVisible)
+}
+
+function addWebSearchProvider() {
+  const idx = webSearchConfig.providers.length
+  webSearchConfig.providers.push({
+    type: 'brave',
+    api_key: '',
+    api_key_configured: false,
+    quota_limit: DEFAULT_WEB_SEARCH_QUOTA_LIMIT,
+    subscribed_at: null,
+    proxy_id: null,
+    expires_at: null,
+  } as WebSearchProviderConfig)
+  expandedProviders[idx] = true
+}
+
+function formatSubscribedAt(ts: number | null): string {
+  if (!ts) return ''
+  const date = new Date(ts * 1000)
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function parseSubscribedAt(dateStr: string): number | null {
+  if (!dateStr) return null
+  return Math.floor(new Date(`${dateStr}T00:00:00Z`).getTime() / 1000)
+}
+
+function quotaPercentage(provider: WebSearchProviderConfig): number {
+  if (!provider.quota_limit || provider.quota_limit <= 0) return 0
+  return ((provider.quota_used ?? 0) / provider.quota_limit) * 100
+}
+
+async function resetWebSearchUsage(idx: number) {
+  const provider = webSearchConfig.providers[idx]
+  if (!provider) return
+  if (!confirm(t('admin.settings.webSearchEmulation.resetUsageConfirm'))) return
+  try {
+    await adminAPI.settings.resetWebSearchUsage({ provider_type: provider.type })
+    provider.quota_used = 0
+    appStore.showSuccess(t('admin.settings.webSearchEmulation.resetUsageSuccess'))
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error')))
+  }
+}
+
+async function copyApiKey(idx: number) {
+  const key = webSearchConfig.providers[idx]?.api_key
+  if (!key) {
+    appStore.showError(t('admin.settings.webSearchEmulation.apiKeyPlaceholder'))
+    return
+  }
+  await copyToClipboard(key, t('admin.settings.webSearchEmulation.copied'))
+}
+
+async function testWebSearchProvider() {
+  wsTestLoading.value = true
+  wsTestResult.value = null
+  try {
+    const query = wsTestQuery.value.trim() || t('admin.settings.webSearchEmulation.testDefaultQuery')
+    wsTestResult.value = await adminAPI.settings.testWebSearchEmulation(query)
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error')))
+  } finally {
+    wsTestLoading.value = false
+  }
+}
+
+async function loadWebSearchConfig() {
+  try {
+    const [resp, proxiesResp] = await Promise.all([
+      adminAPI.settings.getWebSearchEmulationConfig(),
+      adminAPI.proxies.list().catch(() => ({ items: [] as Proxy[] })),
+    ])
+    webSearchConfig.enabled = resp?.enabled === true
+    webSearchConfig.providers = resp?.providers || []
+    webSearchProxies.value = proxiesResp.items || []
+  } catch (error: unknown) {
+    const status = (error as { status?: number })?.status
+    if (status !== 404 && status !== undefined) {
+      appStore.showError(extractApiErrorMessage(error, t('common.error')))
+    }
+  }
+}
+
+async function saveWebSearchConfig(): Promise<boolean> {
+  try {
+    for (const provider of webSearchConfig.providers) {
+      const raw = provider.quota_limit
+      if (raw != null && Number(raw) !== 0 && Number(raw) < 1) {
+        appStore.showError(t('admin.settings.webSearchEmulation.quotaLimitMustBePositive'))
+        return false
+      }
+    }
+    const providers = webSearchConfig.providers.map((provider: WebSearchProviderConfig) => ({
+      ...provider,
+      quota_limit: Number(provider.quota_limit) > 0 ? Number(provider.quota_limit) : null,
+    }))
+    await adminAPI.settings.updateWebSearchEmulationConfig({
+      enabled: webSearchConfig.enabled,
+      providers,
+    })
+    return true
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error')))
+    return false
+  }
+}
 
 const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[]>(() =>
   subscriptionGroups.value.map((group) => ({
@@ -2221,6 +3177,47 @@ const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[
     rate: group.rate_multiplier
   }))
 )
+
+const allPaymentTypes = computed(() => [
+  { value: 'easypay', label: t('payment.methods.easypay') },
+  { value: 'alipay', label: t('payment.methods.alipay') },
+  { value: 'wxpay', label: t('payment.methods.wxpay') },
+  { value: 'stripe', label: t('payment.methods.stripe') }
+])
+
+const providerKeyOptions = computed(() => [
+  { value: 'easypay', label: t('admin.settings.payment.providerEasypay') },
+  { value: 'alipay', label: t('admin.settings.payment.providerAlipay') },
+  { value: 'wxpay', label: t('admin.settings.payment.providerWxpay') },
+  { value: 'stripe', label: t('admin.settings.payment.providerStripe') }
+])
+
+const enabledProviderKeyOptions = computed(() => {
+  const enabled = form.payment_enabled_types
+  return providerKeyOptions.value.filter((option) => enabled.includes(option.value))
+})
+
+const loadBalanceOptions = computed(() => [
+  { value: 'round-robin', label: t('admin.settings.payment.strategyRoundRobin') },
+  { value: 'least-amount', label: t('admin.settings.payment.strategyLeastAmount') }
+])
+
+const cancelRateLimitUnitOptions = computed(() => [
+  { value: 'minute', label: t('admin.settings.payment.cancelRateLimitUnitMinute') },
+  { value: 'hour', label: t('admin.settings.payment.cancelRateLimitUnitHour') },
+  { value: 'day', label: t('admin.settings.payment.cancelRateLimitUnitDay') }
+])
+
+const cancelRateLimitModeOptions = computed(() => [
+  { value: 'rolling', label: t('admin.settings.payment.cancelRateLimitWindowModeRolling') },
+  { value: 'fixed', label: t('admin.settings.payment.cancelRateLimitWindowModeFixed') }
+])
+
+const hasAnyPaymentTypeEnabled = computed(() => form.payment_enabled_types.length > 0)
+
+const paymentErrorMap = computed(() => ({
+  PENDING_ORDERS: t('payment.errors.PENDING_ORDERS')
+}))
 
 const registrationEmailSuffixWhitelistSeparatorKeys = new Set([' ', ',', '，', 'Enter', 'Tab'])
 
@@ -2377,6 +3374,35 @@ function removeEndpoint(index: number) {
   form.custom_endpoints.splice(index, 1)
 }
 
+function isPaymentTypeEnabled(type: string): boolean {
+  return form.payment_enabled_types.includes(type)
+}
+
+function togglePaymentType(type: string) {
+  if (form.payment_enabled_types.includes(type)) {
+    form.payment_enabled_types = form.payment_enabled_types.filter((item) => item !== type)
+    disableProvidersByType(type)
+    return
+  }
+
+  form.payment_enabled_types = [...form.payment_enabled_types, type]
+}
+
+async function disableProvidersByType(type: string) {
+  const matchingProviders = providers.value.filter(
+    (provider) => provider.provider_key === type && provider.enabled
+  )
+
+  for (const provider of matchingProviders) {
+    try {
+      await adminAPI.payment.updateProvider(provider.id, { enabled: false })
+      provider.enabled = false
+    } catch (error) {
+      console.warn('[payment] disable provider failed', provider.id, error)
+    }
+  }
+}
+
 async function loadSettings() {
   loading.value = true
   loadFailed.value = false
@@ -2391,6 +3417,9 @@ async function loadSettings() {
             group_id: item.group_id,
             validity_days: item.validity_days
           }))
+      : []
+    form.account_quota_notify_emails = Array.isArray(settings.account_quota_notify_emails)
+      ? settings.account_quota_notify_emails
       : []
     registrationEmailSuffixWhitelistTags.value = normalizeRegistrationEmailSuffixDomains(
       settings.registration_email_suffix_whitelist
@@ -2439,6 +3468,17 @@ function addDefaultSubscription() {
 
 function removeDefaultSubscription(index: number) {
   form.default_subscriptions.splice(index, 1)
+}
+
+function addQuotaNotifyEmail() {
+  if (!Array.isArray(form.account_quota_notify_emails)) {
+    form.account_quota_notify_emails = []
+  }
+  form.account_quota_notify_emails.push({
+    email: '',
+    disabled: false,
+    verified: true
+  })
 }
 
 async function saveSettings() {
@@ -2521,6 +3561,21 @@ async function saveSettings() {
       form.purchase_subscription_url = ''
     }
 
+    const rechargeURL = form.balance_low_notify_recharge_url.trim()
+    if (rechargeURL && !isValidHttpUrl(rechargeURL)) {
+      appStore.showError(t('admin.settings.balanceNotify.rechargeUrlHint'))
+      saving.value = false
+      return
+    }
+
+    const normalizedQuotaNotifyEmails = (form.account_quota_notify_emails || [])
+      .map((entry) => ({
+        email: entry.email.trim(),
+        disabled: !!entry.disabled,
+        verified: entry.verified !== false
+      }))
+      .filter((entry) => entry.email)
+
     const payload: UpdateSettingsRequest = {
       registration_enabled: form.registration_enabled,
       email_verify_enabled: form.email_verify_enabled,
@@ -2543,6 +3598,26 @@ async function saveSettings() {
       home_content: form.home_content,
       backend_mode_enabled: form.backend_mode_enabled,
       hide_ccs_import_button: form.hide_ccs_import_button,
+      payment_enabled: form.payment_enabled,
+      payment_min_amount: Number(form.payment_min_amount) || 0,
+      payment_max_amount: Number(form.payment_max_amount) || 0,
+      payment_daily_limit: Number(form.payment_daily_limit) || 0,
+      payment_max_pending_orders: Number(form.payment_max_pending_orders) || 0,
+      payment_order_timeout_minutes: Number(form.payment_order_timeout_minutes) || 0,
+      payment_balance_disabled: form.payment_balance_disabled,
+      payment_balance_recharge_multiplier: Number(form.payment_balance_recharge_multiplier) || 1,
+      payment_recharge_fee_rate: Number(form.payment_recharge_fee_rate) || 0,
+      payment_enabled_types: form.payment_enabled_types,
+      payment_load_balance_strategy: form.payment_load_balance_strategy,
+      payment_product_name_prefix: form.payment_product_name_prefix,
+      payment_product_name_suffix: form.payment_product_name_suffix,
+      payment_help_image_url: form.payment_help_image_url,
+      payment_help_text: form.payment_help_text,
+      payment_cancel_rate_limit_enabled: form.payment_cancel_rate_limit_enabled,
+      payment_cancel_rate_limit_max: Number(form.payment_cancel_rate_limit_max) || 10,
+      payment_cancel_rate_limit_window: Number(form.payment_cancel_rate_limit_window) || 1,
+      payment_cancel_rate_limit_unit: form.payment_cancel_rate_limit_unit,
+      payment_cancel_rate_limit_window_mode: form.payment_cancel_rate_limit_window_mode,
       purchase_subscription_enabled: form.purchase_subscription_enabled,
       purchase_subscription_url: form.purchase_subscription_url,
       payg_enabled: form.payg_enabled,
@@ -2576,7 +3651,12 @@ async function saveSettings() {
       identity_patch_prompt: form.identity_patch_prompt,
       min_claude_code_version: form.min_claude_code_version,
       max_claude_code_version: form.max_claude_code_version,
-      allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling
+      allow_ungrouped_key_scheduling: form.allow_ungrouped_key_scheduling,
+      balance_low_notify_enabled: form.balance_low_notify_enabled,
+      balance_low_notify_threshold: Number(form.balance_low_notify_threshold) || 0,
+      balance_low_notify_recharge_url: rechargeURL || currentOrigin,
+      account_quota_notify_enabled: form.account_quota_notify_enabled,
+      account_quota_notify_emails: normalizedQuotaNotifyEmails
     }
     const updated = await adminAPI.settings.updateSettings(payload)
     Object.assign(form, updated)
@@ -2587,15 +3667,21 @@ async function saveSettings() {
     paygFixedAmountOptionsInput.value = formatPaygFixedAmountOptions(
       updated.payg_fixed_amount_options
     )
+    form.account_quota_notify_emails = Array.isArray(updated.account_quota_notify_emails)
+      ? updated.account_quota_notify_emails
+      : []
     form.smtp_password = ''
     smtpPasswordManuallyEdited.value = false
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
     form.shouqianba_terminal_key = ''
+    const wsOk = await saveWebSearchConfig()
     // Refresh cached settings so sidebar/header update immediately
     await appStore.fetchPublicSettings(true)
     await adminSettingsStore.fetch(true)
-    appStore.showSuccess(t('admin.settings.settingsSaved'))
+    if (wsOk) {
+      appStore.showSuccess(t('admin.settings.settingsSaved'))
+    }
   } catch (error: any) {
     appStore.showError(
       t('admin.settings.failedToSave') + ': ' + (error.message || t('common.unknownError'))
@@ -2875,14 +3961,146 @@ async function saveBetaPolicySettings() {
   }
 }
 
+async function loadProviders() {
+  providersLoading.value = true
+  try {
+    const response = await adminAPI.payment.getProviders()
+    providers.value = response.data || []
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error')))
+  } finally {
+    providersLoading.value = false
+  }
+}
+
+function openCreateProvider() {
+  editingProvider.value = null
+  providerDialogRef.value?.reset(enabledProviderKeyOptions.value[0]?.value || 'easypay')
+  showProviderDialog.value = true
+}
+
+function openEditProvider(provider: ProviderInstance) {
+  editingProvider.value = provider
+  providerDialogRef.value?.loadProvider(provider)
+  showProviderDialog.value = true
+}
+
+async function handleSaveProvider(payload: Partial<ProviderInstance>) {
+  providerSaving.value = true
+  try {
+    if (editingProvider.value) {
+      await adminAPI.payment.updateProvider(editingProvider.value.id, payload)
+    } else {
+      await adminAPI.payment.createProvider(payload)
+    }
+    showProviderDialog.value = false
+    await loadProviders()
+    await saveSettings()
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error'), paymentErrorMap.value))
+  } finally {
+    providerSaving.value = false
+  }
+}
+
+async function handleToggleField(
+  provider: ProviderInstance,
+  field: 'enabled' | 'refund_enabled' | 'allow_user_refund'
+) {
+  let newValue: boolean
+  if (field === 'enabled') {
+    newValue = !provider.enabled
+  } else if (field === 'refund_enabled') {
+    newValue = !provider.refund_enabled
+  } else {
+    newValue = !provider.allow_user_refund
+  }
+
+  const payload: Record<string, boolean> = { [field]: newValue }
+  if (field === 'refund_enabled' && !newValue) {
+    payload.allow_user_refund = false
+  }
+
+  try {
+    await adminAPI.payment.updateProvider(provider.id, payload)
+    if (field === 'enabled') {
+      provider.enabled = newValue
+    } else if (field === 'refund_enabled') {
+      provider.refund_enabled = newValue
+      if (!newValue) {
+        provider.allow_user_refund = false
+      }
+    } else {
+      provider.allow_user_refund = newValue
+    }
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error'), paymentErrorMap.value))
+  }
+}
+
+async function handleToggleType(provider: ProviderInstance, type: string) {
+  const updatedTypes = provider.supported_types.includes(type)
+    ? provider.supported_types.filter((item) => item !== type)
+    : [...provider.supported_types, type]
+
+  try {
+    await adminAPI.payment.updateProvider(provider.id, { supported_types: updatedTypes })
+    provider.supported_types = updatedTypes
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error'), paymentErrorMap.value))
+  }
+}
+
+function confirmDeleteProvider(provider: ProviderInstance) {
+  deletingProviderId.value = provider.id
+  showDeleteProviderDialog.value = true
+}
+
+async function handleReorderProviders(updates: { id: number; sort_order: number }[]) {
+  try {
+    await Promise.all(
+      updates.map((update) =>
+        adminAPI.payment.updateProvider(update.id, { sort_order: update.sort_order })
+      )
+    )
+    for (const update of updates) {
+      const provider = providers.value.find((item) => item.id === update.id)
+      if (provider) {
+        provider.sort_order = update.sort_order
+      }
+    }
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error')))
+    loadProviders()
+  }
+}
+
+async function handleDeleteProvider() {
+  if (!deletingProviderId.value) {
+    return
+  }
+
+  try {
+    await adminAPI.payment.deleteProvider(deletingProviderId.value)
+    appStore.showSuccess(t('common.deleted'))
+    showDeleteProviderDialog.value = false
+    deletingProviderId.value = null
+    await loadProviders()
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('common.error'), paymentErrorMap.value))
+  }
+}
+
 onMounted(() => {
   loadSettings()
+  loadWebSearchConfig()
   loadSubscriptionGroups()
   loadAdminApiKey()
   loadOverloadCooldownSettings()
   loadStreamTimeoutSettings()
   loadRectifierSettings()
   loadBetaPolicySettings()
+  loadProviders()
 })
 </script>
 
