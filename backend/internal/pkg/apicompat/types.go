@@ -28,13 +28,14 @@ type AnthropicRequest struct {
 
 // AnthropicOutputConfig controls output generation parameters.
 type AnthropicOutputConfig struct {
-	Effort string `json:"effort,omitempty"` // "low" | "medium" | "high"
+	Effort string `json:"effort,omitempty"` // "low" | "medium" | "high" | "max"
 }
 
 // AnthropicThinking configures extended thinking in the Anthropic API.
 type AnthropicThinking struct {
 	Type         string `json:"type"`                    // "enabled" | "adaptive" | "disabled"
 	BudgetTokens int    `json:"budget_tokens,omitempty"` // max thinking tokens
+	Display      string `json:"display,omitempty"`       // "summarized" | "omitted"
 }
 
 // AnthropicMessage is a single message in the Anthropic conversation.

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -955,16 +956,88 @@ func filterThinkingBlocksInternal(body []byte, _ bool) []byte {
 // NormalizeClaudeOutputEffort normalizes Claude's output_config.effort value.
 // Returns nil for empty or unrecognized values.
 func NormalizeClaudeOutputEffort(raw string) *string {
-	value := strings.ToLower(strings.TrimSpace(raw))
-	if value == "" {
+	value, ok := claude.NormalizeOutputEffort(raw)
+	if !ok {
 		return nil
 	}
-	switch value {
-	case "low", "medium", "high", "max":
-		return &value
-	default:
-		return nil
+	return &value
+}
+
+func normalizeClaudeOpus47RequestBody(body []byte, modelID string) ([]byte, string, bool, error) {
+	if len(body) == 0 {
+		return body, modelID, false, nil
 	}
+
+	rawModel := strings.TrimSpace(modelID)
+	modelValue := gjson.GetBytes(body, "model")
+	if modelValue.Exists() && modelValue.Type == gjson.String {
+		rawModel = modelValue.String()
+	}
+
+	aliasBase, aliasEffort, _, aliasMatched := claude.ParseOpus47AliasModel(rawModel)
+	finalModel := strings.ToLower(strings.TrimSpace(rawModel))
+	if aliasMatched {
+		finalModel = aliasBase
+	}
+	if !claude.IsOpus47Model(finalModel) {
+		return body, modelID, false, nil
+	}
+
+	out := body
+	changed := false
+
+	if aliasMatched {
+		if next, ok := setJSONValueBytes(out, "model", finalModel); ok {
+			out = next
+			changed = true
+		}
+	}
+
+	resolvedEffort := ""
+	if outputEffort := gjson.GetBytes(out, "output_config.effort"); outputEffort.Exists() && outputEffort.Type == gjson.String {
+		if normalized, ok := claude.NormalizeOutputEffort(outputEffort.String()); ok {
+			resolvedEffort = normalized
+			if next, ok := setJSONValueBytes(out, "output_config.effort", normalized); ok {
+				out = next
+				changed = true
+			}
+		}
+	}
+	if aliasEffort != "" {
+		resolvedEffort = aliasEffort
+		if next, ok := setJSONValueBytes(out, "output_config.effort", aliasEffort); ok {
+			out = next
+			changed = true
+		}
+	}
+
+	thinkingValue := gjson.GetBytes(out, "thinking")
+	thinkingExists := thinkingValue.Exists()
+	thinkingType := strings.ToLower(strings.TrimSpace(gjson.GetBytes(out, "thinking.type").String()))
+	needsThinkingCompat := aliasEffort != "" || resolvedEffort != "" || (thinkingExists && thinkingType != "disabled")
+	if needsThinkingCompat {
+		if next, ok := setJSONValueBytes(out, "thinking.type", "adaptive"); ok {
+			out = next
+			changed = true
+		}
+		if next, ok := setJSONValueBytes(out, "thinking.display", claude.ThinkingDisplaySummarized); ok {
+			out = next
+			changed = true
+		}
+		if next, ok := deleteJSONPathBytes(out, "thinking.budget_tokens"); ok {
+			out = next
+			changed = true
+		}
+	}
+
+	for _, path := range []string{"temperature", "top_p", "top_k"} {
+		if next, ok := deleteJSONPathBytes(out, path); ok {
+			out = next
+			changed = true
+		}
+	}
+
+	return out, finalModel, changed, nil
 }
 
 // =========================

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 )
 
 // ResponsesToAnthropicRequest converts a Responses API request into an
@@ -64,7 +66,45 @@ func ResponsesToAnthropicRequest(req *ResponsesRequest) (*AnthropicRequest, erro
 		}
 	}
 
+	normalizeOpus47AnthropicRequest(out, req.Model, req.Reasoning != nil && req.Reasoning.Effort != "")
+
 	return out, nil
+}
+
+func normalizeOpus47AnthropicRequest(out *AnthropicRequest, requestedModel string, explicitReasoning bool) {
+	if out == nil {
+		return
+	}
+
+	baseModel, suffixEffort, _, aliasMatched := claude.ParseOpus47AliasModel(requestedModel)
+	if aliasMatched {
+		out.Model = baseModel
+		if !explicitReasoning {
+			out.OutputConfig = &AnthropicOutputConfig{Effort: suffixEffort}
+		}
+	}
+
+	if !claude.IsOpus47Model(out.Model) {
+		return
+	}
+
+	if out.OutputConfig != nil {
+		if effort, ok := claude.NormalizeOutputEffort(out.OutputConfig.Effort); ok {
+			out.OutputConfig.Effort = effort
+		}
+	}
+
+	if out.Thinking == nil && out.OutputConfig != nil {
+		out.Thinking = &AnthropicThinking{Type: "adaptive"}
+	}
+	if out.Thinking != nil {
+		out.Thinking.Type = "adaptive"
+		out.Thinking.Display = claude.ThinkingDisplaySummarized
+		out.Thinking.BudgetTokens = 0
+	}
+
+	out.Temperature = nil
+	out.TopP = nil
 }
 
 // defaultThinkingBudget returns a sensible thinking budget based on effort level.

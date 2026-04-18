@@ -3935,6 +3935,15 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	// 按分组策略处理 Claude prompt cache，并保留 Anthropic 的块数量限制。
 	body = enforceCacheControlPolicy(body, anthropicPromptCachingEnabledFromContext(ctx))
 
+	normalizedBody, normalizedModel, normalizedOpus47, normalizeErr := normalizeClaudeOpus47RequestBody(body, reqModel)
+	if normalizeErr != nil {
+		return nil, normalizeErr
+	}
+	if normalizedOpus47 {
+		body = normalizedBody
+		reqModel = normalizedModel
+	}
+
 	// 应用模型映射：
 	// - APIKey 账号：使用账号级别的显式映射（如果配置），否则透传原始模型名
 	// - OAuth/SetupToken 账号：使用 Anthropic 标准映射（短ID → 长ID）

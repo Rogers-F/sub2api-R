@@ -785,6 +785,43 @@ func TestAnthropicToResponses_OutputConfigWithoutEffort(t *testing.T) {
 	assert.Equal(t, "high", resp.Reasoning.Effort)
 }
 
+func TestResponsesToAnthropicRequest_Opus47ReasoningUsesAdaptiveSummarizedThinking(t *testing.T) {
+	req := &ResponsesRequest{
+		Model: "claude-opus-4-7",
+		Input: json.RawMessage(`[{"role":"user","content":"hello"}]`),
+		Reasoning: &ResponsesReasoning{
+			Effort: "xhigh",
+		},
+	}
+
+	anth, err := ResponsesToAnthropicRequest(req)
+	require.NoError(t, err)
+	require.Equal(t, "claude-opus-4-7", anth.Model)
+	require.NotNil(t, anth.OutputConfig)
+	assert.Equal(t, "max", anth.OutputConfig.Effort)
+	require.NotNil(t, anth.Thinking)
+	assert.Equal(t, "adaptive", anth.Thinking.Type)
+	assert.Equal(t, "summarized", anth.Thinking.Display)
+	assert.Zero(t, anth.Thinking.BudgetTokens)
+}
+
+func TestResponsesToAnthropicRequest_Opus47ThinkingSuffixMapsToAdaptiveHigh(t *testing.T) {
+	req := &ResponsesRequest{
+		Model: "claude-opus-4-7-thinking",
+		Input: json.RawMessage(`[{"role":"user","content":"hello"}]`),
+	}
+
+	anth, err := ResponsesToAnthropicRequest(req)
+	require.NoError(t, err)
+	require.Equal(t, "claude-opus-4-7", anth.Model)
+	require.NotNil(t, anth.OutputConfig)
+	assert.Equal(t, "high", anth.OutputConfig.Effort)
+	require.NotNil(t, anth.Thinking)
+	assert.Equal(t, "adaptive", anth.Thinking.Type)
+	assert.Equal(t, "summarized", anth.Thinking.Display)
+	assert.Zero(t, anth.Thinking.BudgetTokens)
+}
+
 // ---------------------------------------------------------------------------
 // tool_choice conversion tests
 // ---------------------------------------------------------------------------

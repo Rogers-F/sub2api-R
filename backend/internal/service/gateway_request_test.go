@@ -1188,7 +1188,7 @@ func TestNormalizeClaudeOutputEffort(t *testing.T) {
 		{" medium ", strPtr("medium")},
 		{"", nil},
 		{"unknown", nil},
-		{"xhigh", nil},
+		{"xhigh", strPtr("max")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
