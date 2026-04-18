@@ -53,6 +53,8 @@ const (
 	FieldClaudeCodeOnly = "claude_code_only"
 	// FieldClaudePromptCachingEnabled holds the string denoting the claude_prompt_caching_enabled field in the database.
 	FieldClaudePromptCachingEnabled = "claude_prompt_caching_enabled"
+	// FieldThinkingSignatureCompatEnabled holds the string denoting the thinking_signature_compat_enabled field in the database.
+	FieldThinkingSignatureCompatEnabled = "thinking_signature_compat_enabled"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
 	FieldFallbackGroupID = "fallback_group_id"
 	// FieldFallbackGroupIDOnInvalidRequest holds the string denoting the fallback_group_id_on_invalid_request field in the database.
@@ -171,6 +173,7 @@ var Columns = []string{
 	FieldImagePrice4k,
 	FieldClaudeCodeOnly,
 	FieldClaudePromptCachingEnabled,
+	FieldThinkingSignatureCompatEnabled,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
 	FieldModelRouting,
@@ -242,6 +245,8 @@ var (
 	DefaultClaudeCodeOnly bool
 	// DefaultClaudePromptCachingEnabled holds the default value on creation for the "claude_prompt_caching_enabled" field.
 	DefaultClaudePromptCachingEnabled bool
+	// DefaultThinkingSignatureCompatEnabled holds the default value on creation for the "thinking_signature_compat_enabled" field.
+	DefaultThinkingSignatureCompatEnabled bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
 	DefaultModelRoutingEnabled bool
 	// DefaultMcpXMLInject holds the default value on creation for the "mcp_xml_inject" field.
@@ -365,6 +370,11 @@ func ByClaudeCodeOnly(opts ...sql.OrderTermOption) OrderOption {
 // ByClaudePromptCachingEnabled orders the results by the claude_prompt_caching_enabled field.
 func ByClaudePromptCachingEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClaudePromptCachingEnabled, opts...).ToFunc()
+}
+
+// ByThinkingSignatureCompatEnabled orders the results by the thinking_signature_compat_enabled field.
+func ByThinkingSignatureCompatEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldThinkingSignatureCompatEnabled, opts...).ToFunc()
 }
 
 // ByFallbackGroupID orders the results by the fallback_group_id field.

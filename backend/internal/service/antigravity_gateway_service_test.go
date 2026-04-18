@@ -15,6 +15,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -203,6 +204,79 @@ func (s *antigravitySettingRepoStub) GetAll(ctx context.Context) (map[string]str
 
 func (s *antigravitySettingRepoStub) Delete(ctx context.Context, key string) error {
 	panic("unexpected Delete call")
+}
+
+type antigravityRectifierSettingsRepoStub struct {
+	value string
+	err   error
+}
+
+func (s *antigravityRectifierSettingsRepoStub) Get(context.Context, string) (*Setting, error) {
+	panic("unexpected Get call")
+}
+
+func (s *antigravityRectifierSettingsRepoStub) GetValue(context.Context, string) (string, error) {
+	return s.value, s.err
+}
+
+func (s *antigravityRectifierSettingsRepoStub) Set(context.Context, string, string) error {
+	panic("unexpected Set call")
+}
+
+func (s *antigravityRectifierSettingsRepoStub) GetMultiple(context.Context, []string) (map[string]string, error) {
+	panic("unexpected GetMultiple call")
+}
+
+func (s *antigravityRectifierSettingsRepoStub) SetMultiple(context.Context, map[string]string) error {
+	panic("unexpected SetMultiple call")
+}
+
+func (s *antigravityRectifierSettingsRepoStub) GetAll(context.Context) (map[string]string, error) {
+	panic("unexpected GetAll call")
+}
+
+func (s *antigravityRectifierSettingsRepoStub) Delete(context.Context, string) error {
+	panic("unexpected Delete call")
+}
+
+func TestAntigravityGatewayService_SignatureRectifierEnabled_GroupOverrideWhenGlobalDisabled(t *testing.T) {
+	repo := &antigravityRectifierSettingsRepoStub{
+		value: `{"enabled":false,"thinking_signature_enabled":false,"thinking_budget_enabled":true,"apikey_signature_enabled":false}`,
+	}
+	svc := &AntigravityGatewayService{
+		settingService: &SettingService{settingRepo: repo},
+	}
+
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                             101,
+		Name:                           "mixed-channel-group",
+		Platform:                       PlatformAnthropic,
+		Status:                         StatusActive,
+		Hydrated:                       true,
+		ThinkingSignatureCompatEnabled: true,
+	})
+
+	require.True(t, svc.signatureRectifierEnabled(ctx))
+}
+
+func TestAntigravityGatewayService_WriteMappedClaudeError_StripsNestedRequestIDs(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	svc := &AntigravityGatewayService{}
+	account := &Account{
+		ID:       1,
+		Name:     "acc-1",
+		Platform: PlatformAntigravity,
+	}
+
+	body := []byte(`{"error":{"message":"thinking block signatures in the conversation history are no longer valid. (request id: req-1) (request id: req-2)"}}`)
+	err := svc.writeMappedClaudeError(c, account, http.StatusBadRequest, "upstream-header-id", body)
+	require.Error(t, err)
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.NotContains(t, rec.Body.String(), "request id:")
+	require.Contains(t, rec.Body.String(), `"type":"invalid_request_error"`)
 }
 
 func TestAntigravityGatewayService_Forward_PromptTooLong(t *testing.T) {

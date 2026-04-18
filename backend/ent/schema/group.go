@@ -94,6 +94,9 @@ func (Group) Fields() []ent.Field {
 		field.Bool("claude_prompt_caching_enabled").
 			Default(true).
 			Comment("是否启用 Claude prompt cache（缓存创建与缓存读取）"),
+		field.Bool("thinking_signature_compat_enabled").
+			Default(false).
+			Comment("是否启用历史 thinking 签名兼容重试（适用于 Max/AWS 等混合渠道）"),
 		field.Int64("fallback_group_id").
 			Optional().
 			Nillable().

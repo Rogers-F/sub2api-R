@@ -156,6 +156,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldImagePrice4k,
 				group.FieldClaudeCodeOnly,
 				group.FieldClaudePromptCachingEnabled,
+				group.FieldThinkingSignatureCompatEnabled,
 				group.FieldFallbackGroupID,
 				group.FieldFallbackGroupIDOnInvalidRequest,
 				group.FieldModelRoutingEnabled,
@@ -624,8 +625,8 @@ func userEntityToService(u *dbent.User) *service.User {
 		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
 		BalanceNotifyExtraEmails:   service.ParseNotifyEmails(u.BalanceNotifyExtraEmails),
 		TotalRecharged:             u.TotalRecharged,
-		CreatedAt:           u.CreatedAt,
-		UpdatedAt:           u.UpdatedAt,
+		CreatedAt:                  u.CreatedAt,
+		UpdatedAt:                  u.UpdatedAt,
 	}
 }
 
@@ -652,6 +653,7 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		DefaultValidityDays:              g.DefaultValidityDays,
 		ClaudeCodeOnly:                   g.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       g.ClaudePromptCachingEnabled,
+		ThinkingSignatureCompatEnabled:   g.ThinkingSignatureCompatEnabled,
 		FallbackGroupID:                  g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  g.FallbackGroupIDOnInvalidRequest,
 		ModelRouting:                     g.ModelRouting,

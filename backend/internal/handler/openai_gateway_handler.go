@@ -462,7 +462,9 @@ func (h *OpenAIGatewayHandler) logOpenAIRemoteCompactOutcome(c *gin.Context, sta
 			}
 		}
 		if c.Writer != nil {
-			if upstreamRequestID := strings.TrimSpace(c.Writer.Header().Get("x-request-id")); upstreamRequestID != "" {
+			if upstreamRequestID := strings.TrimSpace(service.GetUpstreamRequestID(c)); upstreamRequestID != "" {
+				fields = append(fields, zap.String("upstream_request_id", upstreamRequestID))
+			} else if upstreamRequestID := strings.TrimSpace(c.Writer.Header().Get("x-request-id")); upstreamRequestID != "" {
 				fields = append(fields, zap.String("upstream_request_id", upstreamRequestID))
 			} else if upstreamRequestID := strings.TrimSpace(c.Writer.Header().Get("X-Request-Id")); upstreamRequestID != "" {
 				fields = append(fields, zap.String("upstream_request_id", upstreamRequestID))

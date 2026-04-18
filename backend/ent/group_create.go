@@ -286,6 +286,20 @@ func (_c *GroupCreate) SetNillableClaudePromptCachingEnabled(v *bool) *GroupCrea
 	return _c
 }
 
+// SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
+func (_c *GroupCreate) SetThinkingSignatureCompatEnabled(v bool) *GroupCreate {
+	_c.mutation.SetThinkingSignatureCompatEnabled(v)
+	return _c
+}
+
+// SetNillableThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableThinkingSignatureCompatEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetThinkingSignatureCompatEnabled(*v)
+	}
+	return _c
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_c *GroupCreate) SetFallbackGroupID(v int64) *GroupCreate {
 	_c.mutation.SetFallbackGroupID(v)
@@ -611,6 +625,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultClaudePromptCachingEnabled
 		_c.mutation.SetClaudePromptCachingEnabled(v)
 	}
+	if _, ok := _c.mutation.ThinkingSignatureCompatEnabled(); !ok {
+		v := group.DefaultThinkingSignatureCompatEnabled
+		_c.mutation.SetThinkingSignatureCompatEnabled(v)
+	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		v := group.DefaultModelRoutingEnabled
 		_c.mutation.SetModelRoutingEnabled(v)
@@ -704,6 +722,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ClaudePromptCachingEnabled(); !ok {
 		return &ValidationError{Name: "claude_prompt_caching_enabled", err: errors.New(`ent: missing required field "Group.claude_prompt_caching_enabled"`)}
+	}
+	if _, ok := _c.mutation.ThinkingSignatureCompatEnabled(); !ok {
+		return &ValidationError{Name: "thinking_signature_compat_enabled", err: errors.New(`ent: missing required field "Group.thinking_signature_compat_enabled"`)}
 	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		return &ValidationError{Name: "model_routing_enabled", err: errors.New(`ent: missing required field "Group.model_routing_enabled"`)}
@@ -839,6 +860,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ClaudePromptCachingEnabled(); ok {
 		_spec.SetField(group.FieldClaudePromptCachingEnabled, field.TypeBool, value)
 		_node.ClaudePromptCachingEnabled = value
+	}
+	if value, ok := _c.mutation.ThinkingSignatureCompatEnabled(); ok {
+		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
+		_node.ThinkingSignatureCompatEnabled = value
 	}
 	if value, ok := _c.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1353,6 +1378,18 @@ func (u *GroupUpsert) SetClaudePromptCachingEnabled(v bool) *GroupUpsert {
 // UpdateClaudePromptCachingEnabled sets the "claude_prompt_caching_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateClaudePromptCachingEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldClaudePromptCachingEnabled)
+	return u
+}
+
+// SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
+func (u *GroupUpsert) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldThinkingSignatureCompatEnabled, v)
+	return u
+}
+
+// UpdateThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateThinkingSignatureCompatEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldThinkingSignatureCompatEnabled)
 	return u
 }
 
@@ -1942,6 +1979,20 @@ func (u *GroupUpsertOne) SetClaudePromptCachingEnabled(v bool) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateClaudePromptCachingEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudePromptCachingEnabled()
+	})
+}
+
+// SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
+func (u *GroupUpsertOne) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetThinkingSignatureCompatEnabled(v)
+	})
+}
+
+// UpdateThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateThinkingSignatureCompatEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateThinkingSignatureCompatEnabled()
 	})
 }
 
@@ -2727,6 +2778,20 @@ func (u *GroupUpsertBulk) SetClaudePromptCachingEnabled(v bool) *GroupUpsertBulk
 func (u *GroupUpsertBulk) UpdateClaudePromptCachingEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudePromptCachingEnabled()
+	})
+}
+
+// SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
+func (u *GroupUpsertBulk) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetThinkingSignatureCompatEnabled(v)
+	})
+}
+
+// UpdateThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateThinkingSignatureCompatEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateThinkingSignatureCompatEnabled()
 	})
 }
 

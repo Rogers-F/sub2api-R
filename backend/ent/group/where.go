@@ -150,6 +150,11 @@ func ClaudePromptCachingEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudePromptCachingEnabled, v))
 }
 
+// ThinkingSignatureCompatEnabled applies equality check predicate on the "thinking_signature_compat_enabled" field. It's identical to ThinkingSignatureCompatEnabledEQ.
+func ThinkingSignatureCompatEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldThinkingSignatureCompatEnabled, v))
+}
+
 // FallbackGroupID applies equality check predicate on the "fallback_group_id" field. It's identical to FallbackGroupIDEQ.
 func FallbackGroupID(v int64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldFallbackGroupID, v))
@@ -1073,6 +1078,16 @@ func ClaudePromptCachingEnabledEQ(v bool) predicate.Group {
 // ClaudePromptCachingEnabledNEQ applies the NEQ predicate on the "claude_prompt_caching_enabled" field.
 func ClaudePromptCachingEnabledNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldClaudePromptCachingEnabled, v))
+}
+
+// ThinkingSignatureCompatEnabledEQ applies the EQ predicate on the "thinking_signature_compat_enabled" field.
+func ThinkingSignatureCompatEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldThinkingSignatureCompatEnabled, v))
+}
+
+// ThinkingSignatureCompatEnabledNEQ applies the NEQ predicate on the "thinking_signature_compat_enabled" field.
+func ThinkingSignatureCompatEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldThinkingSignatureCompatEnabled, v))
 }
 
 // FallbackGroupIDEQ applies the EQ predicate on the "fallback_group_id" field.

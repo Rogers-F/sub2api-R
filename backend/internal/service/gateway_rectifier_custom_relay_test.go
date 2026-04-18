@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,4 +80,25 @@ func TestGatewayService_ShouldRectifySignatureError_APIKeyDisabled(t *testing.T)
 
 	got := svc.shouldRectifySignatureError(context.Background(), &Account{Type: AccountTypeAPIKey}, []byte(`{"error":{"message":"custom_sig_error happened"}}`))
 	require.False(t, got)
+}
+
+func TestGatewayService_ShouldRectifySignatureError_GroupOverrideWhenGlobalDisabled(t *testing.T) {
+	repo := &rectifierSettingsRepoStub{
+		value: `{"enabled":false,"thinking_signature_enabled":false,"thinking_budget_enabled":true,"apikey_signature_enabled":false}`,
+	}
+	svc := &GatewayService{
+		settingService: &SettingService{settingRepo: repo},
+	}
+
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                             99,
+		Name:                           "mixed-channel-group",
+		Platform:                       PlatformAnthropic,
+		Status:                         StatusActive,
+		Hydrated:                       true,
+		ThinkingSignatureCompatEnabled: true,
+	})
+
+	got := svc.shouldRectifySignatureError(ctx, &Account{Type: AccountTypeOAuth}, []byte(`{"error":{"message":"thinking block signatures in the conversation history are no longer valid. (request id: upstream-1)"}}`))
+	require.True(t, got)
 }

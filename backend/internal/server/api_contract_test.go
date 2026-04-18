@@ -212,6 +212,7 @@ func TestAPIContracts(t *testing.T) {
 						"image_price_4k": null,
 						"claude_code_only": false,
 						"claude_prompt_caching_enabled": true,
+						"thinking_signature_compat_enabled": false,
 						"allow_messages_dispatch": false,
 						"require_oauth_only": false,
 						"require_privacy_set": false,

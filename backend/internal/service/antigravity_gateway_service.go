@@ -1434,7 +1434,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 		// 优先检测 thinking block 的 signature 相关错误（400）并重试一次：
 		// Antigravity /v1internal 链路在部分场景会对 thought/thinking signature 做严格校验，
 		// 当历史消息携带的 signature 不合法时会直接 400；去除 thinking 后可继续完成请求。
-		if resp.StatusCode == http.StatusBadRequest && isSignatureRelatedError(respBody) && s.settingService.IsSignatureRectifierEnabled(ctx) {
+		if resp.StatusCode == http.StatusBadRequest && isSignatureRelatedError(respBody) && s.signatureRectifierEnabled(ctx) {
 			upstreamMsg := strings.TrimSpace(extractAntigravityErrorMessage(respBody))
 			upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
 			logBody, maxBytes := s.getLogConfig()
@@ -1714,9 +1714,7 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 	}
 
 	requestID := resp.Header.Get("x-request-id")
-	if requestID != "" {
-		c.Header("x-request-id", requestID)
-	}
+	SetUpstreamRequestID(c, requestID)
 
 	var usage *ClaudeUsage
 	var firstTokenMs *int
@@ -2225,8 +2223,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 			signatureCheckBody = unwrapped
 		}
 		if resp.StatusCode == http.StatusBadRequest &&
-			s.settingService != nil &&
-			s.settingService.IsSignatureRectifierEnabled(ctx) &&
+			s.signatureRectifierEnabled(ctx) &&
 			isSignatureRelatedError(signatureCheckBody) &&
 			bytes.Contains(injectedBody, []byte(`"thoughtSignature"`)) {
 			upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractAntigravityErrorMessage(signatureCheckBody)))
@@ -2330,9 +2327,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 		}
 
 		requestID := resp.Header.Get("x-request-id")
-		if requestID != "" {
-			c.Header("x-request-id", requestID)
-		}
+		SetUpstreamRequestID(c, requestID)
 
 		unwrapped, unwrapErr := s.unwrapV1InternalResponse(respBody)
 		unwrappedForOps := unwrapped
@@ -2396,9 +2391,7 @@ func (s *AntigravityGatewayService) ForwardGemini(ctx context.Context, c *gin.Co
 
 handleSuccess:
 	requestID := resp.Header.Get("x-request-id")
-	if requestID != "" {
-		c.Header("x-request-id", requestID)
-	}
+	SetUpstreamRequestID(c, requestID)
 
 	var usage *ClaudeUsage
 	var firstTokenMs *int
@@ -3575,6 +3568,16 @@ func (s *AntigravityGatewayService) writeClaudeError(c *gin.Context, status int,
 // WriteMappedClaudeError 导出版本，供 handler 层使用（如 fallback 错误处理）
 func (s *AntigravityGatewayService) WriteMappedClaudeError(c *gin.Context, account *Account, upstreamStatus int, upstreamRequestID string, body []byte) error {
 	return s.writeMappedClaudeError(c, account, upstreamStatus, upstreamRequestID, body)
+}
+
+func (s *AntigravityGatewayService) signatureRectifierEnabled(ctx context.Context) bool {
+	if ThinkingSignatureCompatEnabledFromContext(ctx) {
+		return true
+	}
+	if s.settingService == nil {
+		return false
+	}
+	return s.settingService.IsSignatureRectifierEnabled(ctx)
 }
 
 func (s *AntigravityGatewayService) writeMappedClaudeError(c *gin.Context, account *Account, upstreamStatus int, upstreamRequestID string, body []byte) error {

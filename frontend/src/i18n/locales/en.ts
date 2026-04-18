@@ -1839,6 +1839,14 @@ export default {
         disabled: 'Disabled',
         hint: 'Disables both cache creation and cache reads.'
       },
+      thinkingSignatureCompat: {
+        title: 'Cross-channel History Compat',
+        tooltip:
+          'When enabled, if switching between Claude Max, native Anthropic, AWS Bedrock, or other channels invalidates historical thinking signatures, the gateway strips historical thinking / tool signature blocks and retries once.',
+        enabled: 'Compat retry enabled',
+        disabled: 'Compat retry disabled',
+        hint: 'Recommended for groups that mix Claude Max / Anthropic / AWS Bedrock accounts.'
+      },
       openaiMessages: {
         title: 'OpenAI Messages Dispatch',
         allowDispatch: 'Allow /v1/messages dispatch',

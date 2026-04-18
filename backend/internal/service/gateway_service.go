@@ -4760,7 +4760,7 @@ func (s *GatewayService) handleStreamingResponseAnthropicAPIKeyPassthrough(
 	}
 	c.Header("X-Accel-Buffering", "no")
 	if v := resp.Header.Get("x-request-id"); v != "" {
-		c.Header("x-request-id", v)
+		SetUpstreamRequestID(c, v)
 	}
 
 	w := c.Writer
@@ -5433,7 +5433,7 @@ func (s *GatewayService) handleBedrockNonStreamingResponse(
 
 	c.Header("Content-Type", "application/json")
 	if v := resp.Header.Get("x-amzn-requestid"); v != "" {
-		c.Header("x-request-id", v)
+		SetUpstreamRequestID(c, v)
 	}
 	c.Data(resp.StatusCode, "application/json", body)
 	return usage, nil
@@ -6002,7 +6002,17 @@ func (s *GatewayService) shouldRectifySignatureError(ctx context.Context, accoun
 		}
 		return matchSignaturePatterns(respBody, settings.APIKeySignaturePatterns)
 	}
-	return s.isThinkingBlockSignatureError(respBody) && s.settingService.IsSignatureRectifierEnabled(ctx)
+	return s.isThinkingBlockSignatureError(respBody) && s.signatureRectifierEnabled(ctx)
+}
+
+func (s *GatewayService) signatureRectifierEnabled(ctx context.Context) bool {
+	if ThinkingSignatureCompatEnabledFromContext(ctx) {
+		return true
+	}
+	if s.settingService == nil {
+		return false
+	}
+	return s.settingService.IsSignatureRectifierEnabled(ctx)
 }
 
 // isSignatureErrorPattern 仅做模式匹配，不检查开关。
@@ -6460,7 +6470,7 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 
 	// 透传其他响应头
 	if v := resp.Header.Get("x-request-id"); v != "" {
-		c.Header("x-request-id", v)
+		SetUpstreamRequestID(c, v)
 	}
 
 	w := c.Writer

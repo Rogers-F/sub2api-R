@@ -120,6 +120,14 @@ func TestIsOAuthTokenExpired401(t *testing.T) {
 	}
 }
 
+func TestSanitizeUpstreamErrorMessage_StripsNestedRequestIDs(t *testing.T) {
+	msg := `thinking block signatures in the conversation history are no longer valid. (request id: req-1) (request id: req-2) (request id: req-3)`
+
+	got := sanitizeUpstreamErrorMessage(msg)
+
+	require.Equal(t, "thinking block signatures in the conversation history are no longer valid.", got)
+}
+
 func TestTokenRefreshService_ProcessRefresh_SkipsAnthropicAndOpenAI(t *testing.T) {
 	repo := &tokenRefreshProcessRepo{
 		accounts: []Account{
