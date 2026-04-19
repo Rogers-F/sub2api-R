@@ -128,6 +128,23 @@ func TestGetModelPricing_Gpt54NanoUsesDedicatedStaticFallbackWhenRemoteMissing(t
 	require.Zero(t, got.LongContextInputTokenThreshold)
 }
 
+func TestGetModelPricing_ClaudeOpus47PrefersExactFamilyOverGenericOpus(t *testing.T) {
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{
+			"claude-opus-4-1":        {InputCostPerToken: 15e-6, OutputCostPerToken: 75e-6},
+			"claude-opus-4-20250514": {InputCostPerToken: 15e-6, OutputCostPerToken: 75e-6},
+			"claude-opus-4.7":        {InputCostPerToken: 5e-6, OutputCostPerToken: 25e-6},
+		},
+	}
+
+	for i := 0; i < 200; i++ {
+		got := svc.GetModelPricing("claude-opus-4-7")
+		require.NotNil(t, got)
+		require.InDelta(t, 5e-6, got.InputCostPerToken, 1e-12)
+		require.InDelta(t, 25e-6, got.OutputCostPerToken, 1e-12)
+	}
+}
+
 func TestParsePricingData_PreservesPriorityAndServiceTierFields(t *testing.T) {
 	raw := map[string]any{
 		"gpt-5.4": map[string]any{

@@ -23,6 +23,8 @@ import (
 var (
 	openAIModelDatePattern     = regexp.MustCompile(`-\d{8}$`)
 	openAIModelBasePattern     = regexp.MustCompile(`^(gpt-\d+(?:\.\d+)?)(?:-|$)`)
+	claudeHyphenVersionPattern = regexp.MustCompile(`-(\d+)-(\d+)(-|$)`)
+	claudeDotVersionPattern    = regexp.MustCompile(`-(\d+)\.(\d+)(-|$)`)
 	openAIGPT54FallbackPricing = &LiteLLMModelPricing{
 		InputCostPerToken:               2.5e-06, // $2.5 per MTok
 		OutputCostPerToken:              1.5e-05, // $15 per MTok
@@ -575,11 +577,35 @@ func (s *PricingService) buildModelLookupCandidates(modelLower string) []string 
 		}
 		seen[c] = struct{}{}
 		out = append(out, c)
+
+		for _, variant := range claudeModelVersionVariants(c) {
+			if _, ok := seen[variant]; ok {
+				continue
+			}
+			seen[variant] = struct{}{}
+			out = append(out, variant)
+		}
 	}
 	if len(out) == 0 {
 		return []string{modelLower}
 	}
 	return out
+}
+
+func claudeModelVersionVariants(model string) []string {
+	model = strings.ToLower(strings.TrimSpace(model))
+	if model == "" || !strings.Contains(model, "claude-") {
+		return nil
+	}
+
+	var variants []string
+	if dotted := claudeHyphenVersionPattern.ReplaceAllString(model, "-$1.$2$3"); dotted != model {
+		variants = append(variants, dotted)
+	}
+	if hyphenated := claudeDotVersionPattern.ReplaceAllString(model, "-$1-$2$3"); hyphenated != model {
+		variants = append(variants, hyphenated)
+	}
+	return variants
 }
 
 func normalizeModelNameForPricing(model string) string {
@@ -631,71 +657,137 @@ func (s *PricingService) extractBaseName(model string) string {
 
 // matchByModelFamily 基于模型系列匹配
 func (s *PricingService) matchByModelFamily(model string) *LiteLLMModelPricing {
-	// Claude模型系列匹配规则
-	familyPatterns := map[string][]string{
-		"opus-4.7":   {"claude-opus-4.7", "claude-opus-4-7"},
-		"opus-4.6":   {"claude-opus-4.6", "claude-opus-4-6"},
-		"opus-4.5":   {"claude-opus-4.5", "claude-opus-4-5"},
-		"opus-4":     {"claude-opus-4", "claude-3-opus"},
-		"sonnet-4.5": {"claude-sonnet-4.5", "claude-sonnet-4-5"},
-		"sonnet-4":   {"claude-sonnet-4", "claude-3-5-sonnet"},
-		"sonnet-3.5": {"claude-3-5-sonnet", "claude-3.5-sonnet"},
-		"sonnet-3":   {"claude-3-sonnet"},
-		"haiku-3.5":  {"claude-3-5-haiku", "claude-3.5-haiku"},
-		"haiku-3":    {"claude-3-haiku"},
+	type familyRule struct {
+		name     string
+		patterns []string
 	}
 
+	// Claude模型系列匹配规则，顺序必须固定：先具体，后泛化。
+	familyRules := []familyRule{
+		{name: "opus-4.7", patterns: []string{"claude-opus-4.7", "claude-opus-4-7"}},
+		{name: "opus-4.6", patterns: []string{"claude-opus-4.6", "claude-opus-4-6"}},
+		{name: "opus-4.5", patterns: []string{"claude-opus-4.5", "claude-opus-4-5"}},
+		{name: "opus-4", patterns: []string{"claude-opus-4", "claude-3-opus"}},
+		{name: "sonnet-4.5", patterns: []string{"claude-sonnet-4.5", "claude-sonnet-4-5"}},
+		{name: "sonnet-4", patterns: []string{"claude-sonnet-4", "claude-3-5-sonnet"}},
+		{name: "sonnet-3.5", patterns: []string{"claude-3-5-sonnet", "claude-3.5-sonnet"}},
+		{name: "sonnet-3", patterns: []string{"claude-3-sonnet"}},
+		{name: "haiku-3.5", patterns: []string{"claude-3-5-haiku", "claude-3.5-haiku"}},
+		{name: "haiku-3", patterns: []string{"claude-3-haiku"}},
+	}
+
+	model = strings.ToLower(strings.TrimSpace(model))
+
 	// 确定模型属于哪个系列
-	var matchedFamily string
-	for family, patterns := range familyPatterns {
-		for _, pattern := range patterns {
+	var matchedRule *familyRule
+	for i := range familyRules {
+		for _, pattern := range familyRules[i].patterns {
 			if strings.Contains(model, pattern) || strings.Contains(model, strings.ReplaceAll(pattern, "-", "")) {
-				matchedFamily = family
+				matchedRule = &familyRules[i]
 				break
 			}
 		}
-		if matchedFamily != "" {
+		if matchedRule != nil {
 			break
 		}
 	}
 
-	if matchedFamily == "" {
+	if matchedRule == nil {
 		// 简单的系列匹配
 		if strings.Contains(model, "opus") {
 			if strings.Contains(model, "4.7") || strings.Contains(model, "4-7") {
-				matchedFamily = "opus-4.7"
+				for i := range familyRules {
+					if familyRules[i].name == "opus-4.7" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			} else if strings.Contains(model, "4.5") || strings.Contains(model, "4-5") {
-				matchedFamily = "opus-4.5"
+				for i := range familyRules {
+					if familyRules[i].name == "opus-4.5" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			} else {
-				matchedFamily = "opus-4"
+				for i := range familyRules {
+					if familyRules[i].name == "opus-4" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			}
 		} else if strings.Contains(model, "sonnet") {
 			if strings.Contains(model, "4.5") || strings.Contains(model, "4-5") {
-				matchedFamily = "sonnet-4.5"
+				for i := range familyRules {
+					if familyRules[i].name == "sonnet-4.5" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			} else if strings.Contains(model, "3-5") || strings.Contains(model, "3.5") {
-				matchedFamily = "sonnet-3.5"
+				for i := range familyRules {
+					if familyRules[i].name == "sonnet-3.5" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			} else {
-				matchedFamily = "sonnet-4"
+				for i := range familyRules {
+					if familyRules[i].name == "sonnet-4" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			}
 		} else if strings.Contains(model, "haiku") {
 			if strings.Contains(model, "3-5") || strings.Contains(model, "3.5") {
-				matchedFamily = "haiku-3.5"
+				for i := range familyRules {
+					if familyRules[i].name == "haiku-3.5" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			} else {
-				matchedFamily = "haiku-3"
+				for i := range familyRules {
+					if familyRules[i].name == "haiku-3" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
 			}
 		}
 	}
 
-	if matchedFamily == "" {
+	if matchedRule == nil {
 		return nil
 	}
 
-	// 在价格数据中查找该系列的模型
-	patterns := familyPatterns[matchedFamily]
-	for _, pattern := range patterns {
+	var candidates []string
+	seen := make(map[string]struct{})
+	for _, pattern := range matchedRule.patterns {
+		for _, candidate := range append([]string{pattern}, claudeModelVersionVariants(pattern)...) {
+			if _, ok := seen[candidate]; ok {
+				continue
+			}
+			seen[candidate] = struct{}{}
+			candidates = append(candidates, candidate)
+		}
+	}
+
+	// 优先命中系列内的精确 key / 常见分隔符变体。
+	for _, candidate := range candidates {
+		if pricing, ok := s.pricingData[candidate]; ok {
+			logger.LegacyPrintf("service.pricing", "[Pricing] Fuzzy matched %s -> %s", model, candidate)
+			return pricing
+		}
+	}
+
+	// 其次按包含关系查找同系列变体（例如 dated 后缀）。
+	for _, candidate := range candidates {
 		for key, pricing := range s.pricingData {
 			keyLower := strings.ToLower(key)
-			if strings.Contains(keyLower, pattern) {
+			if strings.Contains(keyLower, candidate) {
 				logger.LegacyPrintf("service.pricing", "[Pricing] Fuzzy matched %s -> %s", model, key)
 				return pricing
 			}
