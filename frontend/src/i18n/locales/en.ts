@@ -1847,6 +1847,14 @@ export default {
         disabled: 'Compat retry disabled',
         hint: 'Recommended for groups that mix Claude Max / Anthropic / AWS Bedrock accounts.'
       },
+      claudeToolUseRepair: {
+        title: 'Claude Tool History Auto-repair',
+        tooltip:
+          'When enabled, if malformed historical tool_use / tool_result chains cause Anthropic-compatible upstreams to return 400, the gateway removes the invalid tool chain and retries once so end users usually do not see the raw error.',
+        enabled: 'Auto-repair enabled',
+        disabled: 'Auto-repair disabled',
+        hint: 'Recommended for groups that switch Claude conversations between Claude Max, native Anthropic, AWS Bedrock, and similar channels.'
+      },
       openaiMessages: {
         title: 'OpenAI Messages Dispatch',
         allowDispatch: 'Allow /v1/messages dispatch',

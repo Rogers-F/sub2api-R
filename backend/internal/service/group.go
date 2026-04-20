@@ -35,7 +35,9 @@ type Group struct {
 	// 当 Max / Anthropic / Bedrock 等不同渠道切换导致历史 thinking 签名失效时，
 	// 是否强制触发兼容重试（剥离历史 thinking / tool 签名块）。
 	ThinkingSignatureCompatEnabled bool
-	FallbackGroupID                *int64
+	// 当历史 Claude tool_use / tool_result 链不完整时，是否自动修复并重试。
+	ClaudeToolUseRepairEnabled bool
+	FallbackGroupID            *int64
 	// 无效请求兜底分组（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 
@@ -149,6 +151,11 @@ func ForceApplicationJSONForNonStreamFromContext(ctx context.Context) bool {
 func ThinkingSignatureCompatEnabledFromContext(ctx context.Context) bool {
 	group, ok := GroupFromContext(ctx)
 	return ok && group.ThinkingSignatureCompatEnabled
+}
+
+func ClaudeToolUseRepairEnabledFromContext(ctx context.Context) bool {
+	group, ok := GroupFromContext(ctx)
+	return ok && group.ClaudeToolUseRepairEnabled
 }
 
 func SupportsGroupAccountFilters(platform string) bool {

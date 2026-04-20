@@ -1934,6 +1934,14 @@ export default {
         disabled: '未启用兼容重试',
         hint: '建议在混用 Claude Max / Anthropic / AWS Bedrock 的分组中开启。'
       },
+      claudeToolUseRepair: {
+        title: 'Claude 工具链历史自动修复',
+        tooltip:
+          '开启后，当历史消息里的 tool_use / tool_result 不成对，导致 Anthropic 或兼容渠道返回 400 时，网关会自动移除无效工具链并重试一次，尽量不让终端用户感知到该错误。',
+        enabled: '已启用自动修复',
+        disabled: '未启用自动修复',
+        hint: '适用于 Claude Max、官方 Anthropic、AWS Bedrock 等渠道切换后出现 tool_use/tool_result 历史不兼容的场景。'
+      },
       openaiMessages: {
         title: 'OpenAI Messages 调度配置',
         allowDispatch: '允许 /v1/messages 调度',

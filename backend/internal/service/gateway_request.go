@@ -664,6 +664,265 @@ func removeThinkingDependentContextStrategies(body []byte) []byte {
 	return body
 }
 
+// RepairAnthropicToolUseHistory removes invalid Claude tool_use/tool_result chains
+// while preserving plain text history as much as possible.
+func RepairAnthropicToolUseHistory(body []byte) ([]byte, bool) {
+	if !bytes.Contains(body, []byte(`"type":"tool_use"`)) &&
+		!bytes.Contains(body, []byte(`"type": "tool_use"`)) &&
+		!bytes.Contains(body, []byte(`"type":"tool_result"`)) &&
+		!bytes.Contains(body, []byte(`"type": "tool_result"`)) {
+		return body, false
+	}
+
+	var req map[string]any
+	if err := json.Unmarshal(body, &req); err != nil {
+		return body, false
+	}
+
+	rawMessages, ok := req["messages"].([]any)
+	if !ok {
+		return body, false
+	}
+
+	messages, changed := repairAnthropicToolUseMessages(rawMessages)
+	if !changed {
+		return body, false
+	}
+
+	req["messages"] = messages
+	out, err := json.Marshal(req)
+	if err != nil {
+		return body, false
+	}
+	return out, true
+}
+
+func RepairClaudeRequestToolUseHistory(req *antigravity.ClaudeRequest) (bool, error) {
+	if req == nil {
+		return false, nil
+	}
+	body, err := json.Marshal(req)
+	if err != nil {
+		return false, err
+	}
+	repairedBody, changed := RepairAnthropicToolUseHistory(body)
+	if !changed {
+		return false, nil
+	}
+	var repaired antigravity.ClaudeRequest
+	if err := json.Unmarshal(repairedBody, &repaired); err != nil {
+		return false, err
+	}
+	*req = repaired
+	return true, nil
+}
+
+func isAnthropicToolUseHistoryError(respBody []byte) bool {
+	return isAnthropicToolUseHistoryMessage(extractUpstreamErrorMessage(respBody))
+}
+
+func isAnthropicToolUseHistoryMessage(message string) bool {
+	msg := strings.ToLower(strings.TrimSpace(message))
+	if msg == "" {
+		return false
+	}
+	if !strings.Contains(msg, "tool_use") || !strings.Contains(msg, "tool_result") {
+		return false
+	}
+	return strings.Contains(msg, "immediately after") ||
+		strings.Contains(msg, "next message") ||
+		strings.Contains(msg, "corresponding") ||
+		strings.Contains(msg, "previous message")
+}
+
+func repairAnthropicToolUseMessages(messages []any) ([]any, bool) {
+	if len(messages) == 0 {
+		return messages, false
+	}
+
+	validToolResults := make(map[int]map[string]struct{})
+	changed := false
+
+	for i, rawMsg := range messages {
+		msg, ok := rawMsg.(map[string]any)
+		if !ok {
+			continue
+		}
+		role, _ := msg["role"].(string)
+		if role != "assistant" {
+			continue
+		}
+
+		toolUseIDs := collectAnthropicToolUseIDs(msg["content"])
+		if len(toolUseIDs) == 0 {
+			continue
+		}
+
+		required := make(map[string]struct{}, len(toolUseIDs))
+		for _, id := range toolUseIDs {
+			required[id] = struct{}{}
+		}
+
+		if i+1 < len(messages) {
+			if nextMsg, ok := messages[i+1].(map[string]any); ok {
+				if nextRole, _ := nextMsg["role"].(string); nextRole == "user" && hasAllToolResults(nextMsg["content"], required) {
+					validToolResults[i+1] = required
+					continue
+				}
+			}
+		}
+
+		newContent, removed := stripAnthropicToolUseBlocks(msg["content"])
+		if removed {
+			changed = true
+			if len(newContent) == 0 {
+				messages[i] = nil
+			} else {
+				msg["content"] = newContent
+				messages[i] = msg
+			}
+		}
+	}
+
+	for i, rawMsg := range messages {
+		msg, ok := rawMsg.(map[string]any)
+		if !ok {
+			continue
+		}
+		role, _ := msg["role"].(string)
+		if role != "user" {
+			continue
+		}
+
+		newContent, removed := filterAnthropicToolResultBlocks(msg["content"], validToolResults[i])
+		if !removed {
+			continue
+		}
+		changed = true
+		if len(newContent) == 0 {
+			messages[i] = nil
+		} else {
+			msg["content"] = newContent
+			messages[i] = msg
+		}
+	}
+
+	if !changed {
+		return messages, false
+	}
+
+	filtered := make([]any, 0, len(messages))
+	for _, msg := range messages {
+		if msg != nil {
+			filtered = append(filtered, msg)
+		}
+	}
+	return filtered, true
+}
+
+func collectAnthropicToolUseIDs(content any) []string {
+	blocks, ok := content.([]any)
+	if !ok {
+		return nil
+	}
+
+	ids := make([]string, 0)
+	for _, rawBlock := range blocks {
+		block, ok := rawBlock.(map[string]any)
+		if !ok {
+			continue
+		}
+		if blockType, _ := block["type"].(string); blockType != "tool_use" {
+			continue
+		}
+		id, _ := block["id"].(string)
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func hasAllToolResults(content any, required map[string]struct{}) bool {
+	if len(required) == 0 {
+		return true
+	}
+
+	blocks, ok := content.([]any)
+	if !ok {
+		return false
+	}
+
+	found := make(map[string]struct{}, len(required))
+	for _, rawBlock := range blocks {
+		block, ok := rawBlock.(map[string]any)
+		if !ok {
+			continue
+		}
+		if blockType, _ := block["type"].(string); blockType != "tool_result" {
+			continue
+		}
+		toolUseID, _ := block["tool_use_id"].(string)
+		if _, ok := required[toolUseID]; ok {
+			found[toolUseID] = struct{}{}
+		}
+	}
+
+	return len(found) == len(required)
+}
+
+func stripAnthropicToolUseBlocks(content any) ([]any, bool) {
+	blocks, ok := content.([]any)
+	if !ok {
+		return nil, false
+	}
+
+	filtered := make([]any, 0, len(blocks))
+	removed := false
+	for _, rawBlock := range blocks {
+		block, ok := rawBlock.(map[string]any)
+		if ok {
+			if blockType, _ := block["type"].(string); blockType == "tool_use" {
+				removed = true
+				continue
+			}
+		}
+		filtered = append(filtered, rawBlock)
+	}
+	return filtered, removed
+}
+
+func filterAnthropicToolResultBlocks(content any, allowed map[string]struct{}) ([]any, bool) {
+	blocks, ok := content.([]any)
+	if !ok {
+		return nil, false
+	}
+
+	filtered := make([]any, 0, len(blocks))
+	removed := false
+	for _, rawBlock := range blocks {
+		block, ok := rawBlock.(map[string]any)
+		if !ok {
+			filtered = append(filtered, rawBlock)
+			continue
+		}
+		if blockType, _ := block["type"].(string); blockType == "tool_result" {
+			toolUseID, _ := block["tool_use_id"].(string)
+			if allowed == nil {
+				removed = true
+				continue
+			}
+			if _, ok := allowed[toolUseID]; !ok {
+				removed = true
+				continue
+			}
+		}
+		filtered = append(filtered, rawBlock)
+	}
+	return filtered, removed
+}
+
 // FilterSignatureSensitiveBlocksForRetry is a stronger retry filter for cases where upstream errors indicate
 // signature/thought_signature validation issues involving tool blocks.
 //

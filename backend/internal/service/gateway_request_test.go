@@ -804,6 +804,84 @@ func TestFilterSignatureSensitiveBlocksForRetry_NoThinkingField_ContextManagemen
 	require.Len(t, edits, 1, "无顶层 thinking 时 context_management 不应被修改")
 }
 
+func TestRepairAnthropicToolUseHistory_RemovesInvalidToolChain(t *testing.T) {
+	input := []byte(`{
+		"model":"claude-sonnet-4-5",
+		"messages":[
+			{"role":"user","content":[{"type":"text","text":"hello"}]},
+			{"role":"assistant","content":[
+				{"type":"text","text":"call tool"},
+				{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"ls"}}
+			]},
+			{"role":"assistant","content":[{"type":"text","text":"continue"}]},
+			{"role":"user","content":[
+				{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"},
+				{"type":"text","text":"real user"}
+			]}
+		]
+	}`)
+
+	out, changed := RepairAnthropicToolUseHistory(input)
+	require.True(t, changed)
+
+	var req map[string]any
+	require.NoError(t, json.Unmarshal(out, &req))
+	messages, ok := req["messages"].([]any)
+	require.True(t, ok)
+	require.Len(t, messages, 4)
+
+	assistant1, ok := messages[1].(map[string]any)
+	require.True(t, ok)
+	assistant1Content, ok := assistant1["content"].([]any)
+	require.True(t, ok)
+	require.Len(t, assistant1Content, 1)
+	assistant1Block, ok := assistant1Content[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "text", assistant1Block["type"])
+	require.Equal(t, "call tool", assistant1Block["text"])
+
+	user2, ok := messages[3].(map[string]any)
+	require.True(t, ok)
+	user2Content, ok := user2["content"].([]any)
+	require.True(t, ok)
+	require.Len(t, user2Content, 1)
+	user2Block, ok := user2Content[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "text", user2Block["type"])
+	require.Equal(t, "real user", user2Block["text"])
+}
+
+func TestRepairAnthropicToolUseHistory_PreservesValidToolChain(t *testing.T) {
+	input := []byte(`{
+		"model":"claude-sonnet-4-5",
+		"messages":[
+			{"role":"assistant","content":[
+				{"type":"text","text":"call tool"},
+				{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"ls"}}
+			]},
+			{"role":"user","content":[
+				{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"},
+				{"type":"text","text":"next"}
+			]}
+		]
+	}`)
+
+	out, changed := RepairAnthropicToolUseHistory(input)
+	require.False(t, changed)
+	require.JSONEq(t, string(input), string(out))
+}
+
+func TestIsAnthropicToolUseHistoryError(t *testing.T) {
+	require.True(t, isAnthropicToolUseHistoryError([]byte(`{
+		"error":{
+			"message":"messages.1: 'tool_use' ids were found without 'tool_result' blocks immediately after: toolu_1. Each 'tool_use' block must have a corresponding 'tool_result' block in the next message."
+		}
+	}`)))
+	require.False(t, isAnthropicToolUseHistoryError([]byte(`{
+		"error":{"message":"invalid max_tokens"}
+	}`)))
+}
+
 // ============ Group 7: ParseGatewayRequest 补充单元测试 ============
 
 // Task 7.1 — 类型校验边界测试

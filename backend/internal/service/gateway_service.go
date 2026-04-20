@@ -4042,6 +4042,63 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 			if readErr == nil {
 				_ = resp.Body.Close()
 
+				if ClaudeToolUseRepairEnabledFromContext(ctx) && isAnthropicToolUseHistoryError(respBody) {
+					repairedBody, changed := RepairAnthropicToolUseHistory(body)
+					if changed {
+						appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+							Platform:           account.Platform,
+							AccountID:          account.ID,
+							AccountName:        account.Name,
+							UpstreamStatusCode: resp.StatusCode,
+							UpstreamRequestID:  resp.Header.Get("x-request-id"),
+							UpstreamURL:        safeUpstreamURL(upstreamReq.URL.String()),
+							Kind:               "tool_use_history_error",
+							Message:            extractUpstreamErrorMessage(respBody),
+							Detail: func() string {
+								if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
+									return truncateString(string(respBody), s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes)
+								}
+								return ""
+							}(),
+						})
+
+						if time.Since(retryStart) < maxRetryElapsed {
+							logger.LegacyPrintf("service.gateway", "Account %d: detected invalid Claude tool history, retrying with repaired messages", account.ID)
+							retryCtx, releaseRetryCtx := detachStreamUpstreamContext(ctx, reqStream)
+							retryReq, buildErr := s.buildUpstreamRequest(retryCtx, c, account, repairedBody, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
+							releaseRetryCtx()
+							if buildErr == nil {
+								retryResp, retryErr := s.httpUpstream.DoWithTLS(retryReq, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+								if retryErr == nil {
+									if retryResp.StatusCode < 400 {
+										body = repairedBody
+										resp = retryResp
+										break
+									}
+									retryRespBody, retryReadErr := io.ReadAll(io.LimitReader(retryResp.Body, 2<<20))
+									_ = retryResp.Body.Close()
+									if retryReadErr == nil {
+										body = repairedBody
+										respBody = retryRespBody
+										resp = &http.Response{
+											StatusCode: retryResp.StatusCode,
+											Header:     retryResp.Header.Clone(),
+											Body:       io.NopCloser(bytes.NewReader(retryRespBody)),
+										}
+									}
+								} else {
+									if retryResp != nil && retryResp.Body != nil {
+										_ = retryResp.Body.Close()
+									}
+									logger.LegacyPrintf("service.gateway", "Account %d: tool history repair retry failed: %v", account.ID, retryErr)
+								}
+							} else {
+								logger.LegacyPrintf("service.gateway", "Account %d: tool history repair retry build failed: %v", account.ID, buildErr)
+							}
+						}
+					}
+				}
+
 				if s.shouldRectifySignatureError(ctx, account, respBody) {
 					appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 						Platform:           account.Platform,
@@ -4534,7 +4591,67 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 			return nil, fmt.Errorf("upstream request failed: %s", safeErr)
 		}
 
-		// 透传分支禁止 400 请求体降级重试（该重试会改写请求体）
+		if resp.StatusCode == http.StatusBadRequest && ClaudeToolUseRepairEnabledFromContext(ctx) {
+			respBody, readErr := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+			if readErr == nil {
+				_ = resp.Body.Close()
+				if isAnthropicToolUseHistoryError(respBody) {
+					if repairedBody, changed := RepairAnthropicToolUseHistory(input.Body); changed {
+						appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+							Platform:           account.Platform,
+							AccountID:          account.ID,
+							AccountName:        account.Name,
+							UpstreamStatusCode: resp.StatusCode,
+							UpstreamRequestID:  resp.Header.Get("x-request-id"),
+							UpstreamURL:        safeUpstreamURL(upstreamReq.URL.String()),
+							Passthrough:        true,
+							Kind:               "tool_use_history_error",
+							Message:            extractUpstreamErrorMessage(respBody),
+							Detail: func() string {
+								if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
+									return truncateString(string(respBody), s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes)
+								}
+								return ""
+							}(),
+						})
+
+						logger.LegacyPrintf("service.gateway", "Anthropic passthrough account %d: detected invalid Claude tool history, retrying with repaired messages", account.ID)
+						retryCtx, releaseRetryCtx := detachStreamUpstreamContext(ctx, input.RequestStream)
+						retryReq, buildErr := s.buildUpstreamRequestAnthropicAPIKeyPassthrough(retryCtx, c, account, repairedBody, token)
+						releaseRetryCtx()
+						if buildErr == nil {
+							retryResp, retryErr := s.httpUpstream.DoWithTLS(retryReq, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+							if retryErr == nil {
+								input.Body = repairedBody
+								resp = retryResp
+								if resp.StatusCode >= 400 {
+									retryRespBody, retryReadErr := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+									if retryReadErr == nil {
+										_ = resp.Body.Close()
+										resp.Body = io.NopCloser(bytes.NewReader(retryRespBody))
+									}
+								}
+							} else {
+								if retryResp != nil && retryResp.Body != nil {
+									_ = retryResp.Body.Close()
+								}
+								resp.Body = io.NopCloser(bytes.NewReader(respBody))
+								logger.LegacyPrintf("service.gateway", "Anthropic passthrough account %d: tool history repair retry failed: %v", account.ID, retryErr)
+							}
+						} else {
+							resp.Body = io.NopCloser(bytes.NewReader(respBody))
+							logger.LegacyPrintf("service.gateway", "Anthropic passthrough account %d: tool history repair retry build failed: %v", account.ID, buildErr)
+						}
+					} else {
+						resp.Body = io.NopCloser(bytes.NewReader(respBody))
+					}
+				} else {
+					resp.Body = io.NopCloser(bytes.NewReader(respBody))
+				}
+			}
+		}
+
+		// 透传分支禁止通用 400 请求体降级重试（仅允许明确的 Claude tool history 修复重试）
 		if resp.StatusCode >= 400 && resp.StatusCode != 400 && s.shouldRetryUpstreamError(account, resp.StatusCode) {
 			if attempt < maxRetryAttempts {
 				elapsed := time.Since(retryStart)
@@ -7938,6 +8055,33 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 		}
 		s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
 		return err
+	}
+
+	// 检测 thinking block 签名错误（400）并重试一次（过滤 thinking blocks）
+	if resp.StatusCode == 400 && ClaudeToolUseRepairEnabledFromContext(ctx) && isAnthropicToolUseHistoryError(respBody) {
+		if repairedBody, changed := RepairAnthropicToolUseHistory(body); changed {
+			logger.LegacyPrintf("service.gateway", "Account %d: detected invalid Claude tool history on count_tokens, retrying with repaired messages", account.ID)
+
+			retryReq, buildErr := s.buildCountTokensRequest(ctx, c, account, repairedBody, token, tokenType, reqModel, shouldMimicClaudeCode)
+			if buildErr == nil {
+				retryResp, retryErr := s.httpUpstream.DoWithTLS(retryReq, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())
+				if retryErr == nil {
+					resp = retryResp
+					respBody, err = readUpstreamResponseBodyLimited(resp.Body, maxReadBytes)
+					_ = resp.Body.Close()
+					if err != nil {
+						if errors.Is(err, ErrUpstreamResponseBodyTooLarge) {
+							setOpsUpstreamError(c, http.StatusBadGateway, "upstream response too large", "")
+							s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Upstream response too large")
+							return err
+						}
+						s.countTokensError(c, http.StatusBadGateway, "upstream_error", "Failed to read response")
+						return err
+					}
+					body = repairedBody
+				}
+			}
+		}
 	}
 
 	// 检测 thinking block 签名错误（400）并重试一次（过滤 thinking blocks）

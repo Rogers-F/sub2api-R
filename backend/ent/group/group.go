@@ -55,6 +55,8 @@ const (
 	FieldClaudePromptCachingEnabled = "claude_prompt_caching_enabled"
 	// FieldThinkingSignatureCompatEnabled holds the string denoting the thinking_signature_compat_enabled field in the database.
 	FieldThinkingSignatureCompatEnabled = "thinking_signature_compat_enabled"
+	// FieldClaudeToolUseRepairEnabled holds the string denoting the claude_tool_use_repair_enabled field in the database.
+	FieldClaudeToolUseRepairEnabled = "claude_tool_use_repair_enabled"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
 	FieldFallbackGroupID = "fallback_group_id"
 	// FieldFallbackGroupIDOnInvalidRequest holds the string denoting the fallback_group_id_on_invalid_request field in the database.
@@ -174,6 +176,7 @@ var Columns = []string{
 	FieldClaudeCodeOnly,
 	FieldClaudePromptCachingEnabled,
 	FieldThinkingSignatureCompatEnabled,
+	FieldClaudeToolUseRepairEnabled,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
 	FieldModelRouting,
@@ -247,6 +250,8 @@ var (
 	DefaultClaudePromptCachingEnabled bool
 	// DefaultThinkingSignatureCompatEnabled holds the default value on creation for the "thinking_signature_compat_enabled" field.
 	DefaultThinkingSignatureCompatEnabled bool
+	// DefaultClaudeToolUseRepairEnabled holds the default value on creation for the "claude_tool_use_repair_enabled" field.
+	DefaultClaudeToolUseRepairEnabled bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
 	DefaultModelRoutingEnabled bool
 	// DefaultMcpXMLInject holds the default value on creation for the "mcp_xml_inject" field.
@@ -375,6 +380,11 @@ func ByClaudePromptCachingEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByThinkingSignatureCompatEnabled orders the results by the thinking_signature_compat_enabled field.
 func ByThinkingSignatureCompatEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldThinkingSignatureCompatEnabled, opts...).ToFunc()
+}
+
+// ByClaudeToolUseRepairEnabled orders the results by the claude_tool_use_repair_enabled field.
+func ByClaudeToolUseRepairEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClaudeToolUseRepairEnabled, opts...).ToFunc()
 }
 
 // ByFallbackGroupID orders the results by the fallback_group_id field.

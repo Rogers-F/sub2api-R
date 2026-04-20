@@ -58,6 +58,8 @@ type Group struct {
 	ClaudePromptCachingEnabled bool `json:"claude_prompt_caching_enabled,omitempty"`
 	// 是否启用历史 thinking 签名兼容重试（适用于 Max/AWS 等混合渠道）
 	ThinkingSignatureCompatEnabled bool `json:"thinking_signature_compat_enabled,omitempty"`
+	// 是否启用 Claude tool_use/tool_result 历史自动修复重试
+	ClaudeToolUseRepairEnabled bool `json:"claude_tool_use_repair_enabled,omitempty"`
 	// 非 Claude Code 请求降级使用的分组 ID
 	FallbackGroupID *int64 `json:"fallback_group_id,omitempty"`
 	// 无效请求兜底使用的分组 ID
@@ -190,7 +192,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldThinkingSignatureCompatEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldThinkingSignatureCompatEnabled, group.FieldClaudeToolUseRepairEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
 			values[i] = new(sql.NullFloat64)
@@ -348,6 +350,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field thinking_signature_compat_enabled", values[i])
 			} else if value.Valid {
 				_m.ThinkingSignatureCompatEnabled = value.Bool
+			}
+		case group.FieldClaudeToolUseRepairEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field claude_tool_use_repair_enabled", values[i])
+			} else if value.Valid {
+				_m.ClaudeToolUseRepairEnabled = value.Bool
 			}
 		case group.FieldFallbackGroupID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -578,6 +586,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("thinking_signature_compat_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ThinkingSignatureCompatEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("claude_tool_use_repair_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ClaudeToolUseRepairEnabled))
 	builder.WriteString(", ")
 	if v := _m.FallbackGroupID; v != nil {
 		builder.WriteString("fallback_group_id=")

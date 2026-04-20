@@ -207,6 +207,7 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 				SubscriptionType:                 SubscriptionTypeStandard,
 				RateMultiplier:                   1,
 				ClaudePromptCachingEnabled:       true,
+				ClaudeToolUseRepairEnabled:       true,
 				ModelRoutingEnabled:              true,
 				ForceApplicationJSONForNonStream: true,
 				ModelRouting: map[string][]int64{
@@ -225,6 +226,7 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 	require.Equal(t, int64(2), apiKey.User.ID)
 	require.Equal(t, groupID, apiKey.Group.ID)
 	require.True(t, apiKey.Group.ClaudePromptCachingEnabled)
+	require.True(t, apiKey.Group.ClaudeToolUseRepairEnabled)
 	require.True(t, apiKey.Group.ModelRoutingEnabled)
 	require.True(t, apiKey.Group.ForceApplicationJSONForNonStream)
 	require.Equal(t, map[string][]int64{"claude-opus-*": {1, 2}}, apiKey.Group.ModelRouting)

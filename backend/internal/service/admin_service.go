@@ -147,6 +147,7 @@ type CreateGroupInput struct {
 	ClaudeCodeOnly                 bool  // 仅允许 Claude Code 客户端
 	ClaudePromptCachingEnabled     *bool // 是否启用 Claude prompt cache
 	ThinkingSignatureCompatEnabled bool
+	ClaudeToolUseRepairEnabled     bool
 	FallbackGroupID                *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
@@ -185,6 +186,7 @@ type UpdateGroupInput struct {
 	ClaudeCodeOnly                 *bool // 仅允许 Claude Code 客户端
 	ClaudePromptCachingEnabled     *bool // 是否启用 Claude prompt cache
 	ThinkingSignatureCompatEnabled *bool
+	ClaudeToolUseRepairEnabled     *bool
 	FallbackGroupID                *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
@@ -960,6 +962,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ClaudeCodeOnly:                   input.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       claudePromptCachingEnabled,
 		ThinkingSignatureCompatEnabled:   input.ThinkingSignatureCompatEnabled,
+		ClaudeToolUseRepairEnabled:       input.ClaudeToolUseRepairEnabled,
 		FallbackGroupID:                  input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  fallbackOnInvalidRequest,
 		ModelRouting:                     input.ModelRouting,
@@ -1169,6 +1172,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ThinkingSignatureCompatEnabled != nil {
 		group.ThinkingSignatureCompatEnabled = *input.ThinkingSignatureCompatEnabled
+	}
+	if input.ClaudeToolUseRepairEnabled != nil {
+		group.ClaudeToolUseRepairEnabled = *input.ClaudeToolUseRepairEnabled
 	}
 	if input.FallbackGroupID != nil {
 		// 校验降级分组

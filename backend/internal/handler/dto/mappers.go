@@ -179,6 +179,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		ClaudeCodeOnly:                   g.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       g.ClaudePromptCachingEnabled,
 		ThinkingSignatureCompatEnabled:   g.ThinkingSignatureCompatEnabled,
+		ClaudeToolUseRepairEnabled:       g.ClaudeToolUseRepairEnabled,
 		FallbackGroupID:                  g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  g.FallbackGroupIDOnInvalidRequest,
 		AllowMessagesDispatch:            g.AllowMessagesDispatch,

@@ -300,6 +300,20 @@ func (_c *GroupCreate) SetNillableThinkingSignatureCompatEnabled(v *bool) *Group
 	return _c
 }
 
+// SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
+func (_c *GroupCreate) SetClaudeToolUseRepairEnabled(v bool) *GroupCreate {
+	_c.mutation.SetClaudeToolUseRepairEnabled(v)
+	return _c
+}
+
+// SetNillableClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableClaudeToolUseRepairEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetClaudeToolUseRepairEnabled(*v)
+	}
+	return _c
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_c *GroupCreate) SetFallbackGroupID(v int64) *GroupCreate {
 	_c.mutation.SetFallbackGroupID(v)
@@ -629,6 +643,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultThinkingSignatureCompatEnabled
 		_c.mutation.SetThinkingSignatureCompatEnabled(v)
 	}
+	if _, ok := _c.mutation.ClaudeToolUseRepairEnabled(); !ok {
+		v := group.DefaultClaudeToolUseRepairEnabled
+		_c.mutation.SetClaudeToolUseRepairEnabled(v)
+	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		v := group.DefaultModelRoutingEnabled
 		_c.mutation.SetModelRoutingEnabled(v)
@@ -725,6 +743,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ThinkingSignatureCompatEnabled(); !ok {
 		return &ValidationError{Name: "thinking_signature_compat_enabled", err: errors.New(`ent: missing required field "Group.thinking_signature_compat_enabled"`)}
+	}
+	if _, ok := _c.mutation.ClaudeToolUseRepairEnabled(); !ok {
+		return &ValidationError{Name: "claude_tool_use_repair_enabled", err: errors.New(`ent: missing required field "Group.claude_tool_use_repair_enabled"`)}
 	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		return &ValidationError{Name: "model_routing_enabled", err: errors.New(`ent: missing required field "Group.model_routing_enabled"`)}
@@ -864,6 +885,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
 		_node.ThinkingSignatureCompatEnabled = value
+	}
+	if value, ok := _c.mutation.ClaudeToolUseRepairEnabled(); ok {
+		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
+		_node.ClaudeToolUseRepairEnabled = value
 	}
 	if value, ok := _c.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1390,6 +1415,18 @@ func (u *GroupUpsert) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsert {
 // UpdateThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateThinkingSignatureCompatEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldThinkingSignatureCompatEnabled)
+	return u
+}
+
+// SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
+func (u *GroupUpsert) SetClaudeToolUseRepairEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldClaudeToolUseRepairEnabled, v)
+	return u
+}
+
+// UpdateClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateClaudeToolUseRepairEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldClaudeToolUseRepairEnabled)
 	return u
 }
 
@@ -1993,6 +2030,20 @@ func (u *GroupUpsertOne) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsertO
 func (u *GroupUpsertOne) UpdateThinkingSignatureCompatEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateThinkingSignatureCompatEnabled()
+	})
+}
+
+// SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
+func (u *GroupUpsertOne) SetClaudeToolUseRepairEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetClaudeToolUseRepairEnabled(v)
+	})
+}
+
+// UpdateClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateClaudeToolUseRepairEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateClaudeToolUseRepairEnabled()
 	})
 }
 
@@ -2792,6 +2843,20 @@ func (u *GroupUpsertBulk) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsert
 func (u *GroupUpsertBulk) UpdateThinkingSignatureCompatEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateThinkingSignatureCompatEnabled()
+	})
+}
+
+// SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
+func (u *GroupUpsertBulk) SetClaudeToolUseRepairEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetClaudeToolUseRepairEnabled(v)
+	})
+}
+
+// UpdateClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateClaudeToolUseRepairEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateClaudeToolUseRepairEnabled()
 	})
 }
 

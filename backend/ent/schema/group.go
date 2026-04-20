@@ -97,6 +97,9 @@ func (Group) Fields() []ent.Field {
 		field.Bool("thinking_signature_compat_enabled").
 			Default(false).
 			Comment("是否启用历史 thinking 签名兼容重试（适用于 Max/AWS 等混合渠道）"),
+		field.Bool("claude_tool_use_repair_enabled").
+			Default(false).
+			Comment("是否启用 Claude tool_use/tool_result 历史自动修复重试"),
 		field.Int64("fallback_group_id").
 			Optional().
 			Nillable().

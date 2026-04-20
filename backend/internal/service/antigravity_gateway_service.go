@@ -1431,6 +1431,73 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 
+		if resp.StatusCode == http.StatusBadRequest && ClaudeToolUseRepairEnabledFromContext(ctx) {
+			errMsg := strings.TrimSpace(extractAntigravityErrorMessage(respBody))
+			if isAnthropicToolUseHistoryMessage(errMsg) {
+				retryClaudeReq := claudeReq
+				retryClaudeReq.Messages = append([]antigravity.ClaudeMessage(nil), claudeReq.Messages...)
+
+				repaired, repairErr := RepairClaudeRequestToolUseHistory(&retryClaudeReq)
+				if repairErr == nil && repaired {
+					appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+						Platform:           account.Platform,
+						AccountID:          account.ID,
+						AccountName:        account.Name,
+						UpstreamStatusCode: resp.StatusCode,
+						UpstreamRequestID:  resp.Header.Get("x-request-id"),
+						Kind:               "tool_use_history_error",
+						Message:            sanitizeUpstreamErrorMessage(errMsg),
+						Detail:             s.getUpstreamErrorDetail(respBody),
+					})
+
+					logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: detected invalid Claude tool history, retrying once with repaired messages", account.ID)
+
+					retryGeminiBody, txErr := antigravity.TransformClaudeToGeminiWithOptions(&retryClaudeReq, projectID, mappedModel, transformOpts)
+					if txErr == nil {
+						retryResult, retryErr := s.antigravityRetryLoop(antigravityRetryLoopParams{
+							ctx:             ctx,
+							prefix:          prefix,
+							account:         account,
+							proxyURL:        proxyURL,
+							accessToken:     accessToken,
+							action:          action,
+							body:            retryGeminiBody,
+							c:               c,
+							httpUpstream:    s.httpUpstream,
+							settingService:  s.settingService,
+							accountRepo:     s.accountRepo,
+							handleError:     s.handleUpstreamError,
+							requestedModel:  originalModel,
+							isStickySession: isStickySession,
+							groupID:         0,
+							sessionHash:     "",
+						})
+						if retryErr == nil {
+							retryResp := retryResult.resp
+							if retryResp.StatusCode < 400 {
+								_ = resp.Body.Close()
+								resp = retryResp
+								respBody = nil
+								claudeReq = retryClaudeReq
+							} else {
+								retryBody, _ := io.ReadAll(io.LimitReader(retryResp.Body, 2<<20))
+								_ = retryResp.Body.Close()
+								respBody = retryBody
+								resp = &http.Response{
+									StatusCode: retryResp.StatusCode,
+									Header:     retryResp.Header.Clone(),
+									Body:       io.NopCloser(bytes.NewReader(retryBody)),
+								}
+								claudeReq = retryClaudeReq
+							}
+						} else {
+							logger.LegacyPrintf("service.antigravity_gateway", "Antigravity account %d: tool history repair retry failed: %v", account.ID, retryErr)
+						}
+					}
+				}
+			}
+		}
+
 		// 优先检测 thinking block 的 signature 相关错误（400）并重试一次：
 		// Antigravity /v1internal 链路在部分场景会对 thought/thinking signature 做严格校验，
 		// 当历史消息携带的 signature 不合法时会直接 400；去除 thinking 后可继续完成请求。

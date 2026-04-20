@@ -397,6 +397,20 @@ func (_u *GroupUpdate) SetNillableThinkingSignatureCompatEnabled(v *bool) *Group
 	return _u
 }
 
+// SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
+func (_u *GroupUpdate) SetClaudeToolUseRepairEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetClaudeToolUseRepairEnabled(v)
+	return _u
+}
+
+// SetNillableClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableClaudeToolUseRepairEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetClaudeToolUseRepairEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdate) SetFallbackGroupID(v int64) *GroupUpdate {
 	_u.mutation.ResetFallbackGroupID()
@@ -1003,6 +1017,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudeToolUseRepairEnabled(); ok {
+		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1739,6 +1756,20 @@ func (_u *GroupUpdateOne) SetNillableThinkingSignatureCompatEnabled(v *bool) *Gr
 	return _u
 }
 
+// SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
+func (_u *GroupUpdateOne) SetClaudeToolUseRepairEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetClaudeToolUseRepairEnabled(v)
+	return _u
+}
+
+// SetNillableClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableClaudeToolUseRepairEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetClaudeToolUseRepairEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdateOne) SetFallbackGroupID(v int64) *GroupUpdateOne {
 	_u.mutation.ResetFallbackGroupID()
@@ -2375,6 +2406,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudeToolUseRepairEnabled(); ok {
+		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)

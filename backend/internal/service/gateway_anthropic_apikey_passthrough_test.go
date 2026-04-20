@@ -48,16 +48,17 @@ func newAnthropicAPIKeyAccountForTest() *Account {
 }
 
 func newAnthropicGroupContextForTest(promptCachingEnabled bool) context.Context {
-	return newAnthropicGroupContextForTestWithFlags(promptCachingEnabled, false)
+	return newAnthropicGroupContextForTestWithFlags(promptCachingEnabled, false, false)
 }
 
-func newAnthropicGroupContextForTestWithFlags(promptCachingEnabled bool, forceApplicationJSONForNonStream bool) context.Context {
+func newAnthropicGroupContextForTestWithFlags(promptCachingEnabled bool, forceApplicationJSONForNonStream bool, claudeToolUseRepairEnabled bool) context.Context {
 	return context.WithValue(context.Background(), ctxkey.Group, &Group{
 		ID:                               901,
 		Platform:                         PlatformAnthropic,
 		Status:                           StatusActive,
 		Hydrated:                         true,
 		ClaudePromptCachingEnabled:       promptCachingEnabled,
+		ClaudeToolUseRepairEnabled:       claudeToolUseRepairEnabled,
 		ForceApplicationJSONForNonStream: forceApplicationJSONForNonStream,
 	})
 }
@@ -210,6 +211,105 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardStreamPreservesBodyAnd
 	require.Equal(t, "claude-3-haiku-20240307", gjson.GetBytes(bodyBytes, "model").String(), "缓存的上游请求体应包含映射后的模型")
 }
 
+func TestGatewayService_AnthropicAPIKeyPassthrough_RetriesWithRepairedToolHistory(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{
+		"model":"claude-3-7-sonnet-20250219",
+		"stream":false,
+		"max_tokens":64,
+		"messages":[
+			{"role":"user","content":[{"type":"text","text":"hello"}]},
+			{"role":"assistant","content":[
+				{"type":"text","text":"call tool"},
+				{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"ls"}}
+			]},
+			{"role":"assistant","content":[{"type":"text","text":"continue"}]},
+			{"role":"user","content":[
+				{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"},
+				{"type":"text","text":"real user"}
+			]}
+		]
+	}`)
+	parsed, err := ParseGatewayRequest(body, "")
+	require.NoError(t, err)
+
+	firstRespBody := []byte(`{
+		"type":"error",
+		"error":{
+			"type":"invalid_request_error",
+			"message":"messages.1: 'tool_use' ids were found without 'tool_result' blocks immediately after: toolu_1. Each 'tool_use' block must have a corresponding 'tool_result' block in the next message."
+		}
+	}`)
+	secondRespBody := []byte(`{
+		"id":"msg_test_repaired",
+		"type":"message",
+		"role":"assistant",
+		"model":"claude-3-7-sonnet-20250219",
+		"content":[{"type":"text","text":"ok"}],
+		"stop_reason":"end_turn",
+		"usage":{"input_tokens":8,"output_tokens":2}
+	}`)
+
+	upstream := &queuedHTTPUpstreamStub{
+		responses: []*http.Response{
+			{
+				StatusCode: http.StatusBadRequest,
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+					"X-Request-Id": []string{"rid-tool-repair-1"},
+				},
+				Body: io.NopCloser(bytes.NewReader(firstRespBody)),
+			},
+			{
+				StatusCode: http.StatusOK,
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+					"X-Request-Id": []string{"rid-tool-repair-2"},
+				},
+				Body: io.NopCloser(bytes.NewReader(secondRespBody)),
+			},
+		},
+	}
+
+	cfg := &config.Config{
+		Gateway: config.GatewayConfig{
+			MaxLineSize: defaultMaxLineSize,
+		},
+	}
+	svc := &GatewayService{
+		cfg:                  cfg,
+		responseHeaderFilter: compileResponseHeaderFilter(cfg),
+		httpUpstream:         upstream,
+		rateLimitService:     &RateLimitService{},
+		deferredService:      &DeferredService{},
+	}
+
+	result, err := svc.Forward(
+		newAnthropicGroupContextForTestWithFlags(true, false, true),
+		c,
+		newAnthropicAPIKeyAccountForTest(),
+		parsed,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Len(t, upstream.requestBodies, 2, "tool history repair should retry once")
+
+	firstReq := string(upstream.requestBodies[0])
+	secondReq := string(upstream.requestBodies[1])
+	require.Contains(t, firstReq, `"type":"tool_use"`)
+	require.Contains(t, firstReq, `"type":"tool_result"`)
+	require.NotContains(t, secondReq, `"type":"tool_use"`)
+	require.NotContains(t, secondReq, `"type":"tool_result","tool_use_id":"toolu_1"`)
+	require.Contains(t, secondReq, `"text":"call tool"`)
+	require.Contains(t, secondReq, `"text":"continue"`)
+	require.Contains(t, secondReq, `"text":"real user"`)
+}
+
 func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardCountTokensPreservesBody(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -284,7 +384,7 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardCountTokensPreservesBo
 func TestGatewayService_AnthropicAPIKeyPassthrough_GroupFlagForcesNonStreaming(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	groupCtx := newAnthropicGroupContextForTestWithFlags(false, true)
+	groupCtx := newAnthropicGroupContextForTestWithFlags(false, true, false)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)

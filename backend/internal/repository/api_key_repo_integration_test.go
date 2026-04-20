@@ -105,6 +105,30 @@ func (s *APIKeyRepoSuite) TestGetByKeyForAuth_IncludesForceApplicationJSONForNon
 	s.Require().True(got.Group.ForceApplicationJSONForNonStream, "expected auth query to include non-stream json flag")
 }
 
+func (s *APIKeyRepoSuite) TestGetByKeyForAuth_IncludesClaudeToolUseRepairEnabled() {
+	user := s.mustCreateUser("getbykeyauth-tool@test.com")
+	group := s.mustCreateGroup("g-auth-tool")
+
+	_, err := s.client.Group.UpdateOneID(group.ID).
+		SetClaudeToolUseRepairEnabled(true).
+		Save(s.ctx)
+	s.Require().NoError(err, "update group claude_tool_use_repair_enabled")
+
+	key := &service.APIKey{
+		UserID:  user.ID,
+		Key:     "sk-getbykey-auth-tool",
+		Name:    "Auth Tool Key",
+		GroupID: &group.ID,
+		Status:  service.StatusActive,
+	}
+	s.Require().NoError(s.repo.Create(s.ctx, key))
+
+	got, err := s.repo.GetByKeyForAuth(s.ctx, key.Key)
+	s.Require().NoError(err, "GetByKeyForAuth")
+	s.Require().NotNil(got.Group, "expected Group preload")
+	s.Require().True(got.Group.ClaudeToolUseRepairEnabled, "expected auth query to include claude tool use repair flag")
+}
+
 func (s *APIKeyRepoSuite) TestGetByKey_NotFound() {
 	_, err := s.repo.GetByKey(s.ctx, "non-existent-key")
 	s.Require().Error(err, "expected error for non-existent key")
