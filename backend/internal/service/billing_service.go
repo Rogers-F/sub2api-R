@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -244,6 +245,14 @@ func (s *BillingService) initFallbackPricing() {
 		CacheReadPricePerTokenPriority: 0.35e-6,
 		SupportsCacheBreakdown:         false,
 	}
+	// OpenAI GPT Image 2（官方定价兜底）
+	s.fallbackPrices["gpt-image-2"] = &ModelPricing{
+		InputPricePerToken:         10e-6,  // $10 per MTok
+		OutputPricePerToken:        40e-6,  // $40 per MTok
+		CacheCreationPricePerToken: 10e-6,  // 按输入同价处理
+		CacheReadPricePerToken:     2.5e-6, // $2.5 per MTok
+		SupportsCacheBreakdown:     false,
+	}
 	// Codex 族兜底统一按 GPT-5.1 Codex 价格计费
 	s.fallbackPrices["gpt-5.1-codex"] = &ModelPricing{
 		InputPricePerToken:             1.5e-6, // $1.5 per MTok
@@ -303,6 +312,9 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 	if strings.Contains(modelLower, "gemini-3.1-pro") || strings.Contains(modelLower, "gemini-3-1-pro") {
 		return s.fallbackPrices["gemini-3.1-pro"]
+	}
+	if strings.Contains(modelLower, "gpt-image-2") {
+		return s.fallbackPrices["gpt-image-2"]
 	}
 
 	// OpenAI 仅匹配已知 GPT-5/Codex 族，避免未知 OpenAI 型号误计价。
@@ -664,6 +676,8 @@ func (s *BillingService) CalculateImageCost(model string, imageSize string, imag
 
 // getImageUnitPrice 获取图片单价
 func (s *BillingService) getImageUnitPrice(model string, imageSize string, groupConfig *ImagePriceConfig) float64 {
+	imageSize = normalizeImageBillingSize(imageSize)
+
 	// 优先使用分组配置的价格
 	if groupConfig != nil {
 		switch imageSize {
@@ -689,6 +703,7 @@ func (s *BillingService) getImageUnitPrice(model string, imageSize string, group
 // getDefaultImagePrice 获取 LiteLLM 默认图片价格
 func (s *BillingService) getDefaultImagePrice(model string, imageSize string) float64 {
 	basePrice := 0.0
+	imageSize = normalizeImageBillingSize(imageSize)
 
 	// 从 PricingService 获取 output_cost_per_image
 	if s.pricingService != nil {
@@ -712,4 +727,33 @@ func (s *BillingService) getDefaultImagePrice(model string, imageSize string) fl
 	}
 
 	return basePrice
+}
+
+func normalizeImageBillingSize(imageSize string) string {
+	size := strings.ToUpper(strings.TrimSpace(imageSize))
+	switch size {
+	case "1K", "2K", "4K":
+		return size
+	case "", "AUTO":
+		return "2K"
+	}
+
+	parts := strings.Split(size, "X")
+	if len(parts) != 2 {
+		return "2K"
+	}
+
+	width, errW := strconv.Atoi(strings.TrimSpace(parts[0]))
+	height, errH := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if errW != nil || errH != nil {
+		return "2K"
+	}
+
+	if width <= 1024 && height <= 1024 {
+		return "1K"
+	}
+	if width <= 2048 && height <= 2048 {
+		return "2K"
+	}
+	return "4K"
 }

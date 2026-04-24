@@ -52,6 +52,14 @@ var (
 		Mode:                    "chat",
 		SupportsPromptCaching:   true,
 	}
+	openAIGPTImage2FallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:           1e-05,
+		OutputCostPerToken:          4e-05,
+		CacheCreationInputTokenCost: 1e-05,
+		CacheReadInputTokenCost:     2.5e-06,
+		LiteLLMProvider:             "openai",
+		Mode:                        "image_generation",
+	}
 )
 
 // LiteLLMModelPricing LiteLLM价格数据结构
@@ -850,6 +858,11 @@ func (s *PricingService) matchOpenAIModel(model string) *LiteLLMModelPricing {
 		logger.With(zap.String("component", "service.pricing")).
 			Info(fmt.Sprintf("[Pricing] OpenAI fallback matched %s -> %s", model, "gpt-5.4(static)"))
 		return openAIGPT54FallbackPricing
+	}
+	if strings.HasPrefix(model, "gpt-image-2") {
+		logger.With(zap.String("component", "service.pricing")).
+			Info(fmt.Sprintf("[Pricing] OpenAI fallback matched %s -> %s", model, "gpt-image-2(static)"))
+		return openAIGPTImage2FallbackPricing
 	}
 
 	// 最终回退到 DefaultTestModel

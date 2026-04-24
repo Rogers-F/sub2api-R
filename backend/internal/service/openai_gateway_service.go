@@ -230,6 +230,8 @@ type OpenAIForwardResult struct {
 	ResponseHeaders http.Header
 	Duration        time.Duration
 	FirstTokenMs    *int
+	ImageCount      int
+	ImageSize       string
 }
 
 type OpenAIWSRetryMetricsSnapshot struct {
@@ -4145,7 +4147,8 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 
 	// 跳过所有 token 均为零的用量记录——上游未返回 usage 时不应写入数据库
 	if result.Usage.InputTokens == 0 && result.Usage.OutputTokens == 0 &&
-		result.Usage.CacheCreationInputTokens == 0 && result.Usage.CacheReadInputTokens == 0 {
+		result.Usage.CacheCreationInputTokens == 0 && result.Usage.CacheReadInputTokens == 0 &&
+		result.ImageCount == 0 {
 		return nil
 	}
 
@@ -4187,9 +4190,24 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if result.ServiceTier != nil {
 		serviceTier = strings.TrimSpace(*result.ServiceTier)
 	}
-	cost, err := s.billingService.CalculateCostWithServiceTier(billingModel, tokens, multiplier, serviceTier)
-	if err != nil {
-		cost = &CostBreakdown{ActualCost: 0}
+	cost := &CostBreakdown{}
+	if result.Usage.InputTokens > 0 || result.Usage.OutputTokens > 0 ||
+		result.Usage.CacheCreationInputTokens > 0 || result.Usage.CacheReadInputTokens > 0 {
+		var err error
+		cost, err = s.billingService.CalculateCostWithServiceTier(billingModel, tokens, multiplier, serviceTier)
+		if err != nil {
+			cost = &CostBreakdown{ActualCost: 0}
+		}
+	} else if result.ImageCount > 0 {
+		var groupConfig *ImagePriceConfig
+		if apiKey.Group != nil {
+			groupConfig = &ImagePriceConfig{
+				Price1K: apiKey.Group.ImagePrice1K,
+				Price2K: apiKey.Group.ImagePrice2K,
+				Price4K: apiKey.Group.ImagePrice4K,
+			}
+		}
+		cost = s.billingService.CalculateImageCost(billingModel, result.ImageSize, result.ImageCount, groupConfig, multiplier)
 	}
 
 	// Determine billing type
@@ -4203,6 +4221,10 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	durationMs := int(result.Duration.Milliseconds())
 	accountRateMultiplier := account.BillingRateMultiplier()
 	requestID := resolveUsageBillingRequestID(ctx, result.RequestID)
+	var imageSize *string
+	if result.ImageSize != "" {
+		imageSize = &result.ImageSize
+	}
 	usageLog := &UsageLog{
 		UserID:                user.ID,
 		APIKeyID:              apiKey.ID,
@@ -4232,6 +4254,8 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		OpenAIWSMode:          result.OpenAIWSMode,
 		DurationMs:            &durationMs,
 		FirstTokenMs:          result.FirstTokenMs,
+		ImageCount:            result.ImageCount,
+		ImageSize:             imageSize,
 		CreatedAt:             time.Now(),
 	}
 	// 添加 UserAgent

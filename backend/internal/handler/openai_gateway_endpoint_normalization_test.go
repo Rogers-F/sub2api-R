@@ -41,6 +41,16 @@ func TestOpenAIUpstreamEndpoint_ViaGetUpstreamEndpoint(t *testing.T) {
 			path: "/v1/messages",
 			want: EndpointResponses,
 		},
+		{
+			name: "image generations keeps native images endpoint",
+			path: "/v1/images/generations",
+			want: "/v1/images/generations",
+		},
+		{
+			name: "image edits keeps native images endpoint",
+			path: "/openai/v1/images/edits",
+			want: "/v1/images/edits",
+		},
 	}
 
 	for _, tt := range tests {

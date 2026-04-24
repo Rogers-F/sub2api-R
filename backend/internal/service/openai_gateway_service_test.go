@@ -1424,6 +1424,40 @@ func TestOpenAIResponsesRequestPathSuffix(t *testing.T) {
 	}
 }
 
+func TestBuildOpenAIImagesURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		baseURL  string
+		endpoint string
+		want     string
+	}{
+		{
+			name:     "root base adds v1 images path",
+			baseURL:  "https://api.openai.com",
+			endpoint: "/v1/images/generations",
+			want:     "https://api.openai.com/v1/images/generations",
+		},
+		{
+			name:     "v1 base keeps single v1 prefix",
+			baseURL:  "https://example.com/v1",
+			endpoint: "/v1/images/edits",
+			want:     "https://example.com/v1/images/edits",
+		},
+		{
+			name:     "existing images endpoint stays unchanged",
+			baseURL:  "https://example.com/v1/images/generations",
+			endpoint: "/v1/images/generations",
+			want:     "https://example.com/v1/images/generations",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, buildOpenAIImagesURL(tt.baseURL, tt.endpoint))
+		})
+	}
+}
+
 func TestOpenAIBuildUpstreamRequestOpenAIPassthroughPreservesCompactPath(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

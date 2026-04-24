@@ -723,6 +723,73 @@ func TestOpenAIGatewayServiceRecordUsage_ClampsActualInputTokensToZero(t *testin
 	require.Equal(t, 0, usageRepo.lastLog.InputTokens)
 }
 
+func TestOpenAIGatewayServiceRecordUsage_ImageOnlyUsageStillPersistsAndBills(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{}
+	billingRepo := &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: true}}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	svc := newOpenAIRecordUsageServiceWithBillingRepoForTest(usageRepo, billingRepo, userRepo, subRepo, nil)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:  "resp_image_only",
+			Model:      "gpt-image-2",
+			ImageCount: 2,
+			ImageSize:  "1024x1024",
+			Duration:   time.Second,
+		},
+		APIKey:  &APIKey{ID: 1106},
+		User:    &User{ID: 2106},
+		Account: &Account{ID: 3106},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, billingRepo.calls)
+	require.NotNil(t, billingRepo.lastCmd)
+	require.Equal(t, 2, billingRepo.lastCmd.ImageCount)
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, 2, usageRepo.lastLog.ImageCount)
+	require.NotNil(t, usageRepo.lastLog.ImageSize)
+	require.Equal(t, "1024x1024", *usageRepo.lastLog.ImageSize)
+	require.Greater(t, usageRepo.lastLog.ActualCost, 0.0)
+}
+
+func TestOpenAIGatewayServiceRecordUsage_GPTImage2TokenBillingStillStoresImageMetadata(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, subRepo, nil)
+
+	usage := OpenAIUsage{InputTokens: 120, OutputTokens: 240}
+	expected, err := svc.billingService.CalculateCost("gpt-image-2", UsageTokens{
+		InputTokens:  120,
+		OutputTokens: 240,
+	}, 1.1)
+	require.NoError(t, err)
+
+	err = svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:  "resp_image_with_usage",
+			Model:      "gpt-image-2",
+			Usage:      usage,
+			ImageCount: 1,
+			ImageSize:  "1536x1024",
+			Duration:   time.Second,
+		},
+		APIKey:  &APIKey{ID: 1107},
+		User:    &User{ID: 2107},
+		Account: &Account{ID: 3107},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, 1, usageRepo.lastLog.ImageCount)
+	require.NotNil(t, usageRepo.lastLog.ImageSize)
+	require.Equal(t, "1536x1024", *usageRepo.lastLog.ImageSize)
+	require.InDelta(t, expected.TotalCost, usageRepo.lastLog.TotalCost, 1e-12)
+	require.InDelta(t, expected.ActualCost, usageRepo.lastLog.ActualCost, 1e-12)
+}
+
 func TestOpenAIGatewayServiceRecordUsage_Gpt54LongContextBillsWholeSession(t *testing.T) {
 	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
 	userRepo := &openAIRecordUsageUserRepoStub{}
