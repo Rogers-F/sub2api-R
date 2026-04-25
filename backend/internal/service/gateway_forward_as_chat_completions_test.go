@@ -3,6 +3,7 @@
 package service
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
+
+func TestAppendRawJSON_ReplacesInitialEmptyObjectPlaceholder(t *testing.T) {
+	t.Parallel()
+
+	got := appendRawJSON(json.RawMessage(`{}`), `{"text":"hello"}`)
+	require.JSONEq(t, `{"text":"hello"}`, string(got))
+}
 
 func TestExtractCCReasoningEffortFromBody(t *testing.T) {
 	t.Parallel()
@@ -106,4 +114,37 @@ func TestHandleCCStreamingFromAnthropic_PreservesMessageStartCacheUsageAndReason
 	require.NotNil(t, result.ReasoningEffort)
 	require.Equal(t, "medium", *result.ReasoningEffort)
 	require.Contains(t, rec.Body.String(), `[DONE]`)
+}
+
+func TestHandleCCBufferedFromAnthropic_ToolUseArgumentsDoNotKeepEmptyObjectPrefix(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_cc_tool_args"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`event: message_start`,
+			`data: {"type":"message_start","message":{"id":"msg_tool_1","type":"message","role":"assistant","content":[],"model":"claude-opus-4-6","stop_reason":"","usage":{"input_tokens":12}}}`,
+			``,
+			`event: content_block_start`,
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"send_message","input":{}}}`,
+			``,
+			`event: content_block_delta`,
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"text\":\"hello\"}"}}`,
+			``,
+			`event: message_delta`,
+			`data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":3}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	result, err := svc.handleCCBufferedFromAnthropic(resp, c, "claude-opus-4-6", "claude-opus-4-6", nil, time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotContains(t, rec.Body.String(), `"arguments":"{}{\"text\":\"hello\"}"`)
+	require.Contains(t, rec.Body.String(), `"arguments":"{\"text\":\"hello\"}"`)
 }

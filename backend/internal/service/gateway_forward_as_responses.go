@@ -494,9 +494,21 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 
 // appendRawJSON appends a JSON fragment string to existing raw JSON.
 func appendRawJSON(existing json.RawMessage, fragment string) json.RawMessage {
+	if strings.TrimSpace(fragment) == "" {
+		return existing
+	}
 	if len(existing) == 0 {
 		return json.RawMessage(fragment)
 	}
+
+	// Anthropic tool_use streaming starts with input:{} as a placeholder in
+	// content_block_start, then sends the real arguments through
+	// input_json_delta.partial_json. If we keep the placeholder and append the
+	// first delta, we produce invalid JSON like {}{"text":"hello"}.
+	if bytes.Equal(bytes.TrimSpace(existing), []byte("{}")) {
+		return json.RawMessage(fragment)
+	}
+
 	return json.RawMessage(string(existing) + fragment)
 }
 
