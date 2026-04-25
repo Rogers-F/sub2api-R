@@ -18,3 +18,20 @@ func TestDefaultModels_ContainsGPTImage2(t *testing.T) {
 		t.Fatalf("expected curated OpenAI model %q to have a display name", "gpt-image-2")
 	}
 }
+
+func TestDefaultModels_ContainsGPT55(t *testing.T) {
+	t.Parallel()
+
+	byID := make(map[string]Model, len(DefaultModels))
+	for _, model := range DefaultModels {
+		byID[model.ID] = model
+	}
+
+	model, ok := byID["gpt-5.5"]
+	if !ok {
+		t.Fatalf("expected curated OpenAI model %q to exist", "gpt-5.5")
+	}
+	if model.DisplayName == "" {
+		t.Fatalf("expected curated OpenAI model %q to have a display name", "gpt-5.5")
+	}
+}
