@@ -3,6 +3,7 @@
 package service
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -93,15 +95,68 @@ func TestHandleResponsesStreamingResponse_PreservesMessageStartCacheUsage(t *tes
 	require.Contains(t, rec.Body.String(), `response.completed`)
 }
 
-func TestHandleResponsesBufferedStreamingResponse_ToolUseArgumentsDoNotKeepEmptyObjectPrefix(t *testing.T) {
+func TestHandleResponsesBufferedStreamingResponse_ToolUseArgumentsKeepEmptyObjectPrefixWhenRepairDisabled(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               401,
+		Name:                             "resp-legacy",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ClaudeToolArgumentsRepairEnabled: false,
+	}))
+	c.Request = req
 
 	resp := &http.Response{
 		Header: http.Header{"x-request-id": []string{"rid_resp_tool_args"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`event: message_start`,
+			`data: {"type":"message_start","message":{"id":"msg_tool_2","type":"message","role":"assistant","content":[],"model":"claude-opus-4-6","stop_reason":"","usage":{"input_tokens":10}}}`,
+			``,
+			`event: content_block_start`,
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"send_message","input":{}}}`,
+			``,
+			`event: content_block_delta`,
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"text\":\"hello\"}"}}`,
+			``,
+			`event: message_delta`,
+			`data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":2}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	result, err := svc.handleResponsesBufferedStreamingResponse(resp, c, "claude-opus-4-6", "claude-opus-4-6", nil, time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Contains(t, rec.Body.String(), `"arguments":"{}{\"text\":\"hello\"}"`)
+	require.NotContains(t, rec.Body.String(), `"arguments":"{\"text\":\"hello\"}"`)
+}
+
+func TestHandleResponsesBufferedStreamingResponse_ToolUseArgumentsDoNotKeepEmptyObjectPrefixWhenRepairEnabled(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               402,
+		Name:                             "resp-repair",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ClaudeToolArgumentsRepairEnabled: true,
+	}))
+	c.Request = req
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_resp_tool_args_repair"}},
 		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
 			`event: message_start`,
 			`data: {"type":"message_start","message":{"id":"msg_tool_2","type":"message","role":"assistant","content":[],"model":"claude-opus-4-6","stop_reason":"","usage":{"input_tokens":10}}}`,

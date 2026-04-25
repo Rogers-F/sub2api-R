@@ -160,6 +160,11 @@ func ClaudeToolUseRepairEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudeToolUseRepairEnabled, v))
 }
 
+// ClaudeToolArgumentsRepairEnabled applies equality check predicate on the "claude_tool_arguments_repair_enabled" field. It's identical to ClaudeToolArgumentsRepairEnabledEQ.
+func ClaudeToolArgumentsRepairEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldClaudeToolArgumentsRepairEnabled, v))
+}
+
 // FallbackGroupID applies equality check predicate on the "fallback_group_id" field. It's identical to FallbackGroupIDEQ.
 func FallbackGroupID(v int64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldFallbackGroupID, v))
@@ -1103,6 +1108,16 @@ func ClaudeToolUseRepairEnabledEQ(v bool) predicate.Group {
 // ClaudeToolUseRepairEnabledNEQ applies the NEQ predicate on the "claude_tool_use_repair_enabled" field.
 func ClaudeToolUseRepairEnabledNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldClaudeToolUseRepairEnabled, v))
+}
+
+// ClaudeToolArgumentsRepairEnabledEQ applies the EQ predicate on the "claude_tool_arguments_repair_enabled" field.
+func ClaudeToolArgumentsRepairEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldClaudeToolArgumentsRepairEnabled, v))
+}
+
+// ClaudeToolArgumentsRepairEnabledNEQ applies the NEQ predicate on the "claude_tool_arguments_repair_enabled" field.
+func ClaudeToolArgumentsRepairEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldClaudeToolArgumentsRepairEnabled, v))
 }
 
 // FallbackGroupIDEQ applies the EQ predicate on the "fallback_group_id" field.

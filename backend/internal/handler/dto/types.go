@@ -90,11 +90,12 @@ type Group struct {
 	ImagePrice4K *float64 `json:"image_price_4k"`
 
 	// Claude Code 客户端限制
-	ClaudeCodeOnly                 bool   `json:"claude_code_only"`
-	ClaudePromptCachingEnabled     bool   `json:"claude_prompt_caching_enabled"`
-	ThinkingSignatureCompatEnabled bool   `json:"thinking_signature_compat_enabled"`
-	ClaudeToolUseRepairEnabled     bool   `json:"claude_tool_use_repair_enabled"`
-	FallbackGroupID                *int64 `json:"fallback_group_id"`
+	ClaudeCodeOnly                   bool   `json:"claude_code_only"`
+	ClaudePromptCachingEnabled       bool   `json:"claude_prompt_caching_enabled"`
+	ThinkingSignatureCompatEnabled   bool   `json:"thinking_signature_compat_enabled"`
+	ClaudeToolUseRepairEnabled       bool   `json:"claude_tool_use_repair_enabled"`
+	ClaudeToolArgumentsRepairEnabled bool   `json:"claude_tool_arguments_repair_enabled"`
+	FallbackGroupID                  *int64 `json:"fallback_group_id"`
 	// 无效请求兜底分组
 	FallbackGroupIDOnInvalidRequest *int64 `json:"fallback_group_id_on_invalid_request"`
 

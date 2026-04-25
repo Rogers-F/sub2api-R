@@ -8244,6 +8244,7 @@ type GroupMutation struct {
 	claude_prompt_caching_enabled           *bool
 	thinking_signature_compat_enabled       *bool
 	claude_tool_use_repair_enabled          *bool
+	claude_tool_arguments_repair_enabled    *bool
 	fallback_group_id                       *int64
 	addfallback_group_id                    *int64
 	fallback_group_id_on_invalid_request    *int64
@@ -9408,6 +9409,42 @@ func (m *GroupMutation) ResetClaudeToolUseRepairEnabled() {
 	m.claude_tool_use_repair_enabled = nil
 }
 
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (m *GroupMutation) SetClaudeToolArgumentsRepairEnabled(b bool) {
+	m.claude_tool_arguments_repair_enabled = &b
+}
+
+// ClaudeToolArgumentsRepairEnabled returns the value of the "claude_tool_arguments_repair_enabled" field in the mutation.
+func (m *GroupMutation) ClaudeToolArgumentsRepairEnabled() (r bool, exists bool) {
+	v := m.claude_tool_arguments_repair_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaudeToolArgumentsRepairEnabled returns the old "claude_tool_arguments_repair_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldClaudeToolArgumentsRepairEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaudeToolArgumentsRepairEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaudeToolArgumentsRepairEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaudeToolArgumentsRepairEnabled: %w", err)
+	}
+	return oldValue.ClaudeToolArgumentsRepairEnabled, nil
+}
+
+// ResetClaudeToolArgumentsRepairEnabled resets all changes to the "claude_tool_arguments_repair_enabled" field.
+func (m *GroupMutation) ResetClaudeToolArgumentsRepairEnabled() {
+	m.claude_tool_arguments_repair_enabled = nil
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (m *GroupMutation) SetFallbackGroupID(i int64) {
 	m.fallback_group_id = &i
@@ -10314,7 +10351,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -10377,6 +10414,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.claude_tool_use_repair_enabled != nil {
 		fields = append(fields, group.FieldClaudeToolUseRepairEnabled)
+	}
+	if m.claude_tool_arguments_repair_enabled != nil {
+		fields = append(fields, group.FieldClaudeToolArgumentsRepairEnabled)
 	}
 	if m.fallback_group_id != nil {
 		fields = append(fields, group.FieldFallbackGroupID)
@@ -10464,6 +10504,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ThinkingSignatureCompatEnabled()
 	case group.FieldClaudeToolUseRepairEnabled:
 		return m.ClaudeToolUseRepairEnabled()
+	case group.FieldClaudeToolArgumentsRepairEnabled:
+		return m.ClaudeToolArgumentsRepairEnabled()
 	case group.FieldFallbackGroupID:
 		return m.FallbackGroupID()
 	case group.FieldFallbackGroupIDOnInvalidRequest:
@@ -10539,6 +10581,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldThinkingSignatureCompatEnabled(ctx)
 	case group.FieldClaudeToolUseRepairEnabled:
 		return m.OldClaudeToolUseRepairEnabled(ctx)
+	case group.FieldClaudeToolArgumentsRepairEnabled:
+		return m.OldClaudeToolArgumentsRepairEnabled(ctx)
 	case group.FieldFallbackGroupID:
 		return m.OldFallbackGroupID(ctx)
 	case group.FieldFallbackGroupIDOnInvalidRequest:
@@ -10718,6 +10762,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetClaudeToolUseRepairEnabled(v)
+		return nil
+	case group.FieldClaudeToolArgumentsRepairEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaudeToolArgumentsRepairEnabled(v)
 		return nil
 	case group.FieldFallbackGroupID:
 		v, ok := value.(int64)
@@ -11118,6 +11169,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldClaudeToolUseRepairEnabled:
 		m.ResetClaudeToolUseRepairEnabled()
+		return nil
+	case group.FieldClaudeToolArgumentsRepairEnabled:
+		m.ResetClaudeToolArgumentsRepairEnabled()
 		return nil
 	case group.FieldFallbackGroupID:
 		m.ResetFallbackGroupID()

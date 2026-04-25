@@ -411,6 +411,20 @@ func (_u *GroupUpdate) SetNillableClaudeToolUseRepairEnabled(v *bool) *GroupUpda
 	return _u
 }
 
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (_u *GroupUpdate) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetClaudeToolArgumentsRepairEnabled(v)
+	return _u
+}
+
+// SetNillableClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetClaudeToolArgumentsRepairEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdate) SetFallbackGroupID(v int64) *GroupUpdate {
 	_u.mutation.ResetFallbackGroupID()
@@ -1020,6 +1034,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ClaudeToolUseRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
+		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1770,6 +1787,20 @@ func (_u *GroupUpdateOne) SetNillableClaudeToolUseRepairEnabled(v *bool) *GroupU
 	return _u
 }
 
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (_u *GroupUpdateOne) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetClaudeToolArgumentsRepairEnabled(v)
+	return _u
+}
+
+// SetNillableClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetClaudeToolArgumentsRepairEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdateOne) SetFallbackGroupID(v int64) *GroupUpdateOne {
 	_u.mutation.ResetFallbackGroupID()
@@ -2409,6 +2440,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ClaudeToolUseRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
+		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)

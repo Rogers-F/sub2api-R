@@ -226,6 +226,11 @@ func (s *GatewayService) handleResponsesBufferedStreamingResponse(
 	startTime time.Time,
 ) (*ForwardResult, error) {
 	requestID := resp.Header.Get("x-request-id")
+	ctx := context.Background()
+	if c != nil && c.Request != nil {
+		ctx = c.Request.Context()
+	}
+	repairToolArguments := ClaudeToolArgumentsRepairEnabledFromContext(ctx)
 
 	scanner := bufio.NewScanner(resp.Body)
 	maxLineSize := defaultMaxLineSize
@@ -294,7 +299,7 @@ func (s *GatewayService) handleResponsesBufferedStreamingResponse(
 				case "thinking_delta":
 					finalResp.Content[idx].Thinking += event.Delta.Thinking
 				case "input_json_delta":
-					finalResp.Content[idx].Input = appendRawJSON(finalResp.Content[idx].Input, event.Delta.PartialJSON)
+					finalResp.Content[idx].Input = appendRawJSON(finalResp.Content[idx].Input, event.Delta.PartialJSON, repairToolArguments)
 				}
 			}
 		}
@@ -493,7 +498,7 @@ func (s *GatewayService) handleResponsesStreamingResponse(
 }
 
 // appendRawJSON appends a JSON fragment string to existing raw JSON.
-func appendRawJSON(existing json.RawMessage, fragment string) json.RawMessage {
+func appendRawJSON(existing json.RawMessage, fragment string, replaceInitialEmptyObject bool) json.RawMessage {
 	if strings.TrimSpace(fragment) == "" {
 		return existing
 	}
@@ -505,7 +510,7 @@ func appendRawJSON(existing json.RawMessage, fragment string) json.RawMessage {
 	// content_block_start, then sends the real arguments through
 	// input_json_delta.partial_json. If we keep the placeholder and append the
 	// first delta, we produce invalid JSON like {}{"text":"hello"}.
-	if bytes.Equal(bytes.TrimSpace(existing), []byte("{}")) {
+	if replaceInitialEmptyObject && bytes.Equal(bytes.TrimSpace(existing), []byte("{}")) {
 		return json.RawMessage(fragment)
 	}
 

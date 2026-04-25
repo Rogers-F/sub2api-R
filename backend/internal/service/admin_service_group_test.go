@@ -333,6 +333,45 @@ func TestAdminService_UpdateGroup_ClaudeToolUseRepairEnabled(t *testing.T) {
 	require.True(t, repo.updated.ClaudeToolUseRepairEnabled)
 }
 
+func TestAdminService_CreateGroup_DefaultsClaudeToolArgumentsRepairDisabled(t *testing.T) {
+	repo := &groupRepoStubForAdmin{}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:           "test-group",
+		Platform:       PlatformAnthropic,
+		RateMultiplier: 1.0,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.created)
+	require.False(t, group.ClaudeToolArgumentsRepairEnabled)
+	require.False(t, repo.created.ClaudeToolArgumentsRepairEnabled)
+}
+
+func TestAdminService_UpdateGroup_ClaudeToolArgumentsRepairEnabled(t *testing.T) {
+	existingGroup := &Group{
+		ID:                               1,
+		Name:                             "existing-group",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		SubscriptionType:                 SubscriptionTypeStandard,
+		ClaudeToolArgumentsRepairEnabled: false,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existingGroup}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	enabled := true
+	group, err := svc.UpdateGroup(context.Background(), 1, &UpdateGroupInput{
+		ClaudeToolArgumentsRepairEnabled: &enabled,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.updated)
+	require.True(t, group.ClaudeToolArgumentsRepairEnabled)
+	require.True(t, repo.updated.ClaudeToolArgumentsRepairEnabled)
+}
+
 func TestAdminService_CreateGroup_DefaultsForceApplicationJSONForNonStreamDisabled(t *testing.T) {
 	repo := &groupRepoStubForAdmin{}
 	svc := &adminServiceImpl{groupRepo: repo}

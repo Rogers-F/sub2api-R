@@ -1855,6 +1855,14 @@ export default {
         disabled: 'Auto-repair disabled',
         hint: 'Recommended for groups that switch Claude conversations between Claude Max, native Anthropic, AWS Bedrock, and similar channels.'
       },
+      claudeToolArgumentsRepair: {
+        title: 'Claude Tool Arguments Empty-object Repair',
+        tooltip:
+          'When enabled, if Anthropic-compatible tool_use streaming sends input:{} as a placeholder before the real input_json_delta payload, the gateway strips that leading empty object so returned arguments do not become {}{"text":"..."}',
+        enabled: 'Arguments repair enabled',
+        disabled: 'Arguments repair disabled',
+        hint: 'Disabled by default. Enable only when you need to fix a leading {} placeholder in Claude tool-call arguments.'
+      },
       openaiMessages: {
         title: 'OpenAI Messages Dispatch',
         allowDispatch: 'Allow /v1/messages dispatch',

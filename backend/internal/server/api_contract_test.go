@@ -214,6 +214,7 @@ func TestAPIContracts(t *testing.T) {
 						"claude_prompt_caching_enabled": true,
 						"thinking_signature_compat_enabled": false,
 						"claude_tool_use_repair_enabled": false,
+						"claude_tool_arguments_repair_enabled": false,
 						"allow_messages_dispatch": false,
 						"require_oauth_only": false,
 						"require_privacy_set": false,

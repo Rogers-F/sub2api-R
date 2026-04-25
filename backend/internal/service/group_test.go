@@ -3,8 +3,10 @@
 package service
 
 import (
+	"context"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,4 +91,21 @@ func TestGroup_GetImagePrice_PartialConfig(t *testing.T) {
 	// 2K 和 4K 返回 nil
 	require.Nil(t, group.GetImagePrice("2K"))
 	require.Nil(t, group.GetImagePrice("4K"))
+}
+
+func TestClaudeToolArgumentsRepairEnabledFromContext(t *testing.T) {
+	t.Parallel()
+
+	group := &Group{
+		ID:                               1,
+		Name:                             "claude",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ClaudeToolArgumentsRepairEnabled: true,
+	}
+	ctx := context.WithValue(context.Background(), ctxkey.Group, group)
+
+	require.True(t, ClaudeToolArgumentsRepairEnabledFromContext(ctx))
+	require.False(t, ClaudeToolArgumentsRepairEnabledFromContext(context.Background()))
 }

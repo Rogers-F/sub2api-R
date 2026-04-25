@@ -314,6 +314,20 @@ func (_c *GroupCreate) SetNillableClaudeToolUseRepairEnabled(v *bool) *GroupCrea
 	return _c
 }
 
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (_c *GroupCreate) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupCreate {
+	_c.mutation.SetClaudeToolArgumentsRepairEnabled(v)
+	return _c
+}
+
+// SetNillableClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetClaudeToolArgumentsRepairEnabled(*v)
+	}
+	return _c
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_c *GroupCreate) SetFallbackGroupID(v int64) *GroupCreate {
 	_c.mutation.SetFallbackGroupID(v)
@@ -647,6 +661,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultClaudeToolUseRepairEnabled
 		_c.mutation.SetClaudeToolUseRepairEnabled(v)
 	}
+	if _, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); !ok {
+		v := group.DefaultClaudeToolArgumentsRepairEnabled
+		_c.mutation.SetClaudeToolArgumentsRepairEnabled(v)
+	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		v := group.DefaultModelRoutingEnabled
 		_c.mutation.SetModelRoutingEnabled(v)
@@ -746,6 +764,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ClaudeToolUseRepairEnabled(); !ok {
 		return &ValidationError{Name: "claude_tool_use_repair_enabled", err: errors.New(`ent: missing required field "Group.claude_tool_use_repair_enabled"`)}
+	}
+	if _, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); !ok {
+		return &ValidationError{Name: "claude_tool_arguments_repair_enabled", err: errors.New(`ent: missing required field "Group.claude_tool_arguments_repair_enabled"`)}
 	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		return &ValidationError{Name: "model_routing_enabled", err: errors.New(`ent: missing required field "Group.model_routing_enabled"`)}
@@ -889,6 +910,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ClaudeToolUseRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
 		_node.ClaudeToolUseRepairEnabled = value
+	}
+	if value, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
+		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
+		_node.ClaudeToolArgumentsRepairEnabled = value
 	}
 	if value, ok := _c.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1427,6 +1452,18 @@ func (u *GroupUpsert) SetClaudeToolUseRepairEnabled(v bool) *GroupUpsert {
 // UpdateClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateClaudeToolUseRepairEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldClaudeToolUseRepairEnabled)
+	return u
+}
+
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (u *GroupUpsert) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldClaudeToolArgumentsRepairEnabled, v)
+	return u
+}
+
+// UpdateClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldClaudeToolArgumentsRepairEnabled)
 	return u
 }
 
@@ -2044,6 +2081,20 @@ func (u *GroupUpsertOne) SetClaudeToolUseRepairEnabled(v bool) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateClaudeToolUseRepairEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudeToolUseRepairEnabled()
+	})
+}
+
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (u *GroupUpsertOne) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetClaudeToolArgumentsRepairEnabled(v)
+	})
+}
+
+// UpdateClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateClaudeToolArgumentsRepairEnabled()
 	})
 }
 
@@ -2857,6 +2908,20 @@ func (u *GroupUpsertBulk) SetClaudeToolUseRepairEnabled(v bool) *GroupUpsertBulk
 func (u *GroupUpsertBulk) UpdateClaudeToolUseRepairEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudeToolUseRepairEnabled()
+	})
+}
+
+// SetClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field.
+func (u *GroupUpsertBulk) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetClaudeToolArgumentsRepairEnabled(v)
+	})
+}
+
+// UpdateClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateClaudeToolArgumentsRepairEnabled()
 	})
 }
 

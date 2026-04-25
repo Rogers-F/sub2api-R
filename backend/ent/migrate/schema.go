@@ -399,6 +399,7 @@ var (
 		{Name: "claude_prompt_caching_enabled", Type: field.TypeBool, Default: true},
 		{Name: "thinking_signature_compat_enabled", Type: field.TypeBool, Default: false},
 		{Name: "claude_tool_use_repair_enabled", Type: field.TypeBool, Default: false},
+		{Name: "claude_tool_arguments_repair_enabled", Type: field.TypeBool, Default: false},
 		{Name: "fallback_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "fallback_group_id_on_invalid_request", Type: field.TypeInt64, Nullable: true},
 		{Name: "model_routing", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
@@ -446,7 +447,7 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[28]},
+				Columns: []*schema.Column{GroupsColumns[29]},
 			},
 		},
 	}

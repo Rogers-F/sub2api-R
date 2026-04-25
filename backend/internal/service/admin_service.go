@@ -141,14 +141,15 @@ type CreateGroupInput struct {
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K                   *float64
-	ImagePrice2K                   *float64
-	ImagePrice4K                   *float64
-	ClaudeCodeOnly                 bool  // 仅允许 Claude Code 客户端
-	ClaudePromptCachingEnabled     *bool // 是否启用 Claude prompt cache
-	ThinkingSignatureCompatEnabled bool
-	ClaudeToolUseRepairEnabled     bool
-	FallbackGroupID                *int64 // 降级分组 ID
+	ImagePrice1K                     *float64
+	ImagePrice2K                     *float64
+	ImagePrice4K                     *float64
+	ClaudeCodeOnly                   bool  // 仅允许 Claude Code 客户端
+	ClaudePromptCachingEnabled       *bool // 是否启用 Claude prompt cache
+	ThinkingSignatureCompatEnabled   bool
+	ClaudeToolUseRepairEnabled       bool
+	ClaudeToolArgumentsRepairEnabled bool
+	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -180,14 +181,15 @@ type UpdateGroupInput struct {
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K                   *float64
-	ImagePrice2K                   *float64
-	ImagePrice4K                   *float64
-	ClaudeCodeOnly                 *bool // 仅允许 Claude Code 客户端
-	ClaudePromptCachingEnabled     *bool // 是否启用 Claude prompt cache
-	ThinkingSignatureCompatEnabled *bool
-	ClaudeToolUseRepairEnabled     *bool
-	FallbackGroupID                *int64 // 降级分组 ID
+	ImagePrice1K                     *float64
+	ImagePrice2K                     *float64
+	ImagePrice4K                     *float64
+	ClaudeCodeOnly                   *bool // 仅允许 Claude Code 客户端
+	ClaudePromptCachingEnabled       *bool // 是否启用 Claude prompt cache
+	ThinkingSignatureCompatEnabled   *bool
+	ClaudeToolUseRepairEnabled       *bool
+	ClaudeToolArgumentsRepairEnabled *bool
+	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -963,6 +965,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ClaudePromptCachingEnabled:       claudePromptCachingEnabled,
 		ThinkingSignatureCompatEnabled:   input.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       input.ClaudeToolUseRepairEnabled,
+		ClaudeToolArgumentsRepairEnabled: input.ClaudeToolArgumentsRepairEnabled,
 		FallbackGroupID:                  input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  fallbackOnInvalidRequest,
 		ModelRouting:                     input.ModelRouting,
@@ -1175,6 +1178,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ClaudeToolUseRepairEnabled != nil {
 		group.ClaudeToolUseRepairEnabled = *input.ClaudeToolUseRepairEnabled
+	}
+	if input.ClaudeToolArgumentsRepairEnabled != nil {
+		group.ClaudeToolArgumentsRepairEnabled = *input.ClaudeToolArgumentsRepairEnabled
 	}
 	if input.FallbackGroupID != nil {
 		// 校验降级分组

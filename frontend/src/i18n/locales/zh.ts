@@ -1942,6 +1942,14 @@ export default {
         disabled: '未启用自动修复',
         hint: '适用于 Claude Max、官方 Anthropic、AWS Bedrock 等渠道切换后出现 tool_use/tool_result 历史不兼容的场景。'
       },
+      claudeToolArgumentsRepair: {
+        title: 'Claude 工具参数空对象修复',
+        tooltip:
+          '开启后，当 Anthropic 兼容流式 tool_use 先下发 input:{} 占位，再下发真实 input_json_delta 时，网关会移除前导占位空对象，避免最终返回的 arguments 变成 {}{"text":"..."}。',
+        enabled: '已启用参数修复',
+        disabled: '未启用参数修复',
+        hint: '默认关闭。仅在你需要修复 Claude 工具调用 arguments 前导 {} 占位时开启。'
+      },
       openaiMessages: {
         title: 'OpenAI Messages 调度配置',
         allowDispatch: '允许 /v1/messages 调度',

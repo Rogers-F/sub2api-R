@@ -37,7 +37,9 @@ type Group struct {
 	ThinkingSignatureCompatEnabled bool
 	// 当历史 Claude tool_use / tool_result 链不完整时，是否自动修复并重试。
 	ClaudeToolUseRepairEnabled bool
-	FallbackGroupID            *int64
+	// 是否修复 Claude tool arguments 前导占位 {}，避免输出 {}{"k":"v"}。
+	ClaudeToolArgumentsRepairEnabled bool
+	FallbackGroupID                  *int64
 	// 无效请求兜底分组（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 
@@ -156,6 +158,11 @@ func ThinkingSignatureCompatEnabledFromContext(ctx context.Context) bool {
 func ClaudeToolUseRepairEnabledFromContext(ctx context.Context) bool {
 	group, ok := GroupFromContext(ctx)
 	return ok && group.ClaudeToolUseRepairEnabled
+}
+
+func ClaudeToolArgumentsRepairEnabledFromContext(ctx context.Context) bool {
+	group, ok := GroupFromContext(ctx)
+	return ok && group.ClaudeToolArgumentsRepairEnabled
 }
 
 func SupportsGroupAccountFilters(platform string) bool {

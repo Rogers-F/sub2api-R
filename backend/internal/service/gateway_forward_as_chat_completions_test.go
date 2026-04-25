@@ -3,6 +3,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,14 +12,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAppendRawJSON_ReplacesInitialEmptyObjectPlaceholder(t *testing.T) {
+func TestAppendRawJSON_PreservesLegacyPlaceholderWhenRepairDisabled(t *testing.T) {
 	t.Parallel()
 
-	got := appendRawJSON(json.RawMessage(`{}`), `{"text":"hello"}`)
+	got := appendRawJSON(json.RawMessage(`{}`), `{"text":"hello"}`, false)
+	require.Equal(t, `{}{"text":"hello"}`, string(got))
+}
+
+func TestAppendRawJSON_ReplacesInitialEmptyObjectPlaceholderWhenRepairEnabled(t *testing.T) {
+	t.Parallel()
+
+	got := appendRawJSON(json.RawMessage(`{}`), `{"text":"hello"}`, true)
 	require.JSONEq(t, `{"text":"hello"}`, string(got))
 }
 
@@ -116,15 +125,68 @@ func TestHandleCCStreamingFromAnthropic_PreservesMessageStartCacheUsageAndReason
 	require.Contains(t, rec.Body.String(), `[DONE]`)
 }
 
-func TestHandleCCBufferedFromAnthropic_ToolUseArgumentsDoNotKeepEmptyObjectPrefix(t *testing.T) {
+func TestHandleCCBufferedFromAnthropic_ToolUseArgumentsKeepEmptyObjectPrefixWhenRepairDisabled(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               301,
+		Name:                             "claude-legacy",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ClaudeToolArgumentsRepairEnabled: false,
+	}))
+	c.Request = req
 
 	resp := &http.Response{
 		Header: http.Header{"x-request-id": []string{"rid_cc_tool_args"}},
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			`event: message_start`,
+			`data: {"type":"message_start","message":{"id":"msg_tool_1","type":"message","role":"assistant","content":[],"model":"claude-opus-4-6","stop_reason":"","usage":{"input_tokens":12}}}`,
+			``,
+			`event: content_block_start`,
+			`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"send_message","input":{}}}`,
+			``,
+			`event: content_block_delta`,
+			`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"text\":\"hello\"}"}}`,
+			``,
+			`event: message_delta`,
+			`data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":3}}`,
+			``,
+		}, "\n"))),
+	}
+
+	svc := &GatewayService{}
+	result, err := svc.handleCCBufferedFromAnthropic(resp, c, "claude-opus-4-6", "claude-opus-4-6", nil, time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Contains(t, rec.Body.String(), `"arguments":"{}{\"text\":\"hello\"}"`)
+	require.NotContains(t, rec.Body.String(), `"arguments":"{\"text\":\"hello\"}"`)
+}
+
+func TestHandleCCBufferedFromAnthropic_ToolUseArgumentsDoNotKeepEmptyObjectPrefixWhenRepairEnabled(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+	req = req.WithContext(context.WithValue(req.Context(), ctxkey.Group, &Group{
+		ID:                               302,
+		Name:                             "claude-repair",
+		Platform:                         PlatformAnthropic,
+		Status:                           StatusActive,
+		Hydrated:                         true,
+		ClaudeToolArgumentsRepairEnabled: true,
+	}))
+	c.Request = req
+
+	resp := &http.Response{
+		Header: http.Header{"x-request-id": []string{"rid_cc_tool_args_repair"}},
 		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
 			`event: message_start`,
 			`data: {"type":"message_start","message":{"id":"msg_tool_1","type":"message","role":"assistant","content":[],"model":"claude-opus-4-6","stop_reason":"","usage":{"input_tokens":12}}}`,
