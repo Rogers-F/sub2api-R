@@ -212,6 +212,29 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardStreamPreservesBodyAnd
 }
 
 func TestGatewayService_AnthropicAPIKeyPassthrough_RetriesWithRepairedToolHistory(t *testing.T) {
+	firstRespBody := []byte(`{
+		"type":"error",
+		"error":{
+			"type":"invalid_request_error",
+			"message":"messages.1: 'tool_use' ids were found without 'tool_result' blocks immediately after: toolu_1. Each 'tool_use' block must have a corresponding 'tool_result' block in the next message."
+		}
+	}`)
+	runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t, firstRespBody)
+}
+
+func TestGatewayService_AnthropicAPIKeyPassthrough_RetriesWithRepairedToolHistoryOnGenericInvalidRequest(t *testing.T) {
+	firstRespBody := []byte(`{
+		"type":"error",
+		"error":{
+			"type":"E005",
+			"message":"Invalid request (request id: 20260426053101382941840wVYh82QJ)"
+		}
+	}`)
+	runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t, firstRespBody)
+}
+
+func runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t *testing.T, firstRespBody []byte) {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -238,13 +261,6 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_RetriesWithRepairedToolHistor
 	parsed, err := ParseGatewayRequest(body, "")
 	require.NoError(t, err)
 
-	firstRespBody := []byte(`{
-		"type":"error",
-		"error":{
-			"type":"invalid_request_error",
-			"message":"messages.1: 'tool_use' ids were found without 'tool_result' blocks immediately after: toolu_1. Each 'tool_use' block must have a corresponding 'tool_result' block in the next message."
-		}
-	}`)
 	secondRespBody := []byte(`{
 		"id":"msg_test_repaired",
 		"type":"message",

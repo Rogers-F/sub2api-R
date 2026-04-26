@@ -721,6 +721,13 @@ func isAnthropicToolUseHistoryError(respBody []byte) bool {
 	return isAnthropicToolUseHistoryMessage(extractUpstreamErrorMessage(respBody))
 }
 
+func RepairAnthropicToolUseHistoryForBadRequest(body []byte, respBody []byte) ([]byte, bool) {
+	if !isAnthropicToolUseHistoryError(respBody) && !isGenericAnthropicInvalidRequest(respBody) {
+		return body, false
+	}
+	return RepairAnthropicToolUseHistory(body)
+}
+
 func isAnthropicToolUseHistoryMessage(message string) bool {
 	msg := strings.ToLower(strings.TrimSpace(message))
 	if msg == "" {
@@ -733,6 +740,15 @@ func isAnthropicToolUseHistoryMessage(message string) bool {
 		strings.Contains(msg, "next message") ||
 		strings.Contains(msg, "corresponding") ||
 		strings.Contains(msg, "previous message")
+}
+
+func isGenericAnthropicInvalidRequest(respBody []byte) bool {
+	msg := strings.ToLower(strings.TrimSpace(extractUpstreamErrorMessage(respBody)))
+	if msg == "" || !strings.Contains(msg, "invalid request") {
+		return false
+	}
+	errorType := strings.ToLower(strings.TrimSpace(gjson.GetBytes(respBody, "error.type").String()))
+	return errorType == "e005" || errorType == "invalid_request_error"
 }
 
 func repairAnthropicToolUseMessages(messages []any) ([]any, bool) {
