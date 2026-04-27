@@ -2399,6 +2399,7 @@ const deletingGroup = ref<AdminGroup | null>(null)
 const showRateMultipliersModal = ref(false)
 const rateMultipliersGroup = ref<AdminGroup | null>(null)
 const sortableGroups = ref<AdminGroup[]>([])
+let editRoutingLoadSeq = 0
 
 const createForm = reactive({
   name: '',
@@ -2884,7 +2885,7 @@ const handleCreateGroup = async () => {
   }
 }
 
-const handleEdit = async (group: AdminGroup) => {
+const handleEdit = (group: AdminGroup) => {
   editingGroup.value = group
   editForm.name = group.name
   editForm.description = group.description || ''
@@ -2915,12 +2916,26 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.supported_model_scopes = group.supported_model_scopes || ['claude', 'gemini_text', 'gemini_image']
   editForm.mcp_xml_inject = group.mcp_xml_inject ?? true
   editForm.copy_accounts_from_group_ids = [] // 复制账号字段每次编辑时重置为空
-  // 加载模型路由规则（异步加载账号名称）
-  editModelRoutingRules.value = await convertApiFormatToRoutingRules(group.model_routing)
+  editModelRoutingRules.value = []
   showEditModal.value = true
+
+  const loadSeq = ++editRoutingLoadSeq
+  convertApiFormatToRoutingRules(group.model_routing)
+    .then((rules) => {
+      if (loadSeq === editRoutingLoadSeq && editingGroup.value?.id === group.id) {
+        editModelRoutingRules.value = rules
+      }
+    })
+    .catch((error) => {
+      if (loadSeq === editRoutingLoadSeq && editingGroup.value?.id === group.id) {
+        appStore.showError(t('admin.groups.failedToLoad'))
+        console.error('Error loading model routing accounts:', error)
+      }
+    })
 }
 
 const closeEditModal = () => {
+  editRoutingLoadSeq++
   editModelRoutingRules.value.forEach((rule) => {
     accountSearchRunner.clearKey(getEditRuleSearchKey(rule))
   })
