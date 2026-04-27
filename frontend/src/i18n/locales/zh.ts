@@ -1945,10 +1945,10 @@ export default {
       claudeToolArgumentsRepair: {
         title: 'Claude 工具参数空对象修复',
         tooltip:
-          '开启后，当 Anthropic 兼容流式 tool_use 先下发 input:{} 占位，再下发真实 input_json_delta 时，网关会移除前导占位空对象，避免最终返回的 arguments 变成 {}{"text":"..."}。',
+          '开启后，当 Anthropic 兼容流式 tool_use 先下发空 input 对象占位，再下发真实 input_json_delta 时，网关会移除前导占位空对象，避免最终返回的 arguments 混入空对象前缀。',
         enabled: '已启用参数修复',
         disabled: '未启用参数修复',
-        hint: '默认关闭。仅在你需要修复 Claude 工具调用 arguments 前导 {} 占位时开启。'
+        hint: '默认关闭。仅在你需要修复 Claude 工具调用 arguments 前导空对象占位时开启。'
       },
       openaiMessages: {
         title: 'OpenAI Messages 调度配置',

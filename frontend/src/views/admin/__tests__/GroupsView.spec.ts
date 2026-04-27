@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent } from 'vue'
 import GroupsView from '../GroupsView.vue'
@@ -197,14 +197,19 @@ describe('GroupsView', () => {
     getAccountByIdMock.mockReturnValue(new Promise(() => {}))
   })
 
-  it('opens the edit dialog without waiting for model routing account lookups', async () => {
-    const wrapper = mount(GroupsView, {
+  afterEach(() => {
+    document.body.innerHTML = ''
+    document.body.className = ''
+  })
+
+  const mountGroupsView = (stubs: Record<string, any> = {}) => {
+    return mount(GroupsView, {
+      attachTo: document.body,
       global: {
         stubs: {
           AppLayout: AppLayoutStub,
           TablePageLayout: TablePageLayoutStub,
           DataTable: DataTableStub,
-          BaseDialog: BaseDialogStub,
           ConfirmDialog: PassthroughStub,
           EmptyState: PassthroughStub,
           Select: SelectStub,
@@ -213,10 +218,28 @@ describe('GroupsView', () => {
           GroupRateMultipliersModal: PassthroughStub,
           GroupCapacityBadge: PassthroughStub,
           Pagination: PassthroughStub,
-          VueDraggable: PassthroughStub
+          VueDraggable: PassthroughStub,
+          ...stubs
         }
       }
     })
+  }
+
+  it('opens the create dialog when the create group button is clicked', async () => {
+    const wrapper = mountGroupsView()
+
+    await flushPromises()
+    const createButton = wrapper.find('[data-tour="groups-create-btn"]')
+    expect(createButton.exists()).toBe(true)
+    await createButton.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('admin.groups.createGroup')
+    expect(document.body.querySelector('#create-group-form')).not.toBeNull()
+  })
+
+  it('opens the edit dialog without waiting for model routing account lookups', async () => {
+    const wrapper = mountGroupsView({ BaseDialog: BaseDialogStub })
 
     await flushPromises()
     const editButton = wrapper.findAll('button').find((button) => button.text().includes('common.edit'))
@@ -225,5 +248,19 @@ describe('GroupsView', () => {
 
     expect(getAccountByIdMock).toHaveBeenCalledWith(42)
     expect(wrapper.find('[data-test="edit-dialog"]').exists()).toBe(true)
+  })
+
+  it('renders the real edit dialog when the edit group button is clicked', async () => {
+    const wrapper = mountGroupsView()
+
+    await flushPromises()
+    const editButton = wrapper.findAll('button').find((button) => button.text().includes('common.edit'))
+    expect(editButton).toBeTruthy()
+    await editButton!.trigger('click')
+    await flushPromises()
+
+    expect(getAccountByIdMock).toHaveBeenCalledWith(42)
+    expect(document.body.textContent).toContain('admin.groups.editGroup')
+    expect(document.body.querySelector('#edit-group-form')).not.toBeNull()
   })
 })

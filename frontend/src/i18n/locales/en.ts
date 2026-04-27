@@ -1858,10 +1858,10 @@ export default {
       claudeToolArgumentsRepair: {
         title: 'Claude Tool Arguments Empty-object Repair',
         tooltip:
-          'When enabled, if Anthropic-compatible tool_use streaming sends input:{} as a placeholder before the real input_json_delta payload, the gateway strips that leading empty object so returned arguments do not become {}{"text":"..."}',
+          'When enabled, if Anthropic-compatible tool_use streaming sends an empty input object as a placeholder before the real input_json_delta payload, the gateway strips that leading empty object so returned arguments do not include an empty-object prefix.',
         enabled: 'Arguments repair enabled',
         disabled: 'Arguments repair disabled',
-        hint: 'Disabled by default. Enable only when you need to fix a leading {} placeholder in Claude tool-call arguments.'
+        hint: 'Disabled by default. Enable only when you need to fix a leading empty-object placeholder in Claude tool-call arguments.'
       },
       openaiMessages: {
         title: 'OpenAI Messages Dispatch',
