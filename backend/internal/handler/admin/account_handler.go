@@ -2,6 +2,7 @@
 package admin
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -101,6 +102,7 @@ type CreateAccountRequest struct {
 	Credentials             map[string]any `json:"credentials" binding:"required"`
 	Extra                   map[string]any `json:"extra"`
 	ProxyID                 *int64         `json:"proxy_id"`
+	EnterpriseID            *int64         `json:"enterprise_id"`
 	Concurrency             int            `json:"concurrency"`
 	Priority                int            `json:"priority"`
 	RateMultiplier          *float64       `json:"rate_multiplier"`
@@ -114,38 +116,40 @@ type CreateAccountRequest struct {
 // UpdateAccountRequest represents update account request
 // 使用指针类型来区分"未提供"和"设置为0"
 type UpdateAccountRequest struct {
-	Name                    string         `json:"name"`
-	Notes                   *string        `json:"notes"`
-	Type                    string         `json:"type" binding:"omitempty,oneof=oauth setup-token apikey upstream bedrock"`
-	Credentials             map[string]any `json:"credentials"`
-	Extra                   map[string]any `json:"extra"`
-	ProxyID                 *int64         `json:"proxy_id"`
-	Concurrency             *int           `json:"concurrency"`
-	Priority                *int           `json:"priority"`
-	RateMultiplier          *float64       `json:"rate_multiplier"`
-	LoadFactor              *int           `json:"load_factor"`
-	Status                  string         `json:"status" binding:"omitempty,oneof=active inactive error"`
-	GroupIDs                *[]int64       `json:"group_ids"`
-	ExpiresAt               *int64         `json:"expires_at"`
-	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
-	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	Name                    string             `json:"name"`
+	Notes                   *string            `json:"notes"`
+	Type                    string             `json:"type" binding:"omitempty,oneof=oauth setup-token apikey upstream bedrock"`
+	Credentials             map[string]any     `json:"credentials"`
+	Extra                   map[string]any     `json:"extra"`
+	ProxyID                 *int64             `json:"proxy_id"`
+	EnterpriseID            optionalInt64Field `json:"enterprise_id"`
+	Concurrency             *int               `json:"concurrency"`
+	Priority                *int               `json:"priority"`
+	RateMultiplier          *float64           `json:"rate_multiplier"`
+	LoadFactor              *int               `json:"load_factor"`
+	Status                  string             `json:"status" binding:"omitempty,oneof=active inactive error"`
+	GroupIDs                *[]int64           `json:"group_ids"`
+	ExpiresAt               *int64             `json:"expires_at"`
+	AutoPauseOnExpired      *bool              `json:"auto_pause_on_expired"`
+	ConfirmMixedChannelRisk *bool              `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 // BulkUpdateAccountsRequest represents the payload for bulk editing accounts
 type BulkUpdateAccountsRequest struct {
-	AccountIDs              []int64        `json:"account_ids" binding:"required,min=1"`
-	Name                    string         `json:"name"`
-	ProxyID                 *int64         `json:"proxy_id"`
-	Concurrency             *int           `json:"concurrency"`
-	Priority                *int           `json:"priority"`
-	RateMultiplier          *float64       `json:"rate_multiplier"`
-	LoadFactor              *int           `json:"load_factor"`
-	Status                  string         `json:"status" binding:"omitempty,oneof=active inactive error"`
-	Schedulable             *bool          `json:"schedulable"`
-	GroupIDs                *[]int64       `json:"group_ids"`
-	Credentials             map[string]any `json:"credentials"`
-	Extra                   map[string]any `json:"extra"`
-	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	AccountIDs              []int64            `json:"account_ids" binding:"required,min=1"`
+	Name                    string             `json:"name"`
+	ProxyID                 *int64             `json:"proxy_id"`
+	EnterpriseID            optionalInt64Field `json:"enterprise_id"`
+	Concurrency             *int               `json:"concurrency"`
+	Priority                *int               `json:"priority"`
+	RateMultiplier          *float64           `json:"rate_multiplier"`
+	LoadFactor              *int               `json:"load_factor"`
+	Status                  string             `json:"status" binding:"omitempty,oneof=active inactive error"`
+	Schedulable             *bool              `json:"schedulable"`
+	GroupIDs                *[]int64           `json:"group_ids"`
+	Credentials             map[string]any     `json:"credentials"`
+	Extra                   map[string]any     `json:"extra"`
+	ConfirmMixedChannelRisk *bool              `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 // CheckMixedChannelRequest represents check mixed channel risk request
@@ -153,6 +157,44 @@ type CheckMixedChannelRequest struct {
 	Platform  string  `json:"platform" binding:"required"`
 	GroupIDs  []int64 `json:"group_ids"`
 	AccountID *int64  `json:"account_id"`
+}
+
+type optionalInt64Field struct {
+	set   bool
+	value *int64
+}
+
+func (f *optionalInt64Field) UnmarshalJSON(data []byte) error {
+	f.set = true
+
+	trimmed := bytes.TrimSpace(data)
+	if bytes.Equal(trimmed, []byte("null")) {
+		f.value = nil
+		return nil
+	}
+
+	var number int64
+	if err := json.Unmarshal(trimmed, &number); err == nil {
+		f.value = &number
+		return nil
+	}
+
+	var text string
+	if err := json.Unmarshal(trimmed, &text); err == nil {
+		text = strings.TrimSpace(text)
+		if text == "" {
+			f.value = nil
+			return nil
+		}
+		parsed, err := strconv.ParseInt(text, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid int64 value %q: %w", text, err)
+		}
+		f.value = &parsed
+		return nil
+	}
+
+	return fmt.Errorf("invalid int64 value: %s", string(trimmed))
 }
 
 // AccountWithConcurrency extends Account with real-time concurrency info
@@ -166,6 +208,7 @@ type AccountWithConcurrency struct {
 }
 
 const accountListGroupUngroupedQueryValue = "ungrouped"
+const accountListEnterpriseUnassignedQueryValue = "unassigned"
 
 func (h *AccountHandler) buildAccountResponseWithRuntime(ctx context.Context, account *service.Account) AccountWithConcurrency {
 	item := AccountWithConcurrency{
@@ -245,7 +288,21 @@ func (h *AccountHandler) List(c *gin.Context) {
 		}
 	}
 
-	accounts, total, err := h.adminService.ListAccounts(c.Request.Context(), page, pageSize, platform, accountType, status, search, groupID, privacyMode)
+	var enterpriseID int64
+	if enterpriseIDStr := c.Query("enterprise"); enterpriseIDStr != "" {
+		if enterpriseIDStr == accountListEnterpriseUnassignedQueryValue {
+			enterpriseID = service.AccountListEnterpriseUnassigned
+		} else {
+			parsedEnterpriseID, parseErr := strconv.ParseInt(enterpriseIDStr, 10, 64)
+			if parseErr != nil || parsedEnterpriseID <= 0 {
+				response.ErrorFrom(c, infraerrors.BadRequest("INVALID_ENTERPRISE_FILTER", "invalid enterprise filter"))
+				return
+			}
+			enterpriseID = parsedEnterpriseID
+		}
+	}
+
+	accounts, total, err := h.adminService.ListAccountsWithEnterprise(c.Request.Context(), page, pageSize, platform, accountType, status, search, groupID, privacyMode, enterpriseID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -367,7 +424,7 @@ func (h *AccountHandler) List(c *gin.Context) {
 		result[i] = item
 	}
 
-	etag := buildAccountsListETag(result, total, page, pageSize, platform, accountType, status, search, lite)
+	etag := buildAccountsListETag(result, total, page, pageSize, platform, accountType, status, search, groupID, privacyMode, enterpriseID, lite)
 	if etag != "" {
 		c.Header("ETag", etag)
 		c.Header("Vary", "If-None-Match")
@@ -385,28 +442,37 @@ func buildAccountsListETag(
 	total int64,
 	page, pageSize int,
 	platform, accountType, status, search string,
+	groupID int64,
+	privacyMode string,
+	enterpriseID int64,
 	lite bool,
 ) string {
 	payload := struct {
-		Total       int64                    `json:"total"`
-		Page        int                      `json:"page"`
-		PageSize    int                      `json:"page_size"`
-		Platform    string                   `json:"platform"`
-		AccountType string                   `json:"type"`
-		Status      string                   `json:"status"`
-		Search      string                   `json:"search"`
-		Lite        bool                     `json:"lite"`
-		Items       []AccountWithConcurrency `json:"items"`
+		Total        int64                    `json:"total"`
+		Page         int                      `json:"page"`
+		PageSize     int                      `json:"page_size"`
+		Platform     string                   `json:"platform"`
+		AccountType  string                   `json:"type"`
+		Status       string                   `json:"status"`
+		Search       string                   `json:"search"`
+		GroupID      int64                    `json:"group_id"`
+		PrivacyMode  string                   `json:"privacy_mode"`
+		EnterpriseID int64                    `json:"enterprise_id"`
+		Lite         bool                     `json:"lite"`
+		Items        []AccountWithConcurrency `json:"items"`
 	}{
-		Total:       total,
-		Page:        page,
-		PageSize:    pageSize,
-		Platform:    platform,
-		AccountType: accountType,
-		Status:      status,
-		Search:      search,
-		Lite:        lite,
-		Items:       items,
+		Total:        total,
+		Page:         page,
+		PageSize:     pageSize,
+		Platform:     platform,
+		AccountType:  accountType,
+		Status:       status,
+		Search:       search,
+		GroupID:      groupID,
+		PrivacyMode:  privacyMode,
+		EnterpriseID: enterpriseID,
+		Lite:         lite,
+		Items:        items,
 	}
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -524,6 +590,7 @@ func (h *AccountHandler) Create(c *gin.Context) {
 			Credentials:           req.Credentials,
 			Extra:                 req.Extra,
 			ProxyID:               req.ProxyID,
+			EnterpriseID:          req.EnterpriseID,
 			Concurrency:           req.Concurrency,
 			Priority:              req.Priority,
 			RateMultiplier:        req.RateMultiplier,
@@ -594,6 +661,8 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		Credentials:           req.Credentials,
 		Extra:                 req.Extra,
 		ProxyID:               req.ProxyID,
+		EnterpriseIDSet:       req.EnterpriseID.set,
+		EnterpriseID:          req.EnterpriseID.value,
 		Concurrency:           req.Concurrency, // 指针类型，nil 表示未提供
 		Priority:              req.Priority,    // 指针类型，nil 表示未提供
 		RateMultiplier:        req.RateMultiplier,
@@ -1321,6 +1390,7 @@ func (h *AccountHandler) BulkUpdate(c *gin.Context) {
 
 	hasUpdates := req.Name != "" ||
 		req.ProxyID != nil ||
+		req.EnterpriseID.set ||
 		req.Concurrency != nil ||
 		req.Priority != nil ||
 		req.RateMultiplier != nil ||
@@ -1340,6 +1410,8 @@ func (h *AccountHandler) BulkUpdate(c *gin.Context) {
 		AccountIDs:            req.AccountIDs,
 		Name:                  req.Name,
 		ProxyID:               req.ProxyID,
+		EnterpriseIDSet:       req.EnterpriseID.set,
+		EnterpriseID:          req.EnterpriseID.value,
 		Concurrency:           req.Concurrency,
 		Priority:              req.Priority,
 		RateMultiplier:        req.RateMultiplier,

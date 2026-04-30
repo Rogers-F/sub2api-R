@@ -272,6 +272,21 @@ const UsersIcon = {
     )
 }
 
+const BuildingIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M3.75 21h16.5M4.5 3h15l-.75 18H5.25L4.5 3zM8.25 7.5h1.5m4.5 0h1.5m-7.5 4h1.5m4.5 0h1.5m-7.5 4h1.5m4.5 0h1.5'
+        })
+      ]
+    )
+}
+
 const FolderIcon = {
   render: () =>
     h(
@@ -621,6 +636,7 @@ const adminNavItems = computed((): NavItem[] => {
       : []),
     { path: '/admin/users', label: t('nav.users'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/admin/groups', label: t('nav.groups'), icon: FolderIcon, hideInSimpleMode: true },
+    { path: '/admin/enterprises', label: t('nav.enterprises'), icon: BuildingIcon, hideInSimpleMode: true },
     { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
     { path: '/admin/payg', label: t('nav.payg'), icon: CreditCardIcon },

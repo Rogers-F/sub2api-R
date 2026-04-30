@@ -1032,6 +1032,11 @@
         <ProxySelector v-model="form.proxy_id" :proxies="proxies" />
       </div>
 
+      <div>
+        <label class="input-label">{{ t('admin.enterprises.title') }}</label>
+        <Select v-model="form.enterprise_id" :options="enterpriseOptions" searchable />
+      </div>
+
       <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div>
           <label class="input-label">{{ t('admin.accounts.concurrency') }}</label>
@@ -1765,7 +1770,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { adminAPI } from '@/api/admin'
-import type { Account, Proxy, AdminGroup, CheckMixedChannelResponse } from '@/types'
+import type { Account, Proxy, AdminGroup, Enterprise, CheckMixedChannelResponse } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
@@ -1798,6 +1803,7 @@ interface Props {
   account: Account | null
   proxies: Proxy[]
   groups: AdminGroup[]
+  enterprises?: Enterprise[]
 }
 
 const props = defineProps<Props>()
@@ -1948,6 +1954,38 @@ const isOpenAIModelRestrictionDisabled = computed(() =>
   props.account?.platform === 'openai' && openaiPassthroughEnabled.value
 )
 
+const enterpriseOptions = computed(() => {
+  const options: Array<{ value: number | null; label: string; disabled?: boolean }> = [
+    { value: null, label: t('admin.enterprises.unassigned') }
+  ]
+  const seen = new Set<number>()
+
+  for (const enterprise of props.enterprises || []) {
+    options.push({ value: enterprise.id, label: enterprise.name })
+    seen.add(enterprise.id)
+  }
+
+  const currentEnterprise = props.account?.enterprise
+  if (currentEnterprise && !seen.has(currentEnterprise.id)) {
+    options.push({
+      value: currentEnterprise.id,
+      label:
+        currentEnterprise.status === 'disabled'
+          ? `${currentEnterprise.name} (${t('admin.enterprises.statusDisabled')})`
+          : currentEnterprise.name,
+      disabled: currentEnterprise.status === 'disabled'
+    })
+    seen.add(currentEnterprise.id)
+  }
+
+  const currentEnterpriseId = form.enterprise_id
+  if (currentEnterpriseId != null && !seen.has(currentEnterpriseId)) {
+    options.push({ value: currentEnterpriseId, label: `#${currentEnterpriseId}` })
+  }
+
+  return options
+})
+
 // Computed: current preset mappings based on platform
 const presetMappings = computed(() => getPresetMappingsByPlatform(props.account?.platform || 'anthropic'))
 const tempUnschedPresets = computed(() => [
@@ -1998,6 +2036,7 @@ const form = reactive({
   name: '',
   notes: '',
   proxy_id: null as number | null,
+  enterprise_id: null as number | null,
   concurrency: 1,
   load_factor: null as number | null,
   priority: 1,
@@ -2061,6 +2100,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   form.name = newAccount.name
   form.notes = newAccount.notes || ''
   form.proxy_id = newAccount.proxy_id
+  form.enterprise_id = newAccount.enterprise_id ?? null
   form.concurrency = newAccount.concurrency
   form.load_factor = newAccount.load_factor ?? null
   form.priority = newAccount.priority
@@ -2743,6 +2783,9 @@ const handleSubmit = async () => {
   }
 
   const updatePayload: Record<string, unknown> = { ...form }
+  if ((props.account.enterprise_id ?? null) === form.enterprise_id) {
+    delete updatePayload.enterprise_id
+  }
   try {
     // 后端期望 proxy_id: 0 表示清除代理，而不是 null
     if (updatePayload.proxy_id === null) {

@@ -57,6 +57,7 @@ type AdminService interface {
 
 	// Account management
 	ListAccounts(ctx context.Context, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, int64, error)
+	ListAccountsWithEnterprise(ctx context.Context, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string, enterpriseID int64) ([]Account, int64, error)
 	GetAccount(ctx context.Context, id int64) (*Account, error)
 	GetAccountsByIDs(ctx context.Context, ids []int64) ([]*Account, error)
 	CreateAccount(ctx context.Context, input *CreateAccountInput) (*Account, error)
@@ -217,6 +218,7 @@ type CreateAccountInput struct {
 	Credentials        map[string]any
 	Extra              map[string]any
 	ProxyID            *int64
+	EnterpriseID       *int64
 	Concurrency        int
 	Priority           int
 	RateMultiplier     *float64 // 账号计费倍率（>=0，允许 0）
@@ -238,6 +240,8 @@ type UpdateAccountInput struct {
 	Credentials           map[string]any
 	Extra                 map[string]any
 	ProxyID               *int64
+	EnterpriseIDSet       bool
+	EnterpriseID          *int64
 	Concurrency           *int     // 使用指针区分"未提供"和"设置为0"
 	Priority              *int     // 使用指针区分"未提供"和"设置为0"
 	RateMultiplier        *float64 // 账号计费倍率（>=0，允许 0）
@@ -251,18 +255,20 @@ type UpdateAccountInput struct {
 
 // BulkUpdateAccountsInput describes the payload for bulk updating accounts.
 type BulkUpdateAccountsInput struct {
-	AccountIDs     []int64
-	Name           string
-	ProxyID        *int64
-	Concurrency    *int
-	Priority       *int
-	RateMultiplier *float64 // 账号计费倍率（>=0，允许 0）
-	LoadFactor     *int
-	Status         string
-	Schedulable    *bool
-	GroupIDs       *[]int64
-	Credentials    map[string]any
-	Extra          map[string]any
+	AccountIDs      []int64
+	Name            string
+	ProxyID         *int64
+	EnterpriseIDSet bool
+	EnterpriseID    *int64
+	Concurrency     *int
+	Priority        *int
+	RateMultiplier  *float64 // 账号计费倍率（>=0，允许 0）
+	LoadFactor      *int
+	Status          string
+	Schedulable     *bool
+	GroupIDs        *[]int64
+	Credentials     map[string]any
+	Extra           map[string]any
 	// SkipMixedChannelCheck skips the mixed channel risk check when binding groups.
 	// This should only be set when the caller has explicitly confirmed the risk.
 	SkipMixedChannelCheck bool
@@ -1562,6 +1568,26 @@ func (s *adminServiceImpl) ListAccounts(ctx context.Context, page, pageSize int,
 	return accounts, result.Total, nil
 }
 
+func (s *adminServiceImpl) ListAccountsWithEnterprise(ctx context.Context, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string, enterpriseID int64) ([]Account, int64, error) {
+	if enterpriseID == 0 {
+		return s.ListAccounts(ctx, page, pageSize, platform, accountType, status, search, groupID, privacyMode)
+	}
+	lister, ok := s.accountRepo.(AccountEnterpriseSupport)
+	if !ok {
+		return nil, 0, infraerrors.InternalServer("ENTERPRISE_ACCOUNT_FILTER_UNAVAILABLE", "enterprise account filter is unavailable")
+	}
+	params := pagination.PaginationParams{Page: page, PageSize: pageSize}
+	accounts, result, err := lister.ListWithEnterpriseFilters(ctx, params, platform, accountType, status, search, groupID, privacyMode, enterpriseID)
+	if err != nil {
+		return nil, 0, err
+	}
+	now := time.Now()
+	for i := range accounts {
+		syncOpenAICodexRateLimitFromExtra(ctx, s.accountRepo, &accounts[i], now)
+	}
+	return accounts, result.Total, nil
+}
+
 func (s *adminServiceImpl) GetAccount(ctx context.Context, id int64) (*Account, error) {
 	return s.accountRepo.GetByID(ctx, id)
 }
@@ -1577,6 +1603,20 @@ func (s *adminServiceImpl) GetAccountsByIDs(ctx context.Context, ids []int64) ([
 	}
 
 	return accounts, nil
+}
+
+func (s *adminServiceImpl) validateActiveEnterpriseAssignment(ctx context.Context, enterpriseID *int64) error {
+	if enterpriseID == nil {
+		return nil
+	}
+	if *enterpriseID <= 0 {
+		return ErrInvalidEnterpriseID
+	}
+	validator, ok := s.accountRepo.(AccountEnterpriseSupport)
+	if !ok {
+		return infraerrors.InternalServer("ENTERPRISE_VALIDATION_UNAVAILABLE", "enterprise validation is unavailable")
+	}
+	return validator.ValidateActiveEnterprise(ctx, *enterpriseID)
 }
 
 func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccountInput) (*Account, error) {
@@ -1605,19 +1645,23 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 	if err := s.validateGroupOAuthRequirement(ctx, input.Type, groupIDs); err != nil {
 		return nil, err
 	}
+	if err := s.validateActiveEnterpriseAssignment(ctx, input.EnterpriseID); err != nil {
+		return nil, err
+	}
 
 	account := &Account{
-		Name:        input.Name,
-		Notes:       normalizeAccountNotes(input.Notes),
-		Platform:    input.Platform,
-		Type:        input.Type,
-		Credentials: input.Credentials,
-		Extra:       input.Extra,
-		ProxyID:     input.ProxyID,
-		Concurrency: input.Concurrency,
-		Priority:    input.Priority,
-		Status:      StatusActive,
-		Schedulable: true,
+		Name:         input.Name,
+		Notes:        normalizeAccountNotes(input.Notes),
+		Platform:     input.Platform,
+		Type:         input.Type,
+		Credentials:  input.Credentials,
+		Extra:        input.Extra,
+		ProxyID:      input.ProxyID,
+		EnterpriseID: input.EnterpriseID,
+		Concurrency:  input.Concurrency,
+		Priority:     input.Priority,
+		Status:       StatusActive,
+		Schedulable:  true,
 	}
 	// 预计算固定时间重置的下次重置时间
 	if account.Extra != nil {
@@ -1715,6 +1759,17 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 			account.ProxyID = input.ProxyID
 		}
 		account.Proxy = nil // 清除关联对象，防止 GORM Save 时根据 Proxy.ID 覆盖 ProxyID
+	}
+	if input.EnterpriseIDSet {
+		if input.EnterpriseID != nil {
+			if err := s.validateActiveEnterpriseAssignment(ctx, input.EnterpriseID); err != nil {
+				return nil, err
+			}
+			account.EnterpriseID = input.EnterpriseID
+		} else {
+			account.EnterpriseID = nil
+		}
+		account.Enterprise = nil
 	}
 	// 只在指针非 nil 时更新 Concurrency（支持设置为 0）
 	if input.Concurrency != nil {
@@ -1854,11 +1909,18 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 			return nil, errors.New("rate_multiplier must be >= 0")
 		}
 	}
+	if input.EnterpriseIDSet && input.EnterpriseID != nil {
+		if err := s.validateActiveEnterpriseAssignment(ctx, input.EnterpriseID); err != nil {
+			return nil, err
+		}
+	}
 
 	// Prepare bulk updates for columns and JSONB fields.
 	repoUpdates := AccountBulkUpdate{
-		Credentials: input.Credentials,
-		Extra:       input.Extra,
+		Credentials:     input.Credentials,
+		Extra:           input.Extra,
+		EnterpriseIDSet: input.EnterpriseIDSet,
+		EnterpriseID:    input.EnterpriseID,
 	}
 	if input.Name != "" {
 		repoUpdates.Name = &input.Name

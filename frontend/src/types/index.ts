@@ -798,6 +798,7 @@ export interface Account {
     model_rate_limits?: Record<string, { rate_limited_at: string; rate_limit_reset_at: string }>
   } & Record<string, unknown>)
   proxy_id: number | null
+  enterprise_id?: number | null
   concurrency: number
   load_factor?: number | null
   current_concurrency?: number // Real-time concurrency count from Redis
@@ -811,6 +812,7 @@ export interface Account {
   created_at: string
   updated_at: string
   proxy?: Proxy
+  enterprise?: Enterprise
   group_ids?: number[] // Groups this account belongs to
   groups?: Group[] // Preloaded group objects
 
@@ -884,6 +886,16 @@ export interface Account {
   current_window_cost?: number | null // 当前窗口费用
   active_sessions?: number | null // 当前活跃会话数
   current_rpm?: number | null // 当前分钟 RPM 计数
+}
+
+export interface Enterprise {
+  id: number
+  name: string
+  notes?: string | null
+  status: 'active' | 'disabled'
+  account_count: number
+  created_at: string
+  updated_at: string
 }
 
 // Account Usage types
@@ -978,6 +990,7 @@ export interface CreateAccountRequest {
   credentials: Record<string, unknown>
   extra?: Record<string, unknown>
   proxy_id?: number | null
+  enterprise_id?: number | null
   concurrency?: number
   load_factor?: number | null
   priority?: number
@@ -995,6 +1008,7 @@ export interface UpdateAccountRequest {
   credentials?: Record<string, unknown>
   extra?: Record<string, unknown>
   proxy_id?: number | null
+  enterprise_id?: number | null
   concurrency?: number
   load_factor?: number | null
   priority?: number

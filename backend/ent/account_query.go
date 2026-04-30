@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/enterprise"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
@@ -30,6 +31,7 @@ type AccountQuery struct {
 	predicates        []predicate.Account
 	withGroups        *GroupQuery
 	withProxy         *ProxyQuery
+	withEnterprise    *EnterpriseQuery
 	withUsageLogs     *UsageLogQuery
 	withAccountGroups *AccountGroupQuery
 	modifiers         []func(*sql.Selector)
@@ -106,6 +108,28 @@ func (_q *AccountQuery) QueryProxy() *ProxyQuery {
 			sqlgraph.From(account.Table, account.FieldID, selector),
 			sqlgraph.To(proxy.Table, proxy.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, account.ProxyTable, account.ProxyColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEnterprise chains the current query on the "enterprise" edge.
+func (_q *AccountQuery) QueryEnterprise() *EnterpriseQuery {
+	query := (&EnterpriseClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, selector),
+			sqlgraph.To(enterprise.Table, enterprise.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, account.EnterpriseTable, account.EnterpriseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -351,6 +375,7 @@ func (_q *AccountQuery) Clone() *AccountQuery {
 		predicates:        append([]predicate.Account{}, _q.predicates...),
 		withGroups:        _q.withGroups.Clone(),
 		withProxy:         _q.withProxy.Clone(),
+		withEnterprise:    _q.withEnterprise.Clone(),
 		withUsageLogs:     _q.withUsageLogs.Clone(),
 		withAccountGroups: _q.withAccountGroups.Clone(),
 		// clone intermediate query.
@@ -378,6 +403,17 @@ func (_q *AccountQuery) WithProxy(opts ...func(*ProxyQuery)) *AccountQuery {
 		opt(query)
 	}
 	_q.withProxy = query
+	return _q
+}
+
+// WithEnterprise tells the query-builder to eager-load the nodes that are connected to
+// the "enterprise" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AccountQuery) WithEnterprise(opts ...func(*EnterpriseQuery)) *AccountQuery {
+	query := (&EnterpriseClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEnterprise = query
 	return _q
 }
 
@@ -481,9 +517,10 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	var (
 		nodes       = []*Account{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withGroups != nil,
 			_q.withProxy != nil,
+			_q.withEnterprise != nil,
 			_q.withUsageLogs != nil,
 			_q.withAccountGroups != nil,
 		}
@@ -519,6 +556,12 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	if query := _q.withProxy; query != nil {
 		if err := _q.loadProxy(ctx, query, nodes, nil,
 			func(n *Account, e *Proxy) { n.Edges.Proxy = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEnterprise; query != nil {
+		if err := _q.loadEnterprise(ctx, query, nodes, nil,
+			func(n *Account, e *Enterprise) { n.Edges.Enterprise = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -632,6 +675,38 @@ func (_q *AccountQuery) loadProxy(ctx context.Context, query *ProxyQuery, nodes 
 	}
 	return nil
 }
+func (_q *AccountQuery) loadEnterprise(ctx context.Context, query *EnterpriseQuery, nodes []*Account, init func(*Account), assign func(*Account, *Enterprise)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Account)
+	for i := range nodes {
+		if nodes[i].EnterpriseID == nil {
+			continue
+		}
+		fk := *nodes[i].EnterpriseID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(enterprise.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "enterprise_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *AccountQuery) loadUsageLogs(ctx context.Context, query *UsageLogQuery, nodes []*Account, init func(*Account), assign func(*Account, *UsageLog)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Account)
@@ -723,6 +798,9 @@ func (_q *AccountQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withProxy != nil {
 			_spec.Node.AddColumnOnce(account.FieldProxyID)
+		}
+		if _q.withEnterprise != nil {
+			_spec.Node.AddColumnOnce(account.FieldEnterpriseID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

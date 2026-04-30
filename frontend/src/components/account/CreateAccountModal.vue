@@ -2199,6 +2199,11 @@
         <ProxySelector v-model="form.proxy_id" :proxies="proxies" />
       </div>
 
+      <div>
+        <label class="input-label">{{ t('admin.enterprises.title') }}</label>
+        <Select v-model="form.enterprise_id" :options="enterpriseOptions" searchable />
+      </div>
+
       <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div>
           <label class="input-label">{{ t('admin.accounts.concurrency') }}</label>
@@ -2833,6 +2838,7 @@ import { useAntigravityOAuth } from '@/composables/useAntigravityOAuth'
 import type {
   Proxy,
   AdminGroup,
+  Enterprise,
   AccountPlatform,
   AccountType,
   CheckMixedChannelResponse,
@@ -2898,6 +2904,8 @@ interface Props {
   show: boolean
   proxies: Proxy[]
   groups: AdminGroup[]
+  enterprises?: Enterprise[]
+  defaultEnterpriseId?: number | null
 }
 
 const props = defineProps<Props>()
@@ -3106,6 +3114,14 @@ const openAIWSModeConcurrencyHintKey = computed(() =>
   resolveOpenAIWSModeConcurrencyHintKey(openaiResponsesWebSocketV2Mode.value)
 )
 
+const enterpriseOptions = computed(() => [
+  { value: null, label: t('admin.enterprises.unassigned') },
+  ...(props.enterprises || []).map((enterprise) => ({
+    value: enterprise.id,
+    label: enterprise.name
+  }))
+])
+
 const isOpenAIModelRestrictionDisabled = computed(() =>
   form.platform === 'openai' && openaiPassthroughEnabled.value
 )
@@ -3171,6 +3187,7 @@ const form = reactive({
   type: 'oauth' as AccountType, // Will be 'oauth', 'setup-token', or 'apikey'
   credentials: {} as Record<string, unknown>,
   proxy_id: null as number | null,
+  enterprise_id: null as number | null,
   concurrency: 10,
   load_factor: null as number | null,
   priority: 1,
@@ -3222,6 +3239,7 @@ watch(
   () => props.show,
   (newVal) => {
     if (newVal) {
+      form.enterprise_id = props.defaultEnterpriseId ?? null
       adminAPI.settings.getWebSearchEmulationConfig()
         .then((config) => {
           webSearchGlobalEnabled.value = config?.enabled === true && (config?.providers?.length ?? 0) > 0
@@ -3589,6 +3607,11 @@ const openMixedChannelDialog = (opts: {
   showMixedChannelWarning.value = true
 }
 
+const withEnterpriseAssignment = (payload: CreateAccountRequest): CreateAccountRequest => ({
+  ...payload,
+  enterprise_id: form.enterprise_id
+})
+
 const withAntigravityConfirmFlag = (payload: CreateAccountRequest): CreateAccountRequest => {
   if (needsMixedChannelCheck(payload.platform) && antigravityMixedChannelConfirmed.value) {
     return {
@@ -3634,7 +3657,7 @@ const ensureAntigravityMixedChannelConfirmed = async (onConfirm: () => Promise<v
 const submitCreateAccount = async (payload: CreateAccountRequest) => {
   submitting.value = true
   try {
-    await adminAPI.accounts.create(withAntigravityConfirmFlag(payload))
+    await adminAPI.accounts.create(withAntigravityConfirmFlag(withEnterpriseAssignment(payload)))
     appStore.showSuccess(t('admin.accounts.accountCreated'))
     emit('created')
     handleClose()
@@ -3664,6 +3687,7 @@ const resetForm = () => {
   form.type = 'oauth'
   form.credentials = {}
   form.proxy_id = null
+  form.enterprise_id = props.defaultEnterpriseId ?? null
   form.concurrency = 10
   form.load_factor = null
   form.priority = 1
@@ -4103,6 +4127,7 @@ const createAccountAndFinish = async (
     credentials,
     extra: finalExtra,
     proxy_id: form.proxy_id,
+    enterprise_id: form.enterprise_id,
     concurrency: form.concurrency,
     load_factor: form.load_factor ?? undefined,
     priority: form.priority,
@@ -4162,6 +4187,7 @@ const handleOpenAIExchange = async (authCode: string) => {
       credentials,
       extra,
       proxy_id: form.proxy_id,
+      enterprise_id: form.enterprise_id,
       concurrency: form.concurrency,
       load_factor: form.load_factor ?? undefined,
       priority: form.priority,
@@ -4249,6 +4275,7 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
           credentials,
           extra,
           proxy_id: form.proxy_id,
+          enterprise_id: form.enterprise_id,
           concurrency: form.concurrency,
           load_factor: form.load_factor ?? undefined,
           priority: form.priority,
@@ -4346,6 +4373,7 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
           credentials,
           extra: {},
           proxy_id: form.proxy_id,
+          enterprise_id: form.enterprise_id,
           concurrency: form.concurrency,
           load_factor: form.load_factor ?? undefined,
           priority: form.priority,
@@ -4679,6 +4707,7 @@ const handleCookieAuth = async (sessionKey: string) => {
           credentials,
           extra,
           proxy_id: form.proxy_id,
+          enterprise_id: form.enterprise_id,
           concurrency: form.concurrency,
           load_factor: form.load_factor ?? undefined,
           priority: form.priority,

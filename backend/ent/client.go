@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/enterprise"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -61,6 +62,8 @@ type Client struct {
 	Announcement *AnnouncementClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
 	AnnouncementRead *AnnouncementReadClient
+	// Enterprise is the client for interacting with the Enterprise builders.
+	Enterprise *EnterpriseClient
 	// ErrorPassthroughRule is the client for interacting with the ErrorPassthroughRule builders.
 	ErrorPassthroughRule *ErrorPassthroughRuleClient
 	// Group is the client for interacting with the Group builders.
@@ -121,6 +124,7 @@ func (c *Client) init() {
 	c.AccountGroup = NewAccountGroupClient(c.config)
 	c.Announcement = NewAnnouncementClient(c.config)
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
+	c.Enterprise = NewEnterpriseClient(c.config)
 	c.ErrorPassthroughRule = NewErrorPassthroughRuleClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
@@ -240,6 +244,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AccountGroup:            NewAccountGroupClient(cfg),
 		Announcement:            NewAnnouncementClient(cfg),
 		AnnouncementRead:        NewAnnouncementReadClient(cfg),
+		Enterprise:              NewEnterpriseClient(cfg),
 		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
 		Group:                   NewGroupClient(cfg),
 		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
@@ -286,6 +291,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AccountGroup:            NewAccountGroupClient(cfg),
 		Announcement:            NewAnnouncementClient(cfg),
 		AnnouncementRead:        NewAnnouncementReadClient(cfg),
+		Enterprise:              NewEnterpriseClient(cfg),
 		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
 		Group:                   NewGroupClient(cfg),
 		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
@@ -338,12 +344,12 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PaygOrder,
-		c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ReferralReward, c.SecuritySecret,
-		c.Setting, c.SubscriptionPlan, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserSubscription,
+		c.Enterprise, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.PaygOrder, c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance,
+		c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ReferralReward,
+		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.UsageCleanupTask,
+		c.UsageLog, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UserAttributeValue, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -354,12 +360,12 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PaygOrder,
-		c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ReferralReward, c.SecuritySecret,
-		c.Setting, c.SubscriptionPlan, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserSubscription,
+		c.Enterprise, c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.PaygOrder, c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance,
+		c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.ReferralReward,
+		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.UsageCleanupTask,
+		c.UsageLog, c.User, c.UserAllowedGroup, c.UserAttributeDefinition,
+		c.UserAttributeValue, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -378,6 +384,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Announcement.mutate(ctx, m)
 	case *AnnouncementReadMutation:
 		return c.AnnouncementRead.mutate(ctx, m)
+	case *EnterpriseMutation:
+		return c.Enterprise.mutate(ctx, m)
 	case *ErrorPassthroughRuleMutation:
 		return c.ErrorPassthroughRule.mutate(ctx, m)
 	case *GroupMutation:
@@ -743,6 +751,22 @@ func (c *AccountClient) QueryProxy(_m *Account) *ProxyQuery {
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(proxy.Table, proxy.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, account.ProxyTable, account.ProxyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEnterprise queries the enterprise edge of a Account.
+func (c *AccountClient) QueryEnterprise(_m *Account) *EnterpriseQuery {
+	query := (&EnterpriseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(enterprise.Table, enterprise.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, account.EnterpriseTable, account.EnterpriseColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1236,6 +1260,157 @@ func (c *AnnouncementReadClient) mutate(ctx context.Context, m *AnnouncementRead
 		return (&AnnouncementReadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AnnouncementRead mutation op: %q", m.Op())
+	}
+}
+
+// EnterpriseClient is a client for the Enterprise schema.
+type EnterpriseClient struct {
+	config
+}
+
+// NewEnterpriseClient returns a client for the Enterprise from the given config.
+func NewEnterpriseClient(c config) *EnterpriseClient {
+	return &EnterpriseClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `enterprise.Hooks(f(g(h())))`.
+func (c *EnterpriseClient) Use(hooks ...Hook) {
+	c.hooks.Enterprise = append(c.hooks.Enterprise, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `enterprise.Intercept(f(g(h())))`.
+func (c *EnterpriseClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Enterprise = append(c.inters.Enterprise, interceptors...)
+}
+
+// Create returns a builder for creating a Enterprise entity.
+func (c *EnterpriseClient) Create() *EnterpriseCreate {
+	mutation := newEnterpriseMutation(c.config, OpCreate)
+	return &EnterpriseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Enterprise entities.
+func (c *EnterpriseClient) CreateBulk(builders ...*EnterpriseCreate) *EnterpriseCreateBulk {
+	return &EnterpriseCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EnterpriseClient) MapCreateBulk(slice any, setFunc func(*EnterpriseCreate, int)) *EnterpriseCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EnterpriseCreateBulk{err: fmt.Errorf("calling to EnterpriseClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EnterpriseCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EnterpriseCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Enterprise.
+func (c *EnterpriseClient) Update() *EnterpriseUpdate {
+	mutation := newEnterpriseMutation(c.config, OpUpdate)
+	return &EnterpriseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EnterpriseClient) UpdateOne(_m *Enterprise) *EnterpriseUpdateOne {
+	mutation := newEnterpriseMutation(c.config, OpUpdateOne, withEnterprise(_m))
+	return &EnterpriseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EnterpriseClient) UpdateOneID(id int64) *EnterpriseUpdateOne {
+	mutation := newEnterpriseMutation(c.config, OpUpdateOne, withEnterpriseID(id))
+	return &EnterpriseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Enterprise.
+func (c *EnterpriseClient) Delete() *EnterpriseDelete {
+	mutation := newEnterpriseMutation(c.config, OpDelete)
+	return &EnterpriseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EnterpriseClient) DeleteOne(_m *Enterprise) *EnterpriseDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EnterpriseClient) DeleteOneID(id int64) *EnterpriseDeleteOne {
+	builder := c.Delete().Where(enterprise.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EnterpriseDeleteOne{builder}
+}
+
+// Query returns a query builder for Enterprise.
+func (c *EnterpriseClient) Query() *EnterpriseQuery {
+	return &EnterpriseQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEnterprise},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Enterprise entity by its id.
+func (c *EnterpriseClient) Get(ctx context.Context, id int64) (*Enterprise, error) {
+	return c.Query().Where(enterprise.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EnterpriseClient) GetX(ctx context.Context, id int64) *Enterprise {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAccounts queries the accounts edge of a Enterprise.
+func (c *EnterpriseClient) QueryAccounts(_m *Enterprise) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(enterprise.Table, enterprise.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, enterprise.AccountsTable, enterprise.AccountsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EnterpriseClient) Hooks() []Hook {
+	hooks := c.hooks.Enterprise
+	return append(hooks[:len(hooks):len(hooks)], enterprise.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *EnterpriseClient) Interceptors() []Interceptor {
+	inters := c.inters.Enterprise
+	return append(inters[:len(inters):len(inters)], enterprise.Interceptors[:]...)
+}
+
+func (c *EnterpriseClient) mutate(ctx context.Context, m *EnterpriseMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EnterpriseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EnterpriseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EnterpriseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EnterpriseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Enterprise mutation op: %q", m.Op())
 	}
 }
 
@@ -4865,7 +5040,7 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
+		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, Enterprise,
 		ErrorPassthroughRule, Group, IdempotencyRecord, PaygOrder, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PromoCode, PromoCodeUsage, Proxy,
 		RedeemCode, ReferralReward, SecuritySecret, Setting, SubscriptionPlan,
@@ -4873,7 +5048,7 @@ type (
 		UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
+		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, Enterprise,
 		ErrorPassthroughRule, Group, IdempotencyRecord, PaygOrder, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PromoCode, PromoCodeUsage, Proxy,
 		RedeemCode, ReferralReward, SecuritySecret, Setting, SubscriptionPlan,

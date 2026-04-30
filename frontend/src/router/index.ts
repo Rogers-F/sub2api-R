@@ -349,6 +349,30 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/enterprises',
+    name: 'AdminEnterprises',
+    component: () => import('@/views/admin/EnterprisesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Enterprise Management',
+      titleKey: 'admin.enterprises.title',
+      descriptionKey: 'admin.enterprises.description'
+    }
+  },
+  {
+    path: '/admin/enterprises/:id',
+    name: 'AdminEnterpriseDetail',
+    component: () => import('@/views/admin/EnterpriseDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Enterprise Detail',
+      titleKey: 'admin.enterprises.detailTitle',
+      descriptionKey: 'admin.enterprises.detailDescription'
+    }
+  },
+  {
     path: '/admin/subscriptions',
     name: 'AdminSubscriptions',
     component: () => import('@/views/admin/SubscriptionsView.vue'),

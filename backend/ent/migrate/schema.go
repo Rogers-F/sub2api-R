@@ -124,6 +124,7 @@ var (
 		{Name: "session_window_end", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_status", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "proxy_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "enterprise_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// AccountsTable holds the schema information for the "accounts" table.
 	AccountsTable = &schema.Table{
@@ -135,6 +136,12 @@ var (
 				Symbol:     "accounts_proxies_proxy",
 				Columns:    []*schema.Column{AccountsColumns[28]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "accounts_enterprises_enterprise",
+				Columns:    []*schema.Column{AccountsColumns[29]},
+				RefColumns: []*schema.Column{EnterprisesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -158,6 +165,11 @@ var (
 				Name:    "account_proxy_id",
 				Unique:  false,
 				Columns: []*schema.Column{AccountsColumns[28]},
+			},
+			{
+				Name:    "account_enterprise_id",
+				Unique:  false,
+				Columns: []*schema.Column{AccountsColumns[29]},
 			},
 			{
 				Name:    "account_priority",
@@ -335,6 +347,34 @@ var (
 				Name:    "announcementread_announcement_id_user_id",
 				Unique:  true,
 				Columns: []*schema.Column{AnnouncementReadsColumns[3], AnnouncementReadsColumns[4]},
+			},
+		},
+	}
+	// EnterprisesColumns holds the columns for the "enterprises" table.
+	EnterprisesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+	}
+	// EnterprisesTable holds the schema information for the "enterprises" table.
+	EnterprisesTable = &schema.Table{
+		Name:       "enterprises",
+		Columns:    EnterprisesColumns,
+		PrimaryKey: []*schema.Column{EnterprisesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "enterprise_status",
+				Unique:  false,
+				Columns: []*schema.Column{EnterprisesColumns[6]},
+			},
+			{
+				Name:    "enterprise_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{EnterprisesColumns[3]},
 			},
 		},
 	}
@@ -1394,6 +1434,7 @@ var (
 		AccountGroupsTable,
 		AnnouncementsTable,
 		AnnouncementReadsTable,
+		EnterprisesTable,
 		ErrorPassthroughRulesTable,
 		GroupsTable,
 		IdempotencyRecordsTable,
@@ -1426,6 +1467,7 @@ func init() {
 		Table: "api_keys",
 	}
 	AccountsTable.ForeignKeys[0].RefTable = ProxiesTable
+	AccountsTable.ForeignKeys[1].RefTable = EnterprisesTable
 	AccountsTable.Annotation = &entsql.Annotation{
 		Table: "accounts",
 	}
@@ -1441,6 +1483,9 @@ func init() {
 	AnnouncementReadsTable.ForeignKeys[1].RefTable = UsersTable
 	AnnouncementReadsTable.Annotation = &entsql.Annotation{
 		Table: "announcement_reads",
+	}
+	EnterprisesTable.Annotation = &entsql.Annotation{
+		Table: "enterprises",
 	}
 	ErrorPassthroughRulesTable.Annotation = &entsql.Annotation{
 		Table: "error_passthrough_rules",

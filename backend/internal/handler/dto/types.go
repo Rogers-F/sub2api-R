@@ -109,6 +109,16 @@ type Group struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type Enterprise struct {
+	ID           int64     `json:"id"`
+	Name         string    `json:"name"`
+	Notes        *string   `json:"notes"`
+	Status       string    `json:"status"`
+	AccountCount int64     `json:"account_count"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 // AdminGroup 是管理员接口使用的 group DTO（包含敏感/内部字段）。
 // 注意：普通用户接口不得返回 model_routing/account_count/account_groups 等内部信息。
 type AdminGroup struct {
@@ -144,6 +154,7 @@ type Account struct {
 	Credentials        map[string]any `json:"credentials"`
 	Extra              map[string]any `json:"extra"`
 	ProxyID            *int64         `json:"proxy_id"`
+	EnterpriseID       *int64         `json:"enterprise_id"`
 	Concurrency        int            `json:"concurrency"`
 	LoadFactor         *int           `json:"load_factor,omitempty"`
 	Priority           int            `json:"priority"`
@@ -223,6 +234,7 @@ type Account struct {
 	QuotaWeeklyResetAt   *string `json:"quota_weekly_reset_at,omitempty"`
 
 	Proxy         *Proxy         `json:"proxy,omitempty"`
+	Enterprise    *Enterprise    `json:"enterprise,omitempty"`
 	AccountGroups []AccountGroup `json:"account_groups,omitempty"`
 
 	GroupIDs []int64  `json:"group_ids,omitempty"`

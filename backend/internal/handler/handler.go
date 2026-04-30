@@ -9,6 +9,7 @@ type AdminHandlers struct {
 	Dashboard        *admin.DashboardHandler
 	User             *admin.UserHandler
 	Group            *admin.GroupHandler
+	Enterprise       *admin.EnterpriseHandler
 	Account          *admin.AccountHandler
 	Announcement     *admin.AnnouncementHandler
 	DataManagement   *admin.DataManagementHandler

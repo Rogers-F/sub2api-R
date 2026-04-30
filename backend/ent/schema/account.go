@@ -91,6 +91,9 @@ func (Account) Fields() []ent.Field {
 		field.Int64("proxy_id").
 			Optional().
 			Nillable(),
+		field.Int64("enterprise_id").
+			Optional().
+			Nillable(),
 
 		// concurrency: 账户最大并发请求数
 		// 用于限制同一时间对该账户发起的请求数量
@@ -209,6 +212,10 @@ func (Account) Edges() []ent.Edge {
 		edge.To("proxy", Proxy.Type).
 			Field("proxy_id").
 			Unique(),
+		// enterprise: 账户所属企业（可为空）
+		edge.To("enterprise", Enterprise.Type).
+			Field("enterprise_id").
+			Unique(),
 		// usage_logs: 该账户的使用日志
 		edge.To("usage_logs", UsageLog.Type),
 	}
@@ -222,6 +229,7 @@ func (Account) Indexes() []ent.Index {
 		index.Fields("type"),                // 按认证类型筛选
 		index.Fields("status"),              // 按状态筛选
 		index.Fields("proxy_id"),            // 按代理筛选
+		index.Fields("enterprise_id"),       // 按企业筛选
 		index.Fields("priority"),            // 按优先级排序
 		index.Fields("last_used_at"),        // 按最后使用时间排序
 		index.Fields("schedulable"),         // 筛选可调度账户

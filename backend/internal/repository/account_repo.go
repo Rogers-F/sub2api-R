@@ -22,6 +22,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	dbaccount "github.com/Wei-Shaw/sub2api/ent/account"
 	dbaccountgroup "github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	dbenterprise "github.com/Wei-Shaw/sub2api/ent/enterprise"
 	dbgroup "github.com/Wei-Shaw/sub2api/ent/group"
 	dbpredicate "github.com/Wei-Shaw/sub2api/ent/predicate"
 	dbproxy "github.com/Wei-Shaw/sub2api/ent/proxy"
@@ -105,6 +106,9 @@ func (r *accountRepository) Create(ctx context.Context, account *service.Account
 	if account.ProxyID != nil {
 		builder.SetProxyID(*account.ProxyID)
 	}
+	if account.EnterpriseID != nil {
+		builder.SetEnterpriseID(*account.EnterpriseID)
+	}
 	if account.LastUsedAt != nil {
 		builder.SetLastUsedAt(*account.LastUsedAt)
 	}
@@ -186,6 +190,7 @@ func (r *accountRepository) GetByIDs(ctx context.Context, ids []int64) ([]*servi
 		Query().
 		Where(dbaccount.IDIn(uniqueIDs...)).
 		WithProxy().
+		WithEnterprise().
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -216,6 +221,9 @@ func (r *accountRepository) GetByIDs(ctx context.Context, ids []int64) ([]*servi
 		// Prefer the preloaded proxy edge when available.
 		if entAcc.Edges.Proxy != nil {
 			out.Proxy = proxyEntityToService(entAcc.Edges.Proxy)
+		}
+		if entAcc.Edges.Enterprise != nil {
+			out.Enterprise = enterpriseEntityToService(entAcc.Edges.Enterprise)
 		}
 
 		if groups, ok := groupsByAccount[entAcc.ID]; ok {
@@ -346,6 +354,11 @@ func (r *accountRepository) Update(ctx context.Context, account *service.Account
 	} else {
 		builder.ClearProxyID()
 	}
+	if account.EnterpriseID != nil {
+		builder.SetEnterpriseID(*account.EnterpriseID)
+	} else {
+		builder.ClearEnterpriseID()
+	}
 	if account.LastUsedAt != nil {
 		builder.SetLastUsedAt(*account.LastUsedAt)
 	} else {
@@ -458,6 +471,14 @@ func (r *accountRepository) List(ctx context.Context, params pagination.Paginati
 }
 
 func (r *accountRepository) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, *pagination.PaginationResult, error) {
+	return r.listWithFilters(ctx, params, platform, accountType, status, search, groupID, privacyMode, 0)
+}
+
+func (r *accountRepository) ListWithEnterpriseFilters(ctx context.Context, params pagination.PaginationParams, platform, accountType, status, search string, groupID int64, privacyMode string, enterpriseID int64) ([]service.Account, *pagination.PaginationResult, error) {
+	return r.listWithFilters(ctx, params, platform, accountType, status, search, groupID, privacyMode, enterpriseID)
+}
+
+func (r *accountRepository) listWithFilters(ctx context.Context, params pagination.PaginationParams, platform, accountType, status, search string, groupID int64, privacyMode string, enterpriseID int64) ([]service.Account, *pagination.PaginationResult, error) {
 	q := r.client.Account.Query()
 
 	if platform != "" {
@@ -489,6 +510,11 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 		q = q.Where(dbaccount.Not(dbaccount.HasAccountGroups()))
 	} else if groupID > 0 {
 		q = q.Where(dbaccount.HasAccountGroupsWith(dbaccountgroup.GroupIDEQ(groupID)))
+	}
+	if enterpriseID == service.AccountListEnterpriseUnassigned {
+		q = q.Where(dbaccount.EnterpriseIDIsNil())
+	} else if enterpriseID > 0 {
+		q = q.Where(dbaccount.EnterpriseIDEQ(enterpriseID))
 	}
 	if privacyMode != "" {
 		q = q.Where(dbpredicate.Account(func(s *entsql.Selector) {
@@ -524,6 +550,22 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 		return nil, nil, err
 	}
 	return outAccounts, paginationResultFromTotal(int64(total), params), nil
+}
+
+func (r *accountRepository) ValidateActiveEnterprise(ctx context.Context, enterpriseID int64) error {
+	if enterpriseID <= 0 {
+		return service.ErrInvalidEnterpriseID
+	}
+	enterprise, err := r.client.Enterprise.Query().
+		Where(dbenterprise.IDEQ(enterpriseID)).
+		Only(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrEnterpriseNotFound, nil)
+	}
+	if enterprise.Status != service.StatusActive {
+		return service.ErrEnterpriseNotActive
+	}
+	return nil
 }
 
 func (r *accountRepository) ListByGroup(ctx context.Context, groupID int64) ([]service.Account, error) {
@@ -1292,6 +1334,15 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 			idx++
 		}
 	}
+	if updates.EnterpriseIDSet {
+		if updates.EnterpriseID == nil {
+			setClauses = append(setClauses, "enterprise_id = NULL")
+		} else {
+			setClauses = append(setClauses, "enterprise_id = $"+itoa(idx))
+			args = append(args, *updates.EnterpriseID)
+			idx++
+		}
+	}
 	if updates.Concurrency != nil {
 		setClauses = append(setClauses, "concurrency = $"+itoa(idx))
 		args = append(args, *updates.Concurrency)
@@ -1457,14 +1508,22 @@ func (r *accountRepository) accountsToService(ctx context.Context, accounts []*d
 
 	accountIDs := make([]int64, 0, len(accounts))
 	proxyIDs := make([]int64, 0, len(accounts))
+	enterpriseIDs := make([]int64, 0, len(accounts))
 	for _, acc := range accounts {
 		accountIDs = append(accountIDs, acc.ID)
 		if acc.ProxyID != nil {
 			proxyIDs = append(proxyIDs, *acc.ProxyID)
 		}
+		if acc.EnterpriseID != nil {
+			enterpriseIDs = append(enterpriseIDs, *acc.EnterpriseID)
+		}
 	}
 
 	proxyMap, err := r.loadProxies(ctx, proxyIDs)
+	if err != nil {
+		return nil, err
+	}
+	enterpriseMap, err := r.loadEnterprises(ctx, enterpriseIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1482,6 +1541,11 @@ func (r *accountRepository) accountsToService(ctx context.Context, accounts []*d
 		if acc.ProxyID != nil {
 			if proxy, ok := proxyMap[*acc.ProxyID]; ok {
 				out.Proxy = proxy
+			}
+		}
+		if acc.EnterpriseID != nil {
+			if enterprise, ok := enterpriseMap[*acc.EnterpriseID]; ok {
+				out.Enterprise = enterprise
 			}
 		}
 		if groups, ok := groupsByAccount[acc.ID]; ok {
@@ -1532,6 +1596,23 @@ func (r *accountRepository) loadProxies(ctx context.Context, proxyIDs []int64) (
 		proxyMap[p.ID] = proxyEntityToService(p)
 	}
 	return proxyMap, nil
+}
+
+func (r *accountRepository) loadEnterprises(ctx context.Context, enterpriseIDs []int64) (map[int64]*service.Enterprise, error) {
+	enterpriseMap := make(map[int64]*service.Enterprise)
+	enterpriseIDs = normalizePositiveIDs(enterpriseIDs)
+	if len(enterpriseIDs) == 0 {
+		return enterpriseMap, nil
+	}
+
+	enterprises, err := r.client.Enterprise.Query().Where(dbenterprise.IDIn(enterpriseIDs...)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, enterprise := range enterprises {
+		enterpriseMap[enterprise.ID] = enterpriseEntityToService(enterprise)
+	}
+	return enterpriseMap, nil
 }
 
 func (r *accountRepository) loadAccountGroups(ctx context.Context, accountIDs []int64) (map[int64][]*service.Group, map[int64][]int64, map[int64][]service.AccountGroup, error) {
@@ -1635,6 +1716,7 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		Credentials:             copyJSONMap(m.Credentials),
 		Extra:                   copyJSONMap(m.Extra),
 		ProxyID:                 m.ProxyID,
+		EnterpriseID:            m.EnterpriseID,
 		Concurrency:             m.Concurrency,
 		Priority:                m.Priority,
 		RateMultiplier:          &rateMultiplier,

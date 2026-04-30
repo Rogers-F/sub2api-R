@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
+	"github.com/Wei-Shaw/sub2api/ent/enterprise"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -121,6 +122,20 @@ func (_c *AccountCreate) SetProxyID(v int64) *AccountCreate {
 func (_c *AccountCreate) SetNillableProxyID(v *int64) *AccountCreate {
 	if v != nil {
 		_c.SetProxyID(*v)
+	}
+	return _c
+}
+
+// SetEnterpriseID sets the "enterprise_id" field.
+func (_c *AccountCreate) SetEnterpriseID(v int64) *AccountCreate {
+	_c.mutation.SetEnterpriseID(v)
+	return _c
+}
+
+// SetNillableEnterpriseID sets the "enterprise_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableEnterpriseID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetEnterpriseID(*v)
 	}
 	return _c
 }
@@ -395,6 +410,11 @@ func (_c *AccountCreate) AddGroups(v ...*Group) *AccountCreate {
 // SetProxy sets the "proxy" edge to the Proxy entity.
 func (_c *AccountCreate) SetProxy(v *Proxy) *AccountCreate {
 	return _c.SetProxyID(v.ID)
+}
+
+// SetEnterprise sets the "enterprise" edge to the Enterprise entity.
+func (_c *AccountCreate) SetEnterprise(v *Enterprise) *AccountCreate {
+	return _c.SetEnterpriseID(v.ID)
 }
 
 // AddUsageLogIDs adds the "usage_logs" edge to the UsageLog entity by IDs.
@@ -742,6 +762,23 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 		_node.ProxyID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.EnterpriseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.EnterpriseTable,
+			Columns: []string{account.EnterpriseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(enterprise.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.EnterpriseID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.UsageLogsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -933,6 +970,24 @@ func (u *AccountUpsert) UpdateProxyID() *AccountUpsert {
 // ClearProxyID clears the value of the "proxy_id" field.
 func (u *AccountUpsert) ClearProxyID() *AccountUpsert {
 	u.SetNull(account.FieldProxyID)
+	return u
+}
+
+// SetEnterpriseID sets the "enterprise_id" field.
+func (u *AccountUpsert) SetEnterpriseID(v int64) *AccountUpsert {
+	u.Set(account.FieldEnterpriseID, v)
+	return u
+}
+
+// UpdateEnterpriseID sets the "enterprise_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateEnterpriseID() *AccountUpsert {
+	u.SetExcluded(account.FieldEnterpriseID)
+	return u
+}
+
+// ClearEnterpriseID clears the value of the "enterprise_id" field.
+func (u *AccountUpsert) ClearEnterpriseID() *AccountUpsert {
+	u.SetNull(account.FieldEnterpriseID)
 	return u
 }
 
@@ -1437,6 +1492,27 @@ func (u *AccountUpsertOne) UpdateProxyID() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearProxyID() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProxyID()
+	})
+}
+
+// SetEnterpriseID sets the "enterprise_id" field.
+func (u *AccountUpsertOne) SetEnterpriseID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetEnterpriseID(v)
+	})
+}
+
+// UpdateEnterpriseID sets the "enterprise_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateEnterpriseID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateEnterpriseID()
+	})
+}
+
+// ClearEnterpriseID clears the value of the "enterprise_id" field.
+func (u *AccountUpsertOne) ClearEnterpriseID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearEnterpriseID()
 	})
 }
 
@@ -2159,6 +2235,27 @@ func (u *AccountUpsertBulk) UpdateProxyID() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearProxyID() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProxyID()
+	})
+}
+
+// SetEnterpriseID sets the "enterprise_id" field.
+func (u *AccountUpsertBulk) SetEnterpriseID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetEnterpriseID(v)
+	})
+}
+
+// UpdateEnterpriseID sets the "enterprise_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateEnterpriseID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateEnterpriseID()
+	})
+}
+
+// ClearEnterpriseID clears the value of the "enterprise_id" field.
+func (u *AccountUpsertBulk) ClearEnterpriseID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearEnterpriseID()
 	})
 }
 

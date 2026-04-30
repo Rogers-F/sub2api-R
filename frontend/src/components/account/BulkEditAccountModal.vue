@@ -451,6 +451,35 @@
         </div>
       </div>
 
+      <!-- Enterprise -->
+      <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div class="mb-3 flex items-center justify-between">
+          <label
+            id="bulk-edit-enterprise-label"
+            class="input-label mb-0"
+            for="bulk-edit-enterprise-enabled"
+          >
+            {{ t('admin.enterprises.title') }}
+          </label>
+          <input
+            v-model="enableEnterprise"
+            id="bulk-edit-enterprise-enabled"
+            type="checkbox"
+            aria-controls="bulk-edit-enterprise-body"
+            class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+        </div>
+        <div id="bulk-edit-enterprise-body" :class="!enableEnterprise && 'pointer-events-none opacity-50'">
+          <Select
+            v-model="enterpriseId"
+            :options="enterpriseOptions"
+            searchable
+            aria-labelledby="bulk-edit-enterprise-label"
+          />
+        </div>
+        <p class="input-hint">{{ t('admin.enterprises.bulkAssignHint') }}</p>
+      </div>
+
       <!-- Concurrency & Priority -->
       <div class="grid grid-cols-2 gap-4 border-t border-gray-200 pt-4 dark:border-dark-600 lg:grid-cols-4">
         <div>
@@ -846,7 +875,7 @@ import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
-import type { Proxy as ProxyConfig, AdminGroup, AccountPlatform, AccountType } from '@/types'
+import type { Proxy as ProxyConfig, AdminGroup, Enterprise, AccountPlatform, AccountType } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
@@ -874,6 +903,7 @@ interface Props {
   selectedTypes: AccountType[]
   proxies: ProxyConfig[]
   groups: AdminGroup[]
+  enterprises?: Enterprise[]
 }
 
 const props = defineProps<Props>()
@@ -934,6 +964,7 @@ const enableModelRestriction = ref(false)
 const enableCustomErrorCodes = ref(false)
 const enableInterceptWarmup = ref(false)
 const enableProxy = ref(false)
+const enableEnterprise = ref(false)
 const enableConcurrency = ref(false)
 const enableLoadFactor = ref(false)
 const enablePriority = ref(false)
@@ -956,6 +987,7 @@ const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
 const interceptWarmupRequests = ref(false)
 const proxyId = ref<number | null>(null)
+const enterpriseId = ref<number | null>(null)
 const concurrency = ref(1)
 const loadFactor = ref<number | null>(null)
 const priority = ref(1)
@@ -972,6 +1004,14 @@ const umqModeOptions = computed(() => [
   { value: '', label: t('admin.accounts.quotaControl.rpmLimit.umqModeOff') },
   { value: 'throttle', label: t('admin.accounts.quotaControl.rpmLimit.umqModeThrottle') },
   { value: 'serialize', label: t('admin.accounts.quotaControl.rpmLimit.umqModeSerialize') },
+])
+
+const enterpriseOptions = computed(() => [
+  { value: null, label: t('admin.enterprises.unassigned') },
+  ...(props.enterprises || []).map((enterprise) => ({
+    value: enterprise.id,
+    label: enterprise.name
+  }))
 ])
 
 // Common HTTP error codes
@@ -1089,6 +1129,10 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
   if (enableProxy.value) {
     // 后端期望 proxy_id: 0 表示清除代理，而不是 null
     updates.proxy_id = proxyId.value === null ? 0 : proxyId.value
+  }
+
+  if (enableEnterprise.value) {
+    updates.enterprise_id = enterpriseId.value
   }
 
   if (enableConcurrency.value) {
@@ -1249,6 +1293,7 @@ const handleSubmit = async () => {
     enableCustomErrorCodes.value ||
     enableInterceptWarmup.value ||
     enableProxy.value ||
+    enableEnterprise.value ||
     enableConcurrency.value ||
     enableLoadFactor.value ||
     enablePriority.value ||
@@ -1341,6 +1386,7 @@ watch(
       enableCustomErrorCodes.value = false
       enableInterceptWarmup.value = false
       enableProxy.value = false
+      enableEnterprise.value = false
       enableConcurrency.value = false
       enableLoadFactor.value = false
       enablePriority.value = false
@@ -1359,6 +1405,7 @@ watch(
       customErrorCodeInput.value = null
       interceptWarmupRequests.value = false
       proxyId.value = null
+      enterpriseId.value = null
       concurrency.value = 1
       loadFactor.value = null
       priority.value = 1

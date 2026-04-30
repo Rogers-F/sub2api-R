@@ -52,6 +52,7 @@ var ProviderSet = wire.NewSet(
 	NewUserRepository,
 	NewAPIKeyRepository,
 	NewGroupRepository,
+	NewEnterpriseRepository,
 	NewAccountRepository,
 	wire.Bind(new(service.AccountQuotaReader), new(service.AccountRepository)),
 	NewScheduledTestPlanRepository,   // 定时测试计划仓储

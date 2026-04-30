@@ -132,6 +132,25 @@ func GroupFromService(g *service.Group) *Group {
 	return GroupFromServiceShallow(g)
 }
 
+func EnterpriseFromServiceShallow(e *service.Enterprise) *Enterprise {
+	if e == nil {
+		return nil
+	}
+	return &Enterprise{
+		ID:           e.ID,
+		Name:         e.Name,
+		Notes:        e.Notes,
+		Status:       e.Status,
+		AccountCount: e.AccountCount,
+		CreatedAt:    e.CreatedAt,
+		UpdatedAt:    e.UpdatedAt,
+	}
+}
+
+func EnterpriseFromService(e *service.Enterprise) *Enterprise {
+	return EnterpriseFromServiceShallow(e)
+}
+
 // GroupFromServiceAdmin converts a service Group to DTO for admin users.
 // It includes internal fields like model_routing and account_count.
 func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
@@ -205,6 +224,7 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		Credentials:             a.Credentials,
 		Extra:                   a.Extra,
 		ProxyID:                 a.ProxyID,
+		EnterpriseID:            a.EnterpriseID,
 		Concurrency:             a.Concurrency,
 		LoadFactor:              a.LoadFactor,
 		Priority:                a.Priority,
@@ -338,6 +358,7 @@ func AccountFromService(a *service.Account) *Account {
 	}
 	out := AccountFromServiceShallow(a)
 	out.Proxy = ProxyFromService(a.Proxy)
+	out.Enterprise = EnterpriseFromServiceShallow(a.Enterprise)
 	if len(a.AccountGroups) > 0 {
 		out.AccountGroups = make([]AccountGroup, 0, len(a.AccountGroups))
 		for i := range a.AccountGroups {

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
+	"github.com/Wei-Shaw/sub2api/ent/enterprise"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
@@ -148,6 +149,26 @@ func (_u *AccountUpdate) SetNillableProxyID(v *int64) *AccountUpdate {
 // ClearProxyID clears the value of the "proxy_id" field.
 func (_u *AccountUpdate) ClearProxyID() *AccountUpdate {
 	_u.mutation.ClearProxyID()
+	return _u
+}
+
+// SetEnterpriseID sets the "enterprise_id" field.
+func (_u *AccountUpdate) SetEnterpriseID(v int64) *AccountUpdate {
+	_u.mutation.SetEnterpriseID(v)
+	return _u
+}
+
+// SetNillableEnterpriseID sets the "enterprise_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableEnterpriseID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetEnterpriseID(*v)
+	}
+	return _u
+}
+
+// ClearEnterpriseID clears the value of the "enterprise_id" field.
+func (_u *AccountUpdate) ClearEnterpriseID() *AccountUpdate {
+	_u.mutation.ClearEnterpriseID()
 	return _u
 }
 
@@ -523,6 +544,11 @@ func (_u *AccountUpdate) SetProxy(v *Proxy) *AccountUpdate {
 	return _u.SetProxyID(v.ID)
 }
 
+// SetEnterprise sets the "enterprise" edge to the Enterprise entity.
+func (_u *AccountUpdate) SetEnterprise(v *Enterprise) *AccountUpdate {
+	return _u.SetEnterpriseID(v.ID)
+}
+
 // AddUsageLogIDs adds the "usage_logs" edge to the UsageLog entity by IDs.
 func (_u *AccountUpdate) AddUsageLogIDs(ids ...int64) *AccountUpdate {
 	_u.mutation.AddUsageLogIDs(ids...)
@@ -567,6 +593,12 @@ func (_u *AccountUpdate) RemoveGroups(v ...*Group) *AccountUpdate {
 // ClearProxy clears the "proxy" edge to the Proxy entity.
 func (_u *AccountUpdate) ClearProxy() *AccountUpdate {
 	_u.mutation.ClearProxy()
+	return _u
+}
+
+// ClearEnterprise clears the "enterprise" edge to the Enterprise entity.
+func (_u *AccountUpdate) ClearEnterprise() *AccountUpdate {
+	_u.mutation.ClearEnterprise()
 	return _u
 }
 
@@ -893,6 +925,35 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.EnterpriseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.EnterpriseTable,
+			Columns: []string{account.EnterpriseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(enterprise.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EnterpriseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.EnterpriseTable,
+			Columns: []string{account.EnterpriseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(enterprise.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.UsageLogsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1075,6 +1136,26 @@ func (_u *AccountUpdateOne) SetNillableProxyID(v *int64) *AccountUpdateOne {
 // ClearProxyID clears the value of the "proxy_id" field.
 func (_u *AccountUpdateOne) ClearProxyID() *AccountUpdateOne {
 	_u.mutation.ClearProxyID()
+	return _u
+}
+
+// SetEnterpriseID sets the "enterprise_id" field.
+func (_u *AccountUpdateOne) SetEnterpriseID(v int64) *AccountUpdateOne {
+	_u.mutation.SetEnterpriseID(v)
+	return _u
+}
+
+// SetNillableEnterpriseID sets the "enterprise_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableEnterpriseID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetEnterpriseID(*v)
+	}
+	return _u
+}
+
+// ClearEnterpriseID clears the value of the "enterprise_id" field.
+func (_u *AccountUpdateOne) ClearEnterpriseID() *AccountUpdateOne {
+	_u.mutation.ClearEnterpriseID()
 	return _u
 }
 
@@ -1450,6 +1531,11 @@ func (_u *AccountUpdateOne) SetProxy(v *Proxy) *AccountUpdateOne {
 	return _u.SetProxyID(v.ID)
 }
 
+// SetEnterprise sets the "enterprise" edge to the Enterprise entity.
+func (_u *AccountUpdateOne) SetEnterprise(v *Enterprise) *AccountUpdateOne {
+	return _u.SetEnterpriseID(v.ID)
+}
+
 // AddUsageLogIDs adds the "usage_logs" edge to the UsageLog entity by IDs.
 func (_u *AccountUpdateOne) AddUsageLogIDs(ids ...int64) *AccountUpdateOne {
 	_u.mutation.AddUsageLogIDs(ids...)
@@ -1494,6 +1580,12 @@ func (_u *AccountUpdateOne) RemoveGroups(v ...*Group) *AccountUpdateOne {
 // ClearProxy clears the "proxy" edge to the Proxy entity.
 func (_u *AccountUpdateOne) ClearProxy() *AccountUpdateOne {
 	_u.mutation.ClearProxy()
+	return _u
+}
+
+// ClearEnterprise clears the "enterprise" edge to the Enterprise entity.
+func (_u *AccountUpdateOne) ClearEnterprise() *AccountUpdateOne {
+	_u.mutation.ClearEnterprise()
 	return _u
 }
 
@@ -1843,6 +1935,35 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EnterpriseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.EnterpriseTable,
+			Columns: []string{account.EnterpriseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(enterprise.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EnterpriseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.EnterpriseTable,
+			Columns: []string{account.EnterpriseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(enterprise.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

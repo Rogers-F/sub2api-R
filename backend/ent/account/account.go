@@ -35,6 +35,8 @@ const (
 	FieldExtra = "extra"
 	// FieldProxyID holds the string denoting the proxy_id field in the database.
 	FieldProxyID = "proxy_id"
+	// FieldEnterpriseID holds the string denoting the enterprise_id field in the database.
+	FieldEnterpriseID = "enterprise_id"
 	// FieldConcurrency holds the string denoting the concurrency field in the database.
 	FieldConcurrency = "concurrency"
 	// FieldLoadFactor holds the string denoting the load_factor field in the database.
@@ -75,6 +77,8 @@ const (
 	EdgeGroups = "groups"
 	// EdgeProxy holds the string denoting the proxy edge name in mutations.
 	EdgeProxy = "proxy"
+	// EdgeEnterprise holds the string denoting the enterprise edge name in mutations.
+	EdgeEnterprise = "enterprise"
 	// EdgeUsageLogs holds the string denoting the usage_logs edge name in mutations.
 	EdgeUsageLogs = "usage_logs"
 	// EdgeAccountGroups holds the string denoting the account_groups edge name in mutations.
@@ -93,6 +97,13 @@ const (
 	ProxyInverseTable = "proxies"
 	// ProxyColumn is the table column denoting the proxy relation/edge.
 	ProxyColumn = "proxy_id"
+	// EnterpriseTable is the table that holds the enterprise relation/edge.
+	EnterpriseTable = "accounts"
+	// EnterpriseInverseTable is the table name for the Enterprise entity.
+	// It exists in this package in order to avoid circular dependency with the "enterprise" package.
+	EnterpriseInverseTable = "enterprises"
+	// EnterpriseColumn is the table column denoting the enterprise relation/edge.
+	EnterpriseColumn = "enterprise_id"
 	// UsageLogsTable is the table that holds the usage_logs relation/edge.
 	UsageLogsTable = "usage_logs"
 	// UsageLogsInverseTable is the table name for the UsageLog entity.
@@ -122,6 +133,7 @@ var Columns = []string{
 	FieldCredentials,
 	FieldExtra,
 	FieldProxyID,
+	FieldEnterpriseID,
 	FieldConcurrency,
 	FieldLoadFactor,
 	FieldPriority,
@@ -248,6 +260,11 @@ func ByProxyID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProxyID, opts...).ToFunc()
 }
 
+// ByEnterpriseID orders the results by the enterprise_id field.
+func ByEnterpriseID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnterpriseID, opts...).ToFunc()
+}
+
 // ByConcurrency orders the results by the concurrency field.
 func ByConcurrency(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConcurrency, opts...).ToFunc()
@@ -359,6 +376,13 @@ func ByProxyField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByEnterpriseField orders the results by enterprise field.
+func ByEnterpriseField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEnterpriseStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByUsageLogsCount orders the results by usage_logs count.
 func ByUsageLogsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -398,6 +422,13 @@ func newProxyStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProxyInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, ProxyTable, ProxyColumn),
+	)
+}
+func newEnterpriseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EnterpriseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, EnterpriseTable, EnterpriseColumn),
 	)
 }
 func newUsageLogsStep() *sqlgraph.Step {

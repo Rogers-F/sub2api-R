@@ -26,6 +26,9 @@ func RegisterAdminRoutes(
 		// 分组管理
 		registerGroupRoutes(admin, h)
 
+		// 企业管理
+		registerEnterpriseRoutes(admin, h)
+
 		// 账号管理
 		registerAccountRoutes(admin, h)
 
@@ -250,6 +253,20 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		groups.PUT("/:id/rate-multipliers", h.Admin.Group.BatchSetGroupRateMultipliers)
 		groups.DELETE("/:id/rate-multipliers", h.Admin.Group.ClearGroupRateMultipliers)
 		groups.GET("/:id/api-keys", h.Admin.Group.GetGroupAPIKeys)
+	}
+}
+
+func registerEnterpriseRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	enterprises := admin.Group("/enterprises")
+	{
+		enterprises.GET("", h.Admin.Enterprise.List)
+		enterprises.POST("", h.Admin.Enterprise.Create)
+		enterprises.GET("/:id", h.Admin.Enterprise.GetByID)
+		enterprises.PUT("/:id", h.Admin.Enterprise.Update)
+		enterprises.DELETE("/:id", h.Admin.Enterprise.Delete)
+		enterprises.GET("/:id/accounts", h.Admin.Enterprise.ListAccounts)
+		enterprises.POST("/:id/accounts", h.Admin.Enterprise.AssignAccounts)
+		enterprises.DELETE("/:id/accounts", h.Admin.Enterprise.UnassignAccounts)
 	}
 }
 
