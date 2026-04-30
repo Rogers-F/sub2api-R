@@ -1841,7 +1841,7 @@ export default {
         hint: 'Disables both cache creation and cache reads.'
       },
       thinkingSignatureCompat: {
-        title: 'Cross-channel History Compat',
+        title: 'Cross-channel History Compat (Safe Mode)',
         tooltip:
           'When enabled, if switching between Claude Max, native Anthropic, AWS Bedrock, or other channels invalidates historical thinking signatures, the gateway strips historical thinking / tool signature blocks and retries once.',
         enabled: 'Compat retry enabled',
@@ -1849,7 +1849,7 @@ export default {
         hint: 'Recommended for groups that mix Claude Max / Anthropic / AWS Bedrock accounts.'
       },
       claudeToolUseRepair: {
-        title: 'Claude Tool History Auto-repair',
+        title: 'Claude Tool History Auto-repair (Safe Mode)',
         tooltip:
           'When enabled, if malformed historical tool_use / tool_result chains cause Anthropic-compatible upstreams to return 400, the gateway removes the invalid tool chain and retries once so end users usually do not see the raw error.',
         enabled: 'Auto-repair enabled',

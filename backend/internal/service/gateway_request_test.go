@@ -294,7 +294,7 @@ func TestFilterThinkingBlocks(t *testing.T) {
 	}
 }
 
-func TestFilterThinkingBlocksForRetry_DisablesThinkingAndPreservesAsText(t *testing.T) {
+func TestFilterThinkingBlocksForRetry_DisablesThinkingAndStripsPrivateText(t *testing.T) {
 	input := []byte(`{
 		"model":"claude-3-5-sonnet-20241022",
 		"thinking":{"type":"enabled","budget_tokens":1024},
@@ -308,6 +308,7 @@ func TestFilterThinkingBlocksForRetry_DisablesThinkingAndPreservesAsText(t *test
 	}`)
 
 	out := FilterThinkingBlocksForRetry(input)
+	require.NotContains(t, string(out), "Let me think")
 
 	var req map[string]any
 	require.NoError(t, json.Unmarshal(out, &req))
@@ -322,12 +323,12 @@ func TestFilterThinkingBlocksForRetry_DisablesThinkingAndPreservesAsText(t *test
 	require.True(t, ok)
 	content, ok := assistant["content"].([]any)
 	require.True(t, ok)
-	require.Len(t, content, 2)
+	require.Len(t, content, 1)
 
 	first, ok := content[0].(map[string]any)
 	require.True(t, ok)
 	require.Equal(t, "text", first["type"])
-	require.Equal(t, "Let me think...", first["text"])
+	require.Equal(t, "Answer", first["text"])
 }
 
 func TestFilterThinkingBlocksForRetry_DisablesThinkingEvenWithoutThinkingBlocks(t *testing.T) {
@@ -565,18 +566,25 @@ func TestFilterThinkingBlocksForRetry_PreservesNonEmptyTextBlocks(t *testing.T) 
 	require.Equal(t, input, out)
 }
 
-func TestFilterSignatureSensitiveBlocksForRetry_DowngradesTools(t *testing.T) {
+func TestFilterSignatureSensitiveBlocksForRetry_StripsToolsWithoutLeakingPayload(t *testing.T) {
 	input := []byte(`{
 		"thinking":{"type":"enabled","budget_tokens":1024},
 		"messages":[
 			{"role":"assistant","content":[
-				{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}},
-				{"type":"tool_result","tool_use_id":"t1","content":"ok","is_error":false}
+				{"type":"tool_use","id":"t1","name":"read_file","input":{"absolute_path":"/Users/yixiu/.real/users/u/.skills/bundled/dingtalk-workspace/references/best_practices/07-minutes.md"}},
+				{"type":"tool_result","tool_use_id":"t1","content":"advertising-like private output","is_error":false}
 			]}
 		]
 	}`)
 
 	out := FilterSignatureSensitiveBlocksForRetry(input)
+	outText := string(out)
+	require.NotContains(t, outText, "tool_use")
+	require.NotContains(t, outText, "tool_result")
+	require.NotContains(t, outText, "read_file")
+	require.NotContains(t, outText, "absolute_path")
+	require.NotContains(t, outText, ".skills")
+	require.NotContains(t, outText, "advertising-like")
 
 	var req map[string]any
 	require.NoError(t, json.Unmarshal(out, &req))
@@ -589,15 +597,56 @@ func TestFilterSignatureSensitiveBlocksForRetry_DowngradesTools(t *testing.T) {
 	require.True(t, ok)
 	content, ok := msg0["content"].([]any)
 	require.True(t, ok)
-	require.Len(t, content, 2)
+	require.Len(t, content, 1)
 	content0, ok := content[0].(map[string]any)
 	require.True(t, ok)
-	content1, ok := content[1].(map[string]any)
-	require.True(t, ok)
 	require.Equal(t, "text", content0["type"])
-	require.Equal(t, "text", content1["type"])
-	require.Contains(t, content0["text"], "tool_use")
-	require.Contains(t, content1["text"], "tool_result")
+	require.NotEmpty(t, content0["text"])
+}
+
+func TestStripInternalToolTranscriptText_RemovesHistoricalTranscriptAndKeepsLatestUser(t *testing.T) {
+	input := []byte(`{
+		"messages":[
+			{"role":"assistant","content":[{"type":"text","text":"我会检查听记\\nto=functions.read_file private leaked output json {\"absolute_path\":\"/Users/yixiu/.real/users/user/.skills/bundled/dingtalk-workspace/references/best_practices/07-minutes.md\",\"offset\":1,\"limit\":260}"}]},
+			{"role":"user","content":[{"type":"text","text":"客户正在反馈 to=functions.read_file 出现在页面上，请不要删除这一条最新问题。"}]}
+		]
+	}`)
+
+	out := StripInternalToolTranscriptText(input)
+
+	var req map[string]any
+	require.NoError(t, json.Unmarshal(out, &req))
+	msgs := req["messages"].([]any)
+
+	historical := msgs[0].(map[string]any)["content"].([]any)[0].(map[string]any)
+	require.Equal(t, "text", historical["type"])
+	require.NotContains(t, historical["text"], "to=functions.read_file")
+	require.NotContains(t, historical["text"], ".skills")
+	require.NotContains(t, historical["text"], "private leaked output")
+	require.NotEmpty(t, historical["text"])
+
+	latestUser := msgs[1].(map[string]any)["content"].([]any)[0].(map[string]any)
+	require.Contains(t, latestUser["text"], "to=functions.read_file")
+}
+
+func TestSanitizeInternalToolTranscriptResponseBody_RemovesLeakedAssistantText(t *testing.T) {
+	input := []byte(`{
+		"type":"message",
+		"content":[{"type":"text","text":"to=functions.read_file {\"absolute_path\":\"/Users/yixiu/.real/users/user/.skills/bundled/dingtalk-workspace/references/best_practices/07-minutes.md\"} private leaked output"}],
+		"usage":{"input_tokens":1,"output_tokens":2}
+	}`)
+
+	out := SanitizeInternalToolTranscriptResponseBody(input)
+	outText := string(out)
+	require.NotContains(t, outText, "to=functions.read_file")
+	require.NotContains(t, outText, ".skills")
+	require.NotContains(t, outText, "private leaked output")
+
+	var req map[string]any
+	require.NoError(t, json.Unmarshal(out, &req))
+	require.Equal(t, float64(2), req["usage"].(map[string]any)["output_tokens"])
+	content := req["content"].([]any)
+	require.NotEmpty(t, content[0].(map[string]any)["text"])
 }
 
 // ============ Group 6b: context_management.edits 清理测试 ============

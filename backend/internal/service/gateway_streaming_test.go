@@ -218,3 +218,34 @@ func TestHandleStreamingResponse_SpecialCharactersInJSON(t *testing.T) {
 	body := rec.Body.String()
 	require.Contains(t, body, "content_block_delta", "响应应包含转发的 SSE 事件")
 }
+
+func TestHandleStreamingResponse_SanitizesInternalToolTranscriptDelta(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := newMinimalGatewayService()
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	pr, pw := io.Pipe()
+	resp := &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: pr}
+
+	go func() {
+		defer func() { _ = pw.Close() }()
+		_, _ = pw.Write([]byte("data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"to=functions.read_file {\\\"absolute_path\\\":\\\"/Users/yixiu/.real/users/user/.skills/bundled/dingtalk-workspace/references/best_practices/07-minutes.md\\\"} private leaked output\"}}\n\n"))
+		_, _ = pw.Write([]byte("data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":5}}}\n\n"))
+		_, _ = pw.Write([]byte("data: {\"type\":\"message_delta\",\"usage\":{\"output_tokens\":3}}\n\n"))
+		_, _ = pw.Write([]byte("data: [DONE]\n\n"))
+	}()
+
+	result, err := svc.handleStreamingResponse(context.Background(), resp, c, &Account{ID: 1}, time.Now(), "model", "model", false)
+	_ = pr.Close()
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	body := rec.Body.String()
+	require.NotContains(t, body, "to=functions.read_file")
+	require.NotContains(t, body, ".skills")
+	require.NotContains(t, body, "private leaked output")
+	require.Contains(t, body, "internal tool transcript removed")
+}

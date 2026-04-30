@@ -1928,7 +1928,7 @@ export default {
         hint: '关闭后会同时禁用缓存创建和缓存读取。'
       },
       thinkingSignatureCompat: {
-        title: '跨渠道历史上下文兼容',
+        title: '跨渠道历史上下文兼容（安全模式）',
         tooltip:
           '开启后，当 Claude Max、官方 Anthropic、AWS Bedrock 等不同渠道之间切换导致历史消息里的 thinking 签名失效时，网关会自动剥离历史 thinking / tool 签名块并重试一次。',
         enabled: '已启用兼容重试',
@@ -1936,7 +1936,7 @@ export default {
         hint: '建议在混用 Claude Max / Anthropic / AWS Bedrock 的分组中开启。'
       },
       claudeToolUseRepair: {
-        title: 'Claude 工具链历史自动修复',
+        title: 'Claude 工具链历史自动修复（安全模式）',
         tooltip:
           '开启后，当历史消息里的 tool_use / tool_result 不成对，导致 Anthropic 或兼容渠道返回 400 时，网关会自动移除无效工具链并重试一次，尽量不让终端用户感知到该错误。',
         enabled: '已启用自动修复',

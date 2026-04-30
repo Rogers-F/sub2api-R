@@ -38,6 +38,11 @@ var (
 	patternEmptyTextSp1    = []byte(`"text" : ""`)
 	patternEmptyTextSp2    = []byte(`"text" :""`)
 
+	patternToolTranscriptToFunctions   = []byte(`to=functions.`)
+	patternToolTranscriptFunctionsJSON = []byte(`"recipient_name":"functions.`)
+	patternToolTranscriptSkillsPath    = []byte(`.skills/`)
+	patternToolTranscriptReadFile      = []byte(`functions.read_file`)
+
 	sessionUserAgentProductPattern = regexp.MustCompile(`([A-Za-z0-9._-]+)/[A-Za-z0-9._-]+`)
 	sessionUserAgentVersionPattern = regexp.MustCompile(`\bv?\d+(?:\.\d+){1,3}\b`)
 )
@@ -367,6 +372,200 @@ func StripEmptyTextBlocks(body []byte) []byte {
 	return out
 }
 
+// StripInternalToolTranscriptText removes leaked internal tool-call transcripts from
+// historical text content. It intentionally preserves the latest user message so a
+// customer can report the leaked text without the gateway deleting their report.
+func StripInternalToolTranscriptText(body []byte) []byte {
+	if !bodyMayContainInternalToolTranscript(body) {
+		return body
+	}
+
+	jsonStr := *(*string)(unsafe.Pointer(&body))
+	msgsRes := gjson.Get(jsonStr, "messages")
+	if !msgsRes.Exists() || !msgsRes.IsArray() {
+		return body
+	}
+
+	var messages []any
+	if err := json.Unmarshal(sliceRawFromBody(body, msgsRes), &messages); err != nil {
+		return body
+	}
+
+	lastUserIdx := -1
+	for i, rawMsg := range messages {
+		msgMap, ok := rawMsg.(map[string]any)
+		if !ok {
+			continue
+		}
+		if role, _ := msgMap["role"].(string); role == "user" {
+			lastUserIdx = i
+		}
+	}
+
+	modified := false
+	for i, rawMsg := range messages {
+		if i == lastUserIdx {
+			continue
+		}
+		msgMap, ok := rawMsg.(map[string]any)
+		if !ok {
+			continue
+		}
+		role, _ := msgMap["role"].(string)
+		nextContent, changed := stripInternalToolTranscriptFromContent(msgMap["content"], role)
+		if changed {
+			msgMap["content"] = nextContent
+			modified = true
+		}
+	}
+
+	if !modified {
+		return body
+	}
+
+	msgsBytes, err := json.Marshal(messages)
+	if err != nil {
+		return body
+	}
+	out, err := sjson.SetRawBytes(body, "messages", msgsBytes)
+	if err != nil {
+		return body
+	}
+	return out
+}
+
+// SanitizeInternalToolTranscriptResponseBody removes leaked internal tool-call
+// transcripts from assistant responses before they are written to clients.
+func SanitizeInternalToolTranscriptResponseBody(body []byte) []byte {
+	if !bodyMayContainInternalToolTranscript(body) {
+		return body
+	}
+
+	var decoded any
+	if err := json.Unmarshal(body, &decoded); err != nil {
+		return body
+	}
+	if !sanitizeInternalToolTranscriptJSON(decoded) {
+		return body
+	}
+
+	out, err := json.Marshal(decoded)
+	if err != nil {
+		return body
+	}
+	return out
+}
+
+func bodyMayContainInternalToolTranscript(body []byte) bool {
+	return bytes.Contains(body, patternToolTranscriptToFunctions) ||
+		bytes.Contains(body, patternToolTranscriptFunctionsJSON) ||
+		bytes.Contains(body, patternToolTranscriptSkillsPath) ||
+		bytes.Contains(body, patternToolTranscriptReadFile)
+}
+
+func stripInternalToolTranscriptFromContent(content any, role string) (any, bool) {
+	switch v := content.(type) {
+	case string:
+		if looksLikeInternalToolTranscript(v) {
+			return internalToolTranscriptPlaceholder(role), true
+		}
+		return content, false
+	case []any:
+		newContent := make([]any, 0, len(v))
+		changed := false
+		for _, block := range v {
+			blockMap, ok := block.(map[string]any)
+			if !ok {
+				newContent = append(newContent, block)
+				continue
+			}
+			if txt, ok := blockMap["text"].(string); ok && looksLikeInternalToolTranscript(txt) {
+				changed = true
+				continue
+			}
+			newContent = append(newContent, block)
+		}
+		if !changed {
+			return content, false
+		}
+		if len(newContent) == 0 {
+			newContent = append(newContent, map[string]any{
+				"type": "text",
+				"text": internalToolTranscriptPlaceholder(role),
+			})
+		}
+		return newContent, true
+	default:
+		return content, false
+	}
+}
+
+func looksLikeInternalToolTranscript(text string) bool {
+	if text == "" {
+		return false
+	}
+	lower := strings.ToLower(text)
+	if strings.Contains(lower, "to=functions.") {
+		return true
+	}
+	if strings.Contains(lower, `"recipient_name":"functions.`) ||
+		strings.Contains(lower, `"recipient_name": "functions.`) {
+		return true
+	}
+	if strings.Contains(lower, "functions.read_file") && strings.Contains(lower, "absolute_path") {
+		return true
+	}
+	if strings.Contains(lower, ".skills/") &&
+		(strings.Contains(lower, "functions.") || strings.Contains(lower, "absolute_path")) {
+		return true
+	}
+	return false
+}
+
+func internalToolTranscriptPlaceholder(role string) string {
+	if role == "assistant" {
+		return "(assistant internal tool transcript removed)"
+	}
+	return "(internal tool transcript removed)"
+}
+
+func sanitizeInternalToolTranscriptJSON(v any) bool {
+	switch t := v.(type) {
+	case map[string]any:
+		changed := false
+		for k, vv := range t {
+			if s, ok := vv.(string); ok && responseStringKeyCanContainText(k) && looksLikeInternalToolTranscript(s) {
+				t[k] = internalToolTranscriptPlaceholder("assistant")
+				changed = true
+				continue
+			}
+			if sanitizeInternalToolTranscriptJSON(vv) {
+				changed = true
+			}
+		}
+		return changed
+	case []any:
+		changed := false
+		for _, item := range t {
+			if sanitizeInternalToolTranscriptJSON(item) {
+				changed = true
+			}
+		}
+		return changed
+	default:
+		return false
+	}
+}
+
+func responseStringKeyCanContainText(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(key)) {
+	case "text", "content", "output", "message":
+		return true
+	default:
+		return false
+	}
+}
+
 // FilterThinkingBlocks removes thinking blocks from request body
 // Returns filtered body or original body if filtering fails (fail-safe)
 // This prevents 400 errors from invalid thinking block signatures
@@ -388,12 +587,14 @@ func FilterThinkingBlocks(body []byte) []byte {
 //   - If we remove thinking blocks but keep top-level `thinking` enabled, we can trigger:
 //     "Expected `thinking` or `redacted_thinking`, but found `text`"
 //
-// Strategy (B: preserve content as text):
+// Strategy (safe strip):
 //   - Disable top-level `thinking` (remove `thinking` field).
-//   - Convert `thinking` blocks to `text` blocks (preserve the thinking content).
-//   - Remove `redacted_thinking` blocks (cannot be converted to text).
+//   - Remove `thinking` and `redacted_thinking` blocks instead of converting them to text.
+//   - Remove leaked internal tool-call transcripts from historical text content.
 //   - Ensure no message ends up with empty content.
 func FilterThinkingBlocksForRetry(body []byte) []byte {
+	body = StripInternalToolTranscriptText(body)
+
 	hasThinkingContent := bytes.Contains(body, patternTypeThinking) ||
 		bytes.Contains(body, patternTypeThinkingSpaced) ||
 		bytes.Contains(body, patternTypeRedactedThinking) ||
@@ -505,15 +706,12 @@ func FilterThinkingBlocksForRetry(body []byte) []byte {
 				}
 			}
 
-			// Convert thinking blocks to text (preserve content) and drop redacted_thinking.
+			// Drop thinking blocks entirely. Converting them to text can expose private
+			// reasoning or internal tool transcripts to the next upstream model.
 			switch blockType {
 			case "thinking":
 				modifiedThisMsg = true
 				ensureNewContent(bi)
-				thinkingText, _ := blockMap["thinking"].(string)
-				if thinkingText != "" {
-					newContent = append(newContent, map[string]any{"type": "text", "text": thinkingText})
-				}
 				continue
 			case "redacted_thinking":
 				modifiedThisMsg = true
@@ -523,19 +721,9 @@ func FilterThinkingBlocksForRetry(body []byte) []byte {
 
 			// Handle blocks without type discriminator but with a "thinking" field.
 			if blockType == "" {
-				if rawThinking, hasThinking := blockMap["thinking"]; hasThinking {
+				if _, hasThinking := blockMap["thinking"]; hasThinking {
 					modifiedThisMsg = true
 					ensureNewContent(bi)
-					switch v := rawThinking.(type) {
-					case string:
-						if v != "" {
-							newContent = append(newContent, map[string]any{"type": "text", "text": v})
-						}
-					default:
-						if b, err := json.Marshal(v); err == nil && len(b) > 0 {
-							newContent = append(newContent, map[string]any{"type": "text", "text": string(b)})
-						}
-					}
 					continue
 				}
 			}
@@ -943,12 +1131,14 @@ func filterAnthropicToolResultBlocks(content any, allowed map[string]struct{}) (
 // signature/thought_signature validation issues involving tool blocks.
 //
 // This performs everything in FilterThinkingBlocksForRetry, plus:
-//   - Convert `tool_use` blocks to text (name/id/input) so we stop sending structured tool calls.
-//   - Convert `tool_result` blocks to text so we keep tool results visible without tool semantics.
+//   - Remove `tool_use` blocks so we stop sending structured tool calls.
+//   - Remove `tool_result` blocks so tool output cannot become visible prompt text.
 //
-// Use this only when needed: converting tool blocks to text changes model behaviour and can increase the
-// risk of prompt injection (tool output becomes plain conversation text).
+// Use this only when needed: removing tool blocks changes model behaviour, but it is safer than converting
+// tool names, arguments, paths, or outputs into plain conversation text.
 func FilterSignatureSensitiveBlocksForRetry(body []byte) []byte {
+	body = StripInternalToolTranscriptText(body)
+
 	// Fast path: only run when we see likely relevant constructs.
 	if !bytes.Contains(body, []byte(`"type":"thinking"`)) &&
 		!bytes.Contains(body, []byte(`"type": "thinking"`)) &&
@@ -1033,66 +1223,21 @@ func FilterSignatureSensitiveBlocksForRetry(body []byte) []byte {
 			switch blockType {
 			case "thinking":
 				modifiedThisMsg = true
-				thinkingText, _ := blockMap["thinking"].(string)
-				if thinkingText == "" {
-					continue
-				}
-				newContent = append(newContent, map[string]any{"type": "text", "text": thinkingText})
 				continue
 			case "redacted_thinking":
 				modifiedThisMsg = true
 				continue
 			case "tool_use":
 				modifiedThisMsg = true
-				name, _ := blockMap["name"].(string)
-				id, _ := blockMap["id"].(string)
-				input := blockMap["input"]
-				inputJSON, _ := json.Marshal(input)
-				text := "(tool_use)"
-				if name != "" {
-					text += " name=" + name
-				}
-				if id != "" {
-					text += " id=" + id
-				}
-				if len(inputJSON) > 0 && string(inputJSON) != "null" {
-					text += " input=" + string(inputJSON)
-				}
-				newContent = append(newContent, map[string]any{"type": "text", "text": text})
 				continue
 			case "tool_result":
 				modifiedThisMsg = true
-				toolUseID, _ := blockMap["tool_use_id"].(string)
-				isError, _ := blockMap["is_error"].(bool)
-				content := blockMap["content"]
-				contentJSON, _ := json.Marshal(content)
-				text := "(tool_result)"
-				if toolUseID != "" {
-					text += " tool_use_id=" + toolUseID
-				}
-				if isError {
-					text += " is_error=true"
-				}
-				if len(contentJSON) > 0 && string(contentJSON) != "null" {
-					text += "\n" + string(contentJSON)
-				}
-				newContent = append(newContent, map[string]any{"type": "text", "text": text})
 				continue
 			}
 
 			if blockType == "" {
-				if rawThinking, hasThinking := blockMap["thinking"]; hasThinking {
+				if _, hasThinking := blockMap["thinking"]; hasThinking {
 					modifiedThisMsg = true
-					switch v := rawThinking.(type) {
-					case string:
-						if v != "" {
-							newContent = append(newContent, map[string]any{"type": "text", "text": v})
-						}
-					default:
-						if b, err := json.Marshal(v); err == nil && len(b) > 0 {
-							newContent = append(newContent, map[string]any{"type": "text", "text": string(b)})
-						}
-					}
 					continue
 				}
 			}

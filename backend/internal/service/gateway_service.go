@@ -3988,6 +3988,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		account.ID, account.Name, account.Platform, account.Type, account.IsTLSFingerprintEnabled(), proxyURL)
 	// Pre-filter: strip empty text blocks (including nested in tool_result) to prevent upstream 400.
 	body = StripEmptyTextBlocks(body)
+	body = StripInternalToolTranscriptText(body)
 	body, _, err = enforceNonStreamingRequestBody(c, body)
 	if err != nil {
 		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
@@ -4546,6 +4547,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	input.Body = enforceCacheControlPolicy(input.Body, anthropicPromptCachingEnabledFromContext(ctx))
 	// Pre-filter: strip empty text blocks (including nested in tool_result) to prevent upstream 400.
 	input.Body = StripEmptyTextBlocks(input.Body)
+	input.Body = StripInternalToolTranscriptText(input.Body)
 	input.Body, _, err = enforceNonStreamingRequestBody(c, input.Body)
 	if err != nil {
 		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
@@ -5173,6 +5175,7 @@ func (s *GatewayService) handleNonStreamingResponseAnthropicAPIKeyPassthrough(
 	}
 
 	usage := parseClaudeUsageFromResponseBody(body)
+	body = SanitizeInternalToolTranscriptResponseBody(body)
 
 	writeAnthropicPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	contentType := resolveNonStreamJSONContentType(c, resp.Header.Get("Content-Type"), "application/json")
@@ -6744,6 +6747,9 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 			eventName = eventType
 		}
 		eventChanged := false
+		if sanitizeInternalToolTranscriptJSON(event) {
+			eventChanged = true
+		}
 
 		// 兼容 Kimi cached_tokens → cache_read_input_tokens
 		if eventType == "message_start" {
@@ -7210,6 +7216,7 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 	if originalModel != mappedModel {
 		body = s.replaceModelInResponseBody(body, mappedModel, originalModel)
 	}
+	body = SanitizeInternalToolTranscriptResponseBody(body)
 
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 
@@ -7965,6 +7972,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 
 	// Pre-filter: strip empty text blocks to prevent upstream 400.
 	body = StripEmptyTextBlocks(body)
+	body = StripInternalToolTranscriptText(body)
 
 	isClaudeCode := isClaudeCodeRequest(ctx, c, parsed)
 	shouldMimicClaudeCode := account.IsOAuth() && !isClaudeCode
