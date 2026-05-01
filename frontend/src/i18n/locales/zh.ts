@@ -1927,6 +1927,14 @@ export default {
         disabled: '已关闭缓存',
         hint: '关闭后会同时禁用缓存创建和缓存读取。'
       },
+      strongSafetyMode: {
+        title: '强力安全模式',
+        tooltip:
+          '默认开启。网关会在请求上游前隔离历史里的内部工具调用痕迹，并在返回给用户前兜底拦截内部 transcript，尽量避免污染上下文或泄漏给终端用户。',
+        enabled: '已启用强力安全',
+        disabled: '已关闭强力安全',
+        hint: '建议保持开启。仅在确认该分组需要原始透传调试时关闭。'
+      },
       thinkingSignatureCompat: {
         title: '跨渠道历史上下文兼容（安全模式）',
         tooltip:

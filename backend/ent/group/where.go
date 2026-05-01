@@ -165,6 +165,11 @@ func ClaudeToolArgumentsRepairEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudeToolArgumentsRepairEnabled, v))
 }
 
+// StrongSafetyModeEnabled applies equality check predicate on the "strong_safety_mode_enabled" field. It's identical to StrongSafetyModeEnabledEQ.
+func StrongSafetyModeEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldStrongSafetyModeEnabled, v))
+}
+
 // FallbackGroupID applies equality check predicate on the "fallback_group_id" field. It's identical to FallbackGroupIDEQ.
 func FallbackGroupID(v int64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldFallbackGroupID, v))
@@ -1118,6 +1123,16 @@ func ClaudeToolArgumentsRepairEnabledEQ(v bool) predicate.Group {
 // ClaudeToolArgumentsRepairEnabledNEQ applies the NEQ predicate on the "claude_tool_arguments_repair_enabled" field.
 func ClaudeToolArgumentsRepairEnabledNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldClaudeToolArgumentsRepairEnabled, v))
+}
+
+// StrongSafetyModeEnabledEQ applies the EQ predicate on the "strong_safety_mode_enabled" field.
+func StrongSafetyModeEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldStrongSafetyModeEnabled, v))
+}
+
+// StrongSafetyModeEnabledNEQ applies the NEQ predicate on the "strong_safety_mode_enabled" field.
+func StrongSafetyModeEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldStrongSafetyModeEnabled, v))
 }
 
 // FallbackGroupIDEQ applies the EQ predicate on the "fallback_group_id" field.

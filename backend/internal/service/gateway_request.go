@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -372,6 +373,61 @@ func StripEmptyTextBlocks(body []byte) []byte {
 	return out
 }
 
+// NormalizeClaudeHistoryForUpstream applies the low-risk outbound history safety
+// pass. Empty text cleanup stays on for compatibility; internal transcript cleanup
+// is controlled by the group-level strong safety mode, which defaults on.
+func NormalizeClaudeHistoryForUpstream(ctx context.Context, body []byte) []byte {
+	body = StripEmptyTextBlocks(body)
+	if StrongSafetyModeEnabledFromContext(ctx) {
+		body = StripInternalToolTranscriptText(body)
+	}
+	return body
+}
+
+func SanitizeClaudeResponseForClient(ctx context.Context, body []byte) []byte {
+	if !StrongSafetyModeEnabledFromContext(ctx) {
+		return body
+	}
+	return SanitizeInternalToolTranscriptResponseBody(body)
+}
+
+func SanitizeClaudeSSEDataForClient(ctx context.Context, data string) (string, bool) {
+	if !StrongSafetyModeEnabledFromContext(ctx) {
+		return data, false
+	}
+	trimmed := strings.TrimSpace(data)
+	if trimmed == "" || trimmed == "[DONE]" {
+		return data, false
+	}
+	out := SanitizeInternalToolTranscriptResponseBody([]byte(data))
+	if bytes.Equal(out, []byte(data)) {
+		return data, false
+	}
+	return string(out), true
+}
+
+func SanitizeClaudeSSEPayloadForClient(ctx context.Context, payload []byte) []byte {
+	if !StrongSafetyModeEnabledFromContext(ctx) || !bodyMayContainInternalToolTranscript(payload) {
+		return payload
+	}
+	lines := strings.Split(string(payload), "\n")
+	changed := false
+	for i, line := range lines {
+		data, ok := extractAnthropicSSEDataLine(line)
+		if !ok {
+			continue
+		}
+		if sanitized, lineChanged := SanitizeClaudeSSEDataForClient(ctx, data); lineChanged {
+			lines[i] = "data: " + sanitized
+			changed = true
+		}
+	}
+	if !changed {
+		return payload
+	}
+	return []byte(strings.Join(lines, "\n"))
+}
+
 // StripInternalToolTranscriptText removes leaked internal tool-call transcripts from
 // historical text content. It intentionally preserves the latest user message so a
 // customer can report the leaked text without the gateway deleting their report.
@@ -593,7 +649,17 @@ func FilterThinkingBlocks(body []byte) []byte {
 //   - Remove leaked internal tool-call transcripts from historical text content.
 //   - Ensure no message ends up with empty content.
 func FilterThinkingBlocksForRetry(body []byte) []byte {
-	body = StripInternalToolTranscriptText(body)
+	return filterThinkingBlocksForRetry(body, true)
+}
+
+func FilterThinkingBlocksForRetryWithContext(ctx context.Context, body []byte) []byte {
+	return filterThinkingBlocksForRetry(body, StrongSafetyModeEnabledFromContext(ctx))
+}
+
+func filterThinkingBlocksForRetry(body []byte, stripInternalToolTranscript bool) []byte {
+	if stripInternalToolTranscript {
+		body = StripInternalToolTranscriptText(body)
+	}
 
 	hasThinkingContent := bytes.Contains(body, patternTypeThinking) ||
 		bytes.Contains(body, patternTypeThinkingSpaced) ||
@@ -1137,7 +1203,17 @@ func filterAnthropicToolResultBlocks(content any, allowed map[string]struct{}) (
 // Use this only when needed: removing tool blocks changes model behaviour, but it is safer than converting
 // tool names, arguments, paths, or outputs into plain conversation text.
 func FilterSignatureSensitiveBlocksForRetry(body []byte) []byte {
-	body = StripInternalToolTranscriptText(body)
+	return filterSignatureSensitiveBlocksForRetry(body, true)
+}
+
+func FilterSignatureSensitiveBlocksForRetryWithContext(ctx context.Context, body []byte) []byte {
+	return filterSignatureSensitiveBlocksForRetry(body, StrongSafetyModeEnabledFromContext(ctx))
+}
+
+func filterSignatureSensitiveBlocksForRetry(body []byte, stripInternalToolTranscript bool) []byte {
+	if stripInternalToolTranscript {
+		body = StripInternalToolTranscriptText(body)
+	}
 
 	// Fast path: only run when we see likely relevant constructs.
 	if !bytes.Contains(body, []byte(`"type":"thinking"`)) &&

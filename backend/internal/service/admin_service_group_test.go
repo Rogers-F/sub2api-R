@@ -388,6 +388,45 @@ func TestAdminService_CreateGroup_DefaultsForceApplicationJSONForNonStreamDisabl
 	require.False(t, repo.created.ForceApplicationJSONForNonStream)
 }
 
+func TestAdminService_CreateGroup_DefaultsStrongSafetyModeEnabled(t *testing.T) {
+	repo := &groupRepoStubForAdmin{}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:           "test-group",
+		Platform:       PlatformAnthropic,
+		RateMultiplier: 1.0,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.created)
+	require.True(t, group.StrongSafetyModeEnabled)
+	require.True(t, repo.created.StrongSafetyModeEnabled)
+}
+
+func TestAdminService_UpdateGroup_StrongSafetyModeEnabled(t *testing.T) {
+	existingGroup := &Group{
+		ID:                      1,
+		Name:                    "existing-group",
+		Platform:                PlatformAnthropic,
+		Status:                  StatusActive,
+		SubscriptionType:        SubscriptionTypeStandard,
+		StrongSafetyModeEnabled: true,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existingGroup}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	disabled := false
+	group, err := svc.UpdateGroup(context.Background(), 1, &UpdateGroupInput{
+		StrongSafetyModeEnabled: &disabled,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.updated)
+	require.False(t, group.StrongSafetyModeEnabled)
+	require.False(t, repo.updated.StrongSafetyModeEnabled)
+}
+
 func TestAdminService_UpdateGroup_ForceApplicationJSONForNonStream(t *testing.T) {
 	existingGroup := &Group{
 		ID:                               1,

@@ -1840,6 +1840,14 @@ export default {
         disabled: 'Disabled',
         hint: 'Disables both cache creation and cache reads.'
       },
+      strongSafetyMode: {
+        title: 'Strong Safety Mode',
+        tooltip:
+          'Enabled by default. Before forwarding upstream, the gateway isolates internal tool-call transcript traces from history, and before responding to users it blocks internal transcripts as a final guard.',
+        enabled: 'Strong safety enabled',
+        disabled: 'Strong safety disabled',
+        hint: 'Recommended to keep enabled. Disable only for groups that intentionally need raw passthrough debugging.'
+      },
       thinkingSignatureCompat: {
         title: 'Cross-channel History Compat (Safe Mode)',
         tooltip:

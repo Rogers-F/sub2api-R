@@ -62,6 +62,8 @@ type Group struct {
 	ClaudeToolUseRepairEnabled bool `json:"claude_tool_use_repair_enabled,omitempty"`
 	// 是否启用 Claude tool arguments 占位空对象修复
 	ClaudeToolArgumentsRepairEnabled bool `json:"claude_tool_arguments_repair_enabled,omitempty"`
+	// 是否启用强力安全模式：隔离内部工具 transcript，防止污染上下文或响应
+	StrongSafetyModeEnabled bool `json:"strong_safety_mode_enabled,omitempty"`
 	// 非 Claude Code 请求降级使用的分组 ID
 	FallbackGroupID *int64 `json:"fallback_group_id,omitempty"`
 	// 无效请求兜底使用的分组 ID
@@ -194,7 +196,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldThinkingSignatureCompatEnabled, group.FieldClaudeToolUseRepairEnabled, group.FieldClaudeToolArgumentsRepairEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldThinkingSignatureCompatEnabled, group.FieldClaudeToolUseRepairEnabled, group.FieldClaudeToolArgumentsRepairEnabled, group.FieldStrongSafetyModeEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
 			values[i] = new(sql.NullFloat64)
@@ -364,6 +366,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field claude_tool_arguments_repair_enabled", values[i])
 			} else if value.Valid {
 				_m.ClaudeToolArgumentsRepairEnabled = value.Bool
+			}
+		case group.FieldStrongSafetyModeEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field strong_safety_mode_enabled", values[i])
+			} else if value.Valid {
+				_m.StrongSafetyModeEnabled = value.Bool
 			}
 		case group.FieldFallbackGroupID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -600,6 +608,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("claude_tool_arguments_repair_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ClaudeToolArgumentsRepairEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("strong_safety_mode_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StrongSafetyModeEnabled))
 	builder.WriteString(", ")
 	if v := _m.FallbackGroupID; v != nil {
 		builder.WriteString("fallback_group_id=")

@@ -361,7 +361,7 @@ func (s *OpsService) executeRetry(ctx context.Context, errorLog *OpsErrorLogDeta
 
 	switch reqType {
 	case opsRetryTypeMessages:
-		bodyBytes = FilterThinkingBlocksForRetry(bodyBytes)
+		bodyBytes = FilterThinkingBlocksForRetryWithContext(ctx, bodyBytes)
 	case opsRetryTypeOpenAI, opsRetryTypeGeminiV1B:
 		// No-op
 	}

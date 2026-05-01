@@ -1337,6 +1337,8 @@ func (s *AntigravityGatewayService) Forward(ctx context.Context, c *gin.Context,
 	sessionID := getSessionID(c)
 	prefix := logPrefix(sessionID, account.Name)
 
+	body = NormalizeClaudeHistoryForUpstream(ctx, body)
+
 	// 解析 Claude 请求
 	var claudeReq antigravity.ClaudeRequest
 	if err := json.Unmarshal(body, &claudeReq); err != nil {
@@ -3908,6 +3910,7 @@ returnResponse:
 		logger.LegacyPrintf("service.antigravity_gateway", "[antigravity-Forward] transform_error error=%v body=%s", err, string(geminiBody))
 		return nil, s.writeClaudeError(c, http.StatusBadGateway, "upstream_error", "Failed to parse upstream response")
 	}
+	claudeResp = SanitizeClaudeResponseForClient(c.Request.Context(), claudeResp)
 
 	c.Data(http.StatusOK, "application/json", claudeResp)
 
@@ -4047,7 +4050,7 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 				// 上游完成，发送结束事件
 				finalEvents, agUsage := processor.Finish()
 				if len(finalEvents) > 0 {
-					cw.Write(finalEvents)
+					cw.Write(SanitizeClaudeSSEPayloadForClient(c.Request.Context(), finalEvents))
 				} else if !processor.MessageStartSent() && !cw.Disconnected() {
 					// 整个流未收到任何可解析的上游数据（全部 SSE 行均无法被 JSON 解析），
 					// 触发 failover 在同账号重试，避免向客户端发出缺少 message_start 的残缺流
@@ -4082,7 +4085,7 @@ func (s *AntigravityGatewayService) handleClaudeStreamingResponse(c *gin.Context
 					ms := int(time.Since(startTime).Milliseconds())
 					firstTokenMs = &ms
 				}
-				cw.Write(claudeEvents)
+				cw.Write(SanitizeClaudeSSEPayloadForClient(c.Request.Context(), claudeEvents))
 			}
 
 		case <-intervalCh:

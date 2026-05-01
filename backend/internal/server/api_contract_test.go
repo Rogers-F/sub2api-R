@@ -177,6 +177,7 @@ func TestAPIContracts(t *testing.T) {
 						Status:                     service.StatusActive,
 						SubscriptionType:           service.SubscriptionTypeStandard,
 						ClaudePromptCachingEnabled: true,
+						StrongSafetyModeEnabled:    true,
 						ModelRoutingEnabled:        true,
 						ModelRouting: map[string][]int64{
 							"claude-3-*": []int64{101, 102},
@@ -215,6 +216,7 @@ func TestAPIContracts(t *testing.T) {
 						"thinking_signature_compat_enabled": false,
 						"claude_tool_use_repair_enabled": false,
 						"claude_tool_arguments_repair_enabled": false,
+						"strong_safety_mode_enabled": true,
 						"allow_messages_dispatch": false,
 						"require_oauth_only": false,
 						"require_privacy_set": false,

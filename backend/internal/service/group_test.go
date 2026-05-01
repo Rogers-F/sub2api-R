@@ -109,3 +109,28 @@ func TestClaudeToolArgumentsRepairEnabledFromContext(t *testing.T) {
 	require.True(t, ClaudeToolArgumentsRepairEnabledFromContext(ctx))
 	require.False(t, ClaudeToolArgumentsRepairEnabledFromContext(context.Background()))
 }
+
+func TestStrongSafetyModeEnabledFromContext_DefaultsOn(t *testing.T) {
+	t.Parallel()
+
+	require.True(t, StrongSafetyModeEnabledFromContext(context.Background()))
+}
+
+func TestStrongSafetyModeEnabledFromContext_RespectsGroupToggle(t *testing.T) {
+	t.Parallel()
+
+	group := &Group{
+		ID:                      1,
+		Name:                    "claude",
+		Platform:                PlatformAnthropic,
+		Status:                  StatusActive,
+		Hydrated:                true,
+		StrongSafetyModeEnabled: false,
+	}
+	ctx := context.WithValue(context.Background(), ctxkey.Group, group)
+
+	require.False(t, StrongSafetyModeEnabledFromContext(ctx))
+
+	group.StrongSafetyModeEnabled = true
+	require.True(t, StrongSafetyModeEnabledFromContext(ctx))
+}

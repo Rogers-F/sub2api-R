@@ -1,6 +1,9 @@
 package service
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // APIKeyAuthSnapshot API Key 认证缓存快照（仅包含认证所需字段）
 type APIKeyAuthSnapshot struct {
@@ -54,6 +57,7 @@ type APIKeyAuthGroupSnapshot struct {
 	ThinkingSignatureCompatEnabled   bool     `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       bool     `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled bool     `json:"claude_tool_arguments_repair_enabled"`
+	StrongSafetyModeEnabled          bool     `json:"strong_safety_mode_enabled"`
 	FallbackGroupID                  *int64   `json:"fallback_group_id,omitempty"`
 	FallbackGroupIDOnInvalidRequest  *int64   `json:"fallback_group_id_on_invalid_request,omitempty"`
 
@@ -71,6 +75,16 @@ type APIKeyAuthGroupSnapshot struct {
 	DefaultMappedModel    string `json:"default_mapped_model,omitempty"`
 	// 非流式响应头控制
 	ForceApplicationJSONForNonStream bool `json:"force_application_json_for_non_stream"`
+}
+
+func (g *APIKeyAuthGroupSnapshot) UnmarshalJSON(data []byte) error {
+	type alias APIKeyAuthGroupSnapshot
+	aux := alias{StrongSafetyModeEnabled: true}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*g = APIKeyAuthGroupSnapshot(aux)
+	return nil
 }
 
 // APIKeyAuthCacheEntry 缓存条目，支持负缓存

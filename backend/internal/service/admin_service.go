@@ -150,6 +150,7 @@ type CreateGroupInput struct {
 	ThinkingSignatureCompatEnabled   bool
 	ClaudeToolUseRepairEnabled       bool
 	ClaudeToolArgumentsRepairEnabled bool
+	StrongSafetyModeEnabled          *bool
 	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
@@ -190,6 +191,7 @@ type UpdateGroupInput struct {
 	ThinkingSignatureCompatEnabled   *bool
 	ClaudeToolUseRepairEnabled       *bool
 	ClaudeToolArgumentsRepairEnabled *bool
+	StrongSafetyModeEnabled          *bool
 	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
@@ -920,6 +922,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if input.ClaudePromptCachingEnabled != nil {
 		claudePromptCachingEnabled = *input.ClaudePromptCachingEnabled
 	}
+	strongSafetyModeEnabled := true
+	if input.StrongSafetyModeEnabled != nil {
+		strongSafetyModeEnabled = *input.StrongSafetyModeEnabled
+	}
 
 	// 如果指定了复制账号的源分组，先获取账号 ID 列表
 	var accountIDsToCopy []int64
@@ -972,6 +978,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ThinkingSignatureCompatEnabled:   input.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       input.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: input.ClaudeToolArgumentsRepairEnabled,
+		StrongSafetyModeEnabled:          strongSafetyModeEnabled,
 		FallbackGroupID:                  input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  fallbackOnInvalidRequest,
 		ModelRouting:                     input.ModelRouting,
@@ -1187,6 +1194,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ClaudeToolArgumentsRepairEnabled != nil {
 		group.ClaudeToolArgumentsRepairEnabled = *input.ClaudeToolArgumentsRepairEnabled
+	}
+	if input.StrongSafetyModeEnabled != nil {
+		group.StrongSafetyModeEnabled = *input.StrongSafetyModeEnabled
 	}
 	if input.FallbackGroupID != nil {
 		// 校验降级分组

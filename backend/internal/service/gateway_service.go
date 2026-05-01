@@ -3986,9 +3986,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	// 调试日志：记录即将转发的账号信息
 	logger.LegacyPrintf("service.gateway", "[Forward] Using account: ID=%d Name=%s Platform=%s Type=%s TLSFingerprint=%v Proxy=%s",
 		account.ID, account.Name, account.Platform, account.Type, account.IsTLSFingerprintEnabled(), proxyURL)
-	// Pre-filter: strip empty text blocks (including nested in tool_result) to prevent upstream 400.
-	body = StripEmptyTextBlocks(body)
-	body = StripInternalToolTranscriptText(body)
+	body = NormalizeClaudeHistoryForUpstream(ctx, body)
 	body, _, err = enforceNonStreamingRequestBody(c, body)
 	if err != nil {
 		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
@@ -4140,7 +4138,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 					// 2) Only if upstream still errors AND error message points to tool/function signature issues:
 					//    also downgrade tool_use/tool_result blocks to text.
 
-					filteredBody := FilterThinkingBlocksForRetry(body)
+					filteredBody := FilterThinkingBlocksForRetryWithContext(ctx, body)
 					retryCtx, releaseRetryCtx := detachStreamUpstreamContext(ctx, reqStream)
 					retryReq, buildErr := s.buildUpstreamRequest(retryCtx, c, account, filteredBody, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
 					releaseRetryCtx()
@@ -4175,7 +4173,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 								msg2 := extractUpstreamErrorMessage(retryRespBody)
 								if looksLikeToolSignatureError(msg2) && time.Since(retryStart) < maxRetryElapsed {
 									logger.LegacyPrintf("service.gateway", "Account %d: signature retry still failing and looks tool-related, retrying with tool blocks downgraded", account.ID)
-									filteredBody2 := FilterSignatureSensitiveBlocksForRetry(body)
+									filteredBody2 := FilterSignatureSensitiveBlocksForRetryWithContext(ctx, body)
 									retryCtx2, releaseRetryCtx2 := detachStreamUpstreamContext(ctx, reqStream)
 									retryReq2, buildErr2 := s.buildUpstreamRequest(retryCtx2, c, account, filteredBody2, token, tokenType, reqModel, reqStream, shouldMimicClaudeCode)
 									releaseRetryCtx2()
@@ -4545,9 +4543,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	}
 	// Respect group-level Claude prompt caching policy in passthrough mode as well.
 	input.Body = enforceCacheControlPolicy(input.Body, anthropicPromptCachingEnabledFromContext(ctx))
-	// Pre-filter: strip empty text blocks (including nested in tool_result) to prevent upstream 400.
-	input.Body = StripEmptyTextBlocks(input.Body)
-	input.Body = StripInternalToolTranscriptText(input.Body)
+	input.Body = NormalizeClaudeHistoryForUpstream(ctx, input.Body)
 	input.Body, _, err = enforceNonStreamingRequestBody(c, input.Body)
 	if err != nil {
 		return nil, fmt.Errorf("enforce non-stream request body: %w", err)
@@ -4983,6 +4979,10 @@ func (s *GatewayService) handleStreamingResponseAnthropicAPIKeyPassthrough(
 
 			line := ev.line
 			if data, ok := extractAnthropicSSEDataLine(line); ok {
+				if sanitizedData, changed := SanitizeClaudeSSEDataForClient(ctx, data); changed {
+					data = sanitizedData
+					line = "data: " + sanitizedData
+				}
 				trimmed := strings.TrimSpace(data)
 				if anthropicStreamEventIsTerminal("", trimmed) {
 					sawTerminalEvent = true
@@ -5175,7 +5175,7 @@ func (s *GatewayService) handleNonStreamingResponseAnthropicAPIKeyPassthrough(
 	}
 
 	usage := parseClaudeUsageFromResponseBody(body)
-	body = SanitizeInternalToolTranscriptResponseBody(body)
+	body = SanitizeClaudeResponseForClient(ctx, body)
 
 	writeAnthropicPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	contentType := resolveNonStreamJSONContentType(c, resp.Header.Get("Content-Type"), "application/json")
@@ -6747,7 +6747,7 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 			eventName = eventType
 		}
 		eventChanged := false
-		if sanitizeInternalToolTranscriptJSON(event) {
+		if StrongSafetyModeEnabledFromContext(ctx) && sanitizeInternalToolTranscriptJSON(event) {
 			eventChanged = true
 		}
 
@@ -7216,7 +7216,7 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 	if originalModel != mappedModel {
 		body = s.replaceModelInResponseBody(body, mappedModel, originalModel)
 	}
-	body = SanitizeInternalToolTranscriptResponseBody(body)
+	body = SanitizeClaudeResponseForClient(c.Request.Context(), body)
 
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 
@@ -7970,9 +7970,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 	body := parsed.Body
 	reqModel := parsed.Model
 
-	// Pre-filter: strip empty text blocks to prevent upstream 400.
-	body = StripEmptyTextBlocks(body)
-	body = StripInternalToolTranscriptText(body)
+	body = NormalizeClaudeHistoryForUpstream(ctx, body)
 
 	isClaudeCode := isClaudeCodeRequest(ctx, c, parsed)
 	shouldMimicClaudeCode := account.IsOAuth() && !isClaudeCode
@@ -8092,7 +8090,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 	if resp.StatusCode == 400 && s.shouldRectifySignatureError(ctx, account, respBody) {
 		logger.LegacyPrintf("service.gateway", "Account %d: detected thinking block signature error on count_tokens, retrying with filtered thinking blocks", account.ID)
 
-		filteredBody := FilterThinkingBlocksForRetry(body)
+		filteredBody := FilterThinkingBlocksForRetryWithContext(ctx, body)
 		retryReq, buildErr := s.buildCountTokensRequest(ctx, c, account, filteredBody, token, tokenType, reqModel, shouldMimicClaudeCode)
 		if buildErr == nil {
 			retryResp, retryErr := s.httpUpstream.DoWithTLS(retryReq, proxyURL, account.ID, account.Concurrency, account.IsTLSFingerprintEnabled())

@@ -39,7 +39,9 @@ type Group struct {
 	ClaudeToolUseRepairEnabled bool
 	// 是否修复 Claude tool arguments 前导占位 {}，避免输出 {}{"k":"v"}。
 	ClaudeToolArgumentsRepairEnabled bool
-	FallbackGroupID                  *int64
+	// 强力安全模式：默认开启，隔离内部工具 transcript，防止污染上下文或响应。
+	StrongSafetyModeEnabled bool
+	FallbackGroupID         *int64
 	// 无效请求兜底分组（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 
@@ -163,6 +165,14 @@ func ClaudeToolUseRepairEnabledFromContext(ctx context.Context) bool {
 func ClaudeToolArgumentsRepairEnabledFromContext(ctx context.Context) bool {
 	group, ok := GroupFromContext(ctx)
 	return ok && group.ClaudeToolArgumentsRepairEnabled
+}
+
+func StrongSafetyModeEnabledFromContext(ctx context.Context) bool {
+	group, ok := GroupFromContext(ctx)
+	if !ok {
+		return true
+	}
+	return group.StrongSafetyModeEnabled
 }
 
 func SupportsGroupAccountFilters(platform string) bool {

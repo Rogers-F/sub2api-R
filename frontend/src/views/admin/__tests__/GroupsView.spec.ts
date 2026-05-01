@@ -159,6 +159,7 @@ function makeGroup() {
     thinking_signature_compat_enabled: false,
     claude_tool_use_repair_enabled: false,
     claude_tool_arguments_repair_enabled: false,
+    strong_safety_mode_enabled: true,
     fallback_group_id: null,
     fallback_group_id_on_invalid_request: null,
     allow_messages_dispatch: false,

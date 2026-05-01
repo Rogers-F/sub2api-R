@@ -95,6 +95,7 @@ type Group struct {
 	ThinkingSignatureCompatEnabled   bool   `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       bool   `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled bool   `json:"claude_tool_arguments_repair_enabled"`
+	StrongSafetyModeEnabled          bool   `json:"strong_safety_mode_enabled"`
 	FallbackGroupID                  *int64 `json:"fallback_group_id"`
 	// 无效请求兜底分组
 	FallbackGroupIDOnInvalidRequest *int64 `json:"fallback_group_id_on_invalid_request"`

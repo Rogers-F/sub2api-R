@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -208,6 +209,7 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 				RateMultiplier:                   1,
 				ClaudePromptCachingEnabled:       true,
 				ClaudeToolUseRepairEnabled:       true,
+				StrongSafetyModeEnabled:          true,
 				ModelRoutingEnabled:              true,
 				ForceApplicationJSONForNonStream: true,
 				ModelRouting: map[string][]int64{
@@ -227,6 +229,7 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 	require.Equal(t, groupID, apiKey.Group.ID)
 	require.True(t, apiKey.Group.ClaudePromptCachingEnabled)
 	require.True(t, apiKey.Group.ClaudeToolUseRepairEnabled)
+	require.True(t, apiKey.Group.StrongSafetyModeEnabled)
 	require.True(t, apiKey.Group.ModelRoutingEnabled)
 	require.True(t, apiKey.Group.ForceApplicationJSONForNonStream)
 	require.Equal(t, map[string][]int64{"claude-opus-*": {1, 2}}, apiKey.Group.ModelRouting)
@@ -405,6 +408,15 @@ func TestAPIKeyService_GetByKey_CachesNegativeOnRepoMiss(t *testing.T) {
 	_, err := svc.GetByKey(context.Background(), "missing")
 	require.ErrorIs(t, err, ErrAPIKeyNotFound)
 	require.Len(t, cache.setAuthKeys, 1)
+}
+
+func TestAPIKeyAuthGroupSnapshot_UnmarshalDefaultsStrongSafetyModeOn(t *testing.T) {
+	var snapshot APIKeyAuthGroupSnapshot
+	require.NoError(t, json.Unmarshal([]byte(`{"id":1,"name":"g","platform":"anthropic","status":"active"}`), &snapshot))
+	require.True(t, snapshot.StrongSafetyModeEnabled)
+
+	require.NoError(t, json.Unmarshal([]byte(`{"id":1,"name":"g","platform":"anthropic","status":"active","strong_safety_mode_enabled":false}`), &snapshot))
+	require.False(t, snapshot.StrongSafetyModeEnabled)
 }
 
 func TestAPIKeyService_GetByKey_SingleflightCollapses(t *testing.T) {

@@ -328,6 +328,20 @@ func (_c *GroupCreate) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *Gro
 	return _c
 }
 
+// SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
+func (_c *GroupCreate) SetStrongSafetyModeEnabled(v bool) *GroupCreate {
+	_c.mutation.SetStrongSafetyModeEnabled(v)
+	return _c
+}
+
+// SetNillableStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableStrongSafetyModeEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetStrongSafetyModeEnabled(*v)
+	}
+	return _c
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_c *GroupCreate) SetFallbackGroupID(v int64) *GroupCreate {
 	_c.mutation.SetFallbackGroupID(v)
@@ -665,6 +679,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultClaudeToolArgumentsRepairEnabled
 		_c.mutation.SetClaudeToolArgumentsRepairEnabled(v)
 	}
+	if _, ok := _c.mutation.StrongSafetyModeEnabled(); !ok {
+		v := group.DefaultStrongSafetyModeEnabled
+		_c.mutation.SetStrongSafetyModeEnabled(v)
+	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		v := group.DefaultModelRoutingEnabled
 		_c.mutation.SetModelRoutingEnabled(v)
@@ -767,6 +785,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); !ok {
 		return &ValidationError{Name: "claude_tool_arguments_repair_enabled", err: errors.New(`ent: missing required field "Group.claude_tool_arguments_repair_enabled"`)}
+	}
+	if _, ok := _c.mutation.StrongSafetyModeEnabled(); !ok {
+		return &ValidationError{Name: "strong_safety_mode_enabled", err: errors.New(`ent: missing required field "Group.strong_safety_mode_enabled"`)}
 	}
 	if _, ok := _c.mutation.ModelRoutingEnabled(); !ok {
 		return &ValidationError{Name: "model_routing_enabled", err: errors.New(`ent: missing required field "Group.model_routing_enabled"`)}
@@ -914,6 +935,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
 		_node.ClaudeToolArgumentsRepairEnabled = value
+	}
+	if value, ok := _c.mutation.StrongSafetyModeEnabled(); ok {
+		_spec.SetField(group.FieldStrongSafetyModeEnabled, field.TypeBool, value)
+		_node.StrongSafetyModeEnabled = value
 	}
 	if value, ok := _c.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1464,6 +1489,18 @@ func (u *GroupUpsert) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpsert {
 // UpdateClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldClaudeToolArgumentsRepairEnabled)
+	return u
+}
+
+// SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
+func (u *GroupUpsert) SetStrongSafetyModeEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldStrongSafetyModeEnabled, v)
+	return u
+}
+
+// UpdateStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateStrongSafetyModeEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldStrongSafetyModeEnabled)
 	return u
 }
 
@@ -2095,6 +2132,20 @@ func (u *GroupUpsertOne) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpser
 func (u *GroupUpsertOne) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudeToolArgumentsRepairEnabled()
+	})
+}
+
+// SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
+func (u *GroupUpsertOne) SetStrongSafetyModeEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetStrongSafetyModeEnabled(v)
+	})
+}
+
+// UpdateStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateStrongSafetyModeEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateStrongSafetyModeEnabled()
 	})
 }
 
@@ -2922,6 +2973,20 @@ func (u *GroupUpsertBulk) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpse
 func (u *GroupUpsertBulk) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudeToolArgumentsRepairEnabled()
+	})
+}
+
+// SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
+func (u *GroupUpsertBulk) SetStrongSafetyModeEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetStrongSafetyModeEnabled(v)
+	})
+}
+
+// UpdateStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateStrongSafetyModeEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateStrongSafetyModeEnabled()
 	})
 }
 

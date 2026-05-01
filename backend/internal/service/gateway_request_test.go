@@ -3,12 +3,14 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/stretchr/testify/require"
 )
 
@@ -329,6 +331,30 @@ func TestFilterThinkingBlocksForRetry_DisablesThinkingAndStripsPrivateText(t *te
 	require.True(t, ok)
 	require.Equal(t, "text", first["type"])
 	require.Equal(t, "Answer", first["text"])
+}
+
+func TestFilterThinkingBlocksForRetryWithContext_RespectsStrongSafetyModeDisabled(t *testing.T) {
+	group := &Group{
+		ID:                      1,
+		Name:                    "claude",
+		Platform:                PlatformAnthropic,
+		Status:                  StatusActive,
+		Hydrated:                true,
+		StrongSafetyModeEnabled: false,
+	}
+	ctx := context.WithValue(context.Background(), ctxkey.Group, group)
+	input := []byte(`{
+		"model":"claude-3-5-sonnet-20241022",
+		"thinking":{"type":"enabled","budget_tokens":1024},
+		"messages":[
+			{"role":"assistant","content":"to=functions.read_file {\"absolute_path\":\"/tmp/secret\"}"}
+		]
+	}`)
+
+	out := FilterThinkingBlocksForRetryWithContext(ctx, input)
+
+	require.NotContains(t, string(out), `"thinking"`)
+	require.Contains(t, string(out), "to=functions.read_file")
 }
 
 func TestFilterThinkingBlocksForRetry_DisablesThinkingEvenWithoutThinkingBlocks(t *testing.T) {

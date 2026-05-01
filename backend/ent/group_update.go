@@ -425,6 +425,20 @@ func (_u *GroupUpdate) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *Gro
 	return _u
 }
 
+// SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
+func (_u *GroupUpdate) SetStrongSafetyModeEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetStrongSafetyModeEnabled(v)
+	return _u
+}
+
+// SetNillableStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableStrongSafetyModeEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetStrongSafetyModeEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdate) SetFallbackGroupID(v int64) *GroupUpdate {
 	_u.mutation.ResetFallbackGroupID()
@@ -1037,6 +1051,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.StrongSafetyModeEnabled(); ok {
+		_spec.SetField(group.FieldStrongSafetyModeEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
@@ -1801,6 +1818,20 @@ func (_u *GroupUpdateOne) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *
 	return _u
 }
 
+// SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
+func (_u *GroupUpdateOne) SetStrongSafetyModeEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetStrongSafetyModeEnabled(v)
+	return _u
+}
+
+// SetNillableStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableStrongSafetyModeEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetStrongSafetyModeEnabled(*v)
+	}
+	return _u
+}
+
 // SetFallbackGroupID sets the "fallback_group_id" field.
 func (_u *GroupUpdateOne) SetFallbackGroupID(v int64) *GroupUpdateOne {
 	_u.mutation.ResetFallbackGroupID()
@@ -2443,6 +2474,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.StrongSafetyModeEnabled(); ok {
+		_spec.SetField(group.FieldStrongSafetyModeEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FallbackGroupID(); ok {
 		_spec.SetField(group.FieldFallbackGroupID, field.TypeInt64, value)
