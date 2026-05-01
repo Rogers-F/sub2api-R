@@ -25,10 +25,11 @@ func (r *opsRepository) GetOpenAITokenStats(ctx context.Context, filter *service
 	}
 
 	dashboardFilter := &service.OpsDashboardFilter{
-		StartTime: filter.StartTime.UTC(),
-		EndTime:   filter.EndTime.UTC(),
-		Platform:  strings.TrimSpace(strings.ToLower(filter.Platform)),
-		GroupID:   filter.GroupID,
+		StartTime:    filter.StartTime.UTC(),
+		EndTime:      filter.EndTime.UTC(),
+		Platform:     strings.TrimSpace(strings.ToLower(filter.Platform)),
+		GroupID:      filter.GroupID,
+		EnterpriseID: filter.EnterpriseID,
 	}
 
 	join, where, baseArgs, next := buildUsageWhere(dashboardFilter, dashboardFilter.StartTime, dashboardFilter.EndTime, 1)
@@ -126,13 +127,14 @@ ORDER BY request_count DESC, model ASC`
 	}
 
 	resp := &service.OpsOpenAITokenStatsResponse{
-		TimeRange: strings.TrimSpace(filter.TimeRange),
-		StartTime: dashboardFilter.StartTime,
-		EndTime:   dashboardFilter.EndTime,
-		Platform:  dashboardFilter.Platform,
-		GroupID:   dashboardFilter.GroupID,
-		Items:     items,
-		Total:     total,
+		TimeRange:    strings.TrimSpace(filter.TimeRange),
+		StartTime:    dashboardFilter.StartTime,
+		EndTime:      dashboardFilter.EndTime,
+		Platform:     dashboardFilter.Platform,
+		GroupID:      dashboardFilter.GroupID,
+		EnterpriseID: dashboardFilter.EnterpriseID,
+		Items:        items,
+		Total:        total,
 	}
 	if filter.IsTopNMode() {
 		topN := filter.TopN

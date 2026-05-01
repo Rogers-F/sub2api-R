@@ -142,6 +142,8 @@ func EnterpriseFromServiceShallow(e *service.Enterprise) *Enterprise {
 		Notes:        e.Notes,
 		Status:       e.Status,
 		AccountCount: e.AccountCount,
+		RPM:          e.RPM,
+		ErrorRate5m:  e.ErrorRate5m,
 		CreatedAt:    e.CreatedAt,
 		UpdatedAt:    e.UpdatedAt,
 	}

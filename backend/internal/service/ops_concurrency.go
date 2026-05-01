@@ -106,10 +106,12 @@ func (s *OpsService) getAccountsLoadMapBestEffort(ctx context.Context, accounts 
 // Optional filters:
 // - platformFilter: only include accounts in that platform (best-effort reduces DB load)
 // - groupIDFilter: only include accounts that belong to that group
+// - enterpriseIDFilter: only include accounts assigned to that enterprise
 func (s *OpsService) GetConcurrencyStats(
 	ctx context.Context,
 	platformFilter string,
 	groupIDFilter *int64,
+	enterpriseIDFilter *int64,
 ) (map[string]*PlatformConcurrencyInfo, map[int64]*GroupConcurrencyInfo, map[int64]*AccountConcurrencyInfo, *time.Time, error) {
 	if err := s.RequireMonitoringEnabled(ctx); err != nil {
 		return nil, nil, nil, nil, err
@@ -130,6 +132,11 @@ func (s *OpsService) GetConcurrencyStats(
 	for _, acc := range accounts {
 		if acc.ID <= 0 {
 			continue
+		}
+		if enterpriseIDFilter != nil && *enterpriseIDFilter > 0 {
+			if acc.EnterpriseID == nil || *acc.EnterpriseID != *enterpriseIDFilter {
+				continue
+			}
 		}
 
 		var matchedGroup *Group

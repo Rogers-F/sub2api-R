@@ -3167,7 +3167,9 @@ export default {
       statusDisabled: '禁用',
       allStatus: '全部状态',
       all: '全部企业',
+      allEnterprises: '全部企业',
       unassigned: '无企业',
+      errorRate5m: '5分钟错误率',
       bulkAssignHint: '启用后会把选中账号统一设置到该企业；选择无企业则清空企业归属。',
       back: '返回企业列表',
       accountCount: '{count} 个账号',
@@ -3190,6 +3192,7 @@ export default {
         status: '状态',
         notes: '备注',
         accountCount: '账号数',
+        errorRate5m: '5分钟错误率',
         createdAt: '创建时间',
         actions: '操作'
       }

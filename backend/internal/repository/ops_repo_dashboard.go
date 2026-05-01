@@ -32,6 +32,9 @@ func (r *opsRepository) GetDashboardOverview(ctx context.Context, filter *servic
 	if !mode.IsValid() {
 		mode = service.OpsQueryModeRaw
 	}
+	if filter.EnterpriseID != nil && *filter.EnterpriseID > 0 {
+		mode = service.OpsQueryModeRaw
+	}
 
 	switch mode {
 	case service.OpsQueryModePreagg:
@@ -125,10 +128,11 @@ func (r *opsRepository) getDashboardOverviewRaw(ctx context.Context, filter *ser
 	}
 
 	return &service.OpsDashboardOverview{
-		StartTime: start,
-		EndTime:   end,
-		Platform:  strings.TrimSpace(filter.Platform),
-		GroupID:   filter.GroupID,
+		StartTime:    start,
+		EndTime:      end,
+		Platform:     strings.TrimSpace(filter.Platform),
+		GroupID:      filter.GroupID,
+		EnterpriseID: filter.EnterpriseID,
 
 		SuccessCount:         successCount,
 		ErrorCountTotal:      errorTotal,
@@ -305,10 +309,11 @@ func (r *opsRepository) getDashboardOverviewPreaggregated(ctx context.Context, f
 	}
 
 	return &service.OpsDashboardOverview{
-		StartTime: start,
-		EndTime:   end,
-		Platform:  strings.TrimSpace(filter.Platform),
-		GroupID:   filter.GroupID,
+		StartTime:    start,
+		EndTime:      end,
+		Platform:     strings.TrimSpace(filter.Platform),
+		GroupID:      filter.GroupID,
+		EnterpriseID: filter.EnterpriseID,
 
 		SuccessCount:         successCount,
 		ErrorCountTotal:      errorTotal,
@@ -958,14 +963,17 @@ func isQueryTimeoutErr(err error) bool {
 func buildUsageWhere(filter *service.OpsDashboardFilter, start, end time.Time, startIndex int) (join string, where string, args []any, nextIndex int) {
 	platform := ""
 	groupID := (*int64)(nil)
+	enterpriseID := (*int64)(nil)
 	if filter != nil {
 		platform = strings.TrimSpace(strings.ToLower(filter.Platform))
 		groupID = filter.GroupID
+		enterpriseID = filter.EnterpriseID
 	}
 
 	idx := startIndex
-	clauses := make([]string, 0, 4)
-	args = make([]any, 0, 4)
+	clauses := make([]string, 0, 5)
+	args = make([]any, 0, 5)
+	joinParts := make([]string, 0, 2)
 
 	args = append(args, start)
 	clauses = append(clauses, fmt.Sprintf("ul.created_at >= $%d", idx))
@@ -980,14 +988,25 @@ func buildUsageWhere(filter *service.OpsDashboardFilter, start, end time.Time, s
 		idx++
 	}
 	if platform != "" {
+		joinParts = append(joinParts, "LEFT JOIN groups g ON g.id = ul.group_id")
+	}
+	if platform != "" || (enterpriseID != nil && *enterpriseID > 0) {
+		joinParts = append(joinParts, "LEFT JOIN accounts a ON a.id = ul.account_id")
+	}
+	if platform != "" {
 		// Prefer group.platform when available; fall back to account.platform so we don't
 		// drop rows where group_id is NULL.
-		join = "LEFT JOIN groups g ON g.id = ul.group_id LEFT JOIN accounts a ON a.id = ul.account_id"
 		args = append(args, platform)
 		clauses = append(clauses, fmt.Sprintf("COALESCE(NULLIF(g.platform,''), a.platform) = $%d", idx))
 		idx++
 	}
+	if enterpriseID != nil && *enterpriseID > 0 {
+		args = append(args, *enterpriseID)
+		clauses = append(clauses, fmt.Sprintf("a.enterprise_id = $%d", idx))
+		idx++
+	}
 
+	join = strings.Join(joinParts, " ")
 	where = "WHERE " + strings.Join(clauses, " AND ")
 	return join, where, args, idx
 }
@@ -995,14 +1014,16 @@ func buildUsageWhere(filter *service.OpsDashboardFilter, start, end time.Time, s
 func buildErrorWhere(filter *service.OpsDashboardFilter, start, end time.Time, startIndex int) (where string, args []any, nextIndex int) {
 	platform := ""
 	groupID := (*int64)(nil)
+	enterpriseID := (*int64)(nil)
 	if filter != nil {
 		platform = strings.TrimSpace(strings.ToLower(filter.Platform))
 		groupID = filter.GroupID
+		enterpriseID = filter.EnterpriseID
 	}
 
 	idx := startIndex
-	clauses := make([]string, 0, 5)
-	args = make([]any, 0, 5)
+	clauses := make([]string, 0, 6)
+	args = make([]any, 0, 6)
 
 	args = append(args, start)
 	clauses = append(clauses, fmt.Sprintf("created_at >= $%d", idx))
@@ -1021,6 +1042,11 @@ func buildErrorWhere(filter *service.OpsDashboardFilter, start, end time.Time, s
 	if platform != "" {
 		args = append(args, platform)
 		clauses = append(clauses, fmt.Sprintf("platform = $%d", idx))
+		idx++
+	}
+	if enterpriseID != nil && *enterpriseID > 0 {
+		args = append(args, *enterpriseID)
+		clauses = append(clauses, fmt.Sprintf("EXISTS (SELECT 1 FROM accounts a WHERE a.id = account_id AND a.enterprise_id = $%d)", idx))
 		idx++
 	}
 

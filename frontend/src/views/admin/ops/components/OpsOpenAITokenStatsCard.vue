@@ -9,6 +9,7 @@ import { formatNumber } from '@/utils/format'
 interface Props {
   platformFilter?: string
   groupIdFilter?: number | null
+  enterpriseIdFilter?: number | null
   refreshToken: number
 }
 
@@ -16,7 +17,8 @@ type ViewMode = 'topn' | 'pagination'
 
 const props = withDefaults(defineProps<Props>(), {
   platformFilter: '',
-  groupIdFilter: null
+  groupIdFilter: null,
+  enterpriseIdFilter: null
 })
 
 const { t } = useI18n()
@@ -80,7 +82,8 @@ function buildParams() {
   const params: Record<string, any> = {
     time_range: timeRange.value,
     platform: props.platformFilter || undefined,
-    group_id: typeof props.groupIdFilter === 'number' && props.groupIdFilter > 0 ? props.groupIdFilter : undefined
+    group_id: typeof props.groupIdFilter === 'number' && props.groupIdFilter > 0 ? props.groupIdFilter : undefined,
+    enterprise_id: typeof props.enterpriseIdFilter === 'number' && props.enterpriseIdFilter > 0 ? props.enterpriseIdFilter : undefined
   }
 
   if (viewMode.value === 'topn') {
@@ -120,6 +123,7 @@ watch(
     pageSize: pageSize.value,
     platform: props.platformFilter,
     groupId: props.groupIdFilter,
+    enterpriseId: props.enterpriseIdFilter,
     refreshToken: props.refreshToken
   }),
   (next, prev) => {
@@ -130,7 +134,8 @@ watch(
       next.viewMode !== prev.viewMode ||
       next.pageSize !== prev.pageSize ||
       next.platform !== prev.platform ||
-      next.groupId !== prev.groupId
+      next.groupId !== prev.groupId ||
+      next.enterpriseId !== prev.enterpriseId
 
     if (next.viewMode === 'pagination' && filtersChanged && next.page !== 1) {
       page.value = 1

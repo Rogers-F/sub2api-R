@@ -44,6 +44,12 @@
           <template #cell-account_count="{ value }">
             <span class="font-medium text-gray-900 dark:text-white">{{ value || 0 }}</span>
           </template>
+          <template #cell-rpm="{ value }">
+            <span class="font-mono text-sm font-medium text-gray-900 dark:text-white">{{ formatMetricNumber(value) }}</span>
+          </template>
+          <template #cell-error_rate_5m="{ value }">
+            <span :class="['font-mono text-sm font-medium', errorRateClass(value)]">{{ formatErrorRate(value) }}</span>
+          </template>
           <template #cell-created_at="{ value }">
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ formatRelativeTime(value) }}</span>
           </template>
@@ -154,6 +160,8 @@ const columns = computed(() => [
   { key: 'status', label: t('admin.enterprises.columns.status'), sortable: true },
   { key: 'notes', label: t('admin.enterprises.columns.notes'), sortable: false },
   { key: 'account_count', label: t('admin.enterprises.columns.accountCount'), sortable: true },
+  { key: 'rpm', label: 'RPM', sortable: true },
+  { key: 'error_rate_5m', label: t('admin.enterprises.columns.errorRate5m'), sortable: true },
   { key: 'created_at', label: t('admin.enterprises.columns.createdAt'), sortable: true },
   { key: 'actions', label: t('admin.enterprises.columns.actions'), sortable: false }
 ])
@@ -170,6 +178,23 @@ const statusEditOptions = computed(() => [
 ])
 
 const enterpriseStatusLabel = (status: string) => status === 'active' ? t('admin.enterprises.statusActive') : t('admin.enterprises.statusDisabled')
+
+const formatMetricNumber = (value: unknown) => {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  return Math.round(n).toLocaleString()
+}
+
+const formatErrorRate = (value: unknown) => {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  return `${(n * 100).toFixed(2)}%`
+}
+
+const errorRateClass = (value: unknown) => {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  if (n >= 0.03) return 'text-red-600 dark:text-red-400'
+  if (n >= 0.005) return 'text-yellow-600 dark:text-yellow-400'
+  return 'text-green-600 dark:text-green-400'
+}
 
 let searchTimer: number | undefined
 const handleSearch = () => {

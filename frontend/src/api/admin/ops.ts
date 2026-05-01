@@ -86,6 +86,7 @@ export interface OpsDashboardOverview {
   end_time: string
   platform: string
   group_id?: number | null
+  enterprise_id?: number | null
 
   health_score?: number
 
@@ -197,6 +198,7 @@ export interface OpsRequestDetailsParams {
 
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
 
   user_id?: number
   api_key_id?: number
@@ -227,6 +229,7 @@ export interface OpsLatencyHistogramResponse {
   end_time: string
   platform: string
   group_id?: number | null
+  enterprise_id?: number | null
 
   total_requests: number
   buckets: OpsLatencyHistogramBucket[]
@@ -284,6 +287,7 @@ export interface OpsOpenAITokenStatsResponse {
   end_time: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   items: OpsOpenAITokenStatsItem[]
   total: number
   page?: number
@@ -295,6 +299,7 @@ export interface OpsOpenAITokenStatsParams {
   time_range?: OpsOpenAITokenStatsTimeRange
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   page?: number
   page_size?: number
   top_n?: number
@@ -394,13 +399,16 @@ export interface OpsUserConcurrencyStatsResponse {
   timestamp?: string
 }
 
-export async function getConcurrencyStats(platform?: string, groupId?: number | null): Promise<OpsConcurrencyStatsResponse> {
+export async function getConcurrencyStats(platform?: string, groupId?: number | null, enterpriseId?: number | null): Promise<OpsConcurrencyStatsResponse> {
   const params: Record<string, any> = {}
   if (platform) {
     params.platform = platform
   }
   if (typeof groupId === 'number' && groupId > 0) {
     params.group_id = groupId
+  }
+  if (typeof enterpriseId === 'number' && enterpriseId > 0) {
+    params.enterprise_id = enterpriseId
   }
 
   const { data } = await apiClient.get<OpsConcurrencyStatsResponse>('/admin/ops/concurrency', { params })
@@ -456,13 +464,16 @@ export interface OpsAccountAvailabilityStatsResponse {
   timestamp?: string
 }
 
-export async function getAccountAvailabilityStats(platform?: string, groupId?: number | null): Promise<OpsAccountAvailabilityStatsResponse> {
+export async function getAccountAvailabilityStats(platform?: string, groupId?: number | null, enterpriseId?: number | null): Promise<OpsAccountAvailabilityStatsResponse> {
   const params: Record<string, any> = {}
   if (platform) {
     params.platform = platform
   }
   if (typeof groupId === 'number' && groupId > 0) {
     params.group_id = groupId
+  }
+  if (typeof enterpriseId === 'number' && enterpriseId > 0) {
+    params.enterprise_id = enterpriseId
   }
   const { data } = await apiClient.get<OpsAccountAvailabilityStatsResponse>('/admin/ops/account-availability', { params })
   return data
@@ -480,6 +491,7 @@ export interface OpsRealtimeTrafficSummary {
   end_time: string
   platform: string
   group_id?: number | null
+  enterprise_id?: number | null
   qps: OpsRateSummary
   tps: OpsRateSummary
 }
@@ -493,7 +505,8 @@ export interface OpsRealtimeTrafficSummaryResponse {
 export async function getRealtimeTrafficSummary(
   window: string,
   platform?: string,
-  groupId?: number | null
+  groupId?: number | null,
+  enterpriseId?: number | null
 ): Promise<OpsRealtimeTrafficSummaryResponse> {
   const params: Record<string, any> = { window }
   if (platform) {
@@ -501,6 +514,9 @@ export async function getRealtimeTrafficSummary(
   }
   if (typeof groupId === 'number' && groupId > 0) {
     params.group_id = groupId
+  }
+  if (typeof enterpriseId === 'number' && enterpriseId > 0) {
+    params.enterprise_id = enterpriseId
   }
 
   const { data } = await apiClient.get<OpsRealtimeTrafficSummaryResponse>('/admin/ops/realtime-traffic', { params })
@@ -1010,6 +1026,7 @@ export async function getDashboardOverview(
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   mode?: OpsQueryMode
   },
   options: OpsRequestOptions = {}
@@ -1028,6 +1045,7 @@ export async function getDashboardSnapshotV2(
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   mode?: OpsQueryMode
   },
   options: OpsRequestOptions = {}
@@ -1046,6 +1064,7 @@ export async function getThroughputTrend(
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   mode?: OpsQueryMode
   },
   options: OpsRequestOptions = {}
@@ -1064,6 +1083,7 @@ export async function getLatencyHistogram(
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   mode?: OpsQueryMode
   },
   options: OpsRequestOptions = {}
@@ -1082,6 +1102,7 @@ export async function getErrorTrend(
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   mode?: OpsQueryMode
   },
   options: OpsRequestOptions = {}
@@ -1100,6 +1121,7 @@ export async function getErrorDistribution(
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   mode?: OpsQueryMode
   },
   options: OpsRequestOptions = {}
@@ -1132,6 +1154,7 @@ export type OpsErrorListQueryParams = {
   end_time?: string
   platform?: string
   group_id?: number | null
+  enterprise_id?: number | null
   account_id?: number | null
 
   phase?: string

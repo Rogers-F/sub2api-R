@@ -12,6 +12,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func parseOpsPositiveInt64Query(c *gin.Context, key string) (*int64, bool) {
+	v := strings.TrimSpace(c.Query(key))
+	if v == "" {
+		return nil, true
+	}
+	id, err := strconv.ParseInt(v, 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "Invalid "+key)
+		return nil, false
+	}
+	return &id, true
+}
+
+func buildOpsDashboardFilter(c *gin.Context, startTime, endTime time.Time) (*service.OpsDashboardFilter, bool) {
+	groupID, ok := parseOpsPositiveInt64Query(c, "group_id")
+	if !ok {
+		return nil, false
+	}
+	enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id")
+	if !ok {
+		return nil, false
+	}
+	return &service.OpsDashboardFilter{
+		StartTime:    startTime,
+		EndTime:      endTime,
+		Platform:     strings.TrimSpace(c.Query("platform")),
+		GroupID:      groupID,
+		EnterpriseID: enterpriseID,
+		QueryMode:    parseOpsQueryMode(c),
+	}, true
+}
+
 // GetDashboardOverview returns vNext ops dashboard overview (raw path).
 // GET /api/v1/admin/ops/dashboard/overview
 func (h *OpsHandler) GetDashboardOverview(c *gin.Context) {
@@ -30,19 +62,9 @@ func (h *OpsHandler) GetDashboardOverview(c *gin.Context) {
 		return
 	}
 
-	filter := &service.OpsDashboardFilter{
-		StartTime: startTime,
-		EndTime:   endTime,
-		Platform:  strings.TrimSpace(c.Query("platform")),
-		QueryMode: parseOpsQueryMode(c),
-	}
-	if v := strings.TrimSpace(c.Query("group_id")); v != "" {
-		id, err := strconv.ParseInt(v, 10, 64)
-		if err != nil || id <= 0 {
-			response.BadRequest(c, "Invalid group_id")
-			return
-		}
-		filter.GroupID = &id
+	filter, ok := buildOpsDashboardFilter(c, startTime, endTime)
+	if !ok {
+		return
 	}
 
 	data, err := h.opsService.GetDashboardOverview(c.Request.Context(), filter)
@@ -71,19 +93,9 @@ func (h *OpsHandler) GetDashboardThroughputTrend(c *gin.Context) {
 		return
 	}
 
-	filter := &service.OpsDashboardFilter{
-		StartTime: startTime,
-		EndTime:   endTime,
-		Platform:  strings.TrimSpace(c.Query("platform")),
-		QueryMode: parseOpsQueryMode(c),
-	}
-	if v := strings.TrimSpace(c.Query("group_id")); v != "" {
-		id, err := strconv.ParseInt(v, 10, 64)
-		if err != nil || id <= 0 {
-			response.BadRequest(c, "Invalid group_id")
-			return
-		}
-		filter.GroupID = &id
+	filter, ok := buildOpsDashboardFilter(c, startTime, endTime)
+	if !ok {
+		return
 	}
 
 	bucketSeconds := pickThroughputBucketSeconds(endTime.Sub(startTime))
@@ -113,19 +125,9 @@ func (h *OpsHandler) GetDashboardLatencyHistogram(c *gin.Context) {
 		return
 	}
 
-	filter := &service.OpsDashboardFilter{
-		StartTime: startTime,
-		EndTime:   endTime,
-		Platform:  strings.TrimSpace(c.Query("platform")),
-		QueryMode: parseOpsQueryMode(c),
-	}
-	if v := strings.TrimSpace(c.Query("group_id")); v != "" {
-		id, err := strconv.ParseInt(v, 10, 64)
-		if err != nil || id <= 0 {
-			response.BadRequest(c, "Invalid group_id")
-			return
-		}
-		filter.GroupID = &id
+	filter, ok := buildOpsDashboardFilter(c, startTime, endTime)
+	if !ok {
+		return
 	}
 
 	data, err := h.opsService.GetLatencyHistogram(c.Request.Context(), filter)
@@ -154,19 +156,9 @@ func (h *OpsHandler) GetDashboardErrorTrend(c *gin.Context) {
 		return
 	}
 
-	filter := &service.OpsDashboardFilter{
-		StartTime: startTime,
-		EndTime:   endTime,
-		Platform:  strings.TrimSpace(c.Query("platform")),
-		QueryMode: parseOpsQueryMode(c),
-	}
-	if v := strings.TrimSpace(c.Query("group_id")); v != "" {
-		id, err := strconv.ParseInt(v, 10, 64)
-		if err != nil || id <= 0 {
-			response.BadRequest(c, "Invalid group_id")
-			return
-		}
-		filter.GroupID = &id
+	filter, ok := buildOpsDashboardFilter(c, startTime, endTime)
+	if !ok {
+		return
 	}
 
 	bucketSeconds := pickThroughputBucketSeconds(endTime.Sub(startTime))
@@ -196,19 +188,9 @@ func (h *OpsHandler) GetDashboardErrorDistribution(c *gin.Context) {
 		return
 	}
 
-	filter := &service.OpsDashboardFilter{
-		StartTime: startTime,
-		EndTime:   endTime,
-		Platform:  strings.TrimSpace(c.Query("platform")),
-		QueryMode: parseOpsQueryMode(c),
-	}
-	if v := strings.TrimSpace(c.Query("group_id")); v != "" {
-		id, err := strconv.ParseInt(v, 10, 64)
-		if err != nil || id <= 0 {
-			response.BadRequest(c, "Invalid group_id")
-			return
-		}
-		filter.GroupID = &id
+	filter, ok := buildOpsDashboardFilter(c, startTime, endTime)
+	if !ok {
+		return
 	}
 
 	data, err := h.opsService.GetErrorDistribution(c.Request.Context(), filter)
@@ -274,6 +256,13 @@ func parseOpsOpenAITokenStatsFilter(c *gin.Context) (*service.OpsOpenAITokenStat
 			return nil, fmt.Errorf("invalid group_id")
 		}
 		filter.GroupID = &id
+	}
+	if v := strings.TrimSpace(c.Query("enterprise_id")); v != "" {
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || id <= 0 {
+			return nil, fmt.Errorf("invalid enterprise_id")
+		}
+		filter.EnterpriseID = &id
 	}
 
 	topNRaw := strings.TrimSpace(c.Query("top_n"))

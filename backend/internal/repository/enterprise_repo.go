@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	dbaccount "github.com/Wei-Shaw/sub2api/ent/account"
@@ -78,6 +80,16 @@ func (r *enterpriseRepository) ListWithFilters(ctx context.Context, params pagin
 	for i := range out {
 		out[i].AccountCount = counts[out[i].ID]
 	}
+	metrics, err := r.enterpriseMetrics5m(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	for i := range out {
+		if metric, ok := metrics[out[i].ID]; ok {
+			out[i].RPM = metric.rpm
+			out[i].ErrorRate5m = metric.errorRate5m
+		}
+	}
 	return out, paginationResultFromTotal(int64(total), params), nil
 }
 
@@ -94,6 +106,14 @@ func (r *enterpriseRepository) GetByID(ctx context.Context, id int64) (*service.
 		return nil, err
 	}
 	out.AccountCount = counts[id]
+	metrics, err := r.enterpriseMetrics5m(ctx, []int64{id})
+	if err != nil {
+		return nil, err
+	}
+	if metric, ok := metrics[id]; ok {
+		out.RPM = metric.rpm
+		out.ErrorRate5m = metric.errorRate5m
+	}
 	return out, nil
 }
 
@@ -221,6 +241,97 @@ func (r *enterpriseRepository) countAccountsByEnterprise(ctx context.Context, id
 		return nil, err
 	}
 	return counts, nil
+}
+
+type enterpriseMetric5m struct {
+	successCount int64
+	errorCount   int64
+	rpm          int64
+	errorRate5m  float64
+}
+
+func (r *enterpriseRepository) enterpriseMetrics5m(ctx context.Context, ids []int64) (map[int64]enterpriseMetric5m, error) {
+	metrics := make(map[int64]enterpriseMetric5m, len(ids))
+	ids = normalizePositiveIDs(ids)
+	if len(ids) == 0 || r.sql == nil {
+		return metrics, nil
+	}
+
+	windowStart := time.Now().Add(-5 * time.Minute)
+
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT a.enterprise_id, COUNT(*)::bigint
+		FROM usage_logs ul
+		JOIN accounts a ON a.id = ul.account_id
+		WHERE ul.created_at >= $1
+			AND a.enterprise_id = ANY($2)
+			AND a.deleted_at IS NULL
+		GROUP BY a.enterprise_id
+	`, windowStart, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var enterpriseID int64
+		var successCount int64
+		if err := rows.Scan(&enterpriseID, &successCount); err != nil {
+			_ = rows.Close()
+			return nil, err
+		}
+		metric := metrics[enterpriseID]
+		metric.successCount = successCount
+		metric.rpm = successCount / 5
+		metrics[enterpriseID] = metric
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	rows, err = r.sql.QueryContext(ctx, `
+		SELECT a.enterprise_id, COUNT(*)::bigint
+		FROM ops_error_logs e
+		JOIN accounts a ON a.id = e.account_id
+		WHERE e.created_at >= $1
+			AND COALESCE(e.is_count_tokens, FALSE) = FALSE
+			AND COALESCE(e.status_code, 0) >= 400
+			AND COALESCE(e.is_business_limited, FALSE) = FALSE
+			AND a.enterprise_id = ANY($2)
+			AND a.deleted_at IS NULL
+		GROUP BY a.enterprise_id
+	`, windowStart, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var enterpriseID int64
+		var errorCount int64
+		if err := rows.Scan(&enterpriseID, &errorCount); err != nil {
+			_ = rows.Close()
+			return nil, err
+		}
+		metric := metrics[enterpriseID]
+		metric.errorCount = errorCount
+		denominator := metric.successCount + metric.errorCount
+		if denominator > 0 {
+			metric.errorRate5m = roundEnterpriseMetric4DP(float64(metric.errorCount) / float64(denominator))
+		}
+		metrics[enterpriseID] = metric
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return metrics, nil
+}
+
+func roundEnterpriseMetric4DP(v float64) float64 {
+	return math.Round(v*10000) / 10000
 }
 
 func enterpriseEntityToService(entity *dbent.Enterprise) *service.Enterprise {

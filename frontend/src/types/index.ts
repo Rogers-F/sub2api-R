@@ -897,6 +897,8 @@ export interface Enterprise {
   notes?: string | null
   status: 'active' | 'disabled'
   account_count: number
+  rpm: number
+  error_rate_5m: number
   created_at: string
   updated_at: string
 }

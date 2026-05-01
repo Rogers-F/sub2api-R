@@ -43,6 +43,9 @@ func (r *opsRepository) ListRequestDetails(ctx context.Context, filter *service.
 		if filter.GroupID != nil && *filter.GroupID > 0 {
 			addCondition(fmt.Sprintf("group_id = $%d", len(args)+1), *filter.GroupID)
 		}
+		if filter.EnterpriseID != nil && *filter.EnterpriseID > 0 {
+			addCondition(fmt.Sprintf("enterprise_id = $%d", len(args)+1), *filter.EnterpriseID)
+		}
 
 		if filter.UserID != nil && *filter.UserID > 0 {
 			addCondition(fmt.Sprintf("user_id = $%d", len(args)+1), *filter.UserID)
@@ -102,6 +105,7 @@ WITH combined AS (
     ul.api_key_id AS api_key_id,
     ul.account_id AS account_id,
     ul.group_id AS group_id,
+    a.enterprise_id AS enterprise_id,
     ul.stream AS stream
   FROM usage_logs ul
   LEFT JOIN groups g ON g.id = ul.group_id
@@ -126,6 +130,7 @@ WITH combined AS (
     o.api_key_id AS api_key_id,
     o.account_id AS account_id,
     o.group_id AS group_id,
+    a.enterprise_id AS enterprise_id,
     o.stream AS stream
   FROM ops_error_logs o
   LEFT JOIN groups g ON g.id = o.group_id

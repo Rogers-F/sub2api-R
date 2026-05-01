@@ -24,6 +24,8 @@ type Enterprise struct {
 	Notes        *string
 	Status       string
 	AccountCount int64
+	RPM          int64
+	ErrorRate5m  float64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

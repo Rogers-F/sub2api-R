@@ -16,6 +16,12 @@
                 <span class="text-sm text-gray-500 dark:text-gray-400">
                   {{ t('admin.enterprises.accountCount', { count: enterprise?.account_count || 0 }) }}
                 </span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  RPM {{ formatMetricNumber(enterprise?.rpm) }}
+                </span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.enterprises.errorRate5m') }} {{ formatErrorRate(enterprise?.error_rate_5m) }}
+                </span>
               </div>
               <p v-if="enterprise?.notes" class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-gray-300">{{ enterprise.notes }}</p>
             </div>
@@ -60,6 +66,17 @@
           </template>
           <template #cell-status="{ row }">
             <AccountStatusIndicator :account="row" />
+          </template>
+          <template #cell-schedulable="{ row }">
+            <button
+              class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-dark-800"
+              :class="row.schedulable ? 'bg-primary-500 hover:bg-primary-600' : 'bg-gray-200 hover:bg-gray-300 dark:bg-dark-600 dark:hover:bg-dark-500'"
+              :disabled="togglingSchedulable === row.id"
+              :title="row.schedulable ? t('admin.accounts.schedulableEnabled') : t('admin.accounts.schedulableDisabled')"
+              @click="toggleSchedulable(row)"
+            >
+              <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" :class="row.schedulable ? 'translate-x-4' : 'translate-x-0'" />
+            </button>
           </template>
           <template #cell-groups="{ row }">
             <AccountGroupsCell :groups="row.groups" :max-display="3" />
@@ -176,6 +193,7 @@ const showMoveIn = ref(false)
 const moveCandidates = ref<Account[]>([])
 const moveIds = ref<number[]>([])
 const moveLoading = ref(false)
+const togglingSchedulable = ref<number | null>(null)
 
 const filters = reactive({ search: '', platform: '', status: '' })
 const moveFilters = reactive({ search: '', enterprise: '' })
@@ -206,6 +224,7 @@ const columns = computed(() => [
   { key: 'name', label: t('admin.accounts.columns.name'), sortable: true },
   { key: 'platform_type', label: t('admin.accounts.columns.platformType'), sortable: false },
   { key: 'status', label: t('admin.accounts.columns.status'), sortable: true },
+  { key: 'schedulable', label: t('admin.accounts.columns.schedulable'), sortable: true },
   { key: 'groups', label: t('admin.accounts.columns.groups'), sortable: false },
   { key: 'created_at', label: t('admin.accounts.columns.createdAt'), sortable: true },
   { key: 'actions', label: t('admin.accounts.columns.actions'), sortable: false }
@@ -218,6 +237,16 @@ const moveColumns = computed(() => [
 ])
 
 const allSelected = computed(() => accounts.value.length > 0 && accounts.value.every(account => selectedIds.value.includes(account.id)))
+
+const formatMetricNumber = (value: unknown) => {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  return Math.round(n).toLocaleString()
+}
+
+const formatErrorRate = (value: unknown) => {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  return `${(n * 100).toFixed(2)}%`
+}
 
 let searchTimer: number | undefined
 let moveSearchTimer: number | undefined
@@ -358,6 +387,22 @@ const handleAccountChanged = async () => {
   showEdit.value = false
   editingAccount.value = null
   await reloadAll()
+}
+
+const toggleSchedulable = async (account: Account) => {
+  const nextSchedulable = !account.schedulable
+  togglingSchedulable.value = account.id
+  try {
+    const updated = await adminAPI.accounts.setSchedulable(account.id, nextSchedulable)
+    accounts.value = accounts.value.map((item) => (
+      item.id === account.id ? { ...item, schedulable: updated?.schedulable ?? nextSchedulable } : item
+    ))
+  } catch (error) {
+    console.error('Failed to toggle enterprise account schedulable:', error)
+    appStore.showError(t('admin.accounts.failedToToggleSchedulable'))
+  } finally {
+    togglingSchedulable.value = null
+  }
 }
 
 onMounted(async () => {

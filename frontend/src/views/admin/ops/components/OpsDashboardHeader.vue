@@ -17,6 +17,7 @@ interface Props {
   overview?: OpsDashboardOverview | null
   platform: string
   groupId: number | null
+  enterpriseId?: number | null
   timeRange: string
   queryMode: string
   loading: boolean
@@ -32,6 +33,7 @@ interface Props {
 interface Emits {
   (e: 'update:platform', value: string): void
   (e: 'update:group', value: number | null): void
+  (e: 'update:enterprise', value: number | null): void
   (e: 'update:timeRange', value: string): void
   (e: 'update:queryMode', value: string): void
   (e: 'update:customTimeRange', startTime: string, endTime: string): void
@@ -105,6 +107,7 @@ function formatCustomTimeRangeLabel(startTime: string, endTime: string): string 
 }
 
 const groups = ref<Array<{ id: number; name: string; platform: string }>>([])
+const enterprises = ref<Array<{ id: number; name: string }>>([])
 
 const platformOptions = computed(() => [
   { value: '', label: t('common.all') },
@@ -139,6 +142,11 @@ const groupOptions = computed(() => {
   return [{ value: null, label: t('common.all') }, ...filtered.map((g) => ({ value: g.id, label: g.name }))]
 })
 
+const enterpriseOptions = computed(() => [
+  { value: null, label: t('admin.enterprises.allEnterprises') },
+  ...enterprises.value.map((enterprise) => ({ value: enterprise.id, label: enterprise.name }))
+])
+
 watch(
   () => props.platform,
   (newPlatform) => {
@@ -152,11 +160,16 @@ watch(
 
 onMounted(async () => {
   try {
-    const list = await adminAPI.groups.getAll()
-    groups.value = list.map((g) => ({ id: g.id, name: g.name, platform: g.platform }))
+    const [groupList, enterpriseList] = await Promise.all([
+      adminAPI.groups.getAll(),
+      adminAPI.enterprises.listActive()
+    ])
+    groups.value = groupList.map((g) => ({ id: g.id, name: g.name, platform: g.platform }))
+    enterprises.value = enterpriseList.map((enterprise) => ({ id: enterprise.id, name: enterprise.name }))
   } catch (e) {
-    console.error('[OpsDashboardHeader] Failed to load groups', e)
+    console.error('[OpsDashboardHeader] Failed to load filters', e)
     groups.value = []
+    enterprises.value = []
   }
 })
 
@@ -171,6 +184,15 @@ function handleGroupChange(val: string | number | boolean | null) {
   }
   const id = typeof val === 'number' ? val : Number.parseInt(String(val), 10)
   emit('update:group', Number.isFinite(id) && id > 0 ? id : null)
+}
+
+function handleEnterpriseChange(val: string | number | boolean | null) {
+  if (val === null || val === '' || typeof val === 'boolean') {
+    emit('update:enterprise', null)
+    return
+  }
+  const id = typeof val === 'number' ? val : Number.parseInt(String(val), 10)
+  emit('update:enterprise', Number.isFinite(id) && id > 0 ? id : null)
 }
 
 function handleTimeRangeChange(val: string | number | boolean | null) {
@@ -288,6 +310,7 @@ function makeZeroRealtimeTrafficSummary(): OpsRealtimeTrafficSummary {
     end_time: now,
     platform: props.platform,
     group_id: props.groupId,
+    enterprise_id: props.enterpriseId,
     qps: { current: 0, peak: 0, avg: 0 },
     tps: { current: 0, peak: 0, avg: 0 }
   }
@@ -301,7 +324,7 @@ async function loadRealtimeTrafficSummary() {
   }
   realtimeTrafficLoading.value = true
   try {
-    const res = await opsAPI.getRealtimeTrafficSummary(realtimeWindow.value, props.platform, props.groupId)
+    const res = await opsAPI.getRealtimeTrafficSummary(realtimeWindow.value, props.platform, props.groupId, props.enterpriseId)
     if (res && res.enabled === false) {
       adminSettingsStore.setOpsRealtimeMonitoringEnabledLocal(false)
     }
@@ -315,7 +338,7 @@ async function loadRealtimeTrafficSummary() {
 }
 
 watch(
-  () => [realtimeWindow.value, props.platform, props.groupId] as const,
+  () => [realtimeWindow.value, props.platform, props.groupId, props.enterpriseId] as const,
   () => {
     loadRealtimeTrafficSummary()
   },
@@ -907,6 +930,13 @@ function handleToolbarRefresh() {
             :options="groupOptions"
             class="w-full sm:w-[160px]"
             @update:model-value="handleGroupChange"
+          />
+
+          <Select
+            :model-value="enterpriseId"
+            :options="enterpriseOptions"
+            class="w-full sm:w-[180px]"
+            @update:model-value="handleEnterpriseChange"
           />
 
           <div class="mx-1 hidden h-4 w-[1px] bg-gray-200 dark:bg-dark-700 sm:block"></div>

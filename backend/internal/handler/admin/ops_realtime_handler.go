@@ -44,8 +44,12 @@ func (h *OpsHandler) GetConcurrencyStats(c *gin.Context) {
 		}
 		groupID = &id
 	}
+	enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id")
+	if !ok {
+		return
+	}
 
-	platform, group, account, collectedAt, err := h.opsService.GetConcurrencyStats(c.Request.Context(), platformFilter, groupID)
+	platform, group, account, collectedAt, err := h.opsService.GetConcurrencyStats(c.Request.Context(), platformFilter, groupID, enterpriseID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -137,8 +141,12 @@ func (h *OpsHandler) GetAccountAvailability(c *gin.Context) {
 		}
 		groupID = &id
 	}
+	enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id")
+	if !ok {
+		return
+	}
 
-	platformStats, groupStats, accountStats, collectedAt, err := h.opsService.GetAccountAvailabilityStats(c.Request.Context(), platform, groupID)
+	platformStats, groupStats, accountStats, collectedAt, err := h.opsService.GetAccountAvailabilityStats(c.Request.Context(), platform, groupID, enterpriseID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -204,19 +212,24 @@ func (h *OpsHandler) GetRealtimeTrafficSummary(c *gin.Context) {
 		}
 		groupID = &id
 	}
+	enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id")
+	if !ok {
+		return
+	}
 
 	endTime := time.Now().UTC()
 	startTime := endTime.Add(-windowDur)
 
 	if !h.opsService.IsRealtimeMonitoringEnabled(c.Request.Context()) {
 		disabledSummary := &service.OpsRealtimeTrafficSummary{
-			Window:    windowLabel,
-			StartTime: startTime,
-			EndTime:   endTime,
-			Platform:  platform,
-			GroupID:   groupID,
-			QPS:       service.OpsRateSummary{},
-			TPS:       service.OpsRateSummary{},
+			Window:       windowLabel,
+			StartTime:    startTime,
+			EndTime:      endTime,
+			Platform:     platform,
+			GroupID:      groupID,
+			EnterpriseID: enterpriseID,
+			QPS:          service.OpsRateSummary{},
+			TPS:          service.OpsRateSummary{},
 		}
 		response.Success(c, gin.H{
 			"enabled":   false,
@@ -227,11 +240,12 @@ func (h *OpsHandler) GetRealtimeTrafficSummary(c *gin.Context) {
 	}
 
 	filter := &service.OpsDashboardFilter{
-		StartTime: startTime,
-		EndTime:   endTime,
-		Platform:  platform,
-		GroupID:   groupID,
-		QueryMode: service.OpsQueryModeRaw,
+		StartTime:    startTime,
+		EndTime:      endTime,
+		Platform:     platform,
+		GroupID:      groupID,
+		EnterpriseID: enterpriseID,
+		QueryMode:    service.OpsQueryModeRaw,
 	}
 
 	summary, err := h.opsService.GetRealtimeTrafficSummary(c.Request.Context(), filter)

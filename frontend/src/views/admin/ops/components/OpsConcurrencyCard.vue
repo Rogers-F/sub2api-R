@@ -6,12 +6,14 @@ import { opsAPI, type OpsAccountAvailabilityStatsResponse, type OpsConcurrencySt
 interface Props {
   platformFilter?: string
   groupIdFilter?: number | null
+  enterpriseIdFilter?: number | null
   refreshToken: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   platformFilter: '',
-  groupIdFilter: null
+  groupIdFilter: null,
+  enterpriseIdFilter: null
 })
 
 const { t } = useI18n()
@@ -270,8 +272,8 @@ async function loadData() {
     } else {
       // 常规模式加载账号/平台/分组数据
       const [concData, availData] = await Promise.all([
-        opsAPI.getConcurrencyStats(props.platformFilter, props.groupIdFilter),
-        opsAPI.getAccountAvailabilityStats(props.platformFilter, props.groupIdFilter)
+        opsAPI.getConcurrencyStats(props.platformFilter, props.groupIdFilter, props.enterpriseIdFilter),
+        opsAPI.getAccountAvailabilityStats(props.platformFilter, props.groupIdFilter, props.enterpriseIdFilter)
       ])
       concurrency.value = concData
       availability.value = availData

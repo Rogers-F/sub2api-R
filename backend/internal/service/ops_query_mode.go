@@ -45,6 +45,17 @@ func shouldFallbackOpsPreagg(filter *OpsDashboardFilter, err error) bool {
 		errors.Is(err, ErrOpsPreaggregatedNotPopulated)
 }
 
+func normalizeOpsQueryModeForFilter(ctxMode OpsQueryMode, filter *OpsDashboardFilter) OpsQueryMode {
+	mode := ctxMode
+	if !mode.IsValid() {
+		mode = OpsQueryModeRaw
+	}
+	if filter != nil && filter.EnterpriseID != nil && *filter.EnterpriseID > 0 {
+		return OpsQueryModeRaw
+	}
+	return mode
+}
+
 func cloneOpsFilterWithMode(filter *OpsDashboardFilter, mode OpsQueryMode) *OpsDashboardFilter {
 	if filter == nil {
 		return nil

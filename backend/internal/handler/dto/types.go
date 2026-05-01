@@ -116,6 +116,8 @@ type Enterprise struct {
 	Notes        *string   `json:"notes"`
 	Status       string    `json:"status"`
 	AccountCount int64     `json:"account_count"`
+	RPM          int64     `json:"rpm"`
+	ErrorRate5m  float64   `json:"error_rate_5m"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

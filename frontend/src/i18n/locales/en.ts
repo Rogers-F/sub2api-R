@@ -3070,7 +3070,9 @@ export default {
       statusDisabled: 'Disabled',
       allStatus: 'All Status',
       all: 'All Enterprises',
+      allEnterprises: 'All Enterprises',
       unassigned: 'No Enterprise',
+      errorRate5m: '5m Error Rate',
       bulkAssignHint: 'When enabled, selected accounts will be assigned to this enterprise. Choose no enterprise to clear assignment.',
       back: 'Back to Enterprises',
       accountCount: '{count} accounts',
@@ -3093,6 +3095,7 @@ export default {
         status: 'Status',
         notes: 'Notes',
         accountCount: 'Accounts',
+        errorRate5m: '5m Error Rate',
         createdAt: 'Created At',
         actions: 'Actions'
       }

@@ -130,6 +130,11 @@ func (h *OpsHandler) GetErrorLogs(c *gin.Context) {
 		}
 		filter.GroupID = &id
 	}
+	if enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id"); !ok {
+		return
+	} else {
+		filter.EnterpriseID = enterpriseID
+	}
 	if v := strings.TrimSpace(c.Query("account_id")); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
@@ -230,6 +235,11 @@ func (h *OpsHandler) ListRequestErrors(c *gin.Context) {
 			return
 		}
 		filter.GroupID = &id
+	}
+	if enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id"); !ok {
+		return
+	} else {
+		filter.EnterpriseID = enterpriseID
 	}
 	if v := strings.TrimSpace(c.Query("account_id")); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
@@ -510,6 +520,11 @@ func (h *OpsHandler) ListUpstreamErrors(c *gin.Context) {
 		}
 		filter.GroupID = &id
 	}
+	if enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id"); !ok {
+		return
+	} else {
+		filter.EnterpriseID = enterpriseID
+	}
 	if v := strings.TrimSpace(c.Query("account_id")); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
@@ -673,6 +688,11 @@ func (h *OpsHandler) ListRequestDetails(c *gin.Context) {
 			return
 		}
 		filter.GroupID = &id
+	}
+	if enterpriseID, ok := parseOpsPositiveInt64Query(c, "enterprise_id"); !ok {
+		return
+	} else {
+		filter.EnterpriseID = enterpriseID
 	}
 
 	if v := strings.TrimSpace(c.Query("min_duration_ms")); v != "" {

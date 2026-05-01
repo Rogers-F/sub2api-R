@@ -1307,6 +1307,10 @@ func buildOpsErrorLogsWhere(filter *service.OpsErrorLogFilter) (string, []any) {
 		args = append(args, *filter.AccountID)
 		clauses = append(clauses, "e.account_id = $"+itoa(len(args)))
 	}
+	if filter.EnterpriseID != nil && *filter.EnterpriseID > 0 {
+		args = append(args, *filter.EnterpriseID)
+		clauses = append(clauses, "EXISTS (SELECT 1 FROM accounts a2 WHERE a2.id = e.account_id AND a2.enterprise_id = $"+itoa(len(args))+")")
+	}
 	if phase := phaseFilter; phase != "" {
 		args = append(args, phase)
 		clauses = append(clauses, "e.error_phase = $"+itoa(len(args)))
