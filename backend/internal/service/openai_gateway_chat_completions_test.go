@@ -115,3 +115,92 @@ func TestOpenAIGatewayService_ForwardAsChatCompletions_PreservesExplicitInstruct
 	require.NotNil(t, result)
 	require.Equal(t, "custom instructions", gjson.GetBytes(upstream.lastBody, "instructions").String())
 }
+
+func TestOpenAIGatewayService_ForwardAsChatCompletions_ConvertsUpstreamJSONResponse(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+
+	upstreamJSON := `{"id":"resp_json","object":"response","model":"gpt-5.5","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"pong"}]}],"usage":{"input_tokens":2,"output_tokens":1,"total_tokens":3}}`
+	upstream := &httpUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid-json"}},
+			Body:       io.NopCloser(strings.NewReader(upstreamJSON)),
+		},
+	}
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          44,
+		Name:        "openai-oauth",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"access_token":       "oauth-token",
+			"chatgpt_account_id": "chatgpt-acc",
+		},
+		Extra: map[string]any{
+			"enable_codex_preset": true,
+		},
+	}
+
+	body := []byte(`{"model":"gpt-5.5","messages":[{"role":"user","content":"ping"}],"stream":false}`)
+	result, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body, "", "")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "pong", gjson.Get(rec.Body.String(), "choices.0.message.content").String())
+	require.Equal(t, "gpt-5.5", gjson.Get(rec.Body.String(), "model").String())
+	require.Equal(t, 2, result.Usage.InputTokens)
+	require.Equal(t, 1, result.Usage.OutputTokens)
+}
+
+func TestOpenAIGatewayService_ForwardAsChatCompletions_AcceptsSSEDataLineWithoutSpace(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+
+	upstreamSSE := strings.Join([]string{
+		`data:{"type":"response.completed","response":{"id":"resp_no_space","object":"response","model":"gpt-5.5","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"pong"}]}]}}`,
+		"",
+		"data:[DONE]",
+		"",
+	}, "\n")
+	upstream := &httpUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+			Body:       io.NopCloser(strings.NewReader(upstreamSSE)),
+		},
+	}
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          45,
+		Name:        "openai-oauth",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"access_token":       "oauth-token",
+			"chatgpt_account_id": "chatgpt-acc",
+		},
+	}
+
+	body := []byte(`{"model":"gpt-5.5","messages":[{"role":"user","content":"ping"}],"stream":false}`)
+	result, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body, "", "")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "pong", gjson.Get(rec.Body.String(), "choices.0.message.content").String())
+}

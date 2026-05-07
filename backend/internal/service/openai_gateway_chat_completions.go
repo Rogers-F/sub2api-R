@@ -276,6 +276,10 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 ) (*OpenAIForwardResult, error) {
 	requestID := resp.Header.Get("x-request-id")
 
+	if !isEventStreamResponse(resp.Header) {
+		return s.handleChatNonStreamingResponsesJSON(resp, c, originalModel, mappedModel, startTime)
+	}
+
 	scanner := bufio.NewScanner(resp.Body)
 	maxLineSize := defaultMaxLineSize
 	if s.cfg != nil && s.cfg.Gateway.MaxLineSize > 0 {
@@ -289,10 +293,10 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") || line == "data: [DONE]" {
+		payload, ok := extractOpenAISSEDataLine(line)
+		if !ok || payload == "" || payload == "[DONE]" {
 			continue
 		}
-		payload := line[6:]
 
 		var event apicompat.ResponsesStreamEvent
 		if err := json.Unmarshal([]byte(payload), &event); err != nil {
@@ -337,6 +341,62 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 	acc.SupplementResponseOutput(finalResponse)
 	chatResp := apicompat.ResponsesToChatCompletions(finalResponse, originalModel)
 
+	if s.responseHeaderFilter != nil {
+		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	}
+	applyForcedApplicationJSONHeaderForNonStream(c)
+	c.JSON(http.StatusOK, chatResp)
+
+	return &OpenAIForwardResult{
+		RequestID:     requestID,
+		Usage:         usage,
+		Model:         originalModel,
+		BillingModel:  mappedModel,
+		UpstreamModel: mappedModel,
+		Stream:        false,
+		Duration:      time.Since(startTime),
+	}, nil
+}
+
+func (s *OpenAIGatewayService) handleChatNonStreamingResponsesJSON(
+	resp *http.Response,
+	c *gin.Context,
+	originalModel string,
+	mappedModel string,
+	startTime time.Time,
+) (*OpenAIForwardResult, error) {
+	requestID := resp.Header.Get("x-request-id")
+	maxBytes := resolveUpstreamResponseReadLimit(s.cfg)
+	body, err := readUpstreamResponseBodyLimited(resp.Body, maxBytes)
+	if err != nil {
+		if errors.Is(err, ErrUpstreamResponseBodyTooLarge) {
+			setOpsUpstreamError(c, http.StatusBadGateway, "upstream response too large", "")
+			writeChatCompletionsError(c, http.StatusBadGateway, "upstream_error", "Upstream response too large")
+		}
+		return nil, err
+	}
+
+	var responsesResp apicompat.ResponsesResponse
+	if err := json.Unmarshal(body, &responsesResp); err != nil {
+		msg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(body)))
+		if msg == "" {
+			msg = "Upstream returned an invalid non-streaming response"
+		}
+		setOpsUpstreamError(c, http.StatusBadGateway, msg, "")
+		writeChatCompletionsError(c, http.StatusBadGateway, "api_error", msg)
+		return nil, fmt.Errorf("parse non-streaming responses json: %w", err)
+	}
+
+	usage := OpenAIUsage{}
+	if responsesResp.Usage != nil {
+		usage.InputTokens = responsesResp.Usage.InputTokens
+		usage.OutputTokens = responsesResp.Usage.OutputTokens
+		if responsesResp.Usage.InputTokensDetails != nil {
+			usage.CacheReadInputTokens = responsesResp.Usage.InputTokensDetails.CachedTokens
+		}
+	}
+
+	chatResp := apicompat.ResponsesToChatCompletions(&responsesResp, originalModel)
 	if s.responseHeaderFilter != nil {
 		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	}
@@ -489,10 +549,11 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 	if keepaliveInterval <= 0 {
 		for scanner.Scan() {
 			line := scanner.Text()
-			if !strings.HasPrefix(line, "data: ") || line == "data: [DONE]" {
+			payload, ok := extractOpenAISSEDataLine(line)
+			if !ok || payload == "" || payload == "[DONE]" {
 				continue
 			}
-			if processDataLine(line[6:]) {
+			if processDataLine(payload) {
 				return resultWithUsage(), nil
 			}
 		}
@@ -544,10 +605,11 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 			}
 			lastDataAt = time.Now()
 			line := ev.line
-			if !strings.HasPrefix(line, "data: ") || line == "data: [DONE]" {
+			payload, ok := extractOpenAISSEDataLine(line)
+			if !ok || payload == "" || payload == "[DONE]" {
 				continue
 			}
-			if processDataLine(line[6:]) {
+			if processDataLine(payload) {
 				return resultWithUsage(), nil
 			}
 
