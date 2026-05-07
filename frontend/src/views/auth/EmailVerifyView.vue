@@ -3,12 +3,12 @@
     <div class="space-y-6">
       <!-- Title -->
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <h2 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
           {{ t('auth.verifyYourEmail') }}
         </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+        <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
           {{ t('auth.sendCodeDesc') }}
-          <span class="font-medium text-gray-700 dark:text-gray-300">{{ email }}</span>
+          <span class="font-medium text-dust-700 dark:text-pearl-100">{{ email }}</span>
         </p>
       </div>
 
@@ -57,13 +57,13 @@
         <!-- Code Status -->
         <div
           v-if="codeSent"
-          class="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800/50 dark:bg-green-900/20"
+          class="rounded-xl border border-mint-500/30 bg-mint-500/10 p-4 dark:border-mint-500/30 dark:bg-mint-500/10"
         >
           <div class="flex items-start gap-3">
             <div class="flex-shrink-0">
-              <Icon name="checkCircle" size="md" class="text-green-500" />
+              <Icon name="checkCircle" size="md" class="text-mint-500" />
             </div>
-            <p class="text-sm text-green-700 dark:text-green-400">
+            <p class="text-sm text-mint-600 dark:text-mint-500">
               {{ t('auth.codeSentSuccess') }}
             </p>
           </div>
@@ -87,13 +87,13 @@
         <transition name="fade">
           <div
             v-if="errorMessage"
-            class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/50 dark:bg-red-900/20"
+            class="rounded-xl border border-coral-500/30 bg-coral-500/10 p-4 dark:border-coral-500/30 dark:bg-coral-500/10"
           >
             <div class="flex items-start gap-3">
               <div class="flex-shrink-0">
-                <Icon name="exclamationCircle" size="md" class="text-red-500" />
+                <Icon name="exclamationCircle" size="md" class="text-coral-600 dark:text-coral-500" />
               </div>
-              <p class="text-sm text-red-700 dark:text-red-400">
+              <p class="text-sm text-coral-600 dark:text-coral-500">
                 {{ errorMessage }}
               </p>
             </div>
@@ -132,7 +132,7 @@
             v-if="countdown > 0"
             type="button"
             disabled
-            class="cursor-not-allowed text-sm text-gray-400 dark:text-dark-500"
+            class="cursor-not-allowed text-sm text-dust-400 dark:text-pearl-400"
           >
             {{ t('auth.resendCountdown', { countdown }) }}
           </button>
@@ -143,7 +143,7 @@
             :disabled="
               isSendingCode || (turnstileEnabled && showResendTurnstile && !resendTurnstileToken)
             "
-            class="text-sm text-primary-600 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:hover:text-primary-300"
+            class="text-sm text-gold-600 transition-colors hover:text-gold-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gold-300 dark:hover:text-gold-200"
           >
             <span v-if="isSendingCode">{{ t('auth.sendingCode') }}</span>
             <span v-else-if="turnstileEnabled && !showResendTurnstile">
@@ -159,7 +159,7 @@
     <template #footer>
       <button
         @click="handleBack"
-        class="flex items-center gap-2 text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-gray-300"
+        class="flex items-center gap-2 text-dust-500 transition-colors hover:text-dust-700 dark:text-pearl-300 dark:hover:text-pearl-200"
       >
         <Icon name="arrowLeft" size="sm" />
         {{ t('auth.backToRegistration') }}

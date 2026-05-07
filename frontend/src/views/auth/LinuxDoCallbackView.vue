@@ -2,17 +2,17 @@
   <AuthLayout>
     <div class="space-y-6">
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <h2 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
           {{ t('auth.linuxdo.callbackTitle') }}
         </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+        <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
           {{ isProcessing ? t('auth.linuxdo.callbackProcessing') : t('auth.linuxdo.callbackHint') }}
         </p>
       </div>
 
       <transition name="fade">
         <div v-if="needsInvitation" class="space-y-4">
-          <p class="text-sm text-gray-700 dark:text-gray-300">
+          <p class="text-sm text-dust-700 dark:text-pearl-100">
             {{ t('auth.linuxdo.invitationRequired') }}
           </p>
           <div>
@@ -26,7 +26,7 @@
             />
           </div>
           <transition name="fade">
-            <p v-if="invitationError" class="text-sm text-red-600 dark:text-red-400">
+            <p v-if="invitationError" class="text-sm text-coral-600 dark:text-coral-500">
               {{ invitationError }}
             </p>
           </transition>
@@ -43,14 +43,14 @@
       <transition name="fade">
         <div
           v-if="errorMessage"
-          class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/50 dark:bg-red-900/20"
+          class="rounded-xl border border-coral-500/30 bg-coral-500/10 p-4 dark:border-coral-500/30 dark:bg-coral-500/10"
         >
           <div class="flex items-start gap-3">
             <div class="flex-shrink-0">
-              <Icon name="exclamationCircle" size="md" class="text-red-500" />
+              <Icon name="exclamationCircle" size="md" class="text-coral-600 dark:text-coral-500" />
             </div>
             <div class="space-y-2">
-              <p class="text-sm text-red-700 dark:text-red-400">
+              <p class="text-sm text-coral-600 dark:text-coral-500">
                 {{ errorMessage }}
               </p>
               <router-link to="/login" class="btn btn-primary">

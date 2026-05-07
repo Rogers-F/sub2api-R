@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-50 px-4 py-10 dark:bg-dark-900">
+  <div class="min-h-screen bg-paper-50 px-4 py-10 dark:bg-ink-900">
     <div class="mx-auto max-w-2xl">
       <div class="card p-6">
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">OAuth Callback</h1>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">OAuth Callback</h1>
+        <p class="mt-2 text-sm text-dust-600 dark:text-pearl-300">
           Copy the <code>code</code> (and <code>state</code> if needed) back to the admin
           authorization flow.
         </p>
@@ -51,9 +51,9 @@
 
           <div
             v-if="error"
-            class="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/30"
+            class="rounded-lg border border-coral-500/30 bg-coral-500/10 p-3 dark:border-coral-500/30 dark:bg-coral-500/10"
           >
-            <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+            <p class="text-sm text-coral-600 dark:text-coral-500">{{ error }}</p>
           </div>
         </div>
       </div>
