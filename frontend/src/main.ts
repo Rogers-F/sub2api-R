@@ -4,6 +4,25 @@ import App from './App.vue'
 import router from './router'
 import i18n, { initI18n } from './i18n'
 import { useAppStore } from '@/stores/app'
+
+// Xingsuan v2 self-hosted fonts (vendored by Vite into dist/),
+// 替代原 Google Fonts CDN 阻塞;按 Tailwind fontFamily 栈所需权重加载
+import '@fontsource/inter/300.css'
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/500.css'
+import '@fontsource/inter/600.css'
+import '@fontsource/inter/700.css'
+import '@fontsource/playfair-display/400.css'
+import '@fontsource/playfair-display/500.css'
+import '@fontsource/playfair-display/600.css'
+import '@fontsource/playfair-display/700.css'
+import '@fontsource/jetbrains-mono/400.css'
+import '@fontsource/jetbrains-mono/500.css'
+import '@fontsource/noto-serif-sc/400.css'
+import '@fontsource/noto-serif-sc/500.css'
+import '@fontsource/noto-serif-sc/600.css'
+import '@fontsource/noto-serif-sc/700.css'
+
 import './style.css'
 
 function initThemeClass() {
