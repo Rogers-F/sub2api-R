@@ -1818,13 +1818,6 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		patchDisabled = true
 	}
 
-	// 非透传模式下，instructions 为空时注入默认指令。
-	if isInstructionsEmpty(reqBody) {
-		reqBody["instructions"] = "You are a helpful coding assistant."
-		bodyModified = true
-		markPatchSet("instructions", "You are a helpful coding assistant.")
-	}
-
 	// 对所有请求执行模型映射（包含 Codex CLI）。
 	mappedModel := account.GetMappedModel(reqModel)
 	if mappedModel != reqModel {
@@ -1855,6 +1848,12 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		}
 	}
 
+	// 非透传模式下，instructions 为空时注入默认指令。
+	if applyOpenAIDefaultInstructions(reqBody, account, reqModel, mappedModel) {
+		bodyModified = true
+		markPatchSet("instructions", reqBody["instructions"])
+	}
+
 	// 规范化 reasoning.effort 参数（minimal -> none），与上游允许值对齐。
 	if reasoning, ok := reqBody["reasoning"].(map[string]any); ok {
 		if effort, ok := reasoning["effort"].(string); ok && effort == "minimal" {
@@ -1866,7 +1865,9 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	}
 
 	if account.Type == AccountTypeOAuth {
-		codexResult := applyCodexOAuthTransform(reqBody, isCodexCLI, isOpenAIResponsesCompactPath(c))
+		codexResult := applyCodexOAuthTransformWithOptions(reqBody, isCodexCLI, isOpenAIResponsesCompactPath(c), codexOAuthTransformOptions{
+			UseCodexPresetInstructions: shouldUseOpenAICodexPresetInstructions(account, reqModel, mappedModel),
+		})
 		if codexResult.Modified {
 			bodyModified = true
 			disablePatch()

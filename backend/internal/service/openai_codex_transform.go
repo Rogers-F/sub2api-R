@@ -83,6 +83,10 @@ type codexTransformResult struct {
 }
 
 func applyCodexOAuthTransform(reqBody map[string]any, isCodexCLI bool, isCompact bool) codexTransformResult {
+	return applyCodexOAuthTransformWithOptions(reqBody, isCodexCLI, isCompact, codexOAuthTransformOptions{})
+}
+
+func applyCodexOAuthTransformWithOptions(reqBody map[string]any, isCodexCLI bool, isCompact bool, opts codexOAuthTransformOptions) codexTransformResult {
 	result := codexTransformResult{}
 	// 工具续链需求会影响存储策略与 input 过滤逻辑。
 	needsToolContinuation := NeedsToolContinuation(reqBody)
@@ -130,6 +134,7 @@ func applyCodexOAuthTransform(reqBody map[string]any, isCodexCLI bool, isCompact
 		"top_p",
 		"frequency_penalty",
 		"presence_penalty",
+		"include",
 	} {
 		if _, ok := reqBody[key]; ok {
 			delete(reqBody, key)
@@ -180,13 +185,19 @@ func applyCodexOAuthTransform(reqBody map[string]any, isCodexCLI bool, isCompact
 		result.PromptCacheKey = strings.TrimSpace(v)
 	}
 
+	if opts.UseCodexPresetInstructions && isInstructionsEmpty(reqBody) {
+		if removeCodexPresetChatSystemInput(reqBody) {
+			result.Modified = true
+		}
+	}
+
 	// 提取 input 中 role:"system" 消息至 instructions（OAuth 上游不支持 system role）。
 	if extractSystemMessagesFromInput(reqBody) {
 		result.Modified = true
 	}
 
 	// instructions 处理逻辑：根据是否是 Codex CLI 分别调用不同方法
-	if applyInstructions(reqBody, isCodexCLI) {
+	if applyInstructions(reqBody, opts.UseCodexPresetInstructions) {
 		result.Modified = true
 	}
 
@@ -391,11 +402,20 @@ func extractSystemMessagesFromInput(reqBody map[string]any) bool {
 }
 
 // applyInstructions 处理 instructions 字段：仅在 instructions 为空时填充默认值。
-func applyInstructions(reqBody map[string]any, isCodexCLI bool) bool {
+func applyInstructions(reqBody map[string]any, useCodexPresetInstructions bool) bool {
 	if !isInstructionsEmpty(reqBody) {
 		return false
 	}
-	reqBody["instructions"] = "You are a helpful coding assistant."
+	if useCodexPresetInstructions {
+		model, _ := reqBody["model"].(string)
+		if instructions, ok := openAICodexPresetInstructionsForModels(model); ok {
+			reqBody["instructions"] = instructions
+			return true
+		}
+		reqBody["instructions"] = openAIDefaultCompatInstructions
+		return true
+	}
+	reqBody["instructions"] = openAIDefaultCompatInstructions
 	return true
 }
 

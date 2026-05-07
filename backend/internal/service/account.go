@@ -1145,6 +1145,23 @@ func (a *Account) IsCodexCLIOnlyEnabled() bool {
 	return ok && enabled
 }
 
+// IsOpenAICodexPresetEnabled 返回 OpenAI 账号是否启用 Codex 预设 instructions。
+// 主字段与 pretty-api 保持一致：accounts.extra.enable_codex_preset。
+func (a *Account) IsOpenAICodexPresetEnabled() bool {
+	if a == nil || !a.IsOpenAI() || a.Extra == nil {
+		return false
+	}
+	if enabled, ok := a.Extra["enable_codex_preset"].(bool); ok {
+		return enabled
+	}
+	legacyEnabled, ok := a.Extra["openai_codex_preset_instructions"].(bool)
+	return ok && legacyEnabled
+}
+
+func (a *Account) IsOpenAICodexPresetInstructionsEnabled() bool {
+	return a.IsOpenAICodexPresetEnabled()
+}
+
 // WindowCostSchedulability 窗口费用调度状态
 type WindowCostSchedulability int
 

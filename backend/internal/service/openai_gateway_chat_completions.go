@@ -116,17 +116,29 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	}
 	logger.L().Debug("openai chat_completions: model mapping applied", logFields...)
 
-	// 4. Apply OAuth codex transform after request body is ready
-	if account.Type == AccountTypeOAuth {
+	// 4. Apply instructions and OAuth codex transform after request body is ready.
+	shouldUseCodexPresetInstructions := shouldUseOpenAICodexPresetInstructions(account, originalModel, mappedModel)
+	shouldInjectAPIKeyPresetInstructions := account.Type != AccountTypeOAuth && shouldUseCodexPresetInstructions
+	if account.Type == AccountTypeOAuth || shouldInjectAPIKeyPresetInstructions {
 		var reqBody map[string]any
 		if err := json.Unmarshal(responsesBody, &reqBody); err != nil {
 			return nil, fmt.Errorf("unmarshal for codex transform: %w", err)
 		}
-		codexResult := applyCodexOAuthTransform(reqBody, false, false)
-		if codexResult.PromptCacheKey != "" {
-			promptCacheKey = codexResult.PromptCacheKey
-		} else if promptCacheKey != "" {
-			reqBody["prompt_cache_key"] = promptCacheKey
+		if shouldUseCodexPresetInstructions && isInstructionsEmpty(reqBody) {
+			removeCodexPresetChatSystemInput(reqBody)
+		}
+		if shouldInjectAPIKeyPresetInstructions {
+			applyOpenAIDefaultInstructions(reqBody, account, originalModel, mappedModel)
+		}
+		if account.Type == AccountTypeOAuth {
+			codexResult := applyCodexOAuthTransformWithOptions(reqBody, false, false, codexOAuthTransformOptions{
+				UseCodexPresetInstructions: shouldUseCodexPresetInstructions,
+			})
+			if codexResult.PromptCacheKey != "" {
+				promptCacheKey = codexResult.PromptCacheKey
+			} else if promptCacheKey != "" {
+				reqBody["prompt_cache_key"] = promptCacheKey
+			}
 		}
 		responsesBody, err = json.Marshal(reqBody)
 		if err != nil {
