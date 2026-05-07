@@ -10,6 +10,95 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    tagline: 'Enterprise AI Gateway',
+    announcement: {
+      statusOk: 'All nodes operating smoothly · Service normal'
+    },
+    nav: {
+      home: 'Home',
+      models: 'Models',
+      pricing: 'Pricing',
+      why: 'Why Xingsuan'
+    },
+    hero: {
+      badge: 'New: Claude Opus 4.6 · GPT-5.2 Codex one-click routing',
+      titleLead: 'For teams serious about building products,',
+      titleMid: 'we deliver',
+      titleAccent: 'enduring, stable',
+      titleTail: 'AI compute',
+      subtitle: 'Unified Claude / GPT / Codex gateway for developers and enterprises.',
+      description: 'Native official protocols, millisecond routing, transparent billing, 99.95% SLA.',
+      ctaPrimary: 'Create API Key — Free',
+      ctaSecondary: 'Read the Docs',
+      ctaGoToDashboard: 'Go to Dashboard',
+      // legacy keys kept for compatibility
+      cta: 'Get Started',
+      tagline: 'One key, multiple AI models'
+    },
+    why: {
+      eyebrow: 'WHY XINGSUAN',
+      titleLead: 'Enterprise-grade gateway,',
+      titleAccent: 'no compromises',
+      features: {
+        protocol: {
+          title: 'Native Official Protocols',
+          desc: 'Fully 1:1 compatible with Anthropic / OpenAI SDKs — switch over without changing a line of code.'
+        },
+        routing: {
+          title: 'Smart Routing & Auto-Failover',
+          desc: 'Sub-second primary/standby switching, optimal global nodes; automatic graceful degradation under rate limits — zero impact on your business.'
+        },
+        audit: {
+          title: 'Transparent Auditing',
+          desc: 'Per-call tokens, latency, cache hits and cost are fully traceable, meeting enterprise risk-control requirements.'
+        },
+        support: {
+          title: '24/7 Engineering On-Call',
+          desc: 'Real engineers on duty. Enterprise SLA: 30-min first response, major incidents diagnosed within 1 hour.'
+        }
+      }
+    },
+    pricing: {
+      eyebrow: 'PRICING · TRANSPARENT',
+      titleLead: 'Pay per token,',
+      titleAccent: 'not a cent more',
+      subtitle: '1:1 aligned with official pricing, monthly bills auditable per request. No minimum spend, no commitment, no hidden fees.',
+      bestValue: 'Best Value',
+      input: 'Input',
+      output: 'Output',
+      cachePrice: 'Cache Pricing',
+      cacheWrite: 'Cache Write',
+      cacheRead: 'Cache Read',
+      note: 'Prices 1:1 aligned with the latest LiteLLM data · Multi-model auto fallback · High-volume enterprise pricing available',
+      cta: 'Create Account — Free',
+      tags: {
+        efficient: 'Best Bang for Buck'
+      },
+      models: {
+        opus: {
+          desc: 'Deep reasoning / long documents / Agent orchestration. 1M context · 128k output.',
+          note: '2× surcharge above 200k input'
+        },
+        sonnet: {
+          desc: 'Daily coding / content generation / general-purpose Agent. King of value · 200k context.',
+          note: '2× surcharge above 200k input'
+        },
+        haiku: {
+          desc: 'Lightweight tasks / high concurrency / real-time response. 200k context · 64k output.'
+        },
+        gpt: {
+          desc: 'Code generation / IDE integration / tool-use optimized. 272k context.'
+        }
+      }
+    },
+    cta2: {
+      titleLead: 'Integrate in 5 minutes,',
+      titleAccent: 'unlock enterprise-grade AI compute today',
+      subtitle: 'Sign up to receive trial credits and call every model — no card required.',
+      ctaPrimary: 'Create Account — Free',
+      ctaSecondary: 'Contact Enterprise Sales',
+      ctaGoToDashboard: 'Go to Dashboard'
+    },
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
@@ -106,7 +195,8 @@ export default {
       button: 'Sign Up Free'
     },
     footer: {
-      allRightsReserved: 'All rights reserved.'
+      allRightsReserved: 'All rights reserved.',
+      systemsOk: 'All systems operational'
     }
   },
 
