@@ -9,7 +9,7 @@
               <Icon
                 name="search"
                 size="md"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-dust-400 dark:text-pearl-400"
               />
               <input
                 v-model="searchQuery"
@@ -75,7 +75,7 @@
       <template #table>
         <DataTable :columns="columns" :data="groups" :loading="loading">
           <template #cell-name="{ value }">
-            <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
+            <span class="font-medium text-dust-900 dark:text-pearl-50">{{ value }}</span>
           </template>
 
           <template #cell-platform="{ value }">
@@ -85,7 +85,7 @@
                 value === 'anthropic'
                   ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                   : value === 'openai'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                    ? 'bg-mint-500/15 text-mint-700 dark:bg-mint-500/15 dark:text-mint-400'
                     : value === 'antigravity'
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                       : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
@@ -104,7 +104,7 @@
                   'inline-block rounded-full px-2 py-0.5 text-xs font-medium',
                   row.subscription_type === 'subscription'
                     ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
-                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                    : 'bg-paper-100 text-dust-600 dark:bg-ink-700 dark:text-pearl-200'
                 ]"
               >
                 {{
@@ -116,7 +116,7 @@
               <!-- Subscription Limits - compact single line -->
               <div
                 v-if="row.subscription_type === 'subscription'"
-                class="text-xs text-gray-500 dark:text-gray-400"
+                class="text-xs text-dust-500 dark:text-pearl-300"
               >
                 <template
                   v-if="row.daily_limit_usd || row.weekly_limit_usd || row.monthly_limit_usd"
@@ -126,7 +126,7 @@
                   >
                   <span
                     v-if="row.daily_limit_usd && (row.weekly_limit_usd || row.monthly_limit_usd)"
-                    class="mx-1 text-gray-300 dark:text-gray-600"
+                    class="mx-1 text-dust-300 dark:text-pearl-500"
                     >·</span
                   >
                   <span v-if="row.weekly_limit_usd"
@@ -134,14 +134,14 @@
                   >
                   <span
                     v-if="row.weekly_limit_usd && row.monthly_limit_usd"
-                    class="mx-1 text-gray-300 dark:text-gray-600"
+                    class="mx-1 text-dust-300 dark:text-pearl-500"
                     >·</span
                   >
                   <span v-if="row.monthly_limit_usd"
                     >${{ row.monthly_limit_usd }}/{{ t('admin.groups.limitMonth') }}</span
                   >
                 </template>
-                <span v-else class="text-gray-400 dark:text-gray-500">{{
+                <span v-else class="text-dust-400 dark:text-pearl-400">{{
                   t('admin.groups.subscription.noLimit')
                 }}</span>
               </div>
@@ -149,7 +149,7 @@
           </template>
 
           <template #cell-rate_multiplier="{ value }">
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{ value }}x</span>
+            <span class="text-sm text-dust-700 dark:text-pearl-100">{{ value }}x</span>
           </template>
 
           <template #cell-is_exclusive="{ value }">
@@ -161,19 +161,19 @@
           <template #cell-account_count="{ row }">
             <div class="space-y-0.5 text-xs">
               <div>
-                <span class="text-gray-500 dark:text-gray-400">{{ t('admin.groups.accountsAvailable') }}</span>
-                <span class="ml-1 font-medium text-emerald-600 dark:text-emerald-400">{{ (row.active_account_count || 0) - (row.rate_limited_account_count || 0) }}</span>
-                <span class="ml-1 inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 font-medium text-gray-800 dark:bg-dark-600 dark:text-gray-300">{{ t('admin.groups.accountsUnit') }}</span>
+                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.groups.accountsAvailable') }}</span>
+                <span class="ml-1 font-medium text-mint-600 dark:text-mint-500">{{ (row.active_account_count || 0) - (row.rate_limited_account_count || 0) }}</span>
+                <span class="ml-1 inline-flex items-center rounded bg-paper-100 px-1.5 py-0.5 font-medium text-dust-800 dark:bg-ink-600 dark:text-pearl-200">{{ t('admin.groups.accountsUnit') }}</span>
               </div>
               <div v-if="row.rate_limited_account_count">
-                <span class="text-gray-500 dark:text-gray-400">{{ t('admin.groups.accountsRateLimited') }}</span>
+                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.groups.accountsRateLimited') }}</span>
                 <span class="ml-1 font-medium text-amber-600 dark:text-amber-400">{{ row.rate_limited_account_count }}</span>
-                <span class="ml-1 inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 font-medium text-gray-800 dark:bg-dark-600 dark:text-gray-300">{{ t('admin.groups.accountsUnit') }}</span>
+                <span class="ml-1 inline-flex items-center rounded bg-paper-100 px-1.5 py-0.5 font-medium text-dust-800 dark:bg-ink-600 dark:text-pearl-200">{{ t('admin.groups.accountsUnit') }}</span>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400">{{ t('admin.groups.accountsTotal') }}</span>
-                <span class="ml-1 font-medium text-gray-700 dark:text-gray-300">{{ row.account_count || 0 }}</span>
-                <span class="ml-1 inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 font-medium text-gray-800 dark:bg-dark-600 dark:text-gray-300">{{ t('admin.groups.accountsUnit') }}</span>
+                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.groups.accountsTotal') }}</span>
+                <span class="ml-1 font-medium text-dust-700 dark:text-pearl-100">{{ row.account_count || 0 }}</span>
+                <span class="ml-1 inline-flex items-center rounded bg-paper-100 px-1.5 py-0.5 font-medium text-dust-800 dark:bg-ink-600 dark:text-pearl-200">{{ t('admin.groups.accountsUnit') }}</span>
               </div>
             </div>
           </template>
@@ -188,19 +188,19 @@
               :rpm-used="capacityMap.get(row.id)!.rpmUsed"
               :rpm-max="capacityMap.get(row.id)!.rpmMax"
             />
-            <span v-else class="text-xs text-gray-400">—</span>
+            <span v-else class="text-xs text-dust-400">—</span>
           </template>
 
           <template #cell-usage="{ row }">
-            <div v-if="usageLoading" class="text-xs text-gray-400">—</div>
+            <div v-if="usageLoading" class="text-xs text-dust-400">—</div>
             <div v-else class="space-y-0.5 text-xs">
-              <div class="text-gray-500 dark:text-gray-400">
-                <span class="text-gray-400 dark:text-gray-500">{{ t('admin.groups.usageToday') }}</span>
-                <span class="ml-1 font-medium text-gray-700 dark:text-gray-300">${{ formatCost(usageMap.get(row.id)?.today_cost ?? 0) }}</span>
+              <div class="text-dust-500 dark:text-pearl-300">
+                <span class="text-dust-400 dark:text-pearl-400">{{ t('admin.groups.usageToday') }}</span>
+                <span class="ml-1 font-medium text-dust-700 dark:text-pearl-100">${{ formatCost(usageMap.get(row.id)?.today_cost ?? 0) }}</span>
               </div>
-              <div class="text-gray-500 dark:text-gray-400">
-                <span class="text-gray-400 dark:text-gray-500">{{ t('admin.groups.usageTotal') }}</span>
-                <span class="ml-1 font-medium text-gray-700 dark:text-gray-300">${{ formatCost(usageMap.get(row.id)?.total_cost ?? 0) }}</span>
+              <div class="text-dust-500 dark:text-pearl-300">
+                <span class="text-dust-400 dark:text-pearl-400">{{ t('admin.groups.usageTotal') }}</span>
+                <span class="ml-1 font-medium text-dust-700 dark:text-pearl-100">${{ formatCost(usageMap.get(row.id)?.total_cost ?? 0) }}</span>
               </div>
             </div>
           </template>
@@ -215,21 +215,21 @@
             <div class="flex items-center gap-1">
               <button
                 @click="handleEdit(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-dark-700 dark:hover:text-primary-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-dust-500 transition-colors hover:bg-paper-100 hover:text-gold-700 dark:hover:bg-white/[0.04] dark:hover:text-gold-300"
               >
                 <Icon name="edit" size="sm" />
                 <span class="text-xs">{{ t('common.edit') }}</span>
               </button>
               <button
                 @click="handleRateMultipliers(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-dark-700 dark:hover:text-purple-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-dust-500 transition-colors hover:bg-paper-100 hover:text-purple-600 dark:hover:bg-white/[0.04] dark:hover:text-purple-400"
               >
                 <Icon name="dollar" size="sm" />
                 <span class="text-xs">{{ t('admin.groups.rateMultipliers') }}</span>
               </button>
               <button
                 @click="handleDelete(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-dust-500 transition-colors hover:bg-coral-500/10 hover:text-coral-700 dark:hover:bg-coral-500/15 dark:hover:text-coral-500"
               >
                 <Icon name="trash" size="sm" />
                 <span class="text-xs">{{ t('common.delete') }}</span>
@@ -301,7 +301,7 @@
         <!-- 从分组复制账号 -->
         <div v-if="copyAccountsGroupOptions.length > 0">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.copyAccounts.title') }}
             </label>
             <div class="group relative inline-flex">
@@ -309,14 +309,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.copyAccounts.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -326,13 +326,13 @@
             <span
               v-for="groupId in createForm.copy_accounts_from_group_ids"
               :key="groupId"
-              class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              class="inline-flex items-center gap-1 rounded-full bg-gold-500/15 px-2.5 py-1 text-xs font-medium text-gold-700 dark:bg-gold-300/15 dark:text-gold-200"
             >
               {{ copyAccountsGroupOptions.find(o => o.value === groupId)?.label || `#${groupId}` }}
               <button
                 type="button"
                 @click="createForm.copy_accounts_from_group_ids = createForm.copy_accounts_from_group_ids.filter(id => id !== groupId)"
-                class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+                class="ml-0.5 text-gold-600 hover:text-gold-700 dark:text-gold-300 dark:hover:text-gold-200"
               >
                 <Icon name="x" size="xs" />
               </button>
@@ -376,7 +376,7 @@
         </div>
         <div v-if="createForm.subscription_type !== 'subscription'" data-tour="group-form-exclusive">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.form.exclusive') }}
             </label>
             <!-- Help Tooltip -->
@@ -385,23 +385,23 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <!-- Tooltip Popover -->
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
                   <p class="mb-2 text-xs font-medium">{{ t('admin.groups.exclusiveTooltip.title') }}</p>
-                  <p class="mb-2 text-xs leading-relaxed text-gray-300">
+                  <p class="mb-2 text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.exclusiveTooltip.description') }}
                   </p>
-                  <div class="rounded bg-gray-800 p-2 dark:bg-gray-700">
-                    <p class="text-xs leading-relaxed text-gray-300">
-                      <span class="inline-flex items-center gap-1 text-primary-400"><Icon name="lightbulb" size="xs" /> {{ t('admin.groups.exclusiveTooltip.example') }}</span>
+                  <div class="rounded bg-ink-800 p-2 dark:bg-ink-700">
+                    <p class="text-xs leading-relaxed text-pearl-200">
+                      <span class="inline-flex items-center gap-1 text-gold-300"><Icon name="lightbulb" size="xs" /> {{ t('admin.groups.exclusiveTooltip.example') }}</span>
                       {{ t('admin.groups.exclusiveTooltip.exampleContent') }}
                     </p>
                   </div>
                   <!-- Arrow -->
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -412,7 +412,7 @@
               @click="createForm.is_exclusive = !createForm.is_exclusive"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                createForm.is_exclusive ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                createForm.is_exclusive ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -422,7 +422,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ createForm.is_exclusive ? t('admin.groups.exclusive') : t('admin.groups.public') }}
             </span>
           </div>
@@ -439,7 +439,7 @@
           <!-- Subscription limits (only show when subscription type is selected) -->
           <div
             v-if="createForm.subscription_type === 'subscription'"
-            class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800"
+            class="space-y-4 border-l-2 border-gold-500/30 pl-4 dark:border-gold-300/30"
           >
             <div>
               <label class="input-label">{{ t('admin.groups.subscription.dailyLimit') }}</label>
@@ -479,10 +479,10 @@
 
         <!-- 图片生成计费配置（antigravity 和 gemini 平台） -->
         <div v-if="createForm.platform === 'antigravity' || createForm.platform === 'gemini'" class="border-t pt-4">
-          <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+          <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.imagePricing.title') }}
           </label>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.imagePricing.description') }}
           </p>
           <div class="grid grid-cols-3 gap-3">
@@ -524,10 +524,10 @@
 
         <!-- Sora 按次计费配置 -->
         <div v-if="createForm.platform === 'sora'" class="border-t pt-4">
-          <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+          <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.soraPricing.title') }}
           </label>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.soraPricing.description') }}
           </p>
           <div class="grid grid-cols-2 gap-3 mb-4">
@@ -589,9 +589,9 @@
                 class="input"
                 placeholder="10"
               />
-              <span class="shrink-0 text-sm text-gray-500">GB</span>
+              <span class="shrink-0 text-sm text-dust-500">GB</span>
             </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
               {{ t('admin.groups.soraPricing.storageQuotaHint') }}
             </p>
           </div>
@@ -600,7 +600,7 @@
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.supportedScopes.title') }}
             </label>
             <!-- Help Tooltip -->
@@ -609,14 +609,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.supportedScopes.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -627,36 +627,36 @@
                 type="checkbox"
                 :checked="createForm.supported_model_scopes.includes('claude')"
                 @change="toggleCreateScope('claude')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-paper-300 text-gold-600 focus:ring-gold-500 dark:border-ink-600 dark:bg-ink-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.claude') }}</span>
+              <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.claude') }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 :checked="createForm.supported_model_scopes.includes('gemini_text')"
                 @change="toggleCreateScope('gemini_text')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-paper-300 text-gold-600 focus:ring-gold-500 dark:border-ink-600 dark:bg-ink-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiText') }}</span>
+              <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.geminiText') }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 :checked="createForm.supported_model_scopes.includes('gemini_image')"
                 @change="toggleCreateScope('gemini_image')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-paper-300 text-gold-600 focus:ring-gold-500 dark:border-ink-600 dark:bg-ink-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
+              <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
             </label>
           </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.supportedScopes.hint') }}</p>
+          <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">{{ t('admin.groups.supportedScopes.hint') }}</p>
         </div>
 
         <!-- MCP XML 协议注入（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.mcpXml.title') }}
             </label>
             <div class="group relative inline-flex">
@@ -664,14 +664,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.mcpXml.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -682,7 +682,7 @@
               @click="createForm.mcp_xml_inject = !createForm.mcp_xml_inject"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                createForm.mcp_xml_inject ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                createForm.mcp_xml_inject ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -692,7 +692,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ createForm.mcp_xml_inject ? t('admin.groups.mcpXml.enabled') : t('admin.groups.mcpXml.disabled') }}
             </span>
           </div>
@@ -701,7 +701,7 @@
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.claudeCode.title') }}
             </label>
             <!-- Help Tooltip -->
@@ -710,14 +710,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.claudeCode.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -728,7 +728,7 @@
               @click="createForm.claude_code_only = !createForm.claude_code_only"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                createForm.claude_code_only ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                createForm.claude_code_only ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -738,7 +738,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ createForm.claude_code_only ? t('admin.groups.claudeCode.enabled') : t('admin.groups.claudeCode.disabled') }}
             </span>
           </div>
@@ -755,18 +755,18 @@
         </div>
 
         <!-- OpenAI Messages 调度配置（仅 openai 平台） -->
-        <div v-if="createForm.platform === 'openai'" class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4">
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{{ t('admin.groups.openaiMessages.title') }}</h4>
+        <div v-if="createForm.platform === 'openai'" class="border-t border-paper-200 dark:border-ink-500 pt-4 mt-4">
+          <h4 class="text-sm font-medium text-dust-700 dark:text-pearl-100 mb-3">{{ t('admin.groups.openaiMessages.title') }}</h4>
 
           <!-- 允许 Messages 调度开关 -->
           <div class="flex items-center justify-between">
-            <label class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.groups.openaiMessages.allowDispatch') }}</label>
+            <label class="text-sm text-dust-600 dark:text-pearl-300">{{ t('admin.groups.openaiMessages.allowDispatch') }}</label>
             <button
               type="button"
               @click="createForm.allow_messages_dispatch = !createForm.allow_messages_dispatch"
               class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
               :class="
-                createForm.allow_messages_dispatch ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                createForm.allow_messages_dispatch ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               "
             >
               <span
@@ -777,7 +777,7 @@
               />
             </button>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
+          <p class="text-xs text-dust-500 dark:text-pearl-300 mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
 
           <!-- 默认映射模型（仅当开关打开时显示） -->
           <div v-if="createForm.allow_messages_dispatch" class="mt-3">
@@ -809,7 +809,7 @@
         <!-- 模型路由配置（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.modelRouting.title') }}
             </label>
             <!-- Help Tooltip -->
@@ -818,14 +818,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-80 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.modelRouting.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -837,7 +837,7 @@
               @click="createForm.model_routing_enabled = !createForm.model_routing_enabled"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                createForm.model_routing_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                createForm.model_routing_enabled ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -847,14 +847,14 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ createForm.model_routing_enabled ? t('admin.groups.modelRouting.enabled') : t('admin.groups.modelRouting.disabled') }}
             </span>
           </div>
-          <p v-if="!createForm.model_routing_enabled" class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p v-if="!createForm.model_routing_enabled" class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.modelRouting.disabledHint') }}
           </p>
-          <p v-else class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p v-else class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.modelRouting.noRulesHint') }}
           </p>
           <!-- 路由规则列表（仅在启用时显示） -->
@@ -862,7 +862,7 @@
             <div
               v-for="rule in createModelRoutingRules"
               :key="getCreateRuleRenderKey(rule)"
-              class="rounded-lg border border-gray-200 p-3 dark:border-dark-600"
+              class="rounded-lg border border-paper-200 p-3 dark:border-ink-600"
             >
               <div class="flex items-start gap-3">
                 <div class="flex-1 space-y-2">
@@ -882,13 +882,13 @@
                       <span
                         v-for="account in rule.accounts"
                         :key="account.id"
-                        class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                        class="inline-flex items-center gap-1 rounded-full bg-gold-500/15 px-2.5 py-1 text-xs font-medium text-gold-700 dark:bg-gold-300/15 dark:text-gold-200"
                       >
                         {{ account.name }}
                         <button
                           type="button"
                           @click="removeSelectedAccount(rule, account.id)"
-                          class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+                          class="ml-0.5 text-gold-600 hover:text-gold-700 dark:text-gold-300 dark:hover:text-gold-200"
                         >
                           <Icon name="x" size="xs" />
                         </button>
@@ -907,29 +907,29 @@
                       <!-- 搜索结果下拉框 -->
                       <div
                         v-if="showAccountDropdown[getCreateRuleSearchKey(rule)] && accountSearchResults[getCreateRuleSearchKey(rule)]?.length > 0"
-                        class="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-dark-600 dark:bg-dark-800"
+                        class="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-ink-600 dark:bg-ink-800"
                       >
                         <button
                           v-for="account in accountSearchResults[getCreateRuleSearchKey(rule)]"
                           :key="account.id"
                           type="button"
                           @click="selectAccount(rule, account)"
-                          class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-700"
+                          class="w-full px-3 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.04]"
                           :class="{ 'opacity-50': rule.accounts.some(a => a.id === account.id) }"
                           :disabled="rule.accounts.some(a => a.id === account.id)"
                         >
                           <span>{{ account.name }}</span>
-                          <span class="ml-2 text-xs text-gray-400">#{{ account.id }}</span>
+                          <span class="ml-2 text-xs text-dust-400">#{{ account.id }}</span>
                         </button>
                       </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1">{{ t('admin.groups.modelRouting.accountsHint') }}</p>
+                    <p class="text-xs text-dust-400 mt-1">{{ t('admin.groups.modelRouting.accountsHint') }}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   @click="removeCreateRoutingRule(rule)"
-                  class="mt-5 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                  class="mt-5 p-1.5 text-dust-400 hover:text-coral-500 transition-colors"
                   :title="t('admin.groups.modelRouting.removeRule')"
                 >
                   <Icon name="trash" size="sm" />
@@ -942,7 +942,7 @@
             v-if="createForm.model_routing_enabled"
             type="button"
             @click="addCreateRoutingRule"
-            class="mt-3 flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            class="mt-3 flex items-center gap-1.5 text-sm text-gold-600 hover:text-gold-700 dark:text-gold-300 dark:hover:text-gold-200"
           >
             <Icon name="plus" size="sm" />
             {{ t('admin.groups.modelRouting.addRule') }}
@@ -1029,7 +1029,7 @@
         <!-- 从分组复制账号（编辑时） -->
         <div v-if="copyAccountsGroupOptionsForEdit.length > 0">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.copyAccounts.title') }}
             </label>
             <div class="group relative inline-flex">
@@ -1037,14 +1037,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.copyAccounts.tooltipEdit') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -1054,13 +1054,13 @@
             <span
               v-for="groupId in editForm.copy_accounts_from_group_ids"
               :key="groupId"
-              class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              class="inline-flex items-center gap-1 rounded-full bg-gold-500/15 px-2.5 py-1 text-xs font-medium text-gold-700 dark:bg-gold-300/15 dark:text-gold-200"
             >
               {{ copyAccountsGroupOptionsForEdit.find(o => o.value === groupId)?.label || `#${groupId}` }}
               <button
                 type="button"
                 @click="editForm.copy_accounts_from_group_ids = editForm.copy_accounts_from_group_ids.filter(id => id !== groupId)"
-                class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+                class="ml-0.5 text-gold-600 hover:text-gold-700 dark:text-gold-300 dark:hover:text-gold-200"
               >
                 <Icon name="x" size="xs" />
               </button>
@@ -1103,7 +1103,7 @@
         </div>
         <div v-if="editForm.subscription_type !== 'subscription'">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.form.exclusive') }}
             </label>
             <!-- Help Tooltip -->
@@ -1112,23 +1112,23 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <!-- Tooltip Popover -->
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
                   <p class="mb-2 text-xs font-medium">{{ t('admin.groups.exclusiveTooltip.title') }}</p>
-                  <p class="mb-2 text-xs leading-relaxed text-gray-300">
+                  <p class="mb-2 text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.exclusiveTooltip.description') }}
                   </p>
-                  <div class="rounded bg-gray-800 p-2 dark:bg-gray-700">
-                    <p class="text-xs leading-relaxed text-gray-300">
-                      <span class="inline-flex items-center gap-1 text-primary-400"><Icon name="lightbulb" size="xs" /> {{ t('admin.groups.exclusiveTooltip.example') }}</span>
+                  <div class="rounded bg-ink-800 p-2 dark:bg-ink-700">
+                    <p class="text-xs leading-relaxed text-pearl-200">
+                      <span class="inline-flex items-center gap-1 text-gold-300"><Icon name="lightbulb" size="xs" /> {{ t('admin.groups.exclusiveTooltip.example') }}</span>
                       {{ t('admin.groups.exclusiveTooltip.exampleContent') }}
                     </p>
                   </div>
                   <!-- Arrow -->
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -1139,7 +1139,7 @@
               @click="editForm.is_exclusive = !editForm.is_exclusive"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                editForm.is_exclusive ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                editForm.is_exclusive ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -1149,7 +1149,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ editForm.is_exclusive ? t('admin.groups.exclusive') : t('admin.groups.public') }}
             </span>
           </div>
@@ -1174,7 +1174,7 @@
           <!-- Subscription limits (only show when subscription type is selected) -->
           <div
             v-if="editForm.subscription_type === 'subscription'"
-            class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800"
+            class="space-y-4 border-l-2 border-gold-500/30 pl-4 dark:border-gold-300/30"
           >
             <div>
               <label class="input-label">{{ t('admin.groups.subscription.dailyLimit') }}</label>
@@ -1214,10 +1214,10 @@
 
         <!-- 图片生成计费配置（antigravity 和 gemini 平台） -->
         <div v-if="editForm.platform === 'antigravity' || editForm.platform === 'gemini'" class="border-t pt-4">
-          <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+          <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.imagePricing.title') }}
           </label>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.imagePricing.description') }}
           </p>
           <div class="grid grid-cols-3 gap-3">
@@ -1259,10 +1259,10 @@
 
         <!-- Sora 按次计费配置 -->
         <div v-if="editForm.platform === 'sora'" class="border-t pt-4">
-          <label class="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+          <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.soraPricing.title') }}
           </label>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.soraPricing.description') }}
           </p>
           <div class="grid grid-cols-2 gap-3 mb-4">
@@ -1324,9 +1324,9 @@
                 class="input"
                 placeholder="10"
               />
-              <span class="shrink-0 text-sm text-gray-500">GB</span>
+              <span class="shrink-0 text-sm text-dust-500">GB</span>
             </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
               {{ t('admin.groups.soraPricing.storageQuotaHint') }}
             </p>
           </div>
@@ -1335,7 +1335,7 @@
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.supportedScopes.title') }}
             </label>
             <!-- Help Tooltip -->
@@ -1344,14 +1344,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.supportedScopes.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -1362,36 +1362,36 @@
                 type="checkbox"
                 :checked="editForm.supported_model_scopes.includes('claude')"
                 @change="toggleEditScope('claude')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-paper-300 text-gold-600 focus:ring-gold-500 dark:border-ink-600 dark:bg-ink-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.claude') }}</span>
+              <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.claude') }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 :checked="editForm.supported_model_scopes.includes('gemini_text')"
                 @change="toggleEditScope('gemini_text')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-paper-300 text-gold-600 focus:ring-gold-500 dark:border-ink-600 dark:bg-ink-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiText') }}</span>
+              <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.geminiText') }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 :checked="editForm.supported_model_scopes.includes('gemini_image')"
                 @change="toggleEditScope('gemini_image')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-paper-300 text-gold-600 focus:ring-gold-500 dark:border-ink-600 dark:bg-ink-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
+              <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
             </label>
           </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.groups.supportedScopes.hint') }}</p>
+          <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">{{ t('admin.groups.supportedScopes.hint') }}</p>
         </div>
 
         <!-- MCP XML 协议注入（仅 antigravity 平台） -->
         <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.mcpXml.title') }}
             </label>
             <div class="group relative inline-flex">
@@ -1399,14 +1399,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.mcpXml.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -1417,7 +1417,7 @@
               @click="editForm.mcp_xml_inject = !editForm.mcp_xml_inject"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                editForm.mcp_xml_inject ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                editForm.mcp_xml_inject ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -1427,7 +1427,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ editForm.mcp_xml_inject ? t('admin.groups.mcpXml.enabled') : t('admin.groups.mcpXml.disabled') }}
             </span>
           </div>
@@ -1436,7 +1436,7 @@
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.claudeCode.title') }}
             </label>
             <!-- Help Tooltip -->
@@ -1445,14 +1445,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-72 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.claudeCode.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -1463,7 +1463,7 @@
               @click="editForm.claude_code_only = !editForm.claude_code_only"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                editForm.claude_code_only ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                editForm.claude_code_only ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -1473,7 +1473,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ editForm.claude_code_only ? t('admin.groups.claudeCode.enabled') : t('admin.groups.claudeCode.disabled') }}
             </span>
           </div>
@@ -1490,18 +1490,18 @@
         </div>
 
         <!-- OpenAI Messages 调度配置（仅 openai 平台） -->
-        <div v-if="editForm.platform === 'openai'" class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4">
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{{ t('admin.groups.openaiMessages.title') }}</h4>
+        <div v-if="editForm.platform === 'openai'" class="border-t border-paper-200 dark:border-ink-500 pt-4 mt-4">
+          <h4 class="text-sm font-medium text-dust-700 dark:text-pearl-100 mb-3">{{ t('admin.groups.openaiMessages.title') }}</h4>
 
           <!-- 允许 Messages 调度开关 -->
           <div class="flex items-center justify-between">
-            <label class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.groups.openaiMessages.allowDispatch') }}</label>
+            <label class="text-sm text-dust-600 dark:text-pearl-300">{{ t('admin.groups.openaiMessages.allowDispatch') }}</label>
             <button
               type="button"
               @click="editForm.allow_messages_dispatch = !editForm.allow_messages_dispatch"
               class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
               :class="
-                editForm.allow_messages_dispatch ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                editForm.allow_messages_dispatch ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               "
             >
               <span
@@ -1512,7 +1512,7 @@
               />
             </button>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
+          <p class="text-xs text-dust-500 dark:text-pearl-300 mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
 
           <!-- 默认映射模型（仅当开关打开时显示） -->
           <div v-if="editForm.allow_messages_dispatch" class="mt-3">
@@ -1544,7 +1544,7 @@
         <!-- 模型路由配置（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-dust-700 dark:text-pearl-100">
               {{ t('admin.groups.modelRouting.title') }}
             </label>
             <!-- Help Tooltip -->
@@ -1553,14 +1553,14 @@
                 name="questionCircle"
                 size="sm"
                 :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
+                class="cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-500 dark:hover:text-gold-300"
               />
               <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-80 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
+                <div class="rounded-lg bg-ink-900 p-3 text-pearl-50 shadow-lg dark:bg-ink-800">
+                  <p class="text-xs leading-relaxed text-pearl-200">
                     {{ t('admin.groups.modelRouting.tooltip') }}
                   </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
                 </div>
               </div>
             </div>
@@ -1572,7 +1572,7 @@
               @click="editForm.model_routing_enabled = !editForm.model_routing_enabled"
               :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                editForm.model_routing_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+                editForm.model_routing_enabled ? 'bg-gold-500 dark:bg-gold-300' : 'bg-paper-300 dark:bg-ink-600'
               ]"
             >
               <span
@@ -1582,14 +1582,14 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{ editForm.model_routing_enabled ? t('admin.groups.modelRouting.enabled') : t('admin.groups.modelRouting.disabled') }}
             </span>
           </div>
-          <p v-if="!editForm.model_routing_enabled" class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p v-if="!editForm.model_routing_enabled" class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.modelRouting.disabledHint') }}
           </p>
-          <p v-else class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p v-else class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
             {{ t('admin.groups.modelRouting.noRulesHint') }}
           </p>
           <!-- 路由规则列表（仅在启用时显示） -->
@@ -1597,7 +1597,7 @@
             <div
               v-for="rule in editModelRoutingRules"
               :key="getEditRuleRenderKey(rule)"
-              class="rounded-lg border border-gray-200 p-3 dark:border-dark-600"
+              class="rounded-lg border border-paper-200 p-3 dark:border-ink-600"
             >
               <div class="flex items-start gap-3">
                 <div class="flex-1 space-y-2">
@@ -1617,13 +1617,13 @@
                       <span
                         v-for="account in rule.accounts"
                         :key="account.id"
-                        class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                        class="inline-flex items-center gap-1 rounded-full bg-gold-500/15 px-2.5 py-1 text-xs font-medium text-gold-700 dark:bg-gold-300/15 dark:text-gold-200"
                       >
                         {{ account.name }}
                         <button
                           type="button"
                           @click="removeSelectedAccount(rule, account.id, true)"
-                          class="ml-0.5 text-primary-500 hover:text-primary-700 dark:hover:text-primary-200"
+                          class="ml-0.5 text-gold-600 hover:text-gold-700 dark:text-gold-300 dark:hover:text-gold-200"
                         >
                           <Icon name="x" size="xs" />
                         </button>
@@ -1642,29 +1642,29 @@
                       <!-- 搜索结果下拉框 -->
                       <div
                         v-if="showAccountDropdown[getEditRuleSearchKey(rule)] && accountSearchResults[getEditRuleSearchKey(rule)]?.length > 0"
-                        class="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-dark-600 dark:bg-dark-800"
+                        class="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-ink-600 dark:bg-ink-800"
                       >
                         <button
                           v-for="account in accountSearchResults[getEditRuleSearchKey(rule)]"
                           :key="account.id"
                           type="button"
                           @click="selectAccount(rule, account, true)"
-                          class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-700"
+                          class="w-full px-3 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.04]"
                           :class="{ 'opacity-50': rule.accounts.some(a => a.id === account.id) }"
                           :disabled="rule.accounts.some(a => a.id === account.id)"
                         >
                           <span>{{ account.name }}</span>
-                          <span class="ml-2 text-xs text-gray-400">#{{ account.id }}</span>
+                          <span class="ml-2 text-xs text-dust-400">#{{ account.id }}</span>
                         </button>
                       </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1">{{ t('admin.groups.modelRouting.accountsHint') }}</p>
+                    <p class="text-xs text-dust-400 mt-1">{{ t('admin.groups.modelRouting.accountsHint') }}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   @click="removeEditRoutingRule(rule)"
-                  class="mt-5 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                  class="mt-5 p-1.5 text-dust-400 hover:text-coral-500 transition-colors"
                   :title="t('admin.groups.modelRouting.removeRule')"
                 >
                   <Icon name="trash" size="sm" />
@@ -1677,7 +1677,7 @@
             v-if="editForm.model_routing_enabled"
             type="button"
             @click="addEditRoutingRule"
-            class="mt-3 flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            class="mt-3 flex items-center gap-1.5 text-sm text-gold-600 hover:text-gold-700 dark:text-gold-300 dark:hover:text-gold-200"
           >
             <Icon name="plus" size="sm" />
             {{ t('admin.groups.modelRouting.addRule') }}
@@ -1744,7 +1744,7 @@
       @close="closeSortModal"
     >
       <div class="space-y-4">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-sm text-dust-500 dark:text-pearl-300">
           {{ t('admin.groups.sortOrderHint') }}
         </p>
         <VueDraggable
@@ -1755,21 +1755,21 @@
           <div
             v-for="group in sortableGroups"
             :key="group.id"
-            class="flex cursor-grab items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 transition-shadow hover:shadow-md active:cursor-grabbing dark:border-dark-600 dark:bg-dark-700"
+            class="flex cursor-grab items-center gap-3 rounded-lg border border-paper-200 bg-white p-3 transition-shadow hover:shadow-md active:cursor-grabbing dark:border-ink-600 dark:bg-ink-700"
           >
-            <div class="text-gray-400">
+            <div class="text-dust-400">
               <Icon name="menu" size="md" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-gray-900 dark:text-white">{{ group.name }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">
+              <div class="font-medium text-dust-900 dark:text-pearl-50">{{ group.name }}</div>
+              <div class="text-xs text-dust-500 dark:text-pearl-300">
                 <span
                   :class="[
                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
                     group.platform === 'anthropic'
                       ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                       : group.platform === 'openai'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        ? 'bg-mint-500/15 text-mint-700 dark:bg-mint-500/15 dark:text-mint-400'
                         : group.platform === 'antigravity'
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
@@ -1779,7 +1779,7 @@
                 </span>
               </div>
             </div>
-            <div class="text-sm text-gray-400">
+            <div class="text-sm text-dust-400">
               #{{ group.id }}
             </div>
           </div>

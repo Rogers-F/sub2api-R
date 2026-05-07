@@ -43,11 +43,11 @@
           <template #cell-title="{ value, row }">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <span class="truncate font-medium text-gray-900 dark:text-white">{{ value }}</span>
+                <span class="truncate font-medium text-ink-900 dark:text-white">{{ value }}</span>
               </div>
-              <div class="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-dark-400">
+              <div class="mt-1 flex items-center gap-2 text-xs text-dust-500 dark:text-pearl-400">
                 <span>#{{ row.id }}</span>
-                <span class="text-gray-300 dark:text-dark-700">·</span>
+                <span class="text-paper-300 dark:text-ink-700">·</span>
                 <span>{{ formatDateTime(row.created_at) }}</span>
               </div>
             </div>
@@ -82,13 +82,13 @@
           </template>
 
           <template #cell-targeting="{ row }">
-            <span class="text-sm text-gray-600 dark:text-gray-300">
+            <span class="text-sm text-ink-600 dark:text-paper-100">
               {{ targetingSummary(row.targeting) }}
             </span>
           </template>
 
           <template #cell-timeRange="{ row }">
-            <div class="text-sm text-gray-600 dark:text-gray-300">
+            <div class="text-sm text-ink-600 dark:text-paper-100">
               <div>
                 <span class="font-medium">{{ t('admin.announcements.form.startsAt') }}:</span>
                 <span class="ml-1">{{ row.starts_at ? formatDateTime(row.starts_at) : t('admin.announcements.timeImmediate') }}</span>
@@ -101,28 +101,28 @@
           </template>
 
           <template #cell-createdAt="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">{{ formatDateTime(value) }}</span>
+            <span class="text-sm text-dust-500 dark:text-pearl-400">{{ formatDateTime(value) }}</span>
           </template>
 
           <template #cell-actions="{ row }">
             <div class="flex items-center space-x-1">
               <button
                 @click="openReadStatus(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-dust-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
                 :title="t('admin.announcements.readStatus')"
               >
                 <Icon name="eye" size="sm" />
               </button>
               <button
                 @click="openEditDialog(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-dark-600 dark:hover:text-gray-300"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-dust-500 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:hover:bg-white/[0.04] dark:hover:text-paper-100"
                 :title="t('common.edit')"
               >
                 <Icon name="edit" size="sm" />
               </button>
               <button
                 @click="handleDelete(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-dust-500 transition-colors hover:bg-coral-500/15 hover:text-coral-600 dark:hover:bg-coral-500/15 dark:hover:text-coral-400"
                 :title="t('common.delete')"
               >
                 <Icon name="trash" size="sm" />

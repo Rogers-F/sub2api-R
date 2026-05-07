@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-4xl space-y-6">
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-12">
-        <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary-600"></div>
+        <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
       </div>
 
       <!-- Settings Form -->
@@ -30,11 +30,11 @@
         <div v-show="activeTab === 'security'" class="space-y-6">
         <!-- Admin API Key Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.adminApiKey.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.adminApiKey.description') }}
             </p>
           </div>
@@ -56,14 +56,14 @@
             </div>
 
             <!-- Loading State -->
-            <div v-if="adminApiKeyLoading" class="flex items-center gap-2 text-gray-500">
-              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"></div>
+            <div v-if="adminApiKeyLoading" class="flex items-center gap-2 text-dust-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
               {{ t('common.loading') }}
             </div>
 
             <!-- No Key Configured -->
             <div v-else-if="!adminApiKeyExists" class="flex items-center justify-between">
-              <span class="text-gray-500 dark:text-gray-400">
+              <span class="text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.adminApiKey.notConfigured') }}
               </span>
               <button
@@ -104,11 +104,11 @@
             <div v-else class="space-y-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-1 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.adminApiKey.currentKey') }}
                   </label>
                   <code
-                    class="rounded bg-gray-100 px-2 py-1 font-mono text-sm text-gray-900 dark:bg-dark-700 dark:text-gray-100"
+                    class="rounded bg-paper-100 px-2 py-1 font-mono text-sm text-dust-900 dark:bg-ink-700 dark:text-pearl-100"
                   >
                     {{ adminApiKeyMasked }}
                   </code>
@@ -130,7 +130,7 @@
                     type="button"
                     @click="deleteAdminApiKey"
                     :disabled="adminApiKeyOperating"
-                    class="btn btn-secondary btn-sm text-red-600 hover:text-red-700 dark:text-red-400"
+                    class="btn btn-secondary btn-sm text-coral-600 hover:text-coral-700 dark:text-coral-500"
                   >
                     {{ t('admin.settings.adminApiKey.delete') }}
                   </button>
@@ -147,7 +147,7 @@
                 </p>
                 <div class="flex items-center gap-2">
                   <code
-                    class="flex-1 select-all break-all rounded border border-green-300 bg-white px-3 py-2 font-mono text-sm dark:border-green-700 dark:bg-dark-800"
+                    class="flex-1 select-all break-all rounded border border-green-300 bg-white px-3 py-2 font-mono text-sm dark:border-green-700 dark:bg-ink-800"
                   >
                     {{ newAdminApiKey }}
                   </code>
@@ -173,27 +173,27 @@
 
         <!-- Overload Cooldown (529) Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.overloadCooldown.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.overloadCooldown.description') }}
             </p>
           </div>
           <div class="space-y-5 p-6">
-            <div v-if="overloadCooldownLoading" class="flex items-center gap-2 text-gray-500">
-              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"></div>
+            <div v-if="overloadCooldownLoading" class="flex items-center gap-2 text-dust-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
               {{ t('common.loading') }}
             </div>
 
             <template v-else>
               <div class="flex items-center justify-between">
                 <div>
-                  <label class="font-medium text-gray-900 dark:text-white">{{
+                  <label class="font-medium text-dust-900 dark:text-white">{{
                     t('admin.settings.overloadCooldown.enabled')
                   }}</label>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <p class="text-sm text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.overloadCooldown.enabledHint') }}
                   </p>
                 </div>
@@ -202,10 +202,10 @@
 
               <div
                 v-if="overloadCooldownForm.enabled"
-                class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+                class="space-y-4 hairline border-t pt-4"
               >
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.overloadCooldown.cooldownMinutes') }}
                   </label>
                   <input
@@ -215,13 +215,13 @@
                     max="120"
                     class="input w-32"
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.overloadCooldown.cooldownMinutesHint') }}
                   </p>
                 </div>
               </div>
 
-              <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
+              <div class="flex justify-end hairline border-t pt-4">
                 <button
                   type="button"
                   @click="saveOverloadCooldownSettings"
@@ -257,18 +257,18 @@
 
         <!-- Stream Timeout Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.streamTimeout.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.streamTimeout.description') }}
             </p>
           </div>
           <div class="space-y-5 p-6">
             <!-- Loading State -->
-            <div v-if="streamTimeoutLoading" class="flex items-center gap-2 text-gray-500">
-              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"></div>
+            <div v-if="streamTimeoutLoading" class="flex items-center gap-2 text-dust-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
               {{ t('common.loading') }}
             </div>
 
@@ -276,10 +276,10 @@
               <!-- Enable Stream Timeout -->
               <div class="flex items-center justify-between">
                 <div>
-                  <label class="font-medium text-gray-900 dark:text-white">{{
+                  <label class="font-medium text-dust-900 dark:text-white">{{
                     t('admin.settings.streamTimeout.enabled')
                   }}</label>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <p class="text-sm text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.streamTimeout.enabledHint') }}
                   </p>
                 </div>
@@ -289,11 +289,11 @@
               <!-- Settings - Only show when enabled -->
               <div
                 v-if="streamTimeoutForm.enabled"
-                class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+                class="space-y-4 hairline border-t pt-4"
               >
                 <!-- Action -->
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.streamTimeout.action') }}
                   </label>
                   <select v-model="streamTimeoutForm.action" class="input w-64">
@@ -301,14 +301,14 @@
                     <option value="error">{{ t('admin.settings.streamTimeout.actionError') }}</option>
                     <option value="none">{{ t('admin.settings.streamTimeout.actionNone') }}</option>
                   </select>
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.streamTimeout.actionHint') }}
                   </p>
                 </div>
 
                 <!-- Temp Unsched Minutes (only show when action is temp_unsched) -->
                 <div v-if="streamTimeoutForm.action === 'temp_unsched'">
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.streamTimeout.tempUnschedMinutes') }}
                   </label>
                   <input
@@ -318,14 +318,14 @@
                     max="60"
                     class="input w-32"
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.streamTimeout.tempUnschedMinutesHint') }}
                   </p>
                 </div>
 
                 <!-- Threshold Count -->
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.streamTimeout.thresholdCount') }}
                   </label>
                   <input
@@ -335,14 +335,14 @@
                     max="10"
                     class="input w-32"
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.streamTimeout.thresholdCountHint') }}
                   </p>
                 </div>
 
                 <!-- Threshold Window Minutes -->
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.streamTimeout.thresholdWindowMinutes') }}
                   </label>
                   <input
@@ -352,14 +352,14 @@
                     max="60"
                     class="input w-32"
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.streamTimeout.thresholdWindowMinutesHint') }}
                   </p>
                 </div>
               </div>
 
               <!-- Save Button -->
-              <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
+              <div class="flex justify-end hairline border-t pt-4">
                 <button
                   type="button"
                   @click="saveStreamTimeoutSettings"
@@ -395,18 +395,18 @@
 
         <!-- Request Rectifier Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.rectifier.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.rectifier.description') }}
             </p>
           </div>
           <div class="space-y-5 p-6">
             <!-- Loading State -->
-            <div v-if="rectifierLoading" class="flex items-center gap-2 text-gray-500">
-              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"></div>
+            <div v-if="rectifierLoading" class="flex items-center gap-2 text-dust-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
               {{ t('common.loading') }}
             </div>
 
@@ -414,10 +414,10 @@
               <!-- Master Toggle -->
               <div class="flex items-center justify-between">
                 <div>
-                  <label class="font-medium text-gray-900 dark:text-white">{{
+                  <label class="font-medium text-dust-900 dark:text-white">{{
                     t('admin.settings.rectifier.enabled')
                   }}</label>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <p class="text-sm text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.rectifier.enabledHint') }}
                   </p>
                 </div>
@@ -427,15 +427,15 @@
               <!-- Sub-toggles (only show when master is enabled) -->
               <div
                 v-if="rectifierForm.enabled"
-                class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+                class="space-y-4 hairline border-t pt-4"
               >
                 <!-- Thinking Signature Rectifier -->
                 <div class="flex items-center justify-between">
                   <div>
-                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{
+                    <label class="text-sm font-medium text-dust-700 dark:text-pearl-300">{{
                       t('admin.settings.rectifier.thinkingSignature')
                     }}</label>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <p class="text-xs text-dust-500 dark:text-pearl-400">
                       {{ t('admin.settings.rectifier.thinkingSignatureHint') }}
                     </p>
                   </div>
@@ -445,10 +445,10 @@
                 <!-- Thinking Budget Rectifier -->
                 <div class="flex items-center justify-between">
                   <div>
-                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{
+                    <label class="text-sm font-medium text-dust-700 dark:text-pearl-300">{{
                       t('admin.settings.rectifier.thinkingBudget')
                     }}</label>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <p class="text-xs text-dust-500 dark:text-pearl-400">
                       {{ t('admin.settings.rectifier.thinkingBudgetHint') }}
                     </p>
                   </div>
@@ -457,7 +457,7 @@
               </div>
 
               <!-- Save Button -->
-              <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
+              <div class="flex justify-end hairline border-t pt-4">
                 <button
                   type="button"
                   @click="saveRectifierSettings"
@@ -492,18 +492,18 @@
         </div>
         <!-- Beta Policy Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.betaPolicy.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.betaPolicy.description') }}
             </p>
           </div>
           <div class="space-y-5 p-6">
             <!-- Loading State -->
-            <div v-if="betaPolicyLoading" class="flex items-center gap-2 text-gray-500">
-              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"></div>
+            <div v-if="betaPolicyLoading" class="flex items-center gap-2 text-dust-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
               {{ t('common.loading') }}
             </div>
 
@@ -512,13 +512,13 @@
               <div
                 v-for="rule in betaPolicyForm.rules"
                 :key="rule.beta_token"
-                class="rounded-lg border border-gray-200 p-4 dark:border-dark-600"
+                class="rounded-lg hairline border p-4"
               >
                 <div class="mb-3 flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">
+                  <span class="text-sm font-medium text-dust-900 dark:text-white">
                     {{ getBetaDisplayName(rule.beta_token) }}
                   </span>
-                  <span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-dark-700 dark:text-gray-400">
+                  <span class="rounded bg-paper-100 px-2 py-0.5 text-xs text-dust-500 dark:bg-ink-700 dark:text-pearl-400">
                     {{ rule.beta_token }}
                   </span>
                 </div>
@@ -526,7 +526,7 @@
                 <div class="grid grid-cols-2 gap-4">
                   <!-- Action -->
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                       {{ t('admin.settings.betaPolicy.action') }}
                     </label>
                     <Select
@@ -538,7 +538,7 @@
 
                   <!-- Scope -->
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                       {{ t('admin.settings.betaPolicy.scope') }}
                     </label>
                     <Select
@@ -551,7 +551,7 @@
 
                 <!-- Error Message (only when action=block) -->
                 <div v-if="rule.action === 'block'" class="mt-3">
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                     {{ t('admin.settings.betaPolicy.errorMessage') }}
                   </label>
                   <input
@@ -560,14 +560,14 @@
                     class="input"
                     :placeholder="t('admin.settings.betaPolicy.errorMessagePlaceholder')"
                   />
-                  <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  <p class="mt-1 text-xs text-dust-400 dark:text-pearl-500">
                     {{ t('admin.settings.betaPolicy.errorMessageHint') }}
                   </p>
                 </div>
               </div>
 
               <!-- Save Button -->
-              <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
+              <div class="flex justify-end hairline border-t pt-4">
                 <button
                   type="button"
                   @click="saveBetaPolicySettings"
@@ -607,11 +607,11 @@
         <div v-show="activeTab === 'security'" class="space-y-6">
         <!-- Registration Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.registration.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.registration.description') }}
             </p>
           </div>
@@ -619,10 +619,10 @@
             <!-- Enable Registration -->
             <div class="flex items-center justify-between">
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.registration.enableRegistration')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.registration.enableRegistrationHint') }}
                 </p>
               </div>
@@ -631,13 +631,13 @@
 
             <!-- Email Verification -->
             <div
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.registration.emailVerification')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.registration.emailVerificationHint') }}
                 </p>
               </div>
@@ -645,27 +645,27 @@
             </div>
 
             <!-- Email Suffix Whitelist -->
-            <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
-              <label class="font-medium text-gray-900 dark:text-white">{{
+            <div class="hairline border-t pt-4">
+              <label class="font-medium text-dust-900 dark:text-white">{{
                 t('admin.settings.registration.emailSuffixWhitelist')
               }}</label>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.registration.emailSuffixWhitelistHint') }}
               </p>
               <div
-                class="mt-3 rounded-lg border border-gray-300 bg-white p-2 dark:border-dark-500 dark:bg-dark-700"
+                class="mt-3 rounded-lg hairline-strong border bg-white p-2 dark:bg-ink-700"
               >
                 <div class="flex flex-wrap items-center gap-2">
                   <span
                     v-for="suffix in registrationEmailSuffixWhitelistTags"
                     :key="suffix"
-                    class="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-xs font-mono text-gray-700 dark:bg-dark-600 dark:text-gray-200"
+                    class="inline-flex items-center gap-1 rounded bg-paper-100 px-2 py-1 text-xs font-mono text-dust-700 dark:bg-ink-700 dark:text-pearl-200"
                   >
-                    <span class="text-gray-400 dark:text-gray-500">@</span>
+                    <span class="text-dust-400 dark:text-pearl-500">@</span>
                     <span>{{ suffix }}</span>
                     <button
                       type="button"
-                      class="rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-dark-500 dark:hover:text-white"
+                      class="rounded-full text-dust-500 hover:bg-paper-200 hover:text-dust-700 dark:text-pearl-300 dark:hover:bg-white/[0.04] dark:hover:text-white"
                       @click="removeRegistrationEmailSuffixWhitelistTag(suffix)"
                     >
                       <Icon name="x" size="xs" class="h-3.5 w-3.5" :stroke-width="2" />
@@ -673,13 +673,13 @@
                   </span>
 
                   <div
-                    class="flex min-w-[220px] flex-1 items-center gap-1 rounded border border-transparent px-2 py-1 focus-within:border-primary-300 dark:focus-within:border-primary-700"
+                    class="flex min-w-[220px] flex-1 items-center gap-1 rounded border border-transparent px-2 py-1 focus-within:border-gold-500/50 dark:focus-within:border-gold-300/50"
                   >
-                    <span class="font-mono text-sm text-gray-400 dark:text-gray-500">@</span>
+                    <span class="font-mono text-sm text-dust-400 dark:text-pearl-500">@</span>
                     <input
                       v-model="registrationEmailSuffixWhitelistDraft"
                       type="text"
-                      class="w-full bg-transparent text-sm font-mono text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
+                      class="w-full bg-transparent text-sm font-mono text-dust-900 outline-none placeholder:text-dust-400 dark:text-white dark:placeholder:text-pearl-500"
                       :placeholder="t('admin.settings.registration.emailSuffixWhitelistPlaceholder')"
                       @input="handleRegistrationEmailSuffixWhitelistDraftInput"
                       @keydown="handleRegistrationEmailSuffixWhitelistDraftKeydown"
@@ -689,20 +689,20 @@
                   </div>
                 </div>
               </div>
-              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-2 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.registration.emailSuffixWhitelistInputHint') }}
               </p>
             </div>
 
             <!-- Promo Code -->
             <div
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.registration.promoCode')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.registration.promoCodeHint') }}
                 </p>
               </div>
@@ -711,13 +711,13 @@
 
             <!-- Invitation Code -->
             <div
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.registration.invitationCode')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.registration.invitationCodeHint') }}
                 </p>
               </div>
@@ -726,13 +726,13 @@
             <!-- Password Reset - Only show when email verification is enabled -->
             <div
               v-if="form.email_verify_enabled"
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.registration.passwordReset')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.registration.passwordResetHint') }}
                 </p>
               </div>
@@ -741,9 +741,9 @@
             <!-- Frontend URL - Only show when password reset is enabled -->
             <div
               v-if="form.email_verify_enabled && form.password_reset_enabled"
-              class="border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="hairline border-t pt-4"
             >
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.registration.frontendUrl') }}
               </label>
               <input
@@ -752,20 +752,20 @@
                 class="input"
                 :placeholder="t('admin.settings.registration.frontendUrlPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.registration.frontendUrlHint') }}
               </p>
             </div>
 
             <!-- TOTP 2FA -->
             <div
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.registration.totp')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.registration.totpHint') }}
                 </p>
                 <!-- Warning when encryption key not configured -->
@@ -786,11 +786,11 @@
 
         <!-- Cloudflare Turnstile Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.turnstile.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.turnstile.description') }}
             </p>
           </div>
@@ -798,10 +798,10 @@
             <!-- Enable Turnstile -->
             <div class="flex items-center justify-between">
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.turnstile.enableTurnstile')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.turnstile.enableTurnstileHint') }}
                 </p>
               </div>
@@ -811,11 +811,11 @@
             <!-- Turnstile Keys - Only show when enabled -->
             <div
               v-if="form.turnstile_enabled"
-              class="border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="hairline border-t pt-4"
             >
               <div class="grid grid-cols-1 gap-6">
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.turnstile.siteKey') }}
                   </label>
                   <input
@@ -824,18 +824,18 @@
                     class="input font-mono text-sm"
                     placeholder="0x4AAAAAAA..."
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.turnstile.siteKeyHint') }}
                     <a
                       href="https://dash.cloudflare.com/"
                       target="_blank"
-                      class="text-primary-600 hover:text-primary-500"
+                      class="text-gold-600 hover:text-gold-500 dark:text-gold-300 dark:hover:text-gold-400"
                       >{{ t('admin.settings.turnstile.cloudflareDashboard') }}</a
                     >
                   </p>
                 </div>
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.turnstile.secretKey') }}
                   </label>
                   <input
@@ -844,7 +844,7 @@
                     class="input font-mono text-sm"
                     placeholder="0x4AAAAAAA..."
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{
                       form.turnstile_secret_key_configured
                         ? t('admin.settings.turnstile.secretKeyConfiguredHint')
@@ -859,21 +859,21 @@
 
         <!-- LinuxDo Connect OAuth 登录 -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.linuxdo.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.linuxdo.description') }}
             </p>
           </div>
           <div class="space-y-5 p-6">
             <div class="flex items-center justify-between">
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.linuxdo.enable')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.linuxdo.enableHint') }}
                 </p>
               </div>
@@ -882,11 +882,11 @@
 
             <div
               v-if="form.linuxdo_connect_enabled"
-              class="border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="hairline border-t pt-4"
             >
               <div class="grid grid-cols-1 gap-6">
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.linuxdo.clientId') }}
                   </label>
                   <input
@@ -895,13 +895,13 @@
                     class="input font-mono text-sm"
                     :placeholder="t('admin.settings.linuxdo.clientIdPlaceholder')"
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.linuxdo.clientIdHint') }}
                   </p>
                 </div>
 
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.linuxdo.clientSecret') }}
                   </label>
                   <input
@@ -914,7 +914,7 @@
                         : t('admin.settings.linuxdo.clientSecretPlaceholder')
                     "
                   />
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{
                       form.linuxdo_connect_client_secret_configured
                         ? t('admin.settings.linuxdo.clientSecretConfiguredHint')
@@ -924,7 +924,7 @@
                 </div>
 
                 <div>
-                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                     {{ t('admin.settings.linuxdo.redirectUrl') }}
                   </label>
                   <input
@@ -943,12 +943,12 @@
                     </button>
                     <code
                       v-if="linuxdoRedirectUrlSuggestion"
-                      class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
+                      class="select-all break-all rounded bg-paper-50 px-2 py-1 font-mono text-xs text-dust-600 dark:bg-ink-800 dark:text-pearl-300"
                     >
                       {{ linuxdoRedirectUrlSuggestion }}
                     </code>
                   </div>
-                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.linuxdo.redirectUrlHint') }}
                   </p>
                 </div>
@@ -962,18 +962,18 @@
         <div v-show="activeTab === 'users'" class="space-y-6">
         <!-- Default Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.defaults.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.defaults.description') }}
             </p>
           </div>
           <div class="space-y-6 p-6">
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.defaults.defaultBalance') }}
                 </label>
                 <input
@@ -984,12 +984,12 @@
                   class="input"
                   placeholder="0.00"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.defaults.defaultBalanceHint') }}
                 </p>
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.defaults.defaultConcurrency') }}
                 </label>
                 <input
@@ -999,19 +999,19 @@
                   class="input"
                   placeholder="1"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.defaults.defaultConcurrencyHint') }}
                 </p>
               </div>
             </div>
 
-            <div class="border-t border-gray-100 pt-4 dark:border-dark-700">
+            <div class="hairline border-t pt-4">
               <div class="mb-3 flex items-center justify-between">
                 <div>
-                  <label class="font-medium text-gray-900 dark:text-white">
+                  <label class="font-medium text-dust-900 dark:text-white">
                     {{ t('admin.settings.defaults.defaultSubscriptions') }}
                   </label>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <p class="text-sm text-dust-500 dark:text-pearl-400">
                     {{ t('admin.settings.defaults.defaultSubscriptionsHint') }}
                   </p>
                 </div>
@@ -1027,7 +1027,7 @@
 
               <div
                 v-if="form.default_subscriptions.length === 0"
-                class="rounded border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-dark-600 dark:text-gray-400"
+                class="rounded border border-dashed hairline-strong px-4 py-3 text-sm text-dust-500 dark:text-pearl-400"
               >
                 {{ t('admin.settings.defaults.defaultSubscriptionsEmpty') }}
               </div>
@@ -1036,10 +1036,10 @@
                 <div
                   v-for="(item, index) in form.default_subscriptions"
                   :key="`default-sub-${index}`"
-                  class="grid grid-cols-1 gap-3 rounded border border-gray-200 p-3 md:grid-cols-[1fr_160px_auto] dark:border-dark-600"
+                  class="grid grid-cols-1 gap-3 rounded hairline border p-3 md:grid-cols-[1fr_160px_auto]"
                 >
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                       {{ t('admin.settings.defaults.subscriptionGroup') }}
                     </label>
                     <Select
@@ -1056,7 +1056,7 @@
                           :subscription-type="(option as unknown as DefaultSubscriptionGroupOption).subscriptionType"
                           :rate-multiplier="(option as unknown as DefaultSubscriptionGroupOption).rate"
                         />
-                        <span v-else class="text-gray-400">
+                        <span v-else class="text-dust-400 dark:text-pearl-500">
                           {{ t('admin.settings.defaults.subscriptionGroup') }}
                         </span>
                       </template>
@@ -1073,7 +1073,7 @@
                     </Select>
                   </div>
                   <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                       {{ t('admin.settings.defaults.subscriptionValidityDays') }}
                     </label>
                     <input
@@ -1087,7 +1087,7 @@
                   <div class="flex items-end">
                     <button
                       type="button"
-                      class="btn btn-secondary default-sub-delete-btn w-full text-red-600 hover:text-red-700 dark:text-red-400"
+                      class="btn btn-secondary default-sub-delete-btn w-full text-coral-600 hover:text-coral-700 dark:text-coral-500"
                       @click="removeDefaultSubscription(index)"
                     >
                       {{ t('common.delete') }}
@@ -1104,17 +1104,17 @@
         <div v-show="activeTab === 'gateway'" class="space-y-6">
         <!-- Claude Code Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.claudeCode.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.claudeCode.description') }}
             </p>
           </div>
           <div class="p-6">
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.claudeCode.minVersion') }}
               </label>
               <input
@@ -1123,12 +1123,12 @@
                 class="input max-w-xs font-mono text-sm"
                 :placeholder="t('admin.settings.claudeCode.minVersionPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.claudeCode.minVersionHint') }}
               </p>
             </div>
             <div class="mt-4">
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.claudeCode.maxVersion') }}
               </label>
               <input
@@ -1137,7 +1137,7 @@
                 class="input max-w-xs font-mono text-sm"
                 :placeholder="t('admin.settings.claudeCode.maxVersionPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.claudeCode.maxVersionHint') }}
               </p>
             </div>
@@ -1146,21 +1146,21 @@
 
         <!-- Gateway Scheduling Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.scheduling.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.scheduling.description') }}
             </p>
           </div>
           <div class="p-6">
             <div class="flex items-center justify-between">
               <div>
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.scheduling.allowUngroupedKey') }}
                 </label>
-                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-0.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.scheduling.allowUngroupedKeyHint') }}
                 </p>
               </div>
@@ -1177,11 +1177,11 @@
         <div v-show="activeTab === 'general'" class="space-y-6">
         <!-- Site Settings -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.site.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.site.description') }}
             </p>
           </div>
@@ -1191,10 +1191,10 @@
               class="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20"
             >
               <div>
-                <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                <h3 class="text-sm font-medium text-dust-900 dark:text-white">
                   {{ t('admin.settings.site.backendMode') }}
                 </h3>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.site.backendModeDescription') }}
                 </p>
               </div>
@@ -1203,7 +1203,7 @@
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.site.siteName') }}
                 </label>
                 <input
@@ -1212,12 +1212,12 @@
                   class="input"
                   :placeholder="t('admin.settings.site.siteNamePlaceholder')"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.site.siteNameHint') }}
                 </p>
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.site.siteSubtitle') }}
                 </label>
                 <input
@@ -1226,7 +1226,7 @@
                   class="input"
                   :placeholder="t('admin.settings.site.siteSubtitlePlaceholder')"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.site.siteSubtitleHint') }}
                 </p>
               </div>
@@ -1234,7 +1234,7 @@
 
             <!-- API Base URL -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.site.apiBaseUrl') }}
               </label>
               <input
@@ -1243,17 +1243,17 @@
                 class="input font-mono text-sm"
                 :placeholder="t('admin.settings.site.apiBaseUrlPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.site.apiBaseUrlHint') }}
               </p>
             </div>
 
             <!-- Custom Endpoints -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.site.customEndpoints.title') }}
               </label>
-              <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mb-3 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.site.customEndpoints.description') }}
               </p>
 
@@ -1261,15 +1261,15 @@
                 <div
                   v-for="(ep, index) in form.custom_endpoints"
                   :key="index"
-                  class="rounded-lg border border-gray-200 p-4 dark:border-dark-600"
+                  class="rounded-lg hairline border p-4"
                 >
                   <div class="mb-3 flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span class="text-sm font-medium text-dust-700 dark:text-pearl-300">
                       {{ t('admin.settings.site.customEndpoints.itemLabel', { n: index + 1 }) }}
                     </span>
                     <button
                       type="button"
-                      class="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                      class="rounded p-1 text-coral-500 hover:bg-coral-500/10 hover:text-coral-600 dark:hover:bg-coral-500/20"
                       @click="removeEndpoint(index)"
                     >
                       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -1277,7 +1277,7 @@
                   </div>
                   <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                         {{ t('admin.settings.site.customEndpoints.name') }}
                       </label>
                       <input
@@ -1288,7 +1288,7 @@
                       />
                     </div>
                     <div>
-                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                         {{ t('admin.settings.site.customEndpoints.endpointUrl') }}
                       </label>
                       <input
@@ -1299,7 +1299,7 @@
                       />
                     </div>
                     <div class="sm:col-span-2">
-                      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                         {{ t('admin.settings.site.customEndpoints.descriptionLabel') }}
                       </label>
                       <input
@@ -1315,7 +1315,7 @@
 
               <button
                 type="button"
-                class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2.5 text-sm text-gray-500 transition-colors hover:border-primary-400 hover:text-primary-600 dark:border-dark-600 dark:text-gray-400 dark:hover:border-primary-500 dark:hover:text-primary-400"
+                class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed hairline-strong px-4 py-2.5 text-sm text-dust-500 transition-colors hover:border-gold-500/50 hover:text-gold-600 dark:text-pearl-400 dark:hover:border-gold-300/50 dark:hover:text-gold-300"
                 @click="addEndpoint"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -1325,7 +1325,7 @@
 
             <!-- Contact Info -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.site.contactInfo') }}
               </label>
               <input
@@ -1334,14 +1334,14 @@
                 class="input"
                 :placeholder="t('admin.settings.site.contactInfoPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.site.contactInfoHint') }}
               </p>
             </div>
 
             <!-- Doc URL -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.site.docUrl') }}
               </label>
               <input
@@ -1350,14 +1350,14 @@
                 class="input font-mono text-sm"
                 :placeholder="t('admin.settings.site.docUrlPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.site.docUrlHint') }}
               </p>
             </div>
 
             <!-- Site Logo Upload -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.site.siteLogo') }}
               </label>
               <ImageUpload
@@ -1372,7 +1372,7 @@
 
             <!-- Home Content -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.site.homeContent') }}
               </label>
               <textarea
@@ -1381,7 +1381,7 @@
                 class="input font-mono text-sm"
                 :placeholder="t('admin.settings.site.homeContentPlaceholder')"
               ></textarea>
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.site.homeContentHint') }}
               </p>
               <!-- iframe CSP Warning -->
@@ -1392,13 +1392,13 @@
 
             <!-- Hide CCS Import Button -->
             <div
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.site.hideCcsImportButton')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.site.hideCcsImportButtonHint') }}
                 </p>
               </div>
@@ -1409,11 +1409,11 @@
 
         <!-- Purchase Subscription Page -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.purchase.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.purchase.description') }}
             </p>
           </div>
@@ -1421,10 +1421,10 @@
             <!-- Enable Toggle -->
             <div class="flex items-center justify-between">
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.purchase.enabled')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.purchase.enabledHint') }}
                 </p>
               </div>
@@ -1433,7 +1433,7 @@
 
             <!-- URL -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                 {{ t('admin.settings.purchase.url') }}
               </label>
               <input
@@ -1442,7 +1442,7 @@
                 class="input font-mono text-sm"
                 :placeholder="t('admin.settings.purchase.urlPlaceholder')"
               />
-              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.purchase.urlHint') }}
               </p>
               <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
@@ -1452,7 +1452,7 @@
 
             <!-- Integration Docs -->
             <div class="flex items-center gap-2 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-dust-400 dark:text-pearl-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <a
@@ -1464,8 +1464,8 @@
               >
                 {{ t('admin.settings.purchase.integrationDoc') }}
               </a>
-              <span class="text-gray-400 dark:text-gray-500">—</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="text-dust-400 dark:text-pearl-500">—</span>
+              <span class="text-xs text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.purchase.integrationDocHint') }}
               </span>
             </div>
@@ -1473,11 +1473,11 @@
         </div>
 
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.payg.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.payg.description') }}
             </p>
           </div>
@@ -1488,10 +1488,10 @@
 
             <div class="flex items-center justify-between">
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.payg.enabled')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.payg.enabledHint') }}
                 </p>
               </div>
@@ -1500,7 +1500,7 @@
 
             <div class="grid gap-5 md:grid-cols-2">
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.payg.exchangeRate') }}
                 </label>
                 <input
@@ -1510,13 +1510,13 @@
                   step="0.01"
                   class="input"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.payg.exchangeRateHint') }}
                 </p>
               </div>
 
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.payg.fixedAmountOptions') }}
                 </label>
                 <input
@@ -1525,7 +1525,7 @@
                   class="input"
                   :placeholder="t('admin.settings.payg.fixedAmountOptionsPlaceholder')"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.payg.fixedAmountOptionsHint') }}
                 </p>
               </div>
@@ -1533,7 +1533,7 @@
 
             <div class="grid gap-5 md:grid-cols-2">
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.payg.terminalSn') }}
                 </label>
                 <input
@@ -1542,13 +1542,13 @@
                   class="input font-mono text-sm"
                   :placeholder="t('admin.settings.payg.terminalSnPlaceholder')"
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.payg.terminalSnHint') }}
                 </p>
               </div>
 
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.payg.terminalKey') }}
                 </label>
                 <input
@@ -1561,7 +1561,7 @@
                       : t('admin.settings.payg.terminalKeyPlaceholder')
                   "
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{
                     form.shouqianba_terminal_key_configured
                       ? t('admin.settings.payg.terminalKeyConfiguredHint')
@@ -1575,21 +1575,21 @@
 
         <!-- Sora Client Toggle -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.soraClient.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.soraClient.description') }}
             </p>
           </div>
           <div class="space-y-6 p-6">
             <div class="flex items-center justify-between">
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.soraClient.enabled')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.soraClient.enabledHint') }}
                 </p>
               </div>
@@ -1600,11 +1600,11 @@
 
         <!-- Custom Menu Items -->
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.customMenu.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.customMenu.description') }}
             </p>
           </div>
@@ -1613,10 +1613,10 @@
             <div
               v-for="(item, index) in form.custom_menu_items"
               :key="item.id || index"
-              class="rounded-lg border border-gray-200 p-4 dark:border-dark-600"
+              class="rounded-lg hairline border p-4"
             >
               <div class="mb-3 flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <span class="text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.customMenu.itemLabel', { n: index + 1 }) }}
                 </span>
                 <div class="flex items-center gap-2">
@@ -1624,7 +1624,7 @@
                   <button
                     v-if="index > 0"
                     type="button"
-                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-700"
+                    class="rounded p-1 text-dust-400 hover:bg-paper-100 hover:text-dust-600 dark:text-pearl-500 dark:hover:bg-white/[0.04] dark:hover:text-pearl-300"
                     :title="t('admin.settings.customMenu.moveUp')"
                     @click="moveMenuItem(index, -1)"
                   >
@@ -1634,7 +1634,7 @@
                   <button
                     v-if="index < form.custom_menu_items.length - 1"
                     type="button"
-                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-700"
+                    class="rounded p-1 text-dust-400 hover:bg-paper-100 hover:text-dust-600 dark:text-pearl-500 dark:hover:bg-white/[0.04] dark:hover:text-pearl-300"
                     :title="t('admin.settings.customMenu.moveDown')"
                     @click="moveMenuItem(index, 1)"
                   >
@@ -1643,7 +1643,7 @@
                   <!-- Delete -->
                   <button
                     type="button"
-                    class="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    class="rounded p-1 text-coral-500 hover:bg-coral-500/10 hover:text-coral-600 dark:hover:bg-coral-500/20"
                     :title="t('admin.settings.customMenu.remove')"
                     @click="removeMenuItem(index)"
                   >
@@ -1655,7 +1655,7 @@
               <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <!-- Label -->
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                     {{ t('admin.settings.customMenu.name') }}
                   </label>
                   <input
@@ -1668,7 +1668,7 @@
 
                 <!-- Visibility -->
                 <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                     {{ t('admin.settings.customMenu.visibility') }}
                   </label>
                   <select v-model="item.visibility" class="input text-sm">
@@ -1679,7 +1679,7 @@
 
                 <!-- URL (full width) -->
                 <div class="sm:col-span-2">
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                     {{ t('admin.settings.customMenu.url') }}
                   </label>
                   <input
@@ -1692,7 +1692,7 @@
 
                 <!-- SVG Icon (full width) -->
                 <div class="sm:col-span-2">
-                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <label class="mb-1 block text-xs font-medium text-dust-600 dark:text-pearl-400">
                     {{ t('admin.settings.customMenu.iconSvg') }}
                   </label>
                   <ImageUpload
@@ -1710,7 +1710,7 @@
             <!-- Add button -->
             <button
               type="button"
-              class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm text-gray-500 transition-colors hover:border-primary-400 hover:text-primary-600 dark:border-dark-600 dark:text-gray-400 dark:hover:border-primary-500 dark:hover:text-primary-400"
+              class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed hairline-strong py-3 text-sm text-dust-500 transition-colors hover:border-gold-500/50 hover:text-gold-600 dark:text-pearl-400 dark:hover:border-gold-300/50 dark:hover:text-gold-300"
               @click="addMenuItem"
             >
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -1727,12 +1727,12 @@
         <div v-if="!form.email_verify_enabled" class="card">
           <div class="p-6">
             <div class="flex items-start gap-3">
-              <Icon name="mail" size="md" class="mt-0.5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+              <Icon name="mail" size="md" class="mt-0.5 flex-shrink-0 text-dust-400 dark:text-pearl-500" />
               <div>
-                <h3 class="font-medium text-gray-900 dark:text-white">
+                <h3 class="font-medium text-dust-900 dark:text-white">
                   {{ t('admin.settings.emailTabDisabledTitle') }}
                 </h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.emailTabDisabledHint') }}
                 </p>
               </div>
@@ -1743,13 +1743,13 @@
         <!-- SMTP Settings - Only show when email verification is enabled -->
         <div v-if="form.email_verify_enabled" class="card">
           <div
-            class="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+            class="flex items-center justify-between hairline border-b px-6 py-4"
           >
             <div>
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
                 {{ t('admin.settings.smtp.title') }}
               </h2>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
                 {{ t('admin.settings.smtp.description') }}
               </p>
             </div>
@@ -1784,7 +1784,7 @@
           <div class="space-y-6 p-6">
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.smtp.host') }}
                 </label>
                 <input
@@ -1795,7 +1795,7 @@
                 />
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.smtp.port') }}
                 </label>
                 <input
@@ -1808,7 +1808,7 @@
                 />
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.smtp.username') }}
                 </label>
                 <input
@@ -1819,7 +1819,7 @@
                 />
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.smtp.password') }}
                 </label>
                 <input
@@ -1837,7 +1837,7 @@
                       : t('admin.settings.smtp.passwordPlaceholder')
                   "
                 />
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 text-xs text-dust-500 dark:text-pearl-400">
                   {{
                     form.smtp_password_configured
                       ? t('admin.settings.smtp.passwordConfiguredHint')
@@ -1846,7 +1846,7 @@
                 </p>
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.smtp.fromEmail') }}
                 </label>
                 <input
@@ -1857,7 +1857,7 @@
                 />
               </div>
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.smtp.fromName') }}
                 </label>
                 <input
@@ -1871,13 +1871,13 @@
 
             <!-- Use TLS Toggle -->
             <div
-              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              class="flex items-center justify-between hairline border-t pt-4"
             >
               <div>
-                <label class="font-medium text-gray-900 dark:text-white">{{
+                <label class="font-medium text-dust-900 dark:text-white">{{
                   t('admin.settings.smtp.useTls')
                 }}</label>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.smtp.useTlsHint') }}
                 </p>
               </div>
@@ -1889,18 +1889,18 @@
 
         <!-- Send Test Email - Only show when email verification is enabled -->
         <div v-if="form.email_verify_enabled" class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-white">
               {{ t('admin.settings.testEmail.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.testEmail.description') }}
             </p>
           </div>
           <div class="p-6">
             <div class="flex items-end gap-4">
               <div class="flex-1">
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-300">
                   {{ t('admin.settings.testEmail.recipientEmail') }}
                 </label>
                 <input
@@ -2887,8 +2887,8 @@ onMounted(() => {
 
 .settings-tabs {
   @apply inline-flex min-w-full gap-0.5 rounded-2xl
-         border border-gray-100 bg-white/80 p-1 backdrop-blur-sm
-         dark:border-dark-700/50 dark:bg-dark-800/80;
+         hairline border bg-white/80 p-1 backdrop-blur-sm
+         dark:bg-ink-800/80;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02);
 }
 
@@ -2902,12 +2902,12 @@ onMounted(() => {
   @apply relative flex flex-1 items-center justify-center gap-1.5
          whitespace-nowrap rounded-xl px-2.5 py-2
          text-sm font-medium
-         text-gray-500 dark:text-dark-400
+         text-dust-500 dark:text-pearl-400
          transition-all duration-200 ease-out;
 }
 
 .settings-tab:hover:not(.settings-tab-active) {
-  @apply text-gray-700 dark:text-gray-300;
+  @apply text-dust-700 dark:text-pearl-300;
   background: rgb(0 0 0 / 0.03);
 }
 
@@ -2916,13 +2916,13 @@ onMounted(() => {
 }
 
 .settings-tab-active {
-  @apply text-primary-600 dark:text-primary-400;
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.03));
-  box-shadow: 0 1px 2px rgba(20, 184, 166, 0.1);
+  @apply text-gold-600 dark:text-gold-300;
+  background: linear-gradient(135deg, rgba(168, 131, 71, 0.10), rgba(168, 131, 71, 0.04));
+  box-shadow: 0 1px 2px rgba(168, 131, 71, 0.12);
 }
 
 :root.dark .settings-tab-active {
-  background: linear-gradient(135deg, rgba(45, 212, 191, 0.12), rgba(45, 212, 191, 0.05));
+  background: linear-gradient(135deg, rgba(212, 182, 129, 0.14), rgba(212, 182, 129, 0.05));
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
 }
 
@@ -2932,7 +2932,7 @@ onMounted(() => {
 }
 
 .settings-tab-active .settings-tab-icon {
-  @apply bg-primary-500/15 text-primary-600
-         dark:bg-primary-400/15 dark:text-primary-400;
+  @apply bg-gold-500/15 text-gold-600
+         dark:bg-gold-300/15 dark:text-gold-300;
 }
 </style>

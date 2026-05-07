@@ -3,10 +3,10 @@
       <div class="card p-6">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+            <h3 class="text-base font-semibold text-ink-900 dark:text-white">
               {{ t('admin.settings.soraS3.title') }}
             </h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-400">
               {{ t('admin.settings.soraS3.description') }}
             </p>
           </div>
@@ -23,7 +23,7 @@
         <div class="overflow-x-auto">
           <table class="w-full min-w-[1000px] text-sm">
             <thead>
-              <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500 dark:border-dark-700 dark:text-gray-400">
+              <tr class="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-dust-500 dark:border-ink-700 dark:text-pearl-400">
                 <th class="py-2 pr-4">{{ t('admin.settings.soraS3.columns.profile') }}</th>
                 <th class="py-2 pr-4">{{ t('admin.settings.soraS3.columns.active') }}</th>
                 <th class="py-2 pr-4">{{ t('admin.settings.soraS3.columns.endpoint') }}</th>
@@ -34,22 +34,22 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="profile in soraS3Profiles" :key="profile.profile_id" class="border-b border-gray-100 align-top dark:border-dark-800">
+              <tr v-for="profile in soraS3Profiles" :key="profile.profile_id" class="border-b border-paper-100 align-top dark:border-ink-800">
                 <td class="py-3 pr-4">
                   <div class="font-mono text-xs">{{ profile.profile_id }}</div>
-                  <div class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ profile.name }}</div>
+                  <div class="mt-1 text-xs text-ink-600 dark:text-pearl-400">{{ profile.name }}</div>
                 </td>
                 <td class="py-3 pr-4">
                   <span
                     class="rounded px-2 py-0.5 text-xs"
-                    :class="profile.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-dark-800 dark:text-gray-300'"
+                    :class="profile.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-paper-100 text-ink-700 dark:bg-ink-800 dark:text-paper-100'"
                   >
                     {{ profile.is_active ? t('common.enabled') : t('common.disabled') }}
                   </span>
                 </td>
                 <td class="py-3 pr-4 text-xs">
                   <div>{{ profile.endpoint || '-' }}</div>
-                  <div class="mt-1 text-gray-500 dark:text-gray-400">{{ profile.region || '-' }}</div>
+                  <div class="mt-1 text-dust-500 dark:text-pearl-400">{{ profile.region || '-' }}</div>
                 </td>
                 <td class="py-3 pr-4 text-xs">{{ profile.bucket || '-' }}</td>
                 <td class="py-3 pr-4 text-xs">{{ formatStorageQuotaGB(profile.default_storage_quota_bytes) }}</td>
@@ -80,7 +80,7 @@
                 </td>
               </tr>
               <tr v-if="soraS3Profiles.length === 0">
-                <td colspan="7" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colspan="7" class="py-6 text-center text-sm text-dust-500 dark:text-pearl-400">
                   {{ t('admin.settings.soraS3.empty') }}
                 </td>
               </tr>
@@ -102,15 +102,15 @@
       <Transition name="dm-drawer-panel">
         <div
           v-if="soraProfileDrawerOpen"
-          class="fixed inset-y-0 right-0 z-[55] flex h-full w-full max-w-2xl flex-col border-l border-gray-200 bg-white shadow-2xl dark:border-dark-700 dark:bg-dark-900"
+          class="fixed inset-y-0 right-0 z-[55] flex h-full w-full max-w-2xl flex-col border-l border-paper-200 bg-paper-0 shadow-2xl dark:border-ink-700 dark:bg-ink-900"
         >
-          <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-dark-700">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+          <div class="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-ink-700">
+            <h4 class="text-sm font-semibold text-ink-900 dark:text-white">
               {{ creatingSoraProfile ? t('admin.settings.soraS3.createTitle') : t('admin.settings.soraS3.editTitle') }}
             </h4>
             <button
               type="button"
-              class="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-dark-800 dark:hover:text-gray-200"
+              class="rounded p-1 text-dust-500 hover:bg-paper-100 hover:text-ink-700 dark:text-pearl-400 dark:hover:bg-ink-800 dark:hover:text-paper-200"
               @click="closeSoraProfileDrawer"
             >
               ✕
@@ -130,7 +130,7 @@
                 class="input w-full"
                 :placeholder="t('admin.settings.soraS3.profileName')"
               />
-              <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 md:col-span-2">
+              <label class="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100 md:col-span-2">
                 <input v-model="soraProfileForm.enabled" type="checkbox" />
                 <span>{{ t('admin.settings.soraS3.enabled') }}</span>
               </label>
@@ -155,20 +155,20 @@
                   class="input w-full"
                   :placeholder="t('admin.settings.soraS3.defaultQuota')"
                 />
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.soraS3.defaultQuotaHint') }}</p>
+                <p class="mt-1 text-xs text-dust-500 dark:text-pearl-400">{{ t('admin.settings.soraS3.defaultQuotaHint') }}</p>
               </div>
-              <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <label class="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
                 <input v-model="soraProfileForm.force_path_style" type="checkbox" />
                 <span>{{ t('admin.settings.soraS3.forcePathStyle') }}</span>
               </label>
-              <label v-if="creatingSoraProfile" class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 md:col-span-2">
+              <label v-if="creatingSoraProfile" class="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100 md:col-span-2">
                 <input v-model="soraProfileForm.set_active" type="checkbox" />
                 <span>{{ t('admin.settings.soraS3.setActive') }}</span>
               </label>
             </div>
           </div>
 
-          <div class="flex flex-wrap justify-end gap-2 border-t border-gray-200 p-4 dark:border-dark-700">
+          <div class="flex flex-wrap justify-end gap-2 border-t border-paper-200 p-4 dark:border-ink-700">
             <button type="button" class="btn btn-secondary btn-sm" @click="closeSoraProfileDrawer">
               {{ t('common.cancel') }}
             </button>
