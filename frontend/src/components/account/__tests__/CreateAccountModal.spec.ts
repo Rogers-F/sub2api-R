@@ -140,6 +140,34 @@ describe('CreateAccountModal', () => {
     expect(wrapper.html()).toContain('admin.accounts.openai.wsModeCtxPool')
   })
 
+  it('OpenAI API Key 创建时可启用 Codex preset instructions', async () => {
+    const wrapper = mountModal()
+    const openAIButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('OpenAI'))
+
+    expect(openAIButton).toBeTruthy()
+    await openAIButton!.trigger('click')
+
+    const apiKeyButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('API Key'))
+
+    expect(apiKeyButton).toBeTruthy()
+    await apiKeyButton!.trigger('click')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="openai-codex-preset-toggle"]').trigger('click')
+    await wrapper.find('input[type="text"]').setValue('OpenAI API Key')
+    await wrapper.find('input[type="password"]').setValue('sk-openai-test')
+
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(createAccountMock).toHaveBeenCalledTimes(1)
+    expect(createAccountMock.mock.calls[0]?.[0]?.extra?.enable_codex_preset).toBe(true)
+  })
+
   it('Anthropic API Key 创建表单显示 Web Search 覆盖选项', async () => {
     const wrapper = mountModal()
     await flushPromises()

@@ -2406,6 +2406,9 @@ export default {
         codexCLIOnly: 'Codex official clients only',
         codexCLIOnlyDesc:
           'Only applies to OpenAI OAuth. When enabled, only Codex official client families are allowed; when disabled, the gateway bypasses this restriction and keeps existing behavior.',
+        codexPreset: 'Codex preset instructions',
+        codexPresetDesc:
+          'Applies to OpenAI OAuth and API Key accounts. When enabled, gpt-5* and codex-* requests without instructions automatically use the Codex preset; request-provided instructions are preserved.',
         modelRestrictionDisabledByPassthrough: 'Automatic passthrough is enabled: model whitelist/mapping will not take effect.'
       },
       anthropic: {

@@ -208,6 +208,43 @@ describe('EditAccountModal', () => {
     expect(wrapper.html()).toContain('admin.accounts.openai.wsModeCtxPool')
   })
 
+  it('OpenAI 编辑时从 legacy Codex preset 开关回填并提交主字段', async () => {
+    updateAccountMock.mockResolvedValue(buildAccount())
+
+    const wrapper = mountModal({
+      ...buildAccount(),
+      extra: {
+        openai_codex_preset_instructions: true
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.enable_codex_preset).toBe(true)
+  })
+
+  it('OpenAI 编辑时关闭 Codex preset 开关会显式提交 false', async () => {
+    updateAccountMock.mockResolvedValue(buildAccount())
+
+    const wrapper = mountModal({
+      ...buildAccount(),
+      extra: {
+        enable_codex_preset: true
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-testid="openai-codex-preset-toggle"]').trigger('click')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.enable_codex_preset).toBe(false)
+  })
+
   it('Anthropic API Key 编辑表单显示 Web Search 覆盖选项', async () => {
     const wrapper = mountModal({
       ...buildAccount(),

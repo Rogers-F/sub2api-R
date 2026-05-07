@@ -2554,6 +2554,9 @@ export default {
         responsesWebsocketsV2PassthroughHint: '当前已开启自动透传：仅影响 HTTP 透传链路，不影响 WS mode。',
         codexCLIOnly: '仅允许 Codex 官方客户端',
         codexCLIOnlyDesc: '仅对 OpenAI OAuth 生效。开启后仅允许 Codex 官方客户端家族访问；关闭后完全绕过并保持原逻辑。',
+        codexPreset: 'Codex 预设 Instructions',
+        codexPresetDesc:
+          '对 OpenAI OAuth 和 API Key 生效。开启后，gpt-5* / codex-* 请求未自带 instructions 时会自动注入 Codex 预设；请求自带 instructions 时保持原样。',
         modelRestrictionDisabledByPassthrough: '已开启自动透传：模型白名单/映射不会生效。'
       },
       anthropic: {
