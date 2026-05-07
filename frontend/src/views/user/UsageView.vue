@@ -473,7 +473,7 @@
         </div>
         <!-- Tooltip Arrow (left side) -->
         <div
-          class="absolute right-full top-1/2 h-0 w-0 -translate-y-1/2 border-b-[6px] border-r-[6px] border-t-[6px] border-b-transparent border-r-gray-900 border-t-transparent dark:border-r-gray-800"
+          class="absolute right-full top-1/2 h-0 w-0 -translate-y-1/2 border-b-[6px] border-r-[6px] border-t-[6px] border-b-transparent border-r-ink-900 border-t-transparent dark:border-r-ink-800"
         ></div>
       </div>
     </div>

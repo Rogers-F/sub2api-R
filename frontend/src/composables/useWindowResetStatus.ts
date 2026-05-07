@@ -67,7 +67,7 @@ export function useWindowResetStatus(keyPrefix: string) {
       case 'active_final_window':
         return 'text-orange-600 dark:text-orange-400 font-medium'
       case 'expired_subscription':
-        return 'text-red-600 dark:text-red-400 font-medium'
+        return 'text-coral-600 dark:text-coral-400 font-medium'
       default:
         return ''
     }
