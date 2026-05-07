@@ -4,10 +4,10 @@
       <!-- Welcome Section + Stats -->
       <div>
         <div class="mb-4">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
             {{ t('dashboard.welcomeBack') }}
           </h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">{{ authStore.user?.username }}</p>
+          <p class="text-sm text-dust-500 dark:text-pearl-300">{{ authStore.user?.username }}</p>
         </div>
 
         <!-- Stats Cards -->
@@ -15,41 +15,41 @@
           <!-- API Keys -->
           <div class="card p-4">
             <div class="flex items-center justify-between">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.apiKeys') }}</p>
-              <Icon name="key" size="md" class="text-gray-400" />
+              <p class="text-sm font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.apiKeys') }}</p>
+              <Icon name="key" size="md" class="text-dust-400" />
             </div>
-            <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ stats?.total_api_keys || 0 }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('common.active') }}: {{ stats?.active_api_keys || 0 }}</p>
+            <p class="mt-2 text-2xl font-bold text-dust-900 dark:text-pearl-50">{{ stats?.total_api_keys || 0 }}</p>
+            <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('common.active') }}: {{ stats?.active_api_keys || 0 }}</p>
           </div>
 
           <!-- Subscriptions -->
           <div class="card p-4">
             <div class="flex items-center justify-between">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.subscriptionStatus') }}</p>
-              <Icon name="calendar" size="md" class="text-gray-400" />
+              <p class="text-sm font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.subscriptionStatus') }}</p>
+              <Icon name="calendar" size="md" class="text-dust-400" />
             </div>
-            <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ subscriptionStore.activeSubscriptions.length }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('dashboard.activeSubscriptions') }}</p>
+            <p class="mt-2 text-2xl font-bold text-dust-900 dark:text-pearl-50">{{ subscriptionStore.activeSubscriptions.length }}</p>
+            <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.activeSubscriptions') }}</p>
           </div>
 
           <!-- Today Tokens -->
           <div class="card p-4">
             <div class="flex items-center justify-between">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.todayTokens') }}</p>
-              <Icon name="chart" size="md" class="text-gray-400" />
+              <p class="text-sm font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.todayTokens') }}</p>
+              <Icon name="chart" size="md" class="text-dust-400" />
             </div>
-            <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ formatTokens(stats?.today_tokens || 0) }}</p>
-            <p class="text-xs text-emerald-600 dark:text-emerald-400">{{ t('dashboard.todayCost') }}: ${{ formatCost(stats?.today_actual_cost || 0) }}</p>
+            <p class="mt-2 text-2xl font-bold text-dust-900 dark:text-pearl-50">{{ formatTokens(stats?.today_tokens || 0) }}</p>
+            <p class="text-xs text-mint-600 dark:text-mint-500">{{ t('dashboard.todayCost') }}: ${{ formatCost(stats?.today_actual_cost || 0) }}</p>
           </div>
 
           <!-- Total Tokens -->
           <div class="card p-4">
             <div class="flex items-center justify-between">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('dashboard.totalTokens') }}</p>
-              <Icon name="database" size="md" class="text-gray-400" />
+              <p class="text-sm font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.totalTokens') }}</p>
+              <Icon name="database" size="md" class="text-dust-400" />
             </div>
-            <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ formatTokens(stats?.total_tokens || 0) }}</p>
-            <p class="text-xs text-emerald-600 dark:text-emerald-400">{{ t('dashboard.totalCost') }}: ${{ formatCost(stats?.total_actual_cost || 0) }}</p>
+            <p class="mt-2 text-2xl font-bold text-dust-900 dark:text-pearl-50">{{ formatTokens(stats?.total_tokens || 0) }}</p>
+            <p class="text-xs text-mint-600 dark:text-mint-500">{{ t('dashboard.totalCost') }}: ${{ formatCost(stats?.total_actual_cost || 0) }}</p>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@
       <div class="card flex-1 min-h-0 overflow-hidden">
         <div v-if="loading" class="flex h-full items-center justify-center py-12">
           <div
-            class="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+            class="h-8 w-8 animate-spin rounded-full border-2 border-gold-500 dark:border-gold-300 border-t-transparent"
           ></div>
         </div>
 
@@ -14,14 +14,14 @@
         >
           <div class="max-w-md">
             <div
-              class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-700"
+              class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-paper-100 dark:bg-ink-700"
             >
-              <Icon name="link" size="lg" class="text-gray-400" />
+              <Icon name="link" size="lg" class="text-dust-400" />
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
               {{ t('customPage.notFoundTitle') }}
             </h3>
-            <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
               {{ t('customPage.notFoundDesc') }}
             </p>
           </div>
@@ -30,14 +30,14 @@
         <div v-else-if="!isValidUrl" class="flex h-full items-center justify-center p-10 text-center">
           <div class="max-w-md">
             <div
-              class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-700"
+              class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-paper-100 dark:bg-ink-700"
             >
-              <Icon name="link" size="lg" class="text-gray-400" />
+              <Icon name="link" size="lg" class="text-dust-400" />
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
               {{ t('customPage.notConfiguredTitle') }}
             </h3>
-            <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
               {{ t('customPage.notConfiguredDesc') }}
             </p>
           </div>
@@ -155,13 +155,13 @@ onUnmounted(() => {
 .custom-embed-shell {
   @apply relative;
   @apply h-full w-full overflow-hidden rounded-2xl;
-  @apply bg-gradient-to-b from-gray-50 to-white dark:from-dark-900 dark:to-dark-950;
+  @apply bg-gradient-to-b from-paper-50 to-white dark:from-ink-900 dark:to-ink-950;
   @apply p-0;
 }
 
 .custom-open-fab {
   @apply absolute right-3 top-3 z-10;
-  @apply shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-dark-800/80;
+  @apply shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-ink-800/80;
 }
 
 .custom-embed-frame {

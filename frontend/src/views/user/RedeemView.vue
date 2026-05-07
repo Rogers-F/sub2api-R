@@ -4,26 +4,26 @@
       <!-- Current Balance Card -->
       <div class="card overflow-hidden">
         <div
-          class="relative bg-gradient-to-br from-accent-800 via-accent-900 to-dark-950 px-6 py-8 text-center"
+          class="relative bg-gradient-to-br from-accent-800 via-accent-900 to-ink-950 px-6 py-8 text-center"
         >
           <!-- Decorative glow orbs -->
           <div
-            class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/15 blur-3xl"
+            class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gold-500/15 dark:bg-gold-300/15 blur-3xl"
           ></div>
           <div
-            class="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-primary-400/10 blur-2xl"
+            class="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-gold-500/10 dark:bg-gold-300/10 blur-2xl"
           ></div>
 
           <div class="relative z-10">
             <div
               class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/[0.08] backdrop-blur-sm"
             >
-              <Icon name="creditCard" size="lg" class="text-primary-400" />
+              <Icon name="creditCard" size="lg" class="text-gold-500 dark:text-gold-300" />
             </div>
             <p class="text-sm font-medium tracking-wide text-accent-400">
               {{ t('redeem.currentBalance') }}
             </p>
-            <p class="mt-1.5 text-4xl font-bold tabular-nums tracking-tight text-white">
+            <p class="mt-1.5 text-4xl font-bold tabular-nums tracking-tight text-pearl-50">
               ${{ user?.balance?.toFixed(2) || '0.00' }}
             </p>
             <p class="mt-2.5 text-sm text-accent-400">
@@ -44,7 +44,7 @@
               </label>
               <div class="relative mt-1">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                  <Icon name="gift" size="md" class="text-gray-400 dark:text-dark-500" />
+                  <Icon name="gift" size="md" class="text-dust-400 dark:text-pearl-400" />
                 </div>
                 <input
                   id="code"
@@ -64,7 +64,7 @@
             <button
               type="submit"
               :disabled="!redeemCode || submitting"
-              class="btn btn-primary w-full py-3"
+              class="btn btn-gold w-full py-3"
             >
               <svg
                 v-if="submitting"
@@ -97,20 +97,20 @@
       <transition name="fade">
         <div
           v-if="redeemResult"
-          class="card border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-900/20"
+          class="card border-mint-500/30 bg-mint-500/10 dark:border-mint-500/30 dark:bg-mint-500/10"
         >
           <div class="p-6">
             <div class="flex items-start gap-4">
               <div
-                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/30"
+                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-mint-500/15 dark:bg-mint-500/15"
               >
-                <Icon name="checkCircle" size="md" class="text-emerald-600 dark:text-emerald-400" />
+                <Icon name="checkCircle" size="md" class="text-mint-600 dark:text-mint-500" />
               </div>
               <div class="flex-1">
-                <h3 class="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                <h3 class="text-sm font-semibold text-mint-600 dark:text-mint-500">
                   {{ t('redeem.redeemSuccess') }}
                 </h3>
-                <div class="mt-2 text-sm text-emerald-700 dark:text-emerald-400">
+                <div class="mt-2 text-sm text-mint-600 dark:text-mint-500">
                   <p>{{ redeemResult.message }}</p>
                   <div class="mt-3 space-y-1">
                     <p v-if="redeemResult.type === 'balance'" class="font-medium">
@@ -151,24 +151,24 @@
       <transition name="fade">
         <div
           v-if="errorMessage"
-          class="card border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-900/20"
+          class="card border-coral-500/30 bg-coral-500/10 dark:border-coral-500/30 dark:bg-coral-500/10"
         >
           <div class="p-6">
             <div class="flex items-start gap-4">
               <div
-                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30"
+                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-coral-500/15 dark:bg-coral-500/15"
               >
                 <Icon
                   name="exclamationCircle"
                   size="md"
-                  class="text-red-600 dark:text-red-400"
+                  class="text-coral-600 dark:text-coral-500"
                 />
               </div>
               <div class="flex-1">
-                <h3 class="text-sm font-semibold text-red-800 dark:text-red-300">
+                <h3 class="text-sm font-semibold text-coral-600 dark:text-coral-500">
                   {{ t('redeem.redeemFailed') }}
                 </h3>
-                <p class="mt-2 text-sm text-red-700 dark:text-red-400">
+                <p class="mt-2 text-sm text-coral-600 dark:text-coral-500">
                   {{ errorMessage }}
                 </p>
               </div>
@@ -184,16 +184,16 @@
         <div class="p-6">
           <div class="flex items-start gap-4">
             <div
-              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/30"
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gold-500/10 dark:bg-gold-300/10"
             >
-              <Icon name="infoCircle" size="md" class="text-primary-600 dark:text-primary-400" />
+              <Icon name="infoCircle" size="md" class="text-gold-600 dark:text-gold-300" />
             </div>
             <div class="flex-1">
-              <h3 class="text-sm font-semibold text-primary-800 dark:text-primary-300">
+              <h3 class="text-sm font-semibold text-gold-600 dark:text-gold-300">
                 {{ t('redeem.aboutCodes') }}
               </h3>
               <ul
-                class="mt-2 list-inside list-disc space-y-1 text-sm text-primary-700 dark:text-primary-400"
+                class="mt-2 list-inside list-disc space-y-1 text-sm text-gold-600 dark:text-gold-300"
               >
                 <li>{{ t('redeem.codeRule1') }}</li>
                 <li>{{ t('redeem.codeRule2') }}</li>
@@ -201,7 +201,7 @@
                   {{ t('redeem.codeRule3') }}
                   <span
                     v-if="contactInfo"
-                    class="ml-1.5 inline-flex items-center rounded-md bg-primary-200/50 px-2 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-800/40 dark:text-primary-200"
+                    class="ml-1.5 inline-flex items-center rounded-md bg-gold-500/15 dark:bg-gold-300/15 px-2 py-0.5 text-xs font-medium text-gold-600 dark:text-gold-300"
                   >
                     {{ contactInfo }}
                   </span>
@@ -215,15 +215,15 @@
 
       <!-- Recent Activity -->
       <div class="card">
-        <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <div class="hairline border-b px-6 py-4">
+          <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
             {{ t('redeem.recentActivity') }}
           </h2>
         </div>
         <div class="p-6">
           <!-- Loading State -->
           <div v-if="loadingHistory" class="flex items-center justify-center py-8">
-            <svg class="h-6 w-6 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 animate-spin text-gold-500 dark:text-gold-300" fill="none" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
                 cx="12"
@@ -245,7 +245,7 @@
             <div
               v-for="item in history"
               :key="item.id"
-              class="flex items-center justify-between rounded-xl bg-gray-50 p-4 dark:bg-dark-800"
+              class="flex items-center justify-between rounded-xl bg-paper-50 p-4 dark:bg-ink-800"
             >
               <div class="flex items-center gap-4">
                 <div
@@ -253,8 +253,8 @@
                     'flex h-10 w-10 items-center justify-center rounded-xl',
                     isBalanceType(item.type)
                       ? item.value >= 0
-                        ? 'bg-emerald-100 dark:bg-emerald-900/30'
-                        : 'bg-red-100 dark:bg-red-900/30'
+                        ? 'bg-mint-500/15 dark:bg-mint-500/15'
+                        : 'bg-coral-500/15 dark:bg-coral-500/15'
                       : isSubscriptionType(item.type)
                         ? 'bg-purple-100 dark:bg-purple-900/30'
                         : item.value >= 0
@@ -269,8 +269,8 @@
                     size="md"
                     :class="
                       item.value >= 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'text-mint-600 dark:text-mint-500'
+                        : 'text-coral-600 dark:text-coral-500'
                     "
                   />
                   <!-- 订阅类型图标 -->
@@ -293,10 +293,10 @@
                   />
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  <p class="text-sm font-medium text-dust-900 dark:text-pearl-50">
                     {{ getHistoryItemTitle(item) }}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-dark-400">
+                  <p class="text-xs text-dust-500 dark:text-pearl-300">
                     {{ formatDateTime(item.used_at) }}
                   </p>
                 </div>
@@ -307,8 +307,8 @@
                     'text-sm font-semibold',
                     isBalanceType(item.type)
                       ? item.value >= 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'text-mint-600 dark:text-mint-500'
+                        : 'text-coral-600 dark:text-coral-500'
                       : isSubscriptionType(item.type)
                         ? 'text-purple-600 dark:text-purple-400'
                         : item.value >= 0
@@ -320,17 +320,17 @@
                 </p>
                 <p
                   v-if="!isAdminAdjustment(item.type)"
-                  class="font-mono text-xs text-gray-400 dark:text-dark-500"
+                  class="font-mono text-xs text-dust-400 dark:text-pearl-400"
                 >
                   {{ item.code.slice(0, 8) }}...
                 </p>
-                <p v-else class="text-xs text-gray-400 dark:text-dark-500">
+                <p v-else class="text-xs text-dust-400 dark:text-pearl-400">
                   {{ t('redeem.adminAdjustment') }}
                 </p>
                 <!-- Display notes for admin adjustments -->
                 <p
                   v-if="item.notes"
-                  class="mt-1 text-xs text-gray-500 dark:text-dark-400 italic max-w-[200px] truncate"
+                  class="mt-1 text-xs text-dust-500 dark:text-pearl-300 italic max-w-[200px] truncate"
                   :title="item.notes"
                 >
                   {{ item.notes }}
@@ -342,11 +342,11 @@
           <!-- Empty State -->
           <div v-else class="empty-state py-8">
             <div
-              class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-dark-800"
+              class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-paper-100 dark:bg-ink-800"
             >
-              <Icon name="clock" size="xl" class="text-gray-400 dark:text-dark-500" />
+              <Icon name="clock" size="xl" class="text-dust-400 dark:text-pearl-400" />
             </div>
-            <p class="text-sm text-gray-500 dark:text-dark-400">
+            <p class="text-sm text-dust-500 dark:text-pearl-300">
               {{ t('redeem.historyWillAppear') }}
             </p>
           </div>

@@ -1,7 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
-    <!-- Background Decoration -->
-    <div class="pointer-events-none fixed inset-0 bg-mesh-gradient"></div>
+  <div class="min-h-screen">
+    <!-- 背景由 body 提供(paper-50 / ink-950),不再叠加 mesh-gradient(含青色,与 Xingsuan 不符) -->
 
     <!-- Sidebar -->
     <AppSidebar />

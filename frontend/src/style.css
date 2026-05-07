@@ -12,9 +12,11 @@
   }
 
   body {
-    @apply bg-warm-50 text-warm-900 dark:bg-dark-950 dark:text-gray-100;
+    /* Xingsuan v2 surface tokens(paper / ink) */
+    @apply bg-paper-50 text-dust-900 dark:bg-ink-950 dark:text-pearl-50;
     @apply min-h-screen;
     @apply transition-colors duration-300 ease-in-out;
+    font-feature-settings: 'ss01', 'cv11';
   }
 
   /* 自定义滚动条 - 默认隐藏，悬停或滚动时显示 */
@@ -54,9 +56,10 @@
     @apply bg-gray-400 dark:bg-dark-500;
   }
 
-  /* 选中文本样式 */
+  /* 选中文本样式 - Xingsuan 金 */
   ::selection {
-    @apply bg-primary-500/20 text-primary-900 dark:text-primary-100;
+    background: #D4B681;
+    color: #1A1308;
   }
 
   /*
@@ -198,9 +201,8 @@
   }
 
   /* ============ 玻璃效果 ============ */
-  .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
-  }
+  /* .glass 的双主题版本下移到 file 末尾的 Xingsuan v2 区(避免重复定义),
+     这里删除旧定义,只保留 .glass-card 等子变体 */
 
   .glass-card {
     @apply bg-white/70 dark:bg-dark-800/70;
@@ -355,23 +357,28 @@
     @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400;
   }
 
-  /* ============ 下拉菜单 ============ */
+  /* ============ 下拉菜单 — Xingsuan v2(paper/ink + hairline,中性阴影,不加金色 ring 避免装饰过度) ============ */
   .dropdown {
     @apply absolute z-50;
-    @apply bg-white dark:bg-dark-800;
+    @apply bg-paper-0 dark:bg-ink-800;
     @apply rounded-xl;
-    @apply border border-gray-200 dark:border-dark-700;
-    @apply shadow-lg;
+    @apply border shadow-lg;
     @apply py-1;
     @apply origin-top-right animate-scale-in;
+    @apply hairline;
   }
 
   .dropdown-item {
     @apply px-4 py-2 text-sm;
-    @apply text-gray-700 dark:text-gray-300;
-    @apply hover:bg-gray-100 dark:hover:bg-dark-700;
+    @apply text-dust-700 dark:text-pearl-100;
     @apply cursor-pointer transition-colors;
     @apply flex items-center gap-2;
+  }
+  .dropdown-item:hover {
+    background: rgba(60, 40, 30, 0.04);
+  }
+  .dark .dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.04);
   }
 
   /* ============ 模态框 ============ */
@@ -523,19 +530,21 @@
     @apply border-l-primary-500;
   }
 
-  /* ============ 侧边栏 ============ */
+  /* ============ 侧边栏 — Xingsuan v2(paper-100 / ink-900 + hairline + 金色 active) ============ */
   .sidebar {
     @apply fixed inset-y-0 left-0 z-40;
-    @apply w-64 bg-white dark:bg-dark-900;
-    @apply border-r border-gray-200 dark:border-dark-800;
+    @apply w-64 bg-paper-100 dark:bg-ink-900;
+    @apply border-r;
     @apply flex flex-col;
     @apply transition-transform duration-300;
+    @apply hairline;
   }
 
   .sidebar-header {
     @apply h-16 px-6;
     @apply flex items-center gap-3;
-    @apply border-b border-gray-100 dark:border-dark-800;
+    @apply border-b;
+    @apply hairline;
   }
 
   .sidebar-nav {
@@ -545,16 +554,39 @@
   .sidebar-link {
     @apply flex items-center gap-3 rounded-xl px-3 py-2.5;
     @apply text-sm font-medium;
-    @apply text-gray-600 dark:text-dark-300;
+    @apply text-dust-700 dark:text-pearl-200;
     @apply transition-all duration-200;
-    @apply hover:bg-gray-100 dark:hover:bg-dark-800;
-    @apply hover:text-gray-900 dark:hover:text-white;
+  }
+  .sidebar-link:hover {
+    background: rgba(60, 40, 30, 0.04);
+    @apply text-dust-900;
+  }
+  .dark .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.04);
+    @apply text-pearl-50;
   }
 
-  .sidebar-link-active {
-    @apply bg-primary-50 dark:bg-primary-900/20;
-    @apply text-primary-600 dark:text-primary-400;
-    @apply hover:bg-primary-100 dark:hover:bg-primary-900/30;
+  /* 修 hover specificity:active 复合 (0,2,0) 后定义胜过普通 hover (0,2,0);
+     active:hover (0,3,0) 严格高于普通 .sidebar-link:hover (0,2,0),保 active 时 hover 不丢渐变与 ring */
+  .sidebar-link.sidebar-link-active,
+  .sidebar-link.sidebar-link-active:hover {
+    background: linear-gradient(180deg, rgba(168, 131, 71, 0.10) 0%, rgba(168, 131, 71, 0.04) 100%);
+    @apply text-dust-900;
+    box-shadow: inset 0 0 0 1px rgba(168, 131, 71, 0.22);
+  }
+  .dark .sidebar-link.sidebar-link-active,
+  .dark .sidebar-link.sidebar-link-active:hover {
+    background: linear-gradient(180deg, rgba(212, 182, 129, 0.10) 0%, rgba(212, 182, 129, 0.04) 100%);
+    @apply text-pearl-50;
+    box-shadow: inset 0 0 0 1px rgba(212, 182, 129, 0.18);
+  }
+  /* active 内部 svg(component 渲染)与 .sidebar-svg-icon 内的自定义 svg(sanitizeSvg)都吃金色;
+     hover 复用 active 视觉,不单独声明 */
+  .sidebar-link.sidebar-link-active svg {
+    @apply text-gold-600;
+  }
+  .dark .sidebar-link.sidebar-link-active svg {
+    @apply text-gold-300;
   }
 
   .sidebar-section {
@@ -563,8 +595,9 @@
 
   .sidebar-section-title {
     @apply mb-2 px-3;
-    @apply text-xs font-semibold uppercase tracking-wider;
-    @apply text-gray-400 dark:text-dark-500;
+    @apply text-[10.5px] font-semibold uppercase;
+    @apply text-dust-400 dark:text-pearl-400;
+    letter-spacing: 0.18em;
   }
 
   /* ============ 页面头部 ============ */
@@ -733,9 +766,28 @@
     @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
   }
 
-  /* 玻璃效果 */
+  /* 玻璃效果 - Xingsuan v2(paper / ink 双主题)
+     注意:不设 border 简写,只设 border-color。
+     这样消费者可用 border-b / border-t 等 utility 控制方向,不被覆盖。 */
   .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-color: rgba(60, 40, 30, 0.06);
+  }
+  .dark .glass {
+    background: rgba(17, 20, 28, 0.6);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-color: rgba(60, 40, 30, 0.08);
+  }
+  .dark .glass-strong {
+    background: rgba(17, 20, 28, 0.78);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   /* 隐藏滚动条 */
@@ -754,5 +806,191 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ============================================================
+ * Xingsuan v2 — 设计稿专用工具类(光暗双主题)
+ * 这些类是从 design-preview/v1 迁移到产品代码的统一接入点。
+ * 旧的 .btn-primary / .card 等保留在 @layer components 上方,B/C 阶段陆续替换。
+ * ============================================================ */
+
+/* keyframes 显式声明在 CSS 中,不依赖 Tailwind JIT
+   (因为下方 .xs-pulse-dot 是手写 CSS、非 utility class,JIT 无法保证生成) */
+@keyframes pulseMint {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(90, 192, 168, 0.18); }
+  50%      { box-shadow: 0 0 0 7px rgba(90, 192, 168, 0.05); }
+}
+
+@layer components {
+  /* 1px 描边 — light 用 6% 黑,dark 用 6% 白 */
+  .hairline {
+    border-color: rgba(60, 40, 30, 0.08);
+  }
+  .dark .hairline {
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .hairline-strong {
+    border-color: rgba(60, 40, 30, 0.12);
+  }
+  .dark .hairline-strong {
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+
+  /* 金色渐变文字 — light 用更深档,dark 用浅档 */
+  .gold-text {
+    background: linear-gradient(180deg, #A88347 0%, #8B6938 60%, #6B4F26 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .dark .gold-text {
+    background: linear-gradient(180deg, #F1E4C8 0%, #D4B681 60%, #A88347 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* 暗色专用珍珠白渐变 — light 下退化为普通 dust-900 */
+  .pearl-text {
+    color: #1A1308;
+  }
+  .dark .pearl-text {
+    background: linear-gradient(180deg, #FFFFFF 0%, #B8BCC8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* 主品牌按钮 - 金色渐变 + 内高光 */
+  .btn-gold {
+    background: linear-gradient(180deg, #E5D2A4 0%, #C29F60 100%);
+    color: #1A1308;
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.4) inset,
+      0 8px 24px -8px rgba(212, 182, 129, 0.4);
+    transition: background 200ms ease;
+  }
+  .btn-gold:hover {
+    background: linear-gradient(180deg, #F1E4C8 0%, #D4B681 100%);
+  }
+
+  /* 卡片容器 — 双主题 */
+  .panel {
+    position: relative;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(60, 40, 30, 0.08);
+    border-radius: 16px;
+  }
+  .dark .panel {
+    background: rgba(17, 20, 28, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* 金色 ring */
+  .ring-gold {
+    box-shadow:
+      0 0 0 1px rgba(168, 131, 71, 0.30),
+      0 8px 32px -12px rgba(168, 131, 71, 0.20);
+  }
+  .dark .ring-gold {
+    box-shadow:
+      0 0 0 1px rgba(212, 182, 129, 0.35),
+      0 8px 32px -12px rgba(212, 182, 129, 0.25);
+  }
+  .ring-gold-soft {
+    box-shadow:
+      0 0 0 1px rgba(168, 131, 71, 0.20),
+      0 12px 40px -16px rgba(168, 131, 71, 0.16);
+  }
+  .dark .ring-gold-soft {
+    box-shadow:
+      0 0 0 1px rgba(212, 182, 129, 0.22),
+      0 12px 40px -16px rgba(212, 182, 129, 0.20);
+  }
+
+  /* 状态心跳点 — 命名为 xs-pulse-dot 避免与 KeyUsageView/Sora 等已有 .pulse-dot 冲突 */
+  .xs-pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: #5AC0A8;
+    box-shadow: 0 0 0 4px rgba(90, 192, 168, 0.18);
+    animation: pulseMint 2.4s ease-in-out infinite;
+    display: inline-block;
+  }
+
+  /* 状态/标签胶囊 */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    font-size: 11px;
+  }
+
+  /* 注:.nav-link / .nav-section-label(原设计稿验证物)已迁移至 .sidebar-link* 系列,
+     B2 阶段删除避免双重定义陷阱(参照已踩过的 .glass 重复定义的坑) */
+
+  /* SLA 30-day bars(02-dashboard) */
+  .sla-bars {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .sla-bars > i {
+    flex: 1;
+    height: 8px;
+    border-radius: 2px;
+    background: rgba(44, 153, 133, 0.7);
+  }
+  .dark .sla-bars > i {
+    background: rgba(90, 192, 168, 0.7);
+  }
+  .sla-bars > i.bad {
+    background: rgba(198, 96, 69, 0.8);
+  }
+  .dark .sla-bars > i.bad {
+    background: rgba(232, 130, 107, 0.8);
+  }
+}
+
+@layer utilities {
+  /* Hero 氛围层 — landing 专用 */
+  .stars-bg {
+    background-image:
+      radial-gradient(1px 1px at 20% 18%, rgba(255, 255, 255, 0.6), transparent 60%),
+      radial-gradient(1px 1px at 70% 35%, rgba(255, 255, 255, 0.5), transparent 60%),
+      radial-gradient(1px 1px at 40% 60%, rgba(255, 255, 255, 0.4), transparent 60%),
+      radial-gradient(2px 2px at 85% 75%, rgba(255, 255, 255, 0.7), transparent 60%),
+      radial-gradient(1px 1px at 12% 80%, rgba(255, 255, 255, 0.5), transparent 60%),
+      radial-gradient(1px 1px at 55% 12%, rgba(255, 255, 255, 0.55), transparent 60%),
+      radial-gradient(1px 1px at 92% 18%, rgba(255, 255, 255, 0.45), transparent 60%);
+    background-size: 100% 100%;
+  }
+  /* light 模式星空不可见,只在 dark 启用 */
+  :not(.dark) .stars-bg {
+    opacity: 0;
+  }
+
+  .grid-pattern {
+    background-image:
+      linear-gradient(to right, rgba(60, 40, 30, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(60, 40, 30, 0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 70%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 70%);
+  }
+  .dark .grid-pattern {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  }
+
+  /* marquee mask */
+  .marquee-mask {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   }
 }

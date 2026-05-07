@@ -9,12 +9,12 @@
     <!-- Logo/Brand -->
     <div class="sidebar-header">
       <!-- Custom Logo or Default Logo -->
-      <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow">
+      <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl ring-1 ring-gold-500/30 dark:ring-gold-300/30">
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
       </div>
       <transition name="fade">
         <div v-if="!sidebarCollapsed" class="flex flex-col">
-          <span class="text-lg font-bold text-gray-900 dark:text-white">
+          <span class="text-lg font-bold text-dust-900 dark:text-pearl-50">
             {{ siteName }}
           </span>
           <!-- Version Badge -->
@@ -60,7 +60,7 @@
           <div v-if="!sidebarCollapsed" class="sidebar-section-title">
             {{ t('nav.myAccount') }}
           </div>
-          <div v-else class="mx-3 my-3 h-px bg-gray-200 dark:bg-dark-700"></div>
+          <div v-else class="mx-3 my-3 border-t hairline"></div>
 
           <router-link
             v-for="item in personalNavItems"
@@ -105,14 +105,14 @@
     </nav>
 
     <!-- Bottom Section -->
-    <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
+    <div class="mt-auto border-t hairline p-3">
       <!-- Theme Toggle -->
       <button
         @click="toggleTheme"
         class="sidebar-link mb-2 w-full"
         :title="sidebarCollapsed ? (isDark ? t('nav.lightMode') : t('nav.darkMode')) : undefined"
       >
-        <SunIcon v-if="isDark" class="h-5 w-5 flex-shrink-0 text-amber-500" />
+        <SunIcon v-if="isDark" class="h-5 w-5 flex-shrink-0 text-gold-500 dark:text-gold-300" />
         <MoonIcon v-else class="h-5 w-5 flex-shrink-0" />
         <transition name="fade">
           <span v-if="!sidebarCollapsed">{{

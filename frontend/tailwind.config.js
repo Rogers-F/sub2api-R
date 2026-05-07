@@ -5,7 +5,82 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 主色调 - Teal/Cyan 青色系 (品牌色，用于星空模式和高亮)
+        // ============================================================
+        // Xingsuan v2 (品牌主体)
+        // ============================================================
+        // ink: 暗色 surface(墨黑)
+        ink: {
+          950: '#08090C',
+          900: '#0B0D14',
+          800: '#11141C',
+          700: '#181C26',
+          600: '#222631',
+          500: '#2C313D'
+        },
+        // paper: 亮色 surface(米白,与 Warm Minimalist 同源但更冷一些)
+        paper: {
+          0:   '#FFFFFF',
+          50:  '#FAF9F6',
+          100: '#F5F4EE',
+          200: '#EFEDE5',
+          300: '#E5E2D8'
+        },
+        // pearl: 暗色文字层(深底上的浅文字)
+        pearl: {
+          50:  '#F4F5F8',
+          100: '#E5E7EE',
+          200: '#B8BCC8',
+          300: '#8B91A0',
+          400: '#6E7385',
+          500: '#5A5F6F'
+        },
+        // dust: 亮色文字层(浅底上的深文字)
+        dust: {
+          300: '#A8A8A0',
+          400: '#8B8B85',
+          500: '#5C5C5C',
+          600: '#4A4035',
+          700: '#403028',
+          800: '#2A1F18',
+          900: '#1A1308'
+        },
+        // gold: 跨主题品牌 DNA(光暗都用,深档在 light 上,浅档在 dark 上)
+        gold: {
+          100: '#F1E4C8',
+          200: '#E5D2A4',
+          300: '#D4B681',
+          400: '#C29F60',
+          500: '#A88347',
+          600: '#8B6938',
+          700: '#6B4F26'
+        },
+        // aurora: 数据色 - 蓝(light 用 500/600,dark 用 400/500)
+        aurora: {
+          300: '#B6C5F4',
+          400: '#9DB1F0',
+          500: '#7B96E8',
+          600: '#4862B8',
+          700: '#2E47A0'
+        },
+        // mint: 正向状态(light 用深,dark 用浅)
+        mint: {
+          400: '#7BD0BC',
+          500: '#5AC0A8',
+          600: '#2C9985',
+          700: '#1A7868'
+        },
+        // coral: 异常/危险
+        coral: {
+          400: '#F39A85',
+          500: '#E8826B',
+          600: '#C66045',
+          700: '#9C4530'
+        },
+
+        // ============================================================
+        // Legacy(过渡兼容,B/C 阶段会陆续替换为上方 token)
+        // ============================================================
+        // 主色调 - Teal/Cyan 青色系
         primary: {
           50: '#f0fdfa',
           100: '#ccfbf1',
@@ -68,7 +143,9 @@ export default {
         }
       },
       fontFamily: {
+        // Xingsuan v2:Inter 主导,系统字体 fallback
         sans: [
+          'Inter',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -81,7 +158,22 @@ export default {
           'Microsoft YaHei',
           'sans-serif'
         ],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+        // 展示字体:Playfair Display 配 Noto Serif SC 中文
+        display: [
+          '"Playfair Display"',
+          '"Noto Serif SC"',
+          'Georgia',
+          'serif'
+        ],
+        mono: [
+          '"JetBrains Mono"',
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          'monospace'
+        ]
       },
       boxShadow: {
         glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
@@ -113,8 +205,12 @@ export default {
         'slide-in-right': 'slideInRight 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-mint': 'pulseMint 2.4s ease-in-out infinite',
         shimmer: 'shimmer 2s linear infinite',
-        glow: 'glow 2s ease-in-out infinite alternate'
+        glow: 'glow 2s ease-in-out infinite alternate',
+        drift: 'drift 18s linear infinite',
+        marquee: 'marquee 30s linear infinite',
+        orbit: 'orbit 12s linear infinite'
       },
       keyframes: {
         fadeIn: {
@@ -144,6 +240,23 @@ export default {
         glow: {
           '0%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.25)' },
           '100%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.4)' }
+        },
+        // Xingsuan v2 动画
+        pulseMint: {
+          '0%, 100%': { boxShadow: '0 0 0 4px rgba(90,192,168,0.18)' },
+          '50%': { boxShadow: '0 0 0 7px rgba(90,192,168,0.05)' }
+        },
+        drift: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(-12px)' }
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' }
+        },
+        orbit: {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' }
         }
       },
       backdropBlur: {

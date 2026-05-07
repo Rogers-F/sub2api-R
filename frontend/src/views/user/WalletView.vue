@@ -3,10 +3,10 @@
     <div class="mx-auto max-w-6xl space-y-6">
       <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
             {{ t('wallet.title') }}
           </h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
+          <p class="text-sm text-dust-500 dark:text-pearl-300">
             {{ t('wallet.description') }}
           </p>
         </div>
@@ -17,7 +17,7 @@
       </div>
 
       <div v-if="loading" class="flex items-center justify-center py-16">
-        <div class="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-500"></div>
+        <div class="h-10 w-10 animate-spin rounded-full border-b-2 border-gold-500 dark:border-gold-300"></div>
       </div>
 
       <template v-else-if="wallet">
@@ -36,26 +36,26 @@
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div class="card p-5">
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('wallet.balance') }}</div>
-            <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+            <div class="text-sm text-dust-500 dark:text-pearl-300">{{ t('wallet.balance') }}</div>
+            <div class="mt-2 text-3xl font-bold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
               {{ formatUsd(wallet.balance) }}
             </div>
           </div>
           <div class="card p-5">
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('wallet.totalPaid') }}</div>
-            <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+            <div class="text-sm text-dust-500 dark:text-pearl-300">{{ t('wallet.totalPaid') }}</div>
+            <div class="mt-2 text-3xl font-bold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
               {{ formatCny(wallet.total_paid_amount) }}
             </div>
           </div>
           <div class="card p-5">
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('wallet.totalCredited') }}</div>
-            <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+            <div class="text-sm text-dust-500 dark:text-pearl-300">{{ t('wallet.totalCredited') }}</div>
+            <div class="mt-2 text-3xl font-bold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
               {{ formatUsd(wallet.total_credited_amount) }}
             </div>
           </div>
           <div class="card p-5">
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('wallet.totalConsumption') }}</div>
-            <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+            <div class="text-sm text-dust-500 dark:text-pearl-300">{{ t('wallet.totalConsumption') }}</div>
+            <div class="mt-2 text-3xl font-bold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
               {{ formatUsd(wallet.total_consumption) }}
             </div>
           </div>
@@ -63,11 +63,11 @@
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
           <div class="card">
-            <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <div class="hairline border-b px-6 py-4">
+              <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
                 {{ t('wallet.rechargeTitle') }}
               </h2>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
                 {{ t('wallet.rechargeDescription', { rate: wallet.exchange_rate.toFixed(2) }) }}
               </p>
             </div>
@@ -77,7 +77,7 @@
               </div>
 
               <div>
-                <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div class="mb-3 text-sm font-medium text-dust-700 dark:text-pearl-100">
                   {{ t('wallet.fixedAmounts') }}
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -88,8 +88,8 @@
                     :class="[
                       'rounded-xl border px-4 py-2 text-sm font-medium transition',
                       selectedAmount === amount
-                        ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                        : 'border-gray-200 text-gray-700 hover:border-primary-300 hover:text-primary-600 dark:border-dark-600 dark:text-gray-300'
+                        ? 'border-gold-500 dark:border-gold-300 bg-gold-500/10 dark:bg-gold-300/10 text-gold-600 dark:text-gold-300'
+                        : 'border-paper-200 dark:border-ink-700 text-dust-700 dark:text-pearl-100 hover:border-gold-500/50 dark:hover:border-gold-300/50 hover:text-gold-600 dark:hover:text-gold-300'
                     ]"
                     @click="selectFixedAmount(amount)"
                   >
@@ -99,7 +99,7 @@
               </div>
 
               <div>
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label class="mb-2 block text-sm font-medium text-dust-700 dark:text-pearl-100">
                   {{ t('wallet.customAmount') }}
                 </label>
                 <input
@@ -114,7 +114,7 @@
               </div>
 
               <div>
-                <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div class="mb-3 text-sm font-medium text-dust-700 dark:text-pearl-100">
                   {{ t('wallet.paymentMethod') }}
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -135,16 +135,16 @@
                 </div>
               </div>
 
-              <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-dark-600 dark:bg-dark-800">
+              <div class="rounded-xl hairline-strong border bg-paper-50 px-4 py-3 text-sm dark:bg-ink-800">
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-gray-500 dark:text-gray-400">{{ t('wallet.selectedAmount') }}</span>
-                  <span class="font-semibold text-gray-900 dark:text-white">
+                  <span class="text-dust-500 dark:text-pearl-300">{{ t('wallet.selectedAmount') }}</span>
+                  <span class="font-semibold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
                     {{ effectiveAmount > 0 ? formatCny(effectiveAmount) : t('wallet.noAmountSelected') }}
                   </span>
                 </div>
                 <div class="mt-2 flex items-center justify-between gap-3">
-                  <span class="text-gray-500 dark:text-gray-400">{{ t('wallet.creditPreview') }}</span>
-                  <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span class="text-dust-500 dark:text-pearl-300">{{ t('wallet.creditPreview') }}</span>
+                  <span class="font-semibold font-mono tabular-nums text-mint-600 dark:text-mint-500">
                     {{ effectiveAmount > 0 ? formatUsd(effectiveAmount * wallet.exchange_rate) : formatUsd(0) }}
                   </span>
                 </div>
@@ -177,11 +177,11 @@
           </div>
 
           <div class="card">
-            <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <div class="hairline border-b px-6 py-4">
+              <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
                 {{ t('wallet.currentOrder') }}
               </h2>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
                 {{ t('wallet.currentOrderHint') }}
               </p>
             </div>
@@ -189,8 +189,8 @@
               <div v-if="activeOrder" class="space-y-5">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('wallet.orderNo') }}</div>
-                    <div class="font-mono text-sm text-gray-900 dark:text-white">{{ activeOrder.client_sn }}</div>
+                    <div class="text-sm text-dust-500 dark:text-pearl-300">{{ t('wallet.orderNo') }}</div>
+                    <div class="font-mono text-sm text-dust-900 dark:text-pearl-50">{{ activeOrder.client_sn }}</div>
                   </div>
                   <span :class="['badge', orderStatusClass(activeOrder.status)]">
                     {{ orderStatusLabel(activeOrder.status) }}
@@ -198,28 +198,28 @@
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-xl border border-gray-200 p-4 dark:border-dark-600">
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('wallet.orderAmount') }}</div>
-                    <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+                  <div class="rounded-xl hairline-strong border p-4">
+                    <div class="text-xs text-dust-500 dark:text-pearl-300">{{ t('wallet.orderAmount') }}</div>
+                    <div class="mt-1 text-lg font-semibold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
                       {{ formatCny(activeOrder.amount_yuan) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-gray-200 p-4 dark:border-dark-600">
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('wallet.creditAmount') }}</div>
-                    <div class="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                  <div class="rounded-xl hairline-strong border p-4">
+                    <div class="text-xs text-dust-500 dark:text-pearl-300">{{ t('wallet.creditAmount') }}</div>
+                    <div class="mt-1 text-lg font-semibold font-mono tabular-nums text-mint-600 dark:text-mint-500">
                       {{ formatUsd(activeOrder.credit_amount) }}
                     </div>
                   </div>
                 </div>
 
-                <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800">
+                <div class="rounded-2xl hairline-strong border bg-paper-50 p-4 dark:bg-ink-800">
                   <div v-if="activeQRCodeDataUrl" class="flex flex-col items-center">
                     <img :src="activeQRCodeDataUrl" :alt="t('wallet.qrCodeAlt')" class="h-64 w-64 rounded-xl bg-white p-3" />
-                    <p class="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+                    <p class="mt-3 text-center text-xs text-dust-500 dark:text-pearl-300">
                       {{ t('wallet.qrCodeHint') }}
                     </p>
                   </div>
-                  <div v-else class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <div v-else class="py-8 text-center text-sm text-dust-500 dark:text-pearl-300">
                     {{ t('wallet.qrCodeUnavailable') }}
                   </div>
                 </div>
@@ -247,8 +247,8 @@
               </div>
 
               <div v-else class="py-12 text-center">
-                <Icon name="qrCode" size="xl" class="mx-auto text-gray-300 dark:text-dark-600" />
-                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                <Icon name="qrCode" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
+                <p class="mt-3 text-sm text-dust-500 dark:text-pearl-300">
                   {{ t('wallet.noActiveOrder') }}
                 </p>
               </div>
@@ -257,15 +257,15 @@
         </div>
 
         <div class="card">
-          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="hairline border-b px-6 py-4">
+            <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
               {{ t('wallet.orderHistory') }}
             </h2>
           </div>
           <div class="p-6">
             <div v-if="wallet.orders.length === 0" class="py-12 text-center">
-              <Icon name="list" size="xl" class="mx-auto text-gray-300 dark:text-dark-600" />
-              <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              <Icon name="list" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
+              <p class="mt-3 text-sm text-dust-500 dark:text-pearl-300">
                 {{ t('wallet.noOrders') }}
               </p>
             </div>
@@ -273,7 +273,7 @@
             <div v-else class="overflow-x-auto">
               <table class="w-full min-w-[760px]">
                 <thead>
-                  <tr class="border-b border-gray-200 text-left text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400">
+                  <tr class="hairline-strong border-b text-left text-sm text-dust-500 dark:text-pearl-300">
                     <th class="px-3 py-3">{{ t('wallet.orderNo') }}</th>
                     <th class="px-3 py-3">{{ t('wallet.paymentMethod') }}</th>
                     <th class="px-3 py-3">{{ t('wallet.orderAmount') }}</th>
@@ -282,18 +282,18 @@
                     <th class="px-3 py-3">{{ t('wallet.createdAt') }}</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
-                  <tr v-for="order in wallet.orders" :key="order.id" class="hover:bg-gray-50 dark:hover:bg-dark-800/60">
-                    <td class="px-3 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">
+                <tbody class="divide-y divide-paper-200 dark:divide-ink-700">
+                  <tr v-for="order in wallet.orders" :key="order.id" class="hover:bg-paper-100 dark:hover:bg-white/[0.04]">
+                    <td class="px-3 py-3 font-mono text-xs text-dust-700 dark:text-pearl-200">
                       {{ order.client_sn }}
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-3 text-sm text-dust-700 dark:text-pearl-200">
                       {{ order.payway_name || orderPaywayLabel(order.payway) }}
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-3 text-sm font-mono tabular-nums text-dust-700 dark:text-pearl-200">
                       {{ formatCny(order.amount_yuan) }}
                     </td>
-                    <td class="px-3 py-3 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    <td class="px-3 py-3 text-sm font-medium font-mono tabular-nums text-mint-600 dark:text-mint-500">
                       {{ formatUsd(order.credit_amount) }}
                     </td>
                     <td class="px-3 py-3">
@@ -301,7 +301,7 @@
                         {{ orderStatusLabel(order.status) }}
                       </span>
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    <td class="px-3 py-3 text-sm text-dust-500 dark:text-pearl-300">
                       {{ formatDateTime(order.created_at) }}
                     </td>
                   </tr>
@@ -358,9 +358,9 @@ const effectiveAmount = computed(() => {
 })
 
 const activePaywayClass =
-  'rounded-xl border border-primary-500 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 transition dark:bg-primary-900/30 dark:text-primary-300'
+  'rounded-xl border border-gold-500 dark:border-gold-300 bg-gold-500/10 dark:bg-gold-300/10 px-4 py-3 text-sm font-medium text-gold-600 dark:text-gold-300 transition'
 const inactivePaywayClass =
-  'rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-600 dark:border-dark-600 dark:text-gray-300'
+  'rounded-xl border border-paper-200 dark:border-ink-700 px-4 py-3 text-sm font-medium text-dust-700 dark:text-pearl-100 transition hover:border-gold-500/50 dark:hover:border-gold-300/50 hover:text-gold-600 dark:hover:text-gold-300'
 
 function formatUsd(value: number): string {
   return formatCurrency(value)

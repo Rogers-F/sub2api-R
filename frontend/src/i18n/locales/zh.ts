@@ -8,8 +8,97 @@ export default {
     switchToDark: '切换到深色模式',
     dashboard: '控制台',
     login: '登录',
-    getStarted: '立即开始',
+    getStarted: '开始接入',
     goToDashboard: '进入控制台',
+    tagline: 'Enterprise AI Gateway',
+    announcement: {
+      statusOk: '所有节点运行平稳 · 服务正常'
+    },
+    nav: {
+      home: '首页',
+      models: '模型',
+      pricing: '定价',
+      why: '为什么是星算'
+    },
+    hero: {
+      badge: '新增 Claude Opus 4.6 · GPT-5.2 Codex 一键路由',
+      titleLead: '为认真做产品的团队',
+      titleMid: '提供',
+      titleAccent: '恒久稳定',
+      titleTail: '的 AI 算力',
+      subtitle: '面向开发者与企业的 Claude / GPT / Codex 统一接入网关。',
+      description: '官方原生协议、毫秒级路由、透明计费、SLA 99.95%。',
+      ctaPrimary: '免费创建 API 密钥',
+      ctaSecondary: '查看接入文档',
+      ctaGoToDashboard: '进入控制台',
+      // legacy keys 保留兼容
+      cta: '立即开始',
+      tagline: '一个密钥,畅用多个 AI 模型'
+    },
+    why: {
+      eyebrow: 'WHY XINGSUAN',
+      titleLead: '企业级中转,',
+      titleAccent: '不应该有妥协',
+      features: {
+        protocol: {
+          title: '官方原生协议',
+          desc: '完全 1:1 兼容 Anthropic / OpenAI SDK,无需改一行代码即可切换。'
+        },
+        routing: {
+          title: '智能路由 & 自动续航',
+          desc: '主备账号秒级切换,全球节点择优;遇到限流自动降级,业务零感知。'
+        },
+        audit: {
+          title: '透明审计',
+          desc: '每一次调用的 token、延迟、缓存命中、成本可逐条追溯,符合企业风控要求。'
+        },
+        support: {
+          title: '7×24 工程值守',
+          desc: '由真实工程师值守,企业版 SLA 30 分钟首响应,重大故障 1 小时定位。'
+        }
+      }
+    },
+    pricing: {
+      eyebrow: 'PRICING · TRANSPARENT',
+      titleLead: '按 Token 计价,',
+      titleAccent: '分文不加',
+      subtitle: '与官方计费 1:1 对齐,月度账单可逐请求审计。无最低消费、无保底、无隐藏费用。',
+      bestValue: 'Best Value',
+      input: '输入',
+      output: '输出',
+      cachePrice: '缓存价格',
+      cacheWrite: '缓存写入',
+      cacheRead: '缓存读取',
+      note: '价格 1:1 对齐 LiteLLM 最新数据 · 多模型自动 fallback · 高用量企业版另享议价',
+      cta: '免费创建账号',
+      tags: {
+        efficient: '高性价比'
+      },
+      models: {
+        opus: {
+          desc: '深度推理 / 长文档 / Agent 编排。1M 上下文 · 128k 输出。',
+          note: '200k 以上输入加价 2×'
+        },
+        sonnet: {
+          desc: '日常编码 / 内容生成 / Agent 通用。性价比之王 · 200k 上下文。',
+          note: '200k 以上输入加价 2×'
+        },
+        haiku: {
+          desc: '轻量任务 / 高并发 / 实时响应。200k 上下文 · 64k 输出。'
+        },
+        gpt: {
+          desc: '代码生成 / IDE 集成 / Tool-use 优化。272k 上下文。'
+        }
+      }
+    },
+    cta2: {
+      titleLead: '5 分钟接入,',
+      titleAccent: '立刻拥有企业级 AI 算力',
+      subtitle: '注册即送体验额度,可调用全部模型,无需绑卡。',
+      ctaPrimary: '免费创建账号',
+      ctaSecondary: '联系企业销售',
+      ctaGoToDashboard: '进入控制台'
+    },
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
@@ -106,7 +195,8 @@ export default {
       button: '免费注册'
     },
     footer: {
-      allRightsReserved: '保留所有权利。'
+      allRightsReserved: '保留所有权利。',
+      systemsOk: '所有系统正常'
     }
   },
 
