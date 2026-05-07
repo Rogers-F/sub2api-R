@@ -98,7 +98,7 @@ const labelClass = computed(() => {
   if (props.daysRemaining !== null && props.daysRemaining !== undefined) {
     if (props.daysRemaining <= 0 || props.daysRemaining <= 3) {
       // 已过期或紧急（<=3天）：红色
-      return `${base} bg-red-200/80 text-red-800 dark:bg-red-800/50 dark:text-red-300`
+      return `${base} bg-coral-500/20 text-coral-600 dark:bg-coral-500/30 dark:text-coral-500`
     }
     if (props.daysRemaining <= 7) {
       // 警告（<=7天）：橙色
@@ -111,7 +111,7 @@ const labelClass = computed(() => {
     return `${base} bg-orange-200/60 text-orange-800 dark:bg-orange-800/40 dark:text-orange-300`
   }
   if (props.platform === 'openai') {
-    return `${base} bg-emerald-200/60 text-emerald-800 dark:bg-emerald-800/40 dark:text-emerald-300`
+    return `${base} bg-mint-500/20 text-mint-600 dark:bg-mint-500/30 dark:text-mint-500`
   }
   if (props.platform === 'gemini') {
     return `${base} bg-blue-200/60 text-blue-800 dark:bg-blue-800/40 dark:text-blue-300`
@@ -132,7 +132,7 @@ const badgeClass = computed(() => {
   } else if (props.platform === 'openai') {
     // OpenAI: green theme
     return isSubscription.value
-      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+      ? 'bg-mint-500/15 text-mint-600 dark:bg-mint-500/20 dark:text-mint-500'
       : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
   }
   if (props.platform === 'gemini') {
@@ -148,6 +148,6 @@ const badgeClass = computed(() => {
   // Fallback: original colors
   return isSubscription.value
     ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
-    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    : 'bg-mint-500/15 text-mint-600 dark:bg-mint-500/20 dark:text-mint-500'
 })
 </script>

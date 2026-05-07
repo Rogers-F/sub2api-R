@@ -1,13 +1,13 @@
 <template>
   <div class="card">
-    <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+    <div class="flex items-center justify-between border-b hairline px-6 py-4">
       <div class="flex items-center gap-2">
-        <Icon name="megaphone" size="md" class="text-primary-500" />
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.announcements') }}</h2>
+        <Icon name="megaphone" size="md" class="text-gold-500" />
+        <h2 class="text-lg font-semibold text-dust-900 dark:text-white">{{ t('dashboard.announcements') }}</h2>
       </div>
       <span
         v-if="announcements.length > 0"
-        class="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
+        class="rounded-full bg-gold-500/15 px-2 py-0.5 text-xs font-medium text-gold-600 dark:bg-gold-300/15 dark:text-gold-300"
       >
         {{ announcements.length }}
       </span>
@@ -23,16 +23,16 @@
         <div
           v-for="announcement in announcements.slice(0, 3)"
           :key="announcement.id"
-          class="rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800"
+          class="rounded-lg border hairline bg-paper-50 p-4 dark:bg-ink-800"
         >
           <div class="mb-2 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-900 dark:text-white">{{ announcement.title }}</h3>
-            <span class="text-xs text-gray-500 dark:text-gray-400">
+            <h3 class="font-semibold text-dust-900 dark:text-white">{{ announcement.title }}</h3>
+            <span class="text-xs text-dust-500 dark:text-pearl-300">
               {{ formatDate(announcement.created_at) }}
             </span>
           </div>
           <div
-            class="prose prose-sm max-w-none text-gray-600 dark:prose-invert dark:text-gray-300"
+            class="prose prose-sm max-w-none text-dust-600 dark:prose-invert dark:text-pearl-100"
             v-html="announcement.content"
           ></div>
         </div>
@@ -56,7 +56,7 @@
       </div>
 
       <!-- No Announcements -->
-      <div v-else class="py-8 text-center text-sm text-gray-400">
+      <div v-else class="py-8 text-center text-sm text-dust-400">
         {{ t('dashboard.noAnnouncements') }}
       </div>
     </div>

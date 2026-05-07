@@ -2,13 +2,13 @@
   <div>
     <!-- Loading state -->
     <div v-if="loading" class="space-y-0.5">
-      <div class="h-3 w-12 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-      <div class="h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-      <div class="h-3 w-10 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-3 w-12 animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+      <div class="h-3 w-16 animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+      <div class="h-3 w-10 animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
     </div>
 
     <!-- Error state -->
-    <div v-else-if="error" class="text-xs text-red-500">
+    <div v-else-if="error" class="text-xs text-coral-600 dark:text-coral-500">
       {{ error }}
     </div>
 
@@ -16,40 +16,40 @@
     <div v-else-if="stats" class="space-y-0.5 text-xs">
       <!-- Requests -->
       <div class="flex items-center gap-1">
-        <span class="text-gray-500 dark:text-gray-400"
+        <span class="text-dust-500 dark:text-pearl-300"
           >{{ t('admin.accounts.stats.requests') }}:</span
         >
-        <span class="font-medium text-gray-700 dark:text-gray-300">{{
+        <span class="font-medium text-dust-700 dark:text-pearl-100">{{
           formatNumber(stats.requests)
         }}</span>
       </div>
       <!-- Tokens -->
       <div class="flex items-center gap-1">
-        <span class="text-gray-500 dark:text-gray-400"
+        <span class="text-dust-500 dark:text-pearl-300"
           >{{ t('admin.accounts.stats.tokens') }}:</span
         >
-        <span class="font-medium text-gray-700 dark:text-gray-300">{{
+        <span class="font-medium text-dust-700 dark:text-pearl-100">{{
           formatTokens(stats.tokens)
         }}</span>
       </div>
       <!-- Cost (Account) -->
       <div class="flex items-center gap-1">
-        <span class="text-gray-500 dark:text-gray-400">{{ t('usage.accountBilled') }}:</span>
-        <span class="font-medium text-emerald-600 dark:text-emerald-400">{{
+        <span class="text-dust-500 dark:text-pearl-300">{{ t('usage.accountBilled') }}:</span>
+        <span class="font-medium text-mint-600 dark:text-mint-500">{{
           formatCurrency(stats.cost)
         }}</span>
       </div>
       <!-- Cost (User/API Key) -->
       <div v-if="stats.user_cost != null" class="flex items-center gap-1">
-        <span class="text-gray-500 dark:text-gray-400">{{ t('usage.userBilled') }}:</span>
-        <span class="font-medium text-gray-700 dark:text-gray-300">{{
+        <span class="text-dust-500 dark:text-pearl-300">{{ t('usage.userBilled') }}:</span>
+        <span class="font-medium text-dust-700 dark:text-pearl-100">{{
           formatCurrency(stats.user_cost)
         }}</span>
       </div>
     </div>
 
     <!-- No data -->
-    <div v-else class="text-xs text-gray-400">-</div>
+    <div v-else class="text-xs text-dust-400 dark:text-pearl-400">-</div>
   </div>
 </template>
 

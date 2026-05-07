@@ -1,10 +1,10 @@
 <template>
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+      <h1 class="text-2xl font-bold text-dust-900 dark:text-white">
         {{ t('dashboard.welcomeBack') }}, {{ userName }}
       </h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
         {{ t('dashboard.welcomeSubtitle') }}
       </p>
     </div>

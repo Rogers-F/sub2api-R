@@ -39,7 +39,7 @@ function updatePosition() {
     <!-- Trigger Icon -->
     <slot name="trigger">
       <svg
-        class="h-4 w-4 cursor-help text-gray-400 transition-colors hover:text-primary-600 dark:text-gray-500 dark:hover:text-primary-400"
+        class="h-4 w-4 cursor-help text-dust-400 transition-colors hover:text-gold-600 dark:text-pearl-300 dark:hover:text-gold-300"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -57,11 +57,11 @@ function updatePosition() {
     <Teleport to="body">
       <div
         v-show="show"
-        class="fixed z-[99999] w-64 -translate-x-1/2 -translate-y-full rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/10 dark:bg-gray-800"
+        class="fixed z-[99999] w-64 -translate-x-1/2 -translate-y-full rounded-lg bg-ink-900 p-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/10 dark:bg-ink-800"
         :style="{ top: `calc(${tooltipStyle.top} - 8px)`, left: tooltipStyle.left }"
       >
         <slot>{{ content }}</slot>
-        <div class="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+        <div class="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-ink-900 dark:bg-ink-800"></div>
       </div>
     </Teleport>
   </div>

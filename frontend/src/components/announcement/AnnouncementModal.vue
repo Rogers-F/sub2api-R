@@ -8,13 +8,13 @@
     <div class="space-y-4">
       <!-- Loading state -->
       <div v-if="loading" class="flex items-center justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500"></div>
       </div>
 
       <!-- Empty state -->
       <div v-else-if="announcements.length === 0" class="text-center py-8">
-        <Icon name="megaphone" size="xl" class="mx-auto text-gray-300 dark:text-dark-600" />
-        <p class="mt-2 text-gray-500 dark:text-dark-400">{{ t('announcement.noAnnouncements') }}</p>
+        <Icon name="megaphone" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
+        <p class="mt-2 text-dust-500 dark:text-pearl-300">{{ t('announcement.noAnnouncements') }}</p>
       </div>
 
       <!-- Announcements list -->
@@ -22,18 +22,18 @@
         <div
           v-for="announcement in announcements"
           :key="announcement.id"
-          class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-800"
+          class="rounded-lg border border-paper-200 bg-paper-100 p-4 dark:border-ink-700 dark:bg-ink-800"
         >
-          <h4 class="font-medium text-gray-900 dark:text-white">
+          <h4 class="font-medium text-dust-900 dark:text-pearl-50">
             {{ announcement.title }}
           </h4>
-          <div class="mt-2 text-sm text-gray-600 dark:text-dark-300">
+          <div class="mt-2 text-sm text-dust-700 dark:text-pearl-100">
             <div
               class="prose prose-sm dark:prose-invert max-w-none"
               v-html="announcement.content"
             ></div>
           </div>
-          <p class="mt-3 text-xs text-gray-400 dark:text-dark-500">
+          <p class="mt-3 text-xs text-dust-400 dark:text-pearl-400">
             {{ formatDate(announcement.created_at) }}
           </p>
         </div>

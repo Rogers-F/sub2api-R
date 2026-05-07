@@ -1,19 +1,19 @@
 <template>
   <div v-if="selectedIds.length > 0" class="mb-4 flex items-center justify-between p-3 bg-accent-50 rounded-lg dark:bg-accent-800/30">
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-sm font-medium text-primary-900 dark:text-primary-100">
+      <span class="text-sm font-medium text-gold-700 dark:text-gold-200">
         {{ t('admin.accounts.bulkActions.selected', { count: selectedIds.length }) }}
       </span>
       <button
         @click="$emit('select-page')"
-        class="text-xs font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200"
+        class="text-xs font-medium text-gold-700 hover:text-gold-700 dark:text-gold-200 dark:hover:text-gold-200"
       >
         {{ t('admin.accounts.bulkActions.selectCurrentPage') }}
       </button>
-      <span class="text-gray-300 dark:text-dark-500">•</span>
+      <span class="text-dust-300 dark:text-pearl-400">•</span>
       <button
         @click="$emit('clear')"
-        class="text-xs font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200"
+        class="text-xs font-medium text-gold-700 hover:text-gold-700 dark:text-gold-200 dark:hover:text-gold-200"
       >
         {{ t('admin.accounts.bulkActions.clear') }}
       </button>

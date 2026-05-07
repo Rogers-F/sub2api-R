@@ -87,7 +87,7 @@
         <!-- Refresh Token Input (OpenAI / Antigravity / Mobile RT) -->
         <div v-if="inputMethod === 'refresh_token' || inputMethod === 'mobile_refresh_token'" class="space-y-4">
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <p class="mb-3 text-sm text-blue-700 dark:text-blue-300">
               {{ t(getOAuthKey('refreshTokenDesc')) }}
@@ -96,7 +96,7 @@
             <!-- Refresh Token Input -->
             <div class="mb-4">
               <label
-                class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+                class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-700 dark:text-pearl-100"
               >
                 <Icon name="key" size="sm" class="text-blue-500" />
                 Refresh Token
@@ -124,9 +124,9 @@
             <!-- Error Message -->
             <div
               v-if="error"
-              class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/30"
+              class="mb-4 rounded-lg border border-coral-500/30 bg-coral-500/10 p-3 dark:border-coral-500/30 dark:bg-coral-500/15"
             >
-              <p class="whitespace-pre-line text-sm text-red-600 dark:text-red-400">
+              <p class="whitespace-pre-line text-sm text-coral-600 dark:text-coral-500">
                 {{ error }}
               </p>
             </div>
@@ -171,7 +171,7 @@
         <!-- Session Token Input (Sora) -->
         <div v-if="inputMethod === 'session_token'" class="space-y-4">
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <p class="mb-3 text-sm text-blue-700 dark:text-blue-300">
               {{ t(getOAuthKey('sessionTokenDesc')) }}
@@ -179,7 +179,7 @@
 
             <div class="mb-4">
               <label
-                class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+                class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-700 dark:text-pearl-100"
               >
                 <Icon name="key" size="sm" class="text-blue-500" />
                 {{ t(getOAuthKey('sessionTokenRawLabel')) }}
@@ -232,12 +232,12 @@
             <div v-if="sessionTokenInput.trim()" class="mb-4 space-y-3">
               <div>
                 <label
-                  class="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300"
+                  class="mb-2 flex items-center gap-2 text-xs font-semibold text-dust-700 dark:text-pearl-100"
                 >
                   {{ t(getOAuthKey('parsedSessionTokensLabel')) }}
                   <span
                     v-if="parsedSessionTokenCount > 0"
-                    class="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] text-white"
+                    class="rounded-full bg-mint-500 px-2 py-0.5 text-[10px] text-white"
                   >
                     {{ parsedSessionTokenCount }}
                   </span>
@@ -246,7 +246,7 @@
                   :value="parsedSessionTokensText"
                   rows="2"
                   readonly
-                  class="input w-full resize-y bg-gray-50 font-mono text-xs dark:bg-gray-700"
+                  class="input w-full resize-y bg-paper-100 font-mono text-xs dark:bg-ink-700"
                 ></textarea>
                 <p
                   v-if="parsedSessionTokenCount === 0"
@@ -258,12 +258,12 @@
 
               <div>
                 <label
-                  class="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300"
+                  class="mb-2 flex items-center gap-2 text-xs font-semibold text-dust-700 dark:text-pearl-100"
                 >
                   {{ t(getOAuthKey('parsedAccessTokensLabel')) }}
                   <span
                     v-if="parsedAccessTokenFromSessionInputCount > 0"
-                    class="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] text-white"
+                    class="rounded-full bg-mint-500 px-2 py-0.5 text-[10px] text-white"
                   >
                     {{ parsedAccessTokenFromSessionInputCount }}
                   </span>
@@ -272,16 +272,16 @@
                   :value="parsedAccessTokensText"
                   rows="2"
                   readonly
-                  class="input w-full resize-y bg-gray-50 font-mono text-xs dark:bg-gray-700"
+                  class="input w-full resize-y bg-paper-100 font-mono text-xs dark:bg-ink-700"
                 ></textarea>
               </div>
             </div>
 
             <div
               v-if="error"
-              class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/30"
+              class="mb-4 rounded-lg border border-coral-500/30 bg-coral-500/10 p-3 dark:border-coral-500/30 dark:bg-coral-500/15"
             >
-              <p class="whitespace-pre-line text-sm text-red-600 dark:text-red-400">
+              <p class="whitespace-pre-line text-sm text-coral-600 dark:text-coral-500">
                 {{ error }}
               </p>
             </div>
@@ -325,7 +325,7 @@
         <!-- Access Token Input (Sora) -->
         <div v-if="inputMethod === 'access_token'" class="space-y-4">
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <p class="mb-3 text-sm text-blue-700 dark:text-blue-300">
               {{ t('admin.accounts.oauth.openai.accessTokenDesc', '直接粘贴 Access Token 创建账号，无需 OAuth 授权流程。支持批量导入（每行一个）。') }}
@@ -333,7 +333,7 @@
 
             <div class="mb-4">
               <label
-                class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+                class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-700 dark:text-pearl-100"
               >
                 <Icon name="key" size="sm" class="text-blue-500" />
                 Access Token
@@ -360,9 +360,9 @@
 
             <div
               v-if="error"
-              class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/30"
+              class="mb-4 rounded-lg border border-coral-500/30 bg-coral-500/10 p-3 dark:border-coral-500/30 dark:bg-coral-500/15"
             >
-              <p class="whitespace-pre-line text-sm text-red-600 dark:text-red-400">
+              <p class="whitespace-pre-line text-sm text-coral-600 dark:text-coral-500">
                 {{ error }}
               </p>
             </div>
@@ -382,7 +382,7 @@
         <!-- Cookie Auto-Auth Form -->
         <div v-if="inputMethod === 'cookie'" class="space-y-4">
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <p class="mb-3 text-sm text-blue-700 dark:text-blue-300">
               {{ t('admin.accounts.oauth.cookieAutoAuthDesc') }}
@@ -391,7 +391,7 @@
             <!-- sessionKey Input -->
             <div class="mb-4">
               <label
-                class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+                class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-700 dark:text-pearl-100"
               >
                 <Icon name="key" size="sm" class="text-blue-500" />
                 {{ t('admin.accounts.oauth.sessionKey') }}
@@ -467,9 +467,9 @@
             <!-- Error Message -->
             <div
               v-if="error"
-              class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/30"
+              class="mb-4 rounded-lg border border-coral-500/30 bg-coral-500/10 p-3 dark:border-coral-500/30 dark:bg-coral-500/15"
             >
-              <p class="whitespace-pre-line text-sm text-red-600 dark:text-red-400">
+              <p class="whitespace-pre-line text-sm text-coral-600 dark:text-coral-500">
                 {{ error }}
               </p>
             </div>
@@ -519,7 +519,7 @@
 
           <!-- Step 1: Generate Auth URL -->
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <div class="flex items-start gap-3">
               <div
@@ -552,7 +552,7 @@
                     class="input w-full font-mono text-sm"
                     :placeholder="t('admin.accounts.oauth.gemini.projectIdPlaceholder')"
                   />
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
                     {{ t('admin.accounts.oauth.gemini.projectIdHint') }}
                   </p>
                 </div>
@@ -592,7 +592,7 @@
                       :value="authUrl"
                       readonly
                       type="text"
-                      class="input flex-1 bg-gray-50 font-mono text-xs dark:bg-gray-700"
+                      class="input flex-1 bg-paper-100 font-mono text-xs dark:bg-ink-700"
                     />
                     <button
                       type="button"
@@ -638,7 +638,7 @@
 
           <!-- Step 2: Open URL and authorize -->
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <div class="flex items-start gap-3">
               <div
@@ -679,7 +679,7 @@
 
           <!-- Step 3: Enter authorization code -->
           <div
-            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"
+            class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-ink-800/80"
           >
             <div class="flex items-start gap-3">
               <div
@@ -706,7 +706,7 @@
                     class="input w-full resize-none font-mono text-sm"
                     :placeholder="oauthAuthCodePlaceholder"
                   ></textarea>
-                  <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">
                     <Icon name="infoCircle" size="xs" class="mr-1 inline" />
                     {{ oauthAuthCodeHint }}
                   </p>
@@ -734,9 +734,9 @@
                 <!-- Error Message -->
                 <div
                   v-if="error"
-                  class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/30"
+                  class="mt-3 rounded-lg border border-coral-500/30 bg-coral-500/10 p-3 dark:border-coral-500/30 dark:bg-coral-500/15"
                 >
-                  <p class="whitespace-pre-line text-sm text-red-600 dark:text-red-400">
+                  <p class="whitespace-pre-line text-sm text-coral-600 dark:text-coral-500">
                     {{ error }}
                   </p>
                 </div>

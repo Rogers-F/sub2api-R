@@ -6,11 +6,11 @@
         class="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-gradient-to-br from-black/70 via-black/60 to-black/70 p-4 pt-[8vh] backdrop-blur-md"
       >
         <div
-          class="w-full max-w-[680px] overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-dark-800 dark:ring-white/10"
+          class="w-full max-w-[680px] overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-ink-800 dark:ring-white/10"
           @click.stop
         >
           <!-- Header with warm gradient -->
-          <div class="relative overflow-hidden border-b border-amber-100/80 bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-yellow-50/30 px-8 py-6 dark:border-dark-700/50 dark:from-amber-900/20 dark:via-orange-900/10 dark:to-yellow-900/5">
+          <div class="relative overflow-hidden border-b border-amber-100/80 bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-yellow-50/30 px-8 py-6 dark:border-ink-700/50 dark:from-amber-900/20 dark:via-orange-900/10 dark:to-yellow-900/5">
             <!-- Decorative background -->
             <div class="absolute right-0 top-0 h-full w-64 bg-gradient-to-l from-orange-100/30 to-transparent dark:from-orange-900/20"></div>
             <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-500/20 blur-3xl"></div>
@@ -34,12 +34,12 @@
               </div>
 
               <!-- Title -->
-              <h2 class="mb-2 text-2xl font-bold leading-tight text-gray-900 dark:text-white">
+              <h2 class="mb-2 text-2xl font-bold leading-tight text-dust-900 dark:text-pearl-50">
                 {{ announcementStore.currentPopup.title }}
               </h2>
 
               <!-- Time -->
-              <div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+              <div class="flex items-center gap-1.5 text-sm text-dust-600 dark:text-pearl-300">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -49,7 +49,7 @@
           </div>
 
           <!-- Body -->
-          <div class="max-h-[50vh] overflow-y-auto bg-white px-8 py-8 dark:bg-dark-800">
+          <div class="max-h-[50vh] overflow-y-auto bg-white px-8 py-8 dark:bg-ink-800">
             <div class="relative">
               <div class="absolute left-0 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-amber-500 via-orange-500 to-yellow-500"></div>
               <div class="pl-6">
@@ -62,7 +62,7 @@
           </div>
 
           <!-- Footer -->
-          <div class="border-t border-gray-100 bg-gray-50/50 px-8 py-5 dark:border-dark-700 dark:bg-dark-900/30">
+          <div class="border-t border-paper-100 bg-paper-50/50 px-8 py-5 dark:border-ink-700 dark:bg-ink-900/30">
             <div class="flex items-center justify-end">
               <button
                 @click="handleDismiss"

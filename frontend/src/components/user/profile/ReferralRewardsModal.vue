@@ -8,39 +8,39 @@
     <div class="space-y-4">
       <!-- Loading state -->
       <div v-if="loading" class="flex items-center justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500"></div>
       </div>
 
       <!-- Empty state -->
       <div v-else-if="rewards.length === 0" class="text-center py-8">
-        <Icon name="gift" size="xl" class="mx-auto text-gray-300 dark:text-dark-600" />
-        <p class="mt-2 text-gray-500 dark:text-dark-400">{{ t('profile.referral.noRewards') }}</p>
+        <Icon name="gift" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
+        <p class="mt-2 text-dust-500 dark:text-pearl-300">{{ t('profile.referral.noRewards') }}</p>
       </div>
 
       <!-- Rewards list -->
       <div v-else class="max-h-96 overflow-y-auto">
         <table class="w-full">
-          <thead class="sticky top-0 bg-white dark:bg-dark-800">
-            <tr class="border-b border-gray-200 dark:border-dark-700">
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
+          <thead class="sticky top-0 bg-white dark:bg-ink-800">
+            <tr class="border-b hairline">
+              <th class="px-4 py-3 text-left text-sm font-medium text-dust-500 dark:text-pearl-300">
                 {{ t('profile.referral.rewardType.register') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-dark-400">
+              <th class="px-4 py-3 text-left text-sm font-medium text-dust-500 dark:text-pearl-300">
                 {{ t('profile.referral.referee') }}
               </th>
-              <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-dark-400">
+              <th class="px-4 py-3 text-right text-sm font-medium text-dust-500 dark:text-pearl-300">
                 {{ t('profile.referral.amount') }}
               </th>
-              <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-dark-400">
+              <th class="px-4 py-3 text-right text-sm font-medium text-dust-500 dark:text-pearl-300">
                 {{ t('profile.referral.time') }}
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
+          <tbody class="divide-y divide-paper-200 dark:divide-ink-700">
             <tr
               v-for="reward in rewards"
               :key="reward.id"
-              class="hover:bg-gray-50 dark:hover:bg-dark-700/50"
+              class="hover:bg-paper-50 dark:hover:bg-white/[0.04]"
             >
               <td class="px-4 py-3">
                 <span
@@ -54,13 +54,13 @@
                   {{ reward.reward_type === 'register' ? t('profile.referral.rewardType.register') : t('profile.referral.rewardType.commission') }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+              <td class="px-4 py-3 text-sm text-dust-900 dark:text-white">
                 {{ reward.referee_email || '-' }}
               </td>
               <td class="px-4 py-3 text-right text-sm font-medium text-green-600 dark:text-green-400">
                 +${{ reward.reward_amount.toFixed(2) }}
               </td>
-              <td class="px-4 py-3 text-right text-sm text-gray-500 dark:text-dark-400">
+              <td class="px-4 py-3 text-right text-sm text-dust-500 dark:text-pearl-300">
                 {{ formatDate(reward.created_at) }}
               </td>
             </tr>
@@ -74,19 +74,19 @@
               type="button"
               class="px-3 py-1 rounded text-sm"
               :disabled="page === 1"
-              :class="page === 1 ? 'text-gray-300 dark:text-dark-600' : 'text-gray-600 hover:bg-gray-100 dark:text-dark-300 dark:hover:bg-dark-700'"
+              :class="page === 1 ? 'text-dust-300 dark:text-pearl-400' : 'text-dust-600 hover:bg-paper-100 dark:text-pearl-200 dark:hover:bg-white/[0.04]'"
               @click="loadPage(page - 1)"
             >
               {{ t('common.previous') }}
             </button>
-            <span class="px-3 py-1 text-sm text-gray-600 dark:text-dark-300">
+            <span class="px-3 py-1 text-sm text-dust-600 dark:text-pearl-200">
               {{ page }} / {{ totalPages }}
             </span>
             <button
               type="button"
               class="px-3 py-1 rounded text-sm"
               :disabled="page === totalPages"
-              :class="page === totalPages ? 'text-gray-300 dark:text-dark-600' : 'text-gray-600 hover:bg-gray-100 dark:text-dark-300 dark:hover:bg-dark-700'"
+              :class="page === totalPages ? 'text-dust-300 dark:text-pearl-400' : 'text-dust-600 hover:bg-paper-100 dark:text-pearl-200 dark:hover:bg-white/[0.04]'"
               @click="loadPage(page + 1)"
             >
               {{ t('common.next') }}

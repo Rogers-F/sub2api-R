@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'animate-pulse bg-gray-200 dark:bg-dark-700',
+      'animate-pulse bg-paper-200 dark:bg-ink-700',
       variant === 'circle' ? 'rounded-full' : 'rounded-lg',
       customClass
     ]"

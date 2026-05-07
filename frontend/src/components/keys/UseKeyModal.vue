@@ -24,12 +24,12 @@
       <!-- Platform-specific content -->
       <template v-else>
         <!-- Description -->
-        <p class="text-sm text-gray-600 dark:text-gray-400">
+        <p class="text-sm text-dust-700 dark:text-pearl-300">
           {{ platformDescription }}
         </p>
 
         <!-- Client Tabs -->
-        <div v-if="clientTabs.length" class="border-b border-gray-200 dark:border-dark-700">
+        <div v-if="clientTabs.length" class="border-b border-paper-200 dark:border-ink-700">
           <nav class="-mb-px flex space-x-6" aria-label="Client">
             <button
               v-for="tab in clientTabs"
@@ -38,8 +38,8 @@
               :class="[
                 'whitespace-nowrap py-2.5 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeClientTab === tab.id
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'border-gold-500 text-gold-600 dark:text-gold-300'
+                  : 'border-transparent text-dust-500 hover:text-dust-700 hover:border-paper-300 dark:text-pearl-300 dark:hover:text-pearl-100'
               ]"
             >
               <span class="flex items-center gap-2">
@@ -51,7 +51,7 @@
         </div>
 
         <!-- OS/Shell Tabs -->
-        <div v-if="showShellTabs" class="border-b border-gray-200 dark:border-dark-700">
+        <div v-if="showShellTabs" class="border-b border-paper-200 dark:border-ink-700">
           <nav class="-mb-px flex space-x-4" aria-label="Tabs">
             <button
               v-for="tab in currentTabs"
@@ -60,8 +60,8 @@
               :class="[
                 'whitespace-nowrap py-2.5 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'border-gold-500 text-gold-600 dark:text-gold-300'
+                  : 'border-transparent text-dust-500 hover:text-dust-700 hover:border-paper-300 dark:text-pearl-300 dark:hover:text-pearl-100'
               ]"
             >
               <span class="flex items-center gap-2">
@@ -84,16 +84,16 @@
               <Icon name="exclamationCircle" size="sm" class="flex-shrink-0" />
               {{ file.hint }}
             </p>
-            <div class="bg-gray-900 dark:bg-dark-900 rounded-xl overflow-hidden">
+            <div class="bg-ink-900 dark:bg-ink-900 rounded-xl overflow-hidden">
               <!-- Code Header -->
-              <div class="flex items-center justify-between px-4 py-2 bg-gray-800 dark:bg-dark-800 border-b border-gray-700 dark:border-dark-700">
-                <span class="text-xs text-gray-400 font-mono">{{ file.path }}</span>
+              <div class="flex items-center justify-between px-4 py-2 bg-ink-800 dark:bg-ink-800 border-b border-ink-700 dark:border-ink-700">
+                <span class="text-xs text-pearl-300 font-mono">{{ file.path }}</span>
                 <button
                   @click="copyContent(file.content, index)"
                   class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors"
                   :class="copiedIndex === index
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'"
+                    ? 'bg-mint-500/20 text-mint-500'
+                    : 'bg-ink-700 hover:bg-ink-600 text-pearl-100 hover:text-pearl-50'"
                 >
                   <svg v-if="copiedIndex === index" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -105,7 +105,7 @@
                 </button>
               </div>
               <!-- Code Content -->
-              <pre class="p-4 text-sm font-mono text-gray-100 overflow-x-auto"><code v-if="file.highlighted" v-html="file.highlighted"></code><code v-else v-text="file.content"></code></pre>
+              <pre class="p-4 text-sm font-mono text-pearl-50 overflow-x-auto"><code v-if="file.highlighted" v-html="file.highlighted"></code><code v-else v-text="file.content"></code></pre>
             </div>
           </div>
         </div>
@@ -367,7 +367,7 @@ const escapeHtml = (value: string) => value
 const wrapToken = (className: string, value: string) =>
   `<span class="${className}">${escapeHtml(value)}</span>`
 
-const keyword = (value: string) => wrapToken('text-emerald-300', value)
+const keyword = (value: string) => wrapToken('text-mint-500', value)
 const variable = (value: string) => wrapToken('text-sky-200', value)
 const operator = (value: string) => wrapToken('text-slate-400', value)
 const string = (value: string) => wrapToken('text-amber-200', value)

@@ -1,26 +1,26 @@
 <template>
   <div class="card">
-    <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+    <div class="border-b hairline px-6 py-4">
+      <h2 class="text-lg font-medium text-dust-900 dark:text-white">
         {{ t('profile.referral.title') }}
       </h2>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
         {{ t('profile.referral.description') }}
       </p>
     </div>
     <div class="px-6 py-6">
       <!-- Loading state -->
       <div v-if="loading" class="flex items-center justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500"></div>
       </div>
 
       <!-- System disabled -->
       <div v-else-if="!settings?.enabled" class="flex items-center gap-4 py-4">
-        <div class="flex-shrink-0 rounded-full bg-gray-100 p-3 dark:bg-dark-700">
-          <Icon name="userPlus" size="lg" class="text-gray-400" />
+        <div class="flex-shrink-0 rounded-full bg-paper-100 p-3 dark:bg-ink-700">
+          <Icon name="userPlus" size="lg" class="text-dust-400" />
         </div>
         <div>
-          <p class="font-medium text-gray-700 dark:text-gray-300">
+          <p class="font-medium text-dust-700 dark:text-pearl-100">
             {{ t('profile.referral.systemDisabled') }}
           </p>
         </div>
@@ -30,11 +30,11 @@
       <div v-else class="space-y-6">
         <!-- My referral code -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-2">
+          <label class="block text-sm font-medium text-dust-700 dark:text-pearl-200 mb-2">
             {{ t('profile.referral.myCode') }}
           </label>
           <div class="flex items-center gap-2">
-            <div class="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-lg dark:border-dark-600 dark:bg-dark-800">
+            <div class="flex-1 rounded-lg border hairline bg-paper-50 px-4 py-3 font-mono text-lg dark:bg-ink-800">
               {{ referralInfo?.referral_code || '-' }}
             </div>
             <button
@@ -58,14 +58,14 @@
 
         <!-- Stats -->
         <div class="grid grid-cols-2 gap-4">
-          <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800">
-            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('profile.referral.invitedCount') }}</p>
-            <p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+          <div class="rounded-lg border hairline bg-paper-50 p-4 dark:bg-ink-800">
+            <p class="text-sm text-dust-500 dark:text-pearl-300">{{ t('profile.referral.invitedCount') }}</p>
+            <p class="mt-1 text-2xl font-semibold text-dust-900 dark:text-white">
               {{ referralInfo?.total_invited || 0 }}
             </p>
           </div>
-          <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800">
-            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('profile.referral.totalRewards') }}</p>
+          <div class="rounded-lg border hairline bg-paper-50 p-4 dark:bg-ink-800">
+            <p class="text-sm text-dust-500 dark:text-pearl-300">{{ t('profile.referral.totalRewards') }}</p>
             <p class="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
               ${{ (referralInfo?.total_reward || 0).toFixed(2) }}
             </p>

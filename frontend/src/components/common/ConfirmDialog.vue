@@ -1,7 +1,7 @@
 <template>
   <BaseDialog :show="show" :title="title" width="narrow" @close="handleCancel">
     <div class="space-y-4">
-      <p class="text-sm text-gray-600 dark:text-gray-400">{{ message }}</p>
+      <p class="text-sm text-dust-600 dark:text-pearl-300">{{ message }}</p>
       <slot></slot>
     </div>
 
@@ -10,7 +10,7 @@
         <button
           @click="handleCancel"
           type="button"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600 dark:focus:ring-offset-dark-800"
+          class="rounded-md border border-paper-300 bg-white px-4 py-2 text-sm font-medium text-dust-700 hover:bg-paper-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 dark:border-ink-600 dark:bg-ink-700 dark:text-pearl-100 dark:hover:bg-ink-600 dark:focus:ring-gold-300 dark:focus:ring-offset-ink-800"
         >
           {{ cancelText }}
         </button>
@@ -18,10 +18,10 @@
           @click="handleConfirm"
           type="button"
           :class="[
-            'rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-dark-800',
+            'rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-ink-800',
             danger
-              ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-              : 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-500'
+              ? 'bg-coral-500 hover:bg-coral-600 focus:ring-coral-500'
+              : 'bg-gold-500 hover:bg-gold-600 focus:ring-gold-500'
           ]"
         >
           {{ confirmText }}

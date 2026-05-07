@@ -4,13 +4,13 @@
     <div class="relative mb-3">
       <div
         @click="toggleDropdown"
-        class="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-dark-500 dark:bg-dark-700"
+        class="cursor-pointer rounded-lg border border-paper-300 bg-white px-3 py-2 dark:border-ink-600 dark:bg-ink-700"
       >
         <div class="grid grid-cols-2 gap-1.5">
           <span
             v-for="model in modelValue"
             :key="model"
-            class="inline-flex items-center justify-between gap-1 rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-dark-600 dark:text-gray-300"
+            class="inline-flex items-center justify-between gap-1 rounded bg-paper-100 px-2 py-1 text-xs text-dust-700 dark:bg-ink-700 dark:text-dust-300"
           >
             <span class="flex items-center gap-1 truncate">
               <ModelIcon :model="model" size="14px" />
@@ -19,15 +19,15 @@
             <button
               type="button"
               @click.stop="removeModel(model)"
-              class="shrink-0 rounded-full hover:bg-gray-200 dark:hover:bg-dark-500"
+              class="shrink-0 rounded-full hover:bg-paper-200 dark:hover:bg-ink-600"
             >
               <Icon name="x" size="xs" class="h-3.5 w-3.5" :stroke-width="2" />
             </button>
           </span>
         </div>
-        <div class="mt-2 flex items-center justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
-          <span class="text-xs text-gray-400">{{ t('admin.accounts.modelCount', { count: modelValue.length }) }}</span>
-          <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="mt-2 flex items-center justify-between border-t border-paper-200 pt-2 dark:border-ink-600">
+          <span class="text-xs text-dust-400">{{ t('admin.accounts.modelCount', { count: modelValue.length }) }}</span>
+          <svg class="h-5 w-5 text-dust-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
@@ -35,9 +35,9 @@
       <!-- Dropdown List -->
       <div
         v-if="showDropdown"
-        class="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-600 dark:bg-dark-700"
+        class="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-paper-200 bg-white shadow-lg dark:border-ink-600 dark:bg-ink-700"
       >
-        <div class="sticky top-0 border-b border-gray-200 bg-white p-2 dark:border-dark-600 dark:bg-dark-700">
+        <div class="sticky top-0 border-b border-paper-200 bg-white p-2 dark:border-ink-600 dark:bg-ink-700">
           <input
             v-model="searchQuery"
             type="text"
@@ -52,14 +52,14 @@
             :key="model.value"
             type="button"
             @click="toggleModel(model.value)"
-            class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-600"
+            class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.05]"
           >
             <span
               :class="[
                 'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
                 modelValue.includes(model.value)
-                  ? 'border-primary-500 bg-primary-500 text-white'
-                  : 'border-gray-300 dark:border-dark-500'
+                  ? 'border-gold-500 bg-gold-500 text-white'
+                  : 'border-paper-300 dark:border-ink-600'
               ]"
             >
               <svg v-if="modelValue.includes(model.value)" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,9 +67,9 @@
               </svg>
             </span>
             <ModelIcon :model="model.value" size="18px" />
-            <span class="truncate text-gray-900 dark:text-white">{{ model.value }}</span>
+            <span class="truncate text-dust-900 dark:text-pearl-50">{{ model.value }}</span>
           </button>
-          <div v-if="filteredModels.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
+          <div v-if="filteredModels.length === 0" class="px-3 py-4 text-center text-sm text-dust-500">
             {{ t('admin.accounts.noMatchingModels') }}
           </div>
         </div>
@@ -88,7 +88,7 @@
       <button
         type="button"
         @click="clearAll"
-        class="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30"
+        class="rounded-lg border border-coral-500/30 px-3 py-1.5 text-sm text-coral-600 hover:bg-coral-500/10 dark:border-coral-500/30 dark:text-coral-500 dark:hover:bg-coral-500/15"
       >
         {{ t('admin.accounts.clearAllModels') }}
       </button>
@@ -96,7 +96,7 @@
 
     <!-- Custom Model Input -->
     <div class="mb-3">
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.accounts.customModelName') }}</label>
+      <label class="mb-1.5 block text-sm font-medium text-dust-700 dark:text-pearl-100">{{ t('admin.accounts.customModelName') }}</label>
       <div class="flex gap-2">
         <input
           v-model="customModel"
@@ -110,7 +110,7 @@
         <button
           type="button"
           @click="addCustom"
-          class="rounded-lg bg-primary-50 px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+          class="rounded-lg bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-600 hover:bg-gold-500/15 dark:bg-gold-500/10 dark:text-gold-300 dark:hover:bg-gold-500/15"
         >
           {{ t('admin.accounts.addModel') }}
         </button>

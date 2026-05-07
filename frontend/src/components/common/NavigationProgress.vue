@@ -46,9 +46,9 @@ const isVisible = computed(() => isLoading.value)
   background: linear-gradient(
     90deg,
     transparent 0%,
-    theme('colors.primary.400') 20%,
-    theme('colors.primary.500') 50%,
-    theme('colors.primary.400') 80%,
+    theme('colors.gold.300') 20%,
+    theme('colors.gold.500') 50%,
+    theme('colors.gold.300') 80%,
     transparent 100%
   );
   animation: progress-slide 1.5s ease-in-out infinite;
@@ -59,9 +59,9 @@ const isVisible = computed(() => isLoading.value)
   background: linear-gradient(
     90deg,
     transparent 0%,
-    theme('colors.primary.500') 20%,
-    theme('colors.primary.400') 50%,
-    theme('colors.primary.500') 80%,
+    theme('colors.gold.500') 20%,
+    theme('colors.gold.300') 50%,
+    theme('colors.gold.500') 80%,
     transparent 100%
   );
 }

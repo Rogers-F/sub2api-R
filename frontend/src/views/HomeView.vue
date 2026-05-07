@@ -109,7 +109,7 @@
       <div class="relative mx-auto max-w-7xl px-6 py-24 md:py-32 text-center">
         <div class="inline-flex items-center gap-2 rounded-full border hairline bg-paper-0/60 dark:bg-white/[0.03] px-4 py-1.5 text-xs text-dust-500 dark:text-pearl-200">
           <span class="text-gold-600 dark:text-gold-300 font-mono tracking-wider">v{{ appVersion }}</span>
-          <span class="h-3 w-px bg-dust-200/40 dark:bg-white/10"></span>
+          <span class="h-3 w-px bg-dust-300/40 dark:bg-white/10"></span>
           <span>{{ t('home.hero.badge') }}</span>
         </div>
 

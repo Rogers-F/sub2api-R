@@ -23,11 +23,11 @@
 
       <DataTable :columns="columns" :data="items" :loading="loading">
         <template #cell-email="{ value }">
-          <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
+          <span class="font-medium text-dust-900 dark:text-pearl-50">{{ value }}</span>
         </template>
 
         <template #cell-balance="{ value }">
-          <span class="font-medium text-gray-900 dark:text-white">${{ Number(value ?? 0).toFixed(2) }}</span>
+          <span class="font-medium text-dust-900 dark:text-pearl-50">${{ Number(value ?? 0).toFixed(2) }}</span>
         </template>
 
         <template #cell-eligible="{ value }">
@@ -37,7 +37,7 @@
         </template>
 
         <template #cell-read_at="{ value }">
-          <span class="text-sm text-gray-500 dark:text-dark-400">
+          <span class="text-sm text-dust-500 dark:text-pearl-300">
             {{ value ? formatDateTime(value) : t('admin.announcements.unread') }}
           </span>
         </template>

@@ -5,19 +5,19 @@
       v-if="windowStats && (windowStats.requests > 0 || windowStats.tokens > 0)"
       class="mb-0.5 flex items-center"
     >
-      <div class="flex items-center gap-1.5 text-[9px] text-gray-500 dark:text-gray-400">
-        <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800">
+      <div class="flex items-center gap-1.5 text-[9px] text-dust-500 dark:text-pearl-300">
+        <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800">
           {{ formatRequests }} req
         </span>
-        <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800">
+        <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800">
           {{ formatTokens }}
         </span>
-        <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800" :title="t('usage.accountBilled')">
+        <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800" :title="t('usage.accountBilled')">
           A ${{ formatAccountCost }}
         </span>
         <span
           v-if="windowStats?.user_cost != null"
-          class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800"
+          class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800"
           :title="t('usage.userBilled')"
         >
           U ${{ formatUserCost }}
@@ -35,7 +35,7 @@
       </span>
 
       <!-- Progress bar container -->
-      <div class="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+      <div class="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-paper-200 dark:bg-ink-700">
         <div
           :class="['h-full transition-all duration-300', barClass]"
           :style="{ width: barWidth }"
@@ -48,7 +48,7 @@
       </span>
 
       <!-- Reset time -->
-      <span v-if="shouldShowResetTime" class="shrink-0 text-[10px] text-gray-400">
+      <span v-if="shouldShowResetTime" class="shrink-0 text-[10px] text-dust-400">
         {{ formatResetTime }}
       </span>
     </div>
@@ -100,7 +100,7 @@ watch(
 const labelClass = computed(() => {
   const colors = {
     indigo: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-    emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    emerald: 'bg-mint-500/15 text-mint-600 dark:bg-mint-500/15 dark:text-mint-500',
     purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
     amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
   }
@@ -110,7 +110,7 @@ const labelClass = computed(() => {
 // Progress bar color based on utilization
 const barClass = computed(() => {
   if (props.utilization >= 100) {
-    return 'bg-red-500'
+    return 'bg-coral-500'
   } else if (props.utilization >= 80) {
     return 'bg-amber-500'
   } else {
@@ -121,11 +121,11 @@ const barClass = computed(() => {
 // Text color based on utilization
 const textClass = computed(() => {
   if (props.utilization >= 100) {
-    return 'text-red-600 dark:text-red-400'
+    return 'text-coral-600 dark:text-coral-500'
   } else if (props.utilization >= 80) {
     return 'text-amber-600 dark:text-amber-400'
   } else {
-    return 'text-gray-600 dark:text-gray-400'
+    return 'text-dust-700 dark:text-pearl-300'
   }
 })
 

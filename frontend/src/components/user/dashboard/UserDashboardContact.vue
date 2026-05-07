@@ -1,7 +1,7 @@
 <template>
   <div v-if="contactInfo" class="card">
-    <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.contactUs') }}</h2>
+    <div class="border-b hairline px-6 py-4">
+      <h2 class="text-lg font-semibold text-dust-900 dark:text-white">{{ t('dashboard.contactUs') }}</h2>
     </div>
     <div class="p-4">
       <div class="space-y-3 text-sm">
@@ -11,15 +11,15 @@
           :key="index"
           class="flex items-center gap-3"
         >
-          <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-700">
-            <Icon :name="getContactIcon(line)" size="sm" class="text-gray-500 dark:text-gray-400" />
+          <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-paper-100 dark:bg-ink-700">
+            <Icon :name="getContactIcon(line)" size="sm" class="text-dust-500 dark:text-pearl-300" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-gray-700 dark:text-gray-300">{{ line }}</p>
+            <p class="text-dust-700 dark:text-pearl-100">{{ line }}</p>
           </div>
           <button
             @click="copyText(line)"
-            class="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-700 dark:hover:text-gray-300"
+            class="flex h-7 w-7 items-center justify-center rounded-md text-dust-400 transition-colors hover:bg-paper-100 hover:text-dust-600 dark:hover:bg-white/[0.04] dark:hover:text-pearl-100"
             :title="t('common.copy')"
           >
             <Icon :name="copiedIndex === index ? 'check' : 'copy'" size="xs" />

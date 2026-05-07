@@ -27,7 +27,7 @@
         <!-- Search and Batch Test Header -->
         <div class="select-header">
           <div class="select-search">
-            <Icon name="search" size="sm" class="text-gray-400" />
+            <Icon name="search" size="sm" class="text-dust-400" />
             <input
               ref="searchInputRef"
               v-model="searchQuery"
@@ -72,7 +72,7 @@
             :class="['select-option', modelValue === null && 'select-option-selected']"
           >
             <span class="select-option-label">{{ t('admin.accounts.noProxy') }}</span>
-            <Icon v-if="modelValue === null" name="check" size="sm" class="text-primary-500" />
+            <Icon v-if="modelValue === null" name="check" size="sm" class="text-gold-500 dark:text-gold-300" />
           </div>
 
           <!-- Proxy options -->
@@ -88,7 +88,7 @@
                 <!-- Account count badge -->
                 <span
                   v-if="proxy.account_count !== undefined"
-                  class="inline-flex flex-shrink-0 items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-dark-600 dark:text-gray-400"
+                  class="inline-flex flex-shrink-0 items-center rounded bg-paper-100 px-1.5 py-0.5 text-xs text-dust-600 dark:bg-ink-600 dark:text-pearl-300"
                 >
                   {{ proxy.account_count }}
                 </span>
@@ -96,7 +96,7 @@
                 <template v-if="testResults[proxy.id]">
                   <span
                     v-if="testResults[proxy.id].success"
-                    class="inline-flex flex-shrink-0 items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    class="inline-flex flex-shrink-0 items-center gap-1 rounded bg-mint-500/15 px-1.5 py-0.5 text-xs text-mint-600 dark:bg-mint-500/20 dark:text-mint-500"
                   >
                     <span v-if="testResults[proxy.id].country">{{
                       testResults[proxy.id].country
@@ -107,13 +107,13 @@
                   </span>
                   <span
                     v-else
-                    class="inline-flex flex-shrink-0 items-center rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    class="inline-flex flex-shrink-0 items-center rounded bg-coral-500/15 px-1.5 py-0.5 text-xs text-coral-600 dark:bg-coral-500/20 dark:text-coral-500"
                   >
                     {{ t('admin.proxies.testFailed') }}
                   </span>
                 </template>
               </div>
-              <div class="truncate text-xs text-gray-500 dark:text-gray-400">
+              <div class="truncate text-xs text-dust-500 dark:text-pearl-300">
                 {{ proxy.protocol }}://{{ proxy.host }}:{{ proxy.port }}
               </div>
             </div>
@@ -153,7 +153,7 @@
               v-if="modelValue === proxy.id"
               name="check"
               size="sm"
-              class="flex-shrink-0 text-primary-500"
+              class="flex-shrink-0 text-gold-500 dark:text-gold-300"
             />
           </div>
 
@@ -322,21 +322,21 @@ onUnmounted(() => {
 .select-trigger {
   @apply flex w-full items-center justify-between gap-2;
   @apply rounded-xl px-4 py-2.5 text-sm;
-  @apply bg-white dark:bg-dark-800;
-  @apply border border-gray-200 dark:border-dark-600;
-  @apply text-gray-900 dark:text-gray-100;
+  @apply bg-white dark:bg-ink-800;
+  @apply border border-paper-200 dark:border-ink-600;
+  @apply text-dust-900 dark:text-pearl-50;
   @apply transition-all duration-200;
-  @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
-  @apply hover:border-gray-300 dark:hover:border-dark-500;
+  @apply focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30 dark:focus:border-gold-300 dark:focus:ring-gold-300/30;
+  @apply hover:border-paper-300 dark:hover:border-ink-500;
   @apply cursor-pointer;
 }
 
 .select-trigger-open {
-  @apply border-primary-500 ring-2 ring-primary-500/30;
+  @apply border-gold-500 ring-2 ring-gold-500/30 dark:border-gold-300 dark:ring-gold-300/30;
 }
 
 .select-trigger-disabled {
-  @apply cursor-not-allowed bg-gray-100 opacity-60 dark:bg-dark-900;
+  @apply cursor-not-allowed bg-paper-100 opacity-60 dark:bg-ink-900;
 }
 
 .select-value {
@@ -344,21 +344,21 @@ onUnmounted(() => {
 }
 
 .select-icon {
-  @apply flex-shrink-0 text-gray-400 dark:text-dark-400;
+  @apply flex-shrink-0 text-dust-400 dark:text-pearl-300;
 }
 
 .select-dropdown {
   @apply absolute z-[100] mt-2 w-full;
-  @apply bg-white dark:bg-dark-800;
+  @apply bg-white dark:bg-ink-800;
   @apply rounded-xl;
-  @apply border border-gray-200 dark:border-dark-700;
+  @apply border border-paper-200 dark:border-ink-700;
   @apply shadow-lg shadow-black/10 dark:shadow-black/30;
   @apply overflow-hidden;
 }
 
 .select-header {
   @apply flex items-center gap-2 px-3 py-2;
-  @apply border-b border-gray-100 dark:border-dark-700;
+  @apply border-b border-paper-100 dark:border-ink-700;
 }
 
 .select-search {
@@ -367,15 +367,15 @@ onUnmounted(() => {
 
 .select-search-input {
   @apply flex-1 bg-transparent text-sm;
-  @apply text-gray-900 dark:text-gray-100;
-  @apply placeholder:text-gray-400 dark:placeholder:text-dark-400;
+  @apply text-dust-900 dark:text-pearl-50;
+  @apply placeholder:text-dust-400 dark:placeholder:text-pearl-300;
   @apply focus:outline-none;
 }
 
 .batch-test-btn {
   @apply flex-shrink-0 rounded-lg p-1.5;
-  @apply text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400;
-  @apply hover:bg-emerald-50 dark:hover:bg-emerald-900/20;
+  @apply text-dust-500 hover:text-mint-600 dark:hover:text-mint-500;
+  @apply hover:bg-mint-500/10 dark:hover:bg-mint-500/10;
   @apply transition-colors disabled:cursor-not-allowed disabled:opacity-50;
 }
 
@@ -386,14 +386,14 @@ onUnmounted(() => {
 .select-option {
   @apply flex items-center justify-between gap-2;
   @apply px-4 py-2.5 text-sm;
-  @apply text-gray-700 dark:text-gray-300;
+  @apply text-dust-700 dark:text-pearl-100;
   @apply cursor-pointer transition-colors duration-150;
-  @apply hover:bg-gray-50 dark:hover:bg-dark-700;
+  @apply hover:bg-paper-50 dark:hover:bg-white/[0.04];
 }
 
 .select-option-selected {
-  @apply bg-primary-50 dark:bg-primary-900/20;
-  @apply text-primary-700 dark:text-primary-300;
+  @apply bg-gold-500/10 dark:bg-gold-300/10;
+  @apply text-gold-600 dark:text-gold-300;
 }
 
 .select-option-label {
@@ -402,13 +402,13 @@ onUnmounted(() => {
 
 .select-empty {
   @apply px-4 py-8 text-center text-sm;
-  @apply text-gray-500 dark:text-dark-400;
+  @apply text-dust-500 dark:text-pearl-300;
 }
 
 .test-btn {
   @apply flex-shrink-0 rounded p-1;
-  @apply text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400;
-  @apply hover:bg-emerald-50 dark:hover:bg-emerald-900/20;
+  @apply text-dust-400 hover:text-mint-600 dark:hover:text-mint-500;
+  @apply hover:bg-mint-500/10 dark:hover:bg-mint-500/10;
   @apply transition-colors disabled:cursor-not-allowed disabled:opacity-50;
 }
 

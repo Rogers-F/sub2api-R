@@ -3,13 +3,13 @@
     <!-- Preview Box -->
     <div class="flex-shrink-0">
       <div
-        class="flex items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 dark:border-dark-600 dark:bg-dark-800"
+        class="flex items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-paper-300 bg-paper-50 dark:border-ink-600 dark:bg-ink-800"
         :class="[previewSizeClass, { 'border-solid': !!modelValue }]"
       >
         <!-- SVG mode: render inline -->
         <span
           v-if="mode === 'svg' && modelValue"
-          class="text-gray-600 dark:text-gray-300 [&>svg]:h-full [&>svg]:w-full"
+          class="text-dust-600 dark:text-pearl-100 [&>svg]:h-full [&>svg]:w-full"
           :class="innerSizeClass"
           v-html="sanitizedValue"
         ></span>
@@ -23,7 +23,7 @@
         <!-- Empty placeholder -->
         <svg
           v-else
-          class="text-gray-400 dark:text-dark-500"
+          class="text-dust-400 dark:text-pearl-300"
           :class="placeholderSizeClass"
           fill="none"
           viewBox="0 0 24 24"
@@ -55,15 +55,15 @@
         <button
           v-if="modelValue"
           type="button"
-          class="btn btn-secondary btn-sm text-red-600 hover:text-red-700 dark:text-red-400"
+          class="btn btn-secondary btn-sm text-coral-600 hover:text-coral-700 dark:text-coral-500"
           @click="$emit('update:modelValue', '')"
         >
           <Icon name="trash" size="sm" class="mr-1.5" :stroke-width="2" />
           {{ removeLabel }}
         </button>
       </div>
-      <p v-if="hint" class="text-xs text-gray-500 dark:text-gray-400">{{ hint }}</p>
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="hint" class="text-xs text-dust-500 dark:text-pearl-300">{{ hint }}</p>
+      <p v-if="error" class="text-xs text-coral-500">{{ error }}</p>
     </div>
   </div>
 </template>

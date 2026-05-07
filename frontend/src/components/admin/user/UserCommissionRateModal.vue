@@ -6,22 +6,22 @@
     @close="emit('close')"
   >
     <div v-if="user" class="space-y-5">
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
+      <div class="flex items-center gap-3 rounded-xl bg-paper-50 p-4 dark:bg-ink-700">
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-800/30">
           <span class="text-lg font-medium text-accent-700 dark:text-accent-300">
             {{ user.email.charAt(0).toUpperCase() }}
           </span>
         </div>
         <div class="flex-1">
-          <p class="font-medium text-gray-900 dark:text-white">{{ user.email }}</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
+          <p class="font-medium text-dust-900 dark:text-pearl-50">{{ user.email }}</p>
+          <p class="text-sm text-dust-500 dark:text-pearl-300">
             {{ t('admin.users.commissionRate.description', { email: user.email }) }}
           </p>
         </div>
       </div>
 
       <div v-if="loading" class="flex justify-center py-10">
-        <svg class="h-8 w-8 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+        <svg class="h-8 w-8 animate-spin text-gold-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -29,42 +29,42 @@
 
       <template v-else>
         <div class="grid gap-3 sm:grid-cols-3">
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+          <div class="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700">
+            <p class="text-sm text-dust-500 dark:text-pearl-300">
               {{ t('admin.users.commissionRate.globalRate') }}
             </p>
-            <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+            <p class="mt-2 text-lg font-semibold text-dust-900 dark:text-pearl-50">
               {{ formatPercent(info?.global_commission_rate ?? null) }}
             </p>
           </div>
 
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+          <div class="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700">
+            <p class="text-sm text-dust-500 dark:text-pearl-300">
               {{ t('admin.users.commissionRate.userRate') }}
             </p>
-            <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+            <p class="mt-2 text-lg font-semibold text-dust-900 dark:text-pearl-50">
               {{ info?.user_commission_rate == null ? t('admin.users.commissionRate.inherited') : formatPercent(info.user_commission_rate) }}
             </p>
           </div>
 
-          <div class="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-800/60 dark:bg-primary-900/20">
-            <p class="text-sm text-primary-700 dark:text-primary-300">
+          <div class="rounded-xl border border-gold-500/30 bg-gold-500/10 p-4 dark:border-gold-300/30 dark:bg-gold-300/10">
+            <p class="text-sm text-gold-700 dark:text-gold-200">
               {{ t('admin.users.commissionRate.effectiveRate') }}
             </p>
-            <p class="mt-2 text-lg font-semibold text-primary-700 dark:text-primary-200">
+            <p class="mt-2 text-lg font-semibold text-gold-700 dark:text-gold-200">
               {{ formatPercent(info?.effective_rate ?? null) }}
             </p>
           </div>
         </div>
 
-        <div class="rounded-xl border border-gray-200 p-4 dark:border-dark-600">
+        <div class="rounded-xl border border-paper-200 p-4 dark:border-ink-700">
           <div class="grid gap-2 sm:grid-cols-2">
             <button
               type="button"
               class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
               :class="useGlobalRate
-                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200'
-                : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'"
+                ? 'border-gold-500 bg-gold-500/10 text-gold-700 dark:bg-gold-300/15 dark:text-gold-200'
+                : 'border-paper-200 text-dust-600 hover:hairline-strong dark:text-pearl-200'"
               @click="useGlobalRate = true"
             >
               {{ t('admin.users.commissionRate.useGlobal') }}
@@ -73,8 +73,8 @@
               type="button"
               class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
               :class="!useGlobalRate
-                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200'
-                : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-dark-600 dark:text-gray-300'"
+                ? 'border-gold-500 bg-gold-500/10 text-gold-700 dark:bg-gold-300/15 dark:text-gold-200'
+                : 'border-paper-200 text-dust-600 hover:hairline-strong dark:text-pearl-200'"
               @click="useGlobalRate = false"
             >
               {{ t('admin.users.commissionRate.useCustom') }}
@@ -93,9 +93,9 @@
                 class="input pr-8"
                 :placeholder="t('admin.users.commissionRate.customRatePlaceholder')"
               />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-dust-400">%</span>
             </div>
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">
               {{ t('admin.users.commissionRate.customRateHint') }}
             </p>
           </div>

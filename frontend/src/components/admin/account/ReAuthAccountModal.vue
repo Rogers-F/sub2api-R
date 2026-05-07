@@ -8,7 +8,7 @@
     <div v-if="account" class="space-y-4">
       <!-- Account Info -->
       <div
-        class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700"
+        class="rounded-lg border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700"
       >
         <div class="flex items-center gap-3">
           <div
@@ -26,10 +26,10 @@
             <Icon name="sparkles" size="md" class="text-white" />
           </div>
           <div>
-            <span class="block font-semibold text-gray-900 dark:text-white">{{
+            <span class="block font-semibold text-dust-900 dark:text-pearl-50">{{
               account.name
             }}</span>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-sm text-dust-500 dark:text-pearl-300">
               {{
                 isOpenAI
                   ? t('admin.accounts.openaiAccount')
@@ -55,9 +55,9 @@
               v-model="addMethod"
               type="radio"
               value="oauth"
-              class="mr-2 text-primary-600 focus:ring-primary-500"
+              class="mr-2 text-gold-600 focus:ring-gold-500"
             />
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{
+            <span class="text-sm text-dust-700 dark:text-pearl-100">{{
               t('admin.accounts.types.oauth')
             }}</span>
           </label>
@@ -66,9 +66,9 @@
               v-model="addMethod"
               type="radio"
               value="setup-token"
-              class="mr-2 text-primary-600 focus:ring-primary-500"
+              class="mr-2 text-gold-600 focus:ring-gold-500"
             />
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{
+            <span class="text-sm text-dust-700 dark:text-pearl-100">{{
               t('admin.accounts.setupTokenLongLived')
             }}</span>
           </label>
@@ -76,8 +76,8 @@
       </fieldset>
 
       <!-- Gemini OAuth Type Display (read-only) -->
-      <div v-if="isGemini" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700">
-        <div class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div v-if="isGemini" class="rounded-lg border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700">
+        <div class="mb-2 text-sm font-medium text-dust-700 dark:text-pearl-100">
           {{ t('admin.accounts.oauth.gemini.oauthTypeLabel') }}
         </div>
         <div class="flex items-center gap-3">
@@ -96,7 +96,7 @@
             <Icon v-else name="sparkles" size="sm" />
           </div>
           <div>
-            <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <span class="block text-sm font-medium text-dust-900 dark:text-pearl-50">
               {{
                 geminiOAuthType === 'google_one'
                   ? 'Google One'
@@ -105,7 +105,7 @@
                     : t('admin.accounts.gemini.oauthType.customTitle')
               }}
             </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">
+            <span class="text-xs text-dust-500 dark:text-pearl-300">
               {{
                 geminiOAuthType === 'google_one'
                   ? '个人账号'

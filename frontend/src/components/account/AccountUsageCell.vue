@@ -11,26 +11,26 @@
       <div v-if="loading" class="space-y-1.5">
         <!-- OAuth: 3 rows, Setup Token: 1 row -->
         <div class="flex items-center gap-1">
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
         </div>
         <template v-if="account.type === 'oauth'">
           <div class="flex items-center gap-1">
-            <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-            <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+            <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+            <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
           </div>
           <div class="flex items-center gap-1">
-            <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-            <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+            <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+            <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
           </div>
         </template>
       </div>
 
       <!-- Error state -->
-      <div v-else-if="error" class="text-xs text-red-500">
+      <div v-else-if="error" class="text-xs text-coral-600 dark:text-coral-500">
         {{ error }}
       </div>
 
@@ -72,7 +72,7 @@
         <div class="flex items-center gap-1.5 mt-0.5">
           <span
             v-if="usageInfo.source === 'passive'"
-            class="text-[9px] text-gray-400 dark:text-gray-500 italic"
+            class="text-[9px] text-dust-400 dark:text-pearl-400 italic"
           >
             {{ t('admin.accounts.usageWindow.passiveSampled') }}
           </span>
@@ -102,7 +102,7 @@
       </div>
 
       <!-- No data yet -->
-      <div v-else class="text-xs text-gray-400">-</div>
+      <div v-else class="text-xs text-dust-400">-</div>
     </template>
 
     <!-- OpenAI OAuth accounts: single source from /usage API -->
@@ -129,17 +129,17 @@
       </div>
       <div v-else-if="loading" class="space-y-1.5">
         <div class="flex items-center gap-1">
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
         </div>
         <div class="flex items-center gap-1">
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
         </div>
       </div>
-      <div v-else class="text-xs text-gray-400">-</div>
+      <div v-else class="text-xs text-dust-400">-</div>
     </template>
 
     <!-- Antigravity OAuth accounts: fetch usage from API -->
@@ -160,7 +160,7 @@
           class="group relative cursor-help"
         >
           <svg
-            class="h-3.5 w-3.5 text-red-500"
+            class="h-3.5 w-3.5 text-coral-600 dark:text-coral-500"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -171,7 +171,7 @@
             />
           </svg>
           <span
-            class="pointer-events-none absolute left-0 top-full z-50 mt-1 w-80 whitespace-normal break-words rounded bg-gray-900 px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-gray-700"
+            class="pointer-events-none absolute left-0 top-full z-50 mt-1 w-80 whitespace-normal break-words rounded bg-ink-900 px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-ink-700"
           >
             {{ t('admin.accounts.ineligibleWarning') }}
           </span>
@@ -200,7 +200,7 @@
           </a>
           <button
             type="button"
-            class="text-[10px] text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            class="text-[10px] text-dust-500 hover:text-dust-700 dark:text-pearl-300 dark:hover:text-pearl-100"
             :title="t('admin.accounts.copyLink')"
             @click="copyValidationURL"
           >
@@ -226,14 +226,14 @@
       <!-- Loading state -->
       <div v-else-if="loading" class="space-y-1.5">
         <div class="flex items-center gap-1">
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-          <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+          <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
         </div>
       </div>
 
       <!-- Error state -->
-      <div v-else-if="error" class="text-xs text-red-500">
+      <div v-else-if="error" class="text-xs text-coral-600 dark:text-coral-500">
         {{ error }}
       </div>
 
@@ -275,14 +275,14 @@
           color="amber"
         />
 
-        <div v-if="aiCreditsDisplay" class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+        <div v-if="aiCreditsDisplay" class="mt-1 text-[10px] text-dust-500 dark:text-pearl-300">
           💳 {{ t('admin.accounts.aiCreditsBalance') }}: {{ aiCreditsDisplay }}
         </div>
       </div>
-      <div v-else-if="aiCreditsDisplay" class="text-[10px] text-gray-500 dark:text-gray-400">
+      <div v-else-if="aiCreditsDisplay" class="text-[10px] text-dust-500 dark:text-pearl-300">
         💳 {{ t('admin.accounts.aiCreditsBalance') }}: {{ aiCreditsDisplay }}
       </div>
-      <div v-else class="text-xs text-gray-400">-</div>
+      <div v-else class="text-xs text-dust-400">-</div>
     </template>
 
     <!-- Gemini platform: show quota + local usage window -->
@@ -302,7 +302,7 @@
           class="group relative cursor-help"
         >
           <svg
-            class="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            class="h-3.5 w-3.5 text-dust-400 hover:text-dust-700 dark:text-dust-500 dark:hover:text-dust-300"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -313,10 +313,10 @@
             />
           </svg>
           <span
-            class="pointer-events-none absolute left-0 top-full z-50 mt-1 w-80 whitespace-normal break-words rounded bg-gray-900 px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-gray-700"
+            class="pointer-events-none absolute left-0 top-full z-50 mt-1 w-80 whitespace-normal break-words rounded bg-ink-900 px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-ink-700"
           >
             <div class="font-semibold mb-1">{{ t('admin.accounts.gemini.quotaPolicy.title') }}</div>
-            <div class="mb-2 text-gray-300">{{ t('admin.accounts.gemini.quotaPolicy.note') }}</div>
+            <div class="mb-2 text-dust-300">{{ t('admin.accounts.gemini.quotaPolicy.note') }}</div>
             <div class="space-y-1">
               <div><strong>{{ geminiQuotaPolicyChannel }}:</strong></div>
               <div class="pl-2">• {{ geminiQuotaPolicyLimits }}</div>
@@ -334,12 +334,12 @@
       <div class="space-y-1">
         <div v-if="loading" class="space-y-1">
           <div class="flex items-center gap-1">
-            <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div class="h-1.5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-            <div class="h-3 w-[32px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+            <div class="h-1.5 w-8 animate-pulse rounded-full bg-paper-200 dark:bg-ink-700"></div>
+            <div class="h-3 w-[32px] animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
           </div>
         </div>
-        <div v-else-if="error" class="text-xs text-red-500">
+        <div v-else-if="error" class="text-xs text-coral-600 dark:text-coral-500">
           {{ error }}
         </div>
         <!-- Gemini: show daily usage bars when available -->
@@ -353,12 +353,12 @@
             :window-stats="bar.windowStats"
             :color="bar.color"
           />
-          <p class="mt-1 text-[9px] leading-tight text-gray-400 dark:text-gray-500 italic">
+          <p class="mt-1 text-[9px] leading-tight text-dust-400 dark:text-pearl-400 italic">
             * {{ t('admin.accounts.gemini.quotaPolicy.simulatedNote') || 'Simulated quota' }}
           </p>
         </div>
         <!-- AI Studio Client OAuth: show unlimited flow (no usage tracking) -->
-        <div v-else class="text-xs text-gray-400">
+        <div v-else class="text-xs text-dust-400">
           {{ t('admin.accounts.gemini.rateLimit.unlimited') }}
         </div>
       </div>
@@ -366,7 +366,7 @@
 
     <!-- Other accounts: no usage window -->
     <template v-else>
-      <div class="text-xs text-gray-400">-</div>
+      <div class="text-xs text-dust-400">-</div>
     </template>
   </div>
 
@@ -381,19 +381,19 @@
         v-if="todayStats"
         class="mb-0.5 flex items-center"
       >
-        <div class="flex items-center gap-1.5 text-[9px] text-gray-500 dark:text-gray-400">
-          <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800">
+        <div class="flex items-center gap-1.5 text-[9px] text-dust-500 dark:text-pearl-300">
+          <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800">
             {{ formatKeyRequests }} req
           </span>
-          <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800">
+          <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800">
             {{ formatKeyTokens }}
           </span>
-          <span class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800" :title="t('usage.accountBilled')">
+          <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800" :title="t('usage.accountBilled')">
             A ${{ formatKeyCost }}
           </span>
           <span
             v-if="todayStats.user_cost != null"
-            class="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-gray-800"
+            class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800"
             :title="t('usage.userBilled')"
           >
             U ${{ formatKeyUserCost }}
@@ -405,9 +405,9 @@
         v-else-if="todayStatsLoading"
         class="mb-0.5 flex items-center gap-1"
       >
-        <div class="h-3 w-10 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-        <div class="h-3 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-        <div class="h-3 w-12 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+        <div class="h-3 w-10 animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+        <div class="h-3 w-8 animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
+        <div class="h-3 w-12 animate-pulse rounded bg-paper-200 dark:bg-ink-700"></div>
       </div>
 
       <!-- API Key accounts with quota limits: show progress bars -->
@@ -433,7 +433,7 @@
       />
 
       <!-- No data at all -->
-      <div v-if="!todayStats && !todayStatsLoading && !hasApiKeyQuota" class="text-xs text-gray-400">-</div>
+      <div v-if="!todayStats && !todayStatsLoading && !hasApiKeyQuota" class="text-xs text-dust-400">-</div>
     </div>
   </div>
 </template>
@@ -714,7 +714,7 @@ const geminiTierClass = computed(() => {
   if (channel === 'google one') {
     if (level === 'ultra') return 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300'
     if (level === 'pro') return 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300'
-    return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+    return 'bg-paper-100 text-dust-700 dark:bg-ink-700 dark:text-pearl-100'
   }
 
   if (channel === 'gcp') {
@@ -854,7 +854,7 @@ const antigravityTierLabel = computed(() => {
 const antigravityTierClass = computed(() => {
   switch (antigravityTier.value) {
     case 'free-tier':
-      return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+      return 'bg-paper-100 text-dust-700 dark:bg-ink-700 dark:text-pearl-100'
     case 'g1-pro-tier':
       return 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300'
     case 'g1-ultra-tier':
@@ -906,7 +906,7 @@ const forbiddenBadgeClass = computed(() => {
   if (forbiddenType.value === 'validation') {
     return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
   }
-  return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+  return 'bg-coral-500/15 text-coral-600 dark:bg-coral-500/15 dark:text-coral-500'
 })
 
 const linkCopied = ref(false)

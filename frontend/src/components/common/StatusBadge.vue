@@ -6,7 +6,7 @@
         variantClass
       ]"
     ></span>
-    <span class="text-sm text-gray-700 dark:text-gray-300">
+    <span class="text-sm text-dust-700 dark:text-pearl-100">
       {{ label }}
     </span>
   </div>
@@ -31,9 +31,9 @@ const variantClass = computed(() => {
       return 'bg-yellow-500'
     case 'error':
     case 'danger':
-      return 'bg-red-500'
+      return 'bg-coral-500'
     default:
-      return 'bg-gray-400'
+      return 'bg-dust-400'
   }
 })
 </script>
