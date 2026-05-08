@@ -1826,6 +1826,34 @@ func TestParseSSEUsage_SelectiveParsing(t *testing.T) {
 	require.Equal(t, 4, usage.CacheReadInputTokens)
 }
 
+func TestParseSSEUsage_ExtractsImageTokenDetails(t *testing.T) {
+	svc := &OpenAIGatewayService{}
+	usage := &OpenAIUsage{}
+
+	svc.parseSSEUsage(`{"type":"response.completed","response":{"usage":{"input_tokens":50,"output_tokens":100,"input_tokens_details":{"cached_tokens":14,"text_tokens":10,"image_tokens":40,"cached_tokens_details":{"text_tokens":6,"image_tokens":8}}}}}`, usage)
+
+	require.Equal(t, 50, usage.InputTokens)
+	require.Equal(t, 100, usage.OutputTokens)
+	require.Equal(t, 14, usage.CacheReadInputTokens)
+	require.Equal(t, 10, usage.InputTextTokens)
+	require.Equal(t, 40, usage.InputImageTokens)
+	require.Equal(t, 6, usage.CacheReadTextTokens)
+	require.Equal(t, 8, usage.CacheReadImageTokens)
+}
+
+func TestExtractOpenAIUsageFromJSONBytes_ExtractsImageTokenDetails(t *testing.T) {
+	usage, ok := extractOpenAIUsageFromJSONBytes([]byte(`{"usage":{"input_tokens":50,"output_tokens":100,"input_tokens_details":{"cached_tokens":14,"text_tokens":10,"image_tokens":40,"cached_tokens_details":{"text_tokens":6,"image_tokens":8}}}}`))
+
+	require.True(t, ok)
+	require.Equal(t, 50, usage.InputTokens)
+	require.Equal(t, 100, usage.OutputTokens)
+	require.Equal(t, 14, usage.CacheReadInputTokens)
+	require.Equal(t, 10, usage.InputTextTokens)
+	require.Equal(t, 40, usage.InputImageTokens)
+	require.Equal(t, 6, usage.CacheReadTextTokens)
+	require.Equal(t, 8, usage.CacheReadImageTokens)
+}
+
 func TestExtractCodexFinalResponse_SampleReplay(t *testing.T) {
 	body := strings.Join([]string{
 		`event: message`,

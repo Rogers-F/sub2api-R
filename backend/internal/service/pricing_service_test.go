@@ -157,9 +157,11 @@ func TestGetModelPricing_GptImage2UsesDedicatedStaticFallbackWhenRemoteMissing(t
 
 	got := svc.GetModelPricing("gpt-image-2")
 	require.NotNil(t, got)
-	require.InDelta(t, 1e-05, got.InputCostPerToken, 1e-12)
-	require.InDelta(t, 4e-05, got.OutputCostPerToken, 1e-12)
-	require.InDelta(t, 2.5e-06, got.CacheReadInputTokenCost, 1e-12)
+	require.InDelta(t, 5e-06, got.InputCostPerToken, 1e-12)
+	require.InDelta(t, 8e-06, got.ImageInputCostPerToken, 1e-12)
+	require.InDelta(t, 3e-05, got.OutputCostPerToken, 1e-12)
+	require.InDelta(t, 1.25e-06, got.CacheReadInputTokenCost, 1e-12)
+	require.InDelta(t, 2e-06, got.ImageCacheReadInputTokenCost, 1e-12)
 }
 
 func TestGetModelPricing_ClaudeOpus47PrefersExactFamilyOverGenericOpus(t *testing.T) {

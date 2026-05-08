@@ -204,6 +204,10 @@ type OpenAIUsage struct {
 	OutputTokens             int `json:"output_tokens"`
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
 	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
+	InputTextTokens          int `json:"input_text_tokens,omitempty"`
+	InputImageTokens         int `json:"input_image_tokens,omitempty"`
+	CacheReadTextTokens      int `json:"cache_read_text_tokens,omitempty"`
+	CacheReadImageTokens     int `json:"cache_read_image_tokens,omitempty"`
 }
 
 // OpenAIForwardResult represents the result of forwarding
@@ -3675,26 +3679,49 @@ func (s *OpenAIGatewayService) parseSSEUsageBytes(data []byte, usage *OpenAIUsag
 		return
 	}
 
-	usage.InputTokens = int(gjson.GetBytes(data, "response.usage.input_tokens").Int())
-	usage.OutputTokens = int(gjson.GetBytes(data, "response.usage.output_tokens").Int())
-	usage.CacheReadInputTokens = int(gjson.GetBytes(data, "response.usage.input_tokens_details.cached_tokens").Int())
+	parsed := extractOpenAIUsageAtPath(data, "response.usage")
+	usage.InputTokens = parsed.InputTokens
+	usage.OutputTokens = parsed.OutputTokens
+	usage.CacheReadInputTokens = parsed.CacheReadInputTokens
+	usage.InputTextTokens = parsed.InputTextTokens
+	usage.InputImageTokens = parsed.InputImageTokens
+	usage.CacheReadTextTokens = parsed.CacheReadTextTokens
+	usage.CacheReadImageTokens = parsed.CacheReadImageTokens
 }
 
 func extractOpenAIUsageFromJSONBytes(body []byte) (OpenAIUsage, bool) {
 	if len(body) == 0 || !gjson.ValidBytes(body) {
 		return OpenAIUsage{}, false
 	}
+	return extractOpenAIUsageAtPath(body, "usage"), true
+}
+
+func extractOpenAIUsageAtPath(body []byte, usagePath string) OpenAIUsage {
+	usagePath = strings.Trim(strings.TrimSpace(usagePath), ".")
+	if usagePath == "" {
+		return OpenAIUsage{}
+	}
 	values := gjson.GetManyBytes(
 		body,
-		"usage.input_tokens",
-		"usage.output_tokens",
-		"usage.input_tokens_details.cached_tokens",
+		usagePath+".input_tokens",
+		usagePath+".output_tokens",
+		usagePath+".input_tokens_details.cached_tokens",
+		usagePath+".input_tokens_details.text_tokens",
+		usagePath+".input_tokens_details.image_tokens",
+		usagePath+".input_tokens_details.cached_text_tokens",
+		usagePath+".input_tokens_details.cached_image_tokens",
+		usagePath+".input_tokens_details.cached_tokens_details.text_tokens",
+		usagePath+".input_tokens_details.cached_tokens_details.image_tokens",
 	)
 	return OpenAIUsage{
 		InputTokens:          int(values[0].Int()),
 		OutputTokens:         int(values[1].Int()),
 		CacheReadInputTokens: int(values[2].Int()),
-	}, true
+		InputTextTokens:      int(values[3].Int()),
+		InputImageTokens:     int(values[4].Int()),
+		CacheReadTextTokens:  firstPositiveGJSONInt(values[5], values[7]),
+		CacheReadImageTokens: firstPositiveGJSONInt(values[6], values[8]),
+	}
 }
 
 func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, resp *http.Response, c *gin.Context, account *Account, originalModel, mappedModel string) (*OpenAIUsage, error) {
@@ -4166,12 +4193,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	}
 
 	// Calculate cost
-	tokens := UsageTokens{
-		InputTokens:         actualInputTokens,
-		OutputTokens:        result.Usage.OutputTokens,
-		CacheCreationTokens: result.Usage.CacheCreationInputTokens,
-		CacheReadTokens:     result.Usage.CacheReadInputTokens,
-	}
+	tokens := usageTokensFromOpenAIUsage(result.Usage)
 
 	// Get rate multiplier
 	multiplier := s.cfg.Default.RateMultiplier
@@ -4304,6 +4326,64 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
 
 	return nil
+}
+
+func usageTokensFromOpenAIUsage(usage OpenAIUsage) UsageTokens {
+	if usage.InputTextTokens > 0 || usage.InputImageTokens > 0 ||
+		usage.CacheReadTextTokens > 0 || usage.CacheReadImageTokens > 0 {
+		textCache := usage.CacheReadTextTokens
+		imageCache := usage.CacheReadImageTokens
+		if textCache == 0 && imageCache == 0 && usage.CacheReadInputTokens > 0 {
+			textCache, imageCache = splitCachedInputTokens(usage.CacheReadInputTokens, usage.InputTextTokens, usage.InputImageTokens)
+		}
+		return UsageTokens{
+			TextInputTokens:      max(usage.InputTextTokens-textCache, 0),
+			ImageInputTokens:     max(usage.InputImageTokens-imageCache, 0),
+			OutputTokens:         usage.OutputTokens,
+			CacheCreationTokens:  usage.CacheCreationInputTokens,
+			TextCacheReadTokens:  textCache,
+			ImageCacheReadTokens: imageCache,
+		}
+	}
+
+	return UsageTokens{
+		InputTokens:         max(usage.InputTokens-usage.CacheReadInputTokens, 0),
+		OutputTokens:        usage.OutputTokens,
+		CacheCreationTokens: usage.CacheCreationInputTokens,
+		CacheReadTokens:     usage.CacheReadInputTokens,
+	}
+}
+
+func splitCachedInputTokens(cachedTokens, textTokens, imageTokens int) (int, int) {
+	if cachedTokens <= 0 {
+		return 0, 0
+	}
+	total := textTokens + imageTokens
+	if total <= 0 {
+		return cachedTokens, 0
+	}
+	if textTokens <= 0 {
+		return 0, min(cachedTokens, imageTokens)
+	}
+	if imageTokens <= 0 {
+		return min(cachedTokens, textTokens), 0
+	}
+	textCached := int(float64(cachedTokens) * float64(textTokens) / float64(total))
+	if textCached > textTokens {
+		textCached = textTokens
+	}
+	imageCached := cachedTokens - textCached
+	if imageCached > imageTokens {
+		imageCached = imageTokens
+	}
+	return textCached, imageCached
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // ParseCodexRateLimitHeaders extracts Codex usage limits from response headers.

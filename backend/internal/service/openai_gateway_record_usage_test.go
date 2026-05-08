@@ -165,12 +165,7 @@ func newOpenAIRecordUsageServiceWithBillingRepoForTest(usageRepo UsageLogReposit
 func expectedOpenAICost(t *testing.T, svc *OpenAIGatewayService, model string, usage OpenAIUsage, multiplier float64) *CostBreakdown {
 	t.Helper()
 
-	cost, err := svc.billingService.CalculateCost(model, UsageTokens{
-		InputTokens:         max(usage.InputTokens-usage.CacheReadInputTokens, 0),
-		OutputTokens:        usage.OutputTokens,
-		CacheCreationTokens: usage.CacheCreationInputTokens,
-		CacheReadTokens:     usage.CacheReadInputTokens,
-	}, multiplier)
+	cost, err := svc.billingService.CalculateCost(model, usageTokensFromOpenAIUsage(usage), multiplier)
 	require.NoError(t, err)
 	return cost
 }
@@ -788,6 +783,48 @@ func TestOpenAIGatewayServiceRecordUsage_GPTImage2TokenBillingStillStoresImageMe
 	require.Equal(t, "1536x1024", *usageRepo.lastLog.ImageSize)
 	require.InDelta(t, expected.TotalCost, usageRepo.lastLog.TotalCost, 1e-12)
 	require.InDelta(t, expected.ActualCost, usageRepo.lastLog.ActualCost, 1e-12)
+}
+
+func TestOpenAIGatewayServiceRecordUsage_GPTImage2UsesImageUsageTokenDetails(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, subRepo, nil)
+
+	usage, imageCount := extractOpenAIImageResponseMeta([]byte(`{
+		"data": [{"b64_json": "a"}],
+		"usage": {
+			"input_tokens": 50,
+			"output_tokens": 100,
+			"input_tokens_details": {
+				"text_tokens": 10,
+				"image_tokens": 40
+			}
+		}
+	}`))
+	require.Equal(t, 1, imageCount)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:  "resp_image_detail_usage",
+			Model:      "gpt-image-2",
+			Usage:      usage,
+			ImageCount: imageCount,
+			ImageSize:  "1024x1024",
+			Duration:   time.Second,
+		},
+		APIKey:  &APIKey{ID: 1108},
+		User:    &User{ID: 2108},
+		Account: &Account{ID: 3108},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	expectedTotal := 10*5e-6 + 40*8e-6 + 100*30e-6
+	require.InDelta(t, expectedTotal, usageRepo.lastLog.TotalCost, 1e-12)
+	require.InDelta(t, expectedTotal*1.1, usageRepo.lastLog.ActualCost, 1e-12)
+	require.Equal(t, 50, usageRepo.lastLog.InputTokens)
+	require.Equal(t, 100, usageRepo.lastLog.OutputTokens)
 }
 
 func TestOpenAIGatewayServiceRecordUsage_Gpt54LongContextBillsWholeSession(t *testing.T) {

@@ -46,11 +46,13 @@ type BillingCache interface {
 type ModelPricing struct {
 	InputPricePerToken             float64 // 每token输入价格 (USD)
 	InputPricePerTokenPriority     float64 // priority service tier 下每token输入价格 (USD)
+	ImageInputPricePerToken        float64 // 图片输入每token价格 (USD)
 	OutputPricePerToken            float64 // 每token输出价格 (USD)
 	OutputPricePerTokenPriority    float64 // priority service tier 下每token输出价格 (USD)
 	CacheCreationPricePerToken     float64 // 缓存创建每token价格 (USD)
 	CacheReadPricePerToken         float64 // 缓存读取每token价格 (USD)
 	CacheReadPricePerTokenPriority float64 // priority service tier 下缓存读取每token价格 (USD)
+	ImageCacheReadPricePerToken    float64 // 图片输入缓存读取每token价格 (USD)
 	CacheCreation5mPrice           float64 // 5分钟缓存创建每token价格 (USD)
 	CacheCreation1hPrice           float64 // 1小时缓存创建每token价格 (USD)
 	SupportsCacheBreakdown         bool    // 是否支持详细的缓存分类
@@ -90,9 +92,13 @@ func serviceTierCostMultiplier(serviceTier string) float64 {
 // UsageTokens 使用的token数量
 type UsageTokens struct {
 	InputTokens           int
+	TextInputTokens       int
+	ImageInputTokens      int
 	OutputTokens          int
 	CacheCreationTokens   int
 	CacheReadTokens       int
+	TextCacheReadTokens   int
+	ImageCacheReadTokens  int
 	CacheCreation5mTokens int
 	CacheCreation1hTokens int
 }
@@ -260,11 +266,13 @@ func (s *BillingService) initFallbackPricing() {
 	}
 	// OpenAI GPT Image 2（官方定价兜底）
 	s.fallbackPrices["gpt-image-2"] = &ModelPricing{
-		InputPricePerToken:         10e-6,  // $10 per MTok
-		OutputPricePerToken:        40e-6,  // $40 per MTok
-		CacheCreationPricePerToken: 10e-6,  // 按输入同价处理
-		CacheReadPricePerToken:     2.5e-6, // $2.5 per MTok
-		SupportsCacheBreakdown:     false,
+		InputPricePerToken:          5e-6,    // Text input: $5 per MTok
+		ImageInputPricePerToken:     8e-6,    // Image input: $8 per MTok
+		OutputPricePerToken:         30e-6,   // Image output: $30 per MTok
+		CacheCreationPricePerToken:  5e-6,    // 按 text input 同价处理
+		CacheReadPricePerToken:      1.25e-6, // Text cached input: $1.25 per MTok
+		ImageCacheReadPricePerToken: 2e-6,    // Image cached input: $2 per MTok
+		SupportsCacheBreakdown:      false,
 	}
 	// Codex 族兜底统一按 GPT-5.1 Codex 价格计费
 	s.fallbackPrices["gpt-5.1-codex"] = &ModelPricing{
@@ -376,11 +384,13 @@ func (s *BillingService) GetModelPricing(model string) (*ModelPricing, error) {
 			return s.applyModelSpecificPricingPolicy(model, &ModelPricing{
 				InputPricePerToken:             litellmPricing.InputCostPerToken,
 				InputPricePerTokenPriority:     litellmPricing.InputCostPerTokenPriority,
+				ImageInputPricePerToken:        litellmPricing.ImageInputCostPerToken,
 				OutputPricePerToken:            litellmPricing.OutputCostPerToken,
 				OutputPricePerTokenPriority:    litellmPricing.OutputCostPerTokenPriority,
 				CacheCreationPricePerToken:     litellmPricing.CacheCreationInputTokenCost,
 				CacheReadPricePerToken:         litellmPricing.CacheReadInputTokenCost,
 				CacheReadPricePerTokenPriority: litellmPricing.CacheReadInputTokenCostPriority,
+				ImageCacheReadPricePerToken:    litellmPricing.ImageCacheReadInputTokenCost,
 				CacheCreation5mPrice:           price5m,
 				CacheCreation1hPrice:           price1h,
 				SupportsCacheBreakdown:         enableBreakdown,
@@ -414,8 +424,16 @@ func (s *BillingService) CalculateCostWithServiceTier(model string, tokens Usage
 
 	breakdown := &CostBreakdown{}
 	inputPricePerToken := pricing.InputPricePerToken
+	imageInputPricePerToken := pricing.ImageInputPricePerToken
+	if imageInputPricePerToken <= 0 {
+		imageInputPricePerToken = inputPricePerToken
+	}
 	outputPricePerToken := pricing.OutputPricePerToken
 	cacheReadPricePerToken := pricing.CacheReadPricePerToken
+	imageCacheReadPricePerToken := pricing.ImageCacheReadPricePerToken
+	if imageCacheReadPricePerToken <= 0 {
+		imageCacheReadPricePerToken = cacheReadPricePerToken
+	}
 	tierMultiplier := 1.0
 	if usePriorityServiceTierPricing(serviceTier, pricing) {
 		if pricing.InputPricePerTokenPriority > 0 {
@@ -436,7 +454,13 @@ func (s *BillingService) CalculateCostWithServiceTier(model string, tokens Usage
 	}
 
 	// 计算输入token费用（使用per-token价格）
-	breakdown.InputCost = float64(tokens.InputTokens) * inputPricePerToken
+	if hasSplitImageInputTokens(tokens) {
+		breakdown.InputCost = float64(tokens.TextInputTokens)*inputPricePerToken +
+			float64(tokens.ImageInputTokens)*imageInputPricePerToken +
+			float64(tokens.InputTokens)*inputPricePerToken
+	} else {
+		breakdown.InputCost = float64(tokens.InputTokens) * inputPricePerToken
+	}
 
 	// 计算输出token费用
 	breakdown.OutputCost = float64(tokens.OutputTokens) * outputPricePerToken
@@ -456,7 +480,13 @@ func (s *BillingService) CalculateCostWithServiceTier(model string, tokens Usage
 		breakdown.CacheCreationCost = float64(tokens.CacheCreationTokens) * pricing.CacheCreationPricePerToken
 	}
 
-	breakdown.CacheReadCost = float64(tokens.CacheReadTokens) * cacheReadPricePerToken
+	if hasSplitCacheReadTokens(tokens) {
+		breakdown.CacheReadCost = float64(tokens.TextCacheReadTokens)*cacheReadPricePerToken +
+			float64(tokens.ImageCacheReadTokens)*imageCacheReadPricePerToken +
+			float64(tokens.CacheReadTokens)*cacheReadPricePerToken
+	} else {
+		breakdown.CacheReadCost = float64(tokens.CacheReadTokens) * cacheReadPricePerToken
+	}
 
 	if tierMultiplier != 1.0 {
 		breakdown.InputCost *= tierMultiplier
@@ -476,6 +506,14 @@ func (s *BillingService) CalculateCostWithServiceTier(model string, tokens Usage
 	breakdown.ActualCost = breakdown.TotalCost * rateMultiplier
 
 	return breakdown, nil
+}
+
+func hasSplitImageInputTokens(tokens UsageTokens) bool {
+	return tokens.TextInputTokens > 0 || tokens.ImageInputTokens > 0
+}
+
+func hasSplitCacheReadTokens(tokens UsageTokens) bool {
+	return tokens.TextCacheReadTokens > 0 || tokens.ImageCacheReadTokens > 0
 }
 
 func (s *BillingService) applyModelSpecificPricingPolicy(model string, pricing *ModelPricing) *ModelPricing {

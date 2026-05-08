@@ -331,17 +331,15 @@ func extractOpenAIImageResponseMeta(body []byte) (OpenAIUsage, int) {
 		return OpenAIUsage{}, 0
 	}
 
-	usageValues := gjson.GetManyBytes(
-		body,
-		"usage.input_tokens",
-		"usage.output_tokens",
-		"usage.input_tokens_details.cached_tokens",
-	)
-
 	imageCount := len(gjson.GetBytes(body, "data").Array())
-	return OpenAIUsage{
-		InputTokens:          int(usageValues[0].Int()),
-		OutputTokens:         int(usageValues[1].Int()),
-		CacheReadInputTokens: int(usageValues[2].Int()),
-	}, imageCount
+	return extractOpenAIUsageAtPath(body, "usage"), imageCount
+}
+
+func firstPositiveGJSONInt(values ...gjson.Result) int {
+	for _, value := range values {
+		if value.Int() > 0 {
+			return int(value.Int())
+		}
+	}
+	return 0
 }
