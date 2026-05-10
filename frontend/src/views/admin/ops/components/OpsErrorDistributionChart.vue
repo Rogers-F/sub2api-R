@@ -107,7 +107,7 @@ const options = computed(() => ({
 <template>
   <div class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-sm ring-1 ring-ink-900/5 dark:bg-ink-800 dark:ring-ink-700">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="flex items-center gap-2 text-sm font-bold text-dust-900 dark:text-pearl-50">
+      <h3 class="flex items-center gap-2 text-sm font-bold text-primary-fg">
         <svg class="h-4 w-4 text-coral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             stroke-linecap="round"
@@ -136,13 +136,13 @@ const options = computed(() => ({
           <Doughnut :data="chartData" :options="{ ...options, cutout: '65%' }" />
         </div>
         <div class="mt-4 flex flex-col items-center gap-2">
-          <div v-if="topReason" class="text-xs font-bold text-dust-900 dark:text-pearl-50">
+          <div v-if="topReason" class="text-xs font-bold text-primary-fg">
             {{ t('admin.ops.top') }}: <span :style="{ color: topReason.color }">{{ topReason.label }}</span>
           </div>
           <div class="flex flex-wrap justify-center gap-3">
             <div v-for="item in categories" :key="item.label" class="flex items-center gap-1.5 text-xs">
               <span class="h-2 w-2 rounded-full" :style="{ backgroundColor: item.color }"></span>
-              <span class="text-dust-500 dark:text-pearl-300">{{ item.count }}</span>
+              <span class="text-secondary-fg">{{ item.count }}</span>
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@
     <div class="space-y-4">
       <!-- Add Plan Button -->
       <div class="flex items-center justify-between">
-        <p class="text-sm text-dust-500 dark:text-pearl-300">
+        <p class="text-sm text-secondary-fg">
           {{ t('admin.scheduledTests.title') }}
         </p>
         <button
@@ -138,7 +138,7 @@
         class="rounded-xl border border-dashed border-paper-300 py-10 text-center dark:border-ink-700"
       >
         <Icon name="calendar" size="lg" class="mx-auto mb-2 text-dust-400" :stroke-width="1.5" />
-        <p class="text-sm text-dust-500 dark:text-pearl-300">
+        <p class="text-sm text-secondary-fg">
           {{ t('admin.scheduledTests.noPlans') }}
         </p>
       </div>
@@ -158,10 +158,10 @@
             <div class="flex flex-1 items-center gap-4">
               <!-- Model -->
               <div class="min-w-0">
-                <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+                <div class="text-sm font-medium text-primary-fg">
                   {{ plan.model_id }}
                 </div>
-                <div class="mt-0.5 font-mono text-xs text-dust-500 dark:text-pearl-300">
+                <div class="mt-0.5 font-mono text-xs text-secondary-fg">
                   {{ plan.cron_expression }}
                 </div>
               </div>
@@ -172,7 +172,7 @@
                   :model-value="plan.enabled"
                   @update:model-value="(val: boolean) => handleToggleEnabled(plan, val)"
                 />
-                <span class="text-xs text-dust-500 dark:text-pearl-300">
+                <span class="text-xs text-secondary-fg">
                   {{ plan.enabled ? t('admin.scheduledTests.enabled') : '' }}
                 </span>
               </div>
@@ -188,13 +188,13 @@
 
             <div class="flex items-center gap-3">
               <!-- Last Run -->
-              <div v-if="plan.last_run_at" class="hidden text-right text-xs text-dust-500 dark:text-pearl-300 sm:block">
+              <div v-if="plan.last_run_at" class="hidden text-right text-xs text-secondary-fg sm:block">
                 <div>{{ t('admin.scheduledTests.lastRun') }}</div>
                 <div>{{ formatDateTime(plan.last_run_at) }}</div>
               </div>
 
               <!-- Next Run -->
-              <div v-if="plan.next_run_at" class="hidden text-right text-xs text-dust-500 dark:text-pearl-300 sm:block">
+              <div v-if="plan.next_run_at" class="hidden text-right text-xs text-secondary-fg sm:block">
                 <div>{{ t('admin.scheduledTests.nextRun') }}</div>
                 <div>{{ formatDateTime(plan.next_run_at) }}</div>
               </div>
@@ -354,7 +354,7 @@
             <!-- No Results -->
             <div
               v-else-if="results.length === 0"
-              class="py-4 text-center text-xs text-dust-500 dark:text-pearl-300"
+              class="py-4 text-center text-xs text-secondary-fg"
             >
               {{ t('admin.scheduledTests.noResults') }}
             </div>
@@ -389,7 +389,7 @@
                     </span>
 
                     <!-- Latency -->
-                    <span v-if="result.latency_ms > 0" class="text-xs text-dust-500 dark:text-pearl-300">
+                    <span v-if="result.latency_ms > 0" class="text-xs text-secondary-fg">
                       {{ result.latency_ms }}ms
                     </span>
                   </div>

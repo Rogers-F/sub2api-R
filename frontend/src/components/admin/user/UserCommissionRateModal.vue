@@ -13,8 +13,8 @@
           </span>
         </div>
         <div class="flex-1">
-          <p class="font-medium text-dust-900 dark:text-pearl-50">{{ user.email }}</p>
-          <p class="text-sm text-dust-500 dark:text-pearl-300">
+          <p class="font-medium text-primary-fg">{{ user.email }}</p>
+          <p class="text-sm text-secondary-fg">
             {{ t('admin.users.commissionRate.description', { email: user.email }) }}
           </p>
         </div>
@@ -30,19 +30,19 @@
       <template v-else>
         <div class="grid gap-3 sm:grid-cols-3">
           <div class="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700">
-            <p class="text-sm text-dust-500 dark:text-pearl-300">
+            <p class="text-sm text-secondary-fg">
               {{ t('admin.users.commissionRate.globalRate') }}
             </p>
-            <p class="mt-2 text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <p class="mt-2 text-lg font-semibold text-primary-fg">
               {{ formatPercent(info?.global_commission_rate ?? null) }}
             </p>
           </div>
 
           <div class="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700">
-            <p class="text-sm text-dust-500 dark:text-pearl-300">
+            <p class="text-sm text-secondary-fg">
               {{ t('admin.users.commissionRate.userRate') }}
             </p>
-            <p class="mt-2 text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <p class="mt-2 text-lg font-semibold text-primary-fg">
               {{ info?.user_commission_rate == null ? t('admin.users.commissionRate.inherited') : formatPercent(info.user_commission_rate) }}
             </p>
           </div>
@@ -95,7 +95,7 @@
               />
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-dust-400">%</span>
             </div>
-            <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-2 text-xs text-secondary-fg">
               {{ t('admin.users.commissionRate.customRateHint') }}
             </p>
           </div>

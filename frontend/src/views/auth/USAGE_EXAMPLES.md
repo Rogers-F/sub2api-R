@@ -486,7 +486,7 @@ async function handleRegister(): Promise<void> {
 
 ```html
 <!-- Proper labels for screen readers -->
-<label for="username" class="mb-1 block text-sm font-medium text-gray-700"> Username </label>
+<label for="username" class="mb-1 block text-sm font-medium text-dust-700"> Username </label>
 <input
   id="username"
   type="text"
@@ -495,7 +495,7 @@ async function handleRegister(): Promise<void> {
   aria-invalid="false"
   aria-describedby="username-error"
 />
-<p id="username-error" role="alert" class="text-sm text-red-600">
+<p id="username-error" role="alert" class="text-sm text-coral-600">
   <!-- Error message here -->
 </p>
 

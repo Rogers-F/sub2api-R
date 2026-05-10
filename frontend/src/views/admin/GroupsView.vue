@@ -75,7 +75,7 @@
       <template #table>
         <DataTable :columns="columns" :data="groups" :loading="loading">
           <template #cell-name="{ value }">
-            <span class="font-medium text-dust-900 dark:text-pearl-50">{{ value }}</span>
+            <span class="font-medium text-primary-fg">{{ value }}</span>
           </template>
 
           <template #cell-platform="{ value }">
@@ -116,7 +116,7 @@
               <!-- Subscription Limits - compact single line -->
               <div
                 v-if="row.subscription_type === 'subscription'"
-                class="text-xs text-dust-500 dark:text-pearl-300"
+                class="text-xs text-secondary-fg"
               >
                 <template
                   v-if="row.daily_limit_usd || row.weekly_limit_usd || row.monthly_limit_usd"
@@ -161,17 +161,17 @@
           <template #cell-account_count="{ row }">
             <div class="space-y-0.5 text-xs">
               <div>
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.groups.accountsAvailable') }}</span>
+                <span class="text-secondary-fg">{{ t('admin.groups.accountsAvailable') }}</span>
                 <span class="ml-1 font-medium text-mint-600 dark:text-mint-500">{{ (row.active_account_count || 0) - (row.rate_limited_account_count || 0) }}</span>
                 <span class="ml-1 inline-flex items-center rounded bg-paper-100 px-1.5 py-0.5 font-medium text-dust-800 dark:bg-ink-600 dark:text-pearl-200">{{ t('admin.groups.accountsUnit') }}</span>
               </div>
               <div v-if="row.rate_limited_account_count">
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.groups.accountsRateLimited') }}</span>
+                <span class="text-secondary-fg">{{ t('admin.groups.accountsRateLimited') }}</span>
                 <span class="ml-1 font-medium text-amber-600 dark:text-amber-400">{{ row.rate_limited_account_count }}</span>
                 <span class="ml-1 inline-flex items-center rounded bg-paper-100 px-1.5 py-0.5 font-medium text-dust-800 dark:bg-ink-600 dark:text-pearl-200">{{ t('admin.groups.accountsUnit') }}</span>
               </div>
               <div>
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.groups.accountsTotal') }}</span>
+                <span class="text-secondary-fg">{{ t('admin.groups.accountsTotal') }}</span>
                 <span class="ml-1 font-medium text-dust-700 dark:text-pearl-100">{{ row.account_count || 0 }}</span>
                 <span class="ml-1 inline-flex items-center rounded bg-paper-100 px-1.5 py-0.5 font-medium text-dust-800 dark:bg-ink-600 dark:text-pearl-200">{{ t('admin.groups.accountsUnit') }}</span>
               </div>
@@ -194,11 +194,11 @@
           <template #cell-usage="{ row }">
             <div v-if="usageLoading" class="text-xs text-dust-400">—</div>
             <div v-else class="space-y-0.5 text-xs">
-              <div class="text-dust-500 dark:text-pearl-300">
+              <div class="text-secondary-fg">
                 <span class="text-dust-400 dark:text-pearl-400">{{ t('admin.groups.usageToday') }}</span>
                 <span class="ml-1 font-medium text-dust-700 dark:text-pearl-100">${{ formatCost(usageMap.get(row.id)?.today_cost ?? 0) }}</span>
               </div>
-              <div class="text-dust-500 dark:text-pearl-300">
+              <div class="text-secondary-fg">
                 <span class="text-dust-400 dark:text-pearl-400">{{ t('admin.groups.usageTotal') }}</span>
                 <span class="ml-1 font-medium text-dust-700 dark:text-pearl-100">${{ formatCost(usageMap.get(row.id)?.total_cost ?? 0) }}</span>
               </div>
@@ -422,7 +422,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ createForm.is_exclusive ? t('admin.groups.exclusive') : t('admin.groups.public') }}
             </span>
           </div>
@@ -482,7 +482,7 @@
           <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.imagePricing.title') }}
           </label>
-          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.imagePricing.description') }}
           </p>
           <div class="grid grid-cols-3 gap-3">
@@ -527,7 +527,7 @@
           <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.soraPricing.title') }}
           </label>
-          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.soraPricing.description') }}
           </p>
           <div class="grid grid-cols-2 gap-3 mb-4">
@@ -591,7 +591,7 @@
               />
               <span class="shrink-0 text-sm text-dust-500">GB</span>
             </div>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.groups.soraPricing.storageQuotaHint') }}
             </p>
           </div>
@@ -650,7 +650,7 @@
               <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
             </label>
           </div>
-          <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">{{ t('admin.groups.supportedScopes.hint') }}</p>
+          <p class="mt-2 text-xs text-secondary-fg">{{ t('admin.groups.supportedScopes.hint') }}</p>
         </div>
 
         <!-- MCP XML 协议注入（仅 antigravity 平台） -->
@@ -692,7 +692,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ createForm.mcp_xml_inject ? t('admin.groups.mcpXml.enabled') : t('admin.groups.mcpXml.disabled') }}
             </span>
           </div>
@@ -738,7 +738,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ createForm.claude_code_only ? t('admin.groups.claudeCode.enabled') : t('admin.groups.claudeCode.disabled') }}
             </span>
           </div>
@@ -777,7 +777,7 @@
               />
             </button>
           </div>
-          <p class="text-xs text-dust-500 dark:text-pearl-300 mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
+          <p class="text-xs text-secondary-fg mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
 
           <!-- 默认映射模型（仅当开关打开时显示） -->
           <div v-if="createForm.allow_messages_dispatch" class="mt-3">
@@ -847,14 +847,14 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ createForm.model_routing_enabled ? t('admin.groups.modelRouting.enabled') : t('admin.groups.modelRouting.disabled') }}
             </span>
           </div>
-          <p v-if="!createForm.model_routing_enabled" class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p v-if="!createForm.model_routing_enabled" class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.modelRouting.disabledHint') }}
           </p>
-          <p v-else class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p v-else class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.modelRouting.noRulesHint') }}
           </p>
           <!-- 路由规则列表（仅在启用时显示） -->
@@ -914,7 +914,7 @@
                           :key="account.id"
                           type="button"
                           @click="selectAccount(rule, account)"
-                          class="w-full px-3 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                          class="w-full px-3 py-2 text-left text-sm hover-tint"
                           :class="{ 'opacity-50': rule.accounts.some(a => a.id === account.id) }"
                           :disabled="rule.accounts.some(a => a.id === account.id)"
                         >
@@ -1149,7 +1149,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ editForm.is_exclusive ? t('admin.groups.exclusive') : t('admin.groups.public') }}
             </span>
           </div>
@@ -1217,7 +1217,7 @@
           <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.imagePricing.title') }}
           </label>
-          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.imagePricing.description') }}
           </p>
           <div class="grid grid-cols-3 gap-3">
@@ -1262,7 +1262,7 @@
           <label class="block mb-2 font-medium text-dust-700 dark:text-pearl-100">
             {{ t('admin.groups.soraPricing.title') }}
           </label>
-          <p class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.soraPricing.description') }}
           </p>
           <div class="grid grid-cols-2 gap-3 mb-4">
@@ -1326,7 +1326,7 @@
               />
               <span class="shrink-0 text-sm text-dust-500">GB</span>
             </div>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.groups.soraPricing.storageQuotaHint') }}
             </p>
           </div>
@@ -1385,7 +1385,7 @@
               <span class="text-sm text-dust-700 dark:text-pearl-100">{{ t('admin.groups.supportedScopes.geminiImage') }}</span>
             </label>
           </div>
-          <p class="mt-2 text-xs text-dust-500 dark:text-pearl-300">{{ t('admin.groups.supportedScopes.hint') }}</p>
+          <p class="mt-2 text-xs text-secondary-fg">{{ t('admin.groups.supportedScopes.hint') }}</p>
         </div>
 
         <!-- MCP XML 协议注入（仅 antigravity 平台） -->
@@ -1427,7 +1427,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ editForm.mcp_xml_inject ? t('admin.groups.mcpXml.enabled') : t('admin.groups.mcpXml.disabled') }}
             </span>
           </div>
@@ -1473,7 +1473,7 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ editForm.claude_code_only ? t('admin.groups.claudeCode.enabled') : t('admin.groups.claudeCode.disabled') }}
             </span>
           </div>
@@ -1512,7 +1512,7 @@
               />
             </button>
           </div>
-          <p class="text-xs text-dust-500 dark:text-pearl-300 mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
+          <p class="text-xs text-secondary-fg mt-1">{{ t('admin.groups.openaiMessages.allowDispatchHint') }}</p>
 
           <!-- 默认映射模型（仅当开关打开时显示） -->
           <div v-if="editForm.allow_messages_dispatch" class="mt-3">
@@ -1582,14 +1582,14 @@
                 ]"
               />
             </button>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{ editForm.model_routing_enabled ? t('admin.groups.modelRouting.enabled') : t('admin.groups.modelRouting.disabled') }}
             </span>
           </div>
-          <p v-if="!editForm.model_routing_enabled" class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p v-if="!editForm.model_routing_enabled" class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.modelRouting.disabledHint') }}
           </p>
-          <p v-else class="text-xs text-dust-500 dark:text-pearl-300 mb-3">
+          <p v-else class="text-xs text-secondary-fg mb-3">
             {{ t('admin.groups.modelRouting.noRulesHint') }}
           </p>
           <!-- 路由规则列表（仅在启用时显示） -->
@@ -1649,7 +1649,7 @@
                           :key="account.id"
                           type="button"
                           @click="selectAccount(rule, account, true)"
-                          class="w-full px-3 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                          class="w-full px-3 py-2 text-left text-sm hover-tint"
                           :class="{ 'opacity-50': rule.accounts.some(a => a.id === account.id) }"
                           :disabled="rule.accounts.some(a => a.id === account.id)"
                         >
@@ -1744,7 +1744,7 @@
       @close="closeSortModal"
     >
       <div class="space-y-4">
-        <p class="text-sm text-dust-500 dark:text-pearl-300">
+        <p class="text-sm text-secondary-fg">
           {{ t('admin.groups.sortOrderHint') }}
         </p>
         <VueDraggable
@@ -1761,8 +1761,8 @@
               <Icon name="menu" size="md" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-dust-900 dark:text-pearl-50">{{ group.name }}</div>
-              <div class="text-xs text-dust-500 dark:text-pearl-300">
+              <div class="font-medium text-primary-fg">{{ group.name }}</div>
+              <div class="text-xs text-secondary-fg">
                 <span
                   :class="[
                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',

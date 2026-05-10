@@ -34,67 +34,67 @@
         </div>
 
         <div class="rounded-lg border border-paper-200 p-4 dark:border-ink-600">
-          <p class="text-xs text-dust-500 dark:text-pearl-300">
+          <p class="text-xs text-secondary-fg">
             {{ t('admin.accounts.tempUnschedulable.accountName') }}
           </p>
-          <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <p class="mt-1 text-sm font-medium text-primary-fg">
             {{ account?.name || '-' }}
           </p>
         </div>
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.triggeredAt') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <p class="mt-1 text-sm font-medium text-primary-fg">
               {{ triggeredAtText }}
             </p>
           </div>
           <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.until') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <p class="mt-1 text-sm font-medium text-primary-fg">
               {{ untilText }}
             </p>
           </div>
           <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.remaining') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <p class="mt-1 text-sm font-medium text-primary-fg">
               {{ remainingText }}
             </p>
           </div>
           <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.errorCode') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <p class="mt-1 text-sm font-medium text-primary-fg">
               {{ state?.status_code || '-' }}
             </p>
           </div>
           <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.matchedKeyword') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <p class="mt-1 text-sm font-medium text-primary-fg">
               {{ state?.matched_keyword || '-' }}
             </p>
           </div>
           <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.ruleOrder') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <p class="mt-1 text-sm font-medium text-primary-fg">
               {{ ruleIndexDisplay }}
             </p>
           </div>
         </div>
 
         <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-600">
-          <p class="text-xs text-dust-500 dark:text-pearl-300">
+          <p class="text-xs text-secondary-fg">
             {{ t('admin.accounts.tempUnschedulable.errorMessage') }}
           </p>
           <div class="mt-2 rounded bg-paper-100 p-2 text-xs text-dust-700 dark:bg-ink-700 dark:text-dust-300">

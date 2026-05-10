@@ -27,7 +27,7 @@
         >
           <div class="mb-2 flex items-center justify-between">
             <h3 class="font-semibold text-dust-900 dark:text-white">{{ announcement.title }}</h3>
-            <span class="text-xs text-dust-500 dark:text-pearl-300">
+            <span class="text-xs text-secondary-fg">
               {{ formatDate(announcement.created_at) }}
             </span>
           </div>

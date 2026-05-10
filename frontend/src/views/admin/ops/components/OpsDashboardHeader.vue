@@ -651,7 +651,7 @@ const cpuPercentValue = computed<number | null>(() => {
 
 const cpuPercentClass = computed(() => {
   const v = cpuPercentValue.value
-  if (v == null) return 'text-dust-900 dark:text-pearl-50'
+  if (v == null) return 'text-primary-fg'
   if (v >= 95) return 'text-rose-600 dark:text-rose-400'
   if (v >= 80) return 'text-yellow-600 dark:text-yellow-400'
   return 'text-mint-600 dark:text-mint-500'
@@ -664,7 +664,7 @@ const memPercentValue = computed<number | null>(() => {
 
 const memPercentClass = computed(() => {
   const v = memPercentValue.value
-  if (v == null) return 'text-dust-900 dark:text-pearl-50'
+  if (v == null) return 'text-primary-fg'
   if (v >= 95) return 'text-rose-600 dark:text-rose-400'
   if (v >= 85) return 'text-yellow-600 dark:text-yellow-400'
   return 'text-mint-600 dark:text-mint-500'
@@ -715,7 +715,7 @@ const dbMiddleClass = computed(() => {
     return 'text-mint-600 dark:text-mint-500'
   }
   if (systemMetrics.value?.db_ok === true) return 'text-mint-600 dark:text-mint-500'
-  return 'text-dust-900 dark:text-pearl-50'
+  return 'text-primary-fg'
 })
 
 const redisConnTotalValue = computed<number | null>(() => {
@@ -758,7 +758,7 @@ const redisMiddleClass = computed(() => {
     return 'text-mint-600 dark:text-mint-500'
   }
   if (systemMetrics.value?.redis_ok === true) return 'text-mint-600 dark:text-mint-500'
-  return 'text-dust-900 dark:text-pearl-50'
+  return 'text-primary-fg'
 })
 
 const goroutineCountValue = computed<number | null>(() => {
@@ -799,7 +799,7 @@ const goroutineStatusClass = computed(() => {
     case 'critical':
       return 'text-rose-600 dark:text-rose-400'
     default:
-      return 'text-dust-900 dark:text-pearl-50'
+      return 'text-primary-fg'
   }
 })
 
@@ -842,7 +842,7 @@ const jobsStatusClass = computed(() => {
     case 'warn':
       return 'text-yellow-600 dark:text-yellow-400'
     default:
-      return 'text-dust-900 dark:text-pearl-50'
+      return 'text-primary-fg'
   }
 })
 
@@ -863,7 +863,7 @@ function handleToolbarRefresh() {
     <!-- Top Toolbar -->
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-paper-100 pb-4 dark:border-ink-700">
       <div>
-        <h1 class="flex items-center gap-2 text-xl font-black text-dust-900 dark:text-pearl-50">
+        <h1 class="flex items-center gap-2 text-xl font-black text-primary-fg">
           <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               stroke-linecap="round"
@@ -1035,7 +1035,7 @@ function handleToolbarRefresh() {
                       </svg>
                     </div>
                     <div class="flex-1">
-                      <div class="text-xs font-semibold text-dust-900 dark:text-pearl-50">{{ item.message }}</div>
+                      <div class="text-xs font-semibold text-primary-fg">{{ item.message }}</div>
                       <div class="mt-0.5 text-[11px] text-dust-500 dark:text-dust-400">{{ item.impact }}</div>
                       <div v-if="item.action" class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 flex items-center gap-1">
                         <Icon name="lightbulb" size="xs" />
@@ -1136,11 +1136,11 @@ function handleToolbarRefresh() {
                 <div :class="[props.fullscreen ? 'text-xs' : 'text-[10px]', 'font-bold uppercase text-dust-400']">{{ t('admin.ops.current') }}</div>
                 <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-2">
                   <div class="flex items-baseline gap-1.5">
-                    <span :class="[props.fullscreen ? 'text-4xl' : 'text-xl sm:text-2xl', 'font-black text-dust-900 dark:text-pearl-50']">{{ displayRealTimeQps.toFixed(1) }}</span>
+                    <span :class="[props.fullscreen ? 'text-4xl' : 'text-xl sm:text-2xl', 'font-black text-primary-fg']">{{ displayRealTimeQps.toFixed(1) }}</span>
                     <span :class="[props.fullscreen ? 'text-sm' : 'text-xs', 'font-bold text-dust-500']">QPS</span>
                   </div>
                   <div class="flex items-baseline gap-1.5">
-                    <span :class="[props.fullscreen ? 'text-4xl' : 'text-xl sm:text-2xl', 'font-black text-dust-900 dark:text-pearl-50']">{{ displayRealTimeTps.toFixed(1) }}</span>
+                    <span :class="[props.fullscreen ? 'text-4xl' : 'text-xl sm:text-2xl', 'font-black text-primary-fg']">{{ displayRealTimeTps.toFixed(1) }}</span>
                     <span :class="[props.fullscreen ? 'text-sm' : 'text-xs', 'font-bold text-dust-500']">{{ t('admin.ops.tps') }}</span>
                   </div>
                 </div>
@@ -1153,11 +1153,11 @@ function handleToolbarRefresh() {
                   <div :class="[props.fullscreen ? 'text-xs' : 'text-[10px]', 'font-bold uppercase text-dust-400']">{{ t('admin.ops.peak') }}</div>
                   <div :class="[props.fullscreen ? 'text-base' : 'text-sm', 'mt-1 space-y-0.5 font-medium text-dust-600 dark:text-dust-400']">
                     <div class="flex items-baseline gap-1.5">
-                      <span class="font-black text-dust-900 dark:text-pearl-50">{{ realtimeQpsPeakLabel }}</span>
+                      <span class="font-black text-primary-fg">{{ realtimeQpsPeakLabel }}</span>
                       <span class="text-xs">QPS</span>
                     </div>
                     <div class="flex items-baseline gap-1.5">
-                      <span class="font-black text-dust-900 dark:text-pearl-50">{{ realtimeTpsPeakLabel }}</span>
+                      <span class="font-black text-primary-fg">{{ realtimeTpsPeakLabel }}</span>
                       <span class="text-xs">{{ t('admin.ops.tps') }}</span>
                     </div>
                   </div>
@@ -1168,11 +1168,11 @@ function handleToolbarRefresh() {
                   <div :class="[props.fullscreen ? 'text-xs' : 'text-[10px]', 'font-bold uppercase text-dust-400']">{{ t('admin.ops.average') }}</div>
                   <div :class="[props.fullscreen ? 'text-base' : 'text-sm', 'mt-1 space-y-0.5 font-medium text-dust-600 dark:text-dust-400']">
                     <div class="flex items-baseline gap-1.5">
-                      <span class="font-black text-dust-900 dark:text-pearl-50">{{ realtimeQpsAvgLabel }}</span>
+                      <span class="font-black text-primary-fg">{{ realtimeQpsAvgLabel }}</span>
                       <span class="text-xs">QPS</span>
                     </div>
                     <div class="flex items-baseline gap-1.5">
-                      <span class="font-black text-dust-900 dark:text-pearl-50">{{ realtimeTpsAvgLabel }}</span>
+                      <span class="font-black text-primary-fg">{{ realtimeTpsAvgLabel }}</span>
                       <span class="text-xs">{{ t('admin.ops.tps') }}</span>
                     </div>
                   </div>
@@ -1227,19 +1227,19 @@ function handleToolbarRefresh() {
           <div class="mt-2 space-y-2 text-xs">
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.requests') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ totalRequestsLabel }}</span>
+              <span class="font-bold text-primary-fg">{{ totalRequestsLabel }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.tokens') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ totalTokensLabel }}</span>
+              <span class="font-bold text-primary-fg">{{ totalTokensLabel }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.avgQps') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ qpsAvgLabel }}</span>
+              <span class="font-bold text-primary-fg">{{ qpsAvgLabel }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.avgTps') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ tpsAvgLabel }}</span>
+              <span class="font-bold text-primary-fg">{{ tpsAvgLabel }}</span>
             </div>
           </div>
         </div>
@@ -1292,7 +1292,7 @@ function handleToolbarRefresh() {
             </button>
           </div>
           <div class="mt-2 flex items-baseline gap-2">
-            <div class="text-3xl font-black text-dust-900 dark:text-pearl-50">
+            <div class="text-3xl font-black text-primary-fg">
               {{ durationP99Ms ?? '-' }}
             </div>
             <span class="text-xs font-bold text-dust-400">ms (P99)</span>
@@ -1300,27 +1300,27 @@ function handleToolbarRefresh() {
           <div class="mt-3 grid grid-cols-1 gap-x-3 gap-y-1 text-xs 2xl:grid-cols-2">
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="text-dust-500">P95:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ durationP95Ms ?? '-' }}</span>
+              <span class="font-bold text-primary-fg">{{ durationP95Ms ?? '-' }}</span>
               <span class="text-dust-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="text-dust-500">P90:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ durationP90Ms ?? '-' }}</span>
+              <span class="font-bold text-primary-fg">{{ durationP90Ms ?? '-' }}</span>
               <span class="text-dust-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="text-dust-500">P50:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ durationP50Ms ?? '-' }}</span>
+              <span class="font-bold text-primary-fg">{{ durationP50Ms ?? '-' }}</span>
               <span class="text-dust-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="text-dust-500">Avg:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ durationAvgMs ?? '-' }}</span>
+              <span class="font-bold text-primary-fg">{{ durationAvgMs ?? '-' }}</span>
               <span class="text-dust-400">ms</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="text-dust-500">Max:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ durationMaxMs ?? '-' }}</span>
+              <span class="font-bold text-primary-fg">{{ durationMaxMs ?? '-' }}</span>
               <span class="text-dust-400">ms</span>
             </div>
           </div>
@@ -1394,11 +1394,11 @@ function handleToolbarRefresh() {
           <div class="mt-3 space-y-1 text-xs">
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.errorCount') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ formatNumber(overview.error_count_sla ?? 0) }}</span>
+              <span class="font-bold text-primary-fg">{{ formatNumber(overview.error_count_sla ?? 0) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.businessLimited') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ formatNumber(overview.business_limited_count ?? 0) }}</span>
+              <span class="font-bold text-primary-fg">{{ formatNumber(overview.business_limited_count ?? 0) }}</span>
             </div>
           </div>
         </div>
@@ -1420,11 +1420,11 @@ function handleToolbarRefresh() {
           <div class="mt-3 space-y-1 text-xs">
             <div class="flex justify-between">
               <span class="text-dust-500">{{ t('admin.ops.errorCountExcl429529') }}:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ formatNumber(overview.upstream_error_count_excl_429_529 ?? 0) }}</span>
+              <span class="font-bold text-primary-fg">{{ formatNumber(overview.upstream_error_count_excl_429_529 ?? 0) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-dust-500">429/529:</span>
-              <span class="font-bold text-dust-900 dark:text-pearl-50">{{ formatNumber((overview.upstream_429_count ?? 0) + (overview.upstream_529_count ?? 0)) }}</span>
+              <span class="font-bold text-primary-fg">{{ formatNumber((overview.upstream_429_count ?? 0) + (overview.upstream_529_count ?? 0)) }}</span>
             </div>
           </div>
         </div>
@@ -1553,7 +1553,7 @@ function handleToolbarRefresh() {
           class="rounded-xl border border-paper-100 bg-white p-4 dark:border-ink-700 dark:bg-ink-900"
         >
           <div class="flex items-center justify-between gap-3">
-            <div class="truncate text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ hb.job_name }}</div>
+            <div class="truncate text-sm font-semibold text-primary-fg">{{ hb.job_name }}</div>
             <div class="flex items-center gap-3 text-xs text-dust-500 dark:text-dust-400">
               <span v-if="hb.last_duration_ms != null" class="font-mono">{{ hb.last_duration_ms }}ms</span>
               <span>{{ formatTimeShort(hb.updated_at) }}</span>

@@ -67,7 +67,7 @@
               </svg>
             </span>
             <ModelIcon :model="model.value" size="18px" />
-            <span class="truncate text-dust-900 dark:text-pearl-50">{{ model.value }}</span>
+            <span class="truncate text-primary-fg">{{ model.value }}</span>
           </button>
           <div v-if="filteredModels.length === 0" class="px-3 py-4 text-center text-sm text-dust-500">
             {{ t('admin.accounts.noMatchingModels') }}

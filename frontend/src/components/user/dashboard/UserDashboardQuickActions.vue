@@ -14,7 +14,7 @@
         </div>
         <div>
           <p class="text-sm font-medium text-dust-900 dark:text-white">{{ t('nav.apiKeys') }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.manageKeys') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.manageKeys') }}</p>
         </div>
       </button>
 
@@ -28,7 +28,7 @@
         </div>
         <div>
           <p class="text-sm font-medium text-dust-900 dark:text-white">{{ t('nav.subscriptions') }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.viewSubscriptions') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.viewSubscriptions') }}</p>
         </div>
       </button>
 
@@ -42,7 +42,7 @@
         </div>
         <div>
           <p class="text-sm font-medium text-dust-900 dark:text-white">{{ t('nav.usageStatistics') }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.checkUsage') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.checkUsage') }}</p>
         </div>
       </button>
 
@@ -56,7 +56,7 @@
         </div>
         <div>
           <p class="text-sm font-medium text-dust-900 dark:text-white">{{ t('nav.redeemCode') }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.redeemNow') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.redeemNow') }}</p>
         </div>
       </button>
     </div>

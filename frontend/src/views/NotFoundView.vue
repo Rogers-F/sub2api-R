@@ -46,7 +46,7 @@
         <h1 class="mb-3 text-2xl font-bold text-ink-900 dark:text-white">
           {{ t('errors.pageNotFound') }}
         </h1>
-        <p class="text-dust-500 dark:text-pearl-300">
+        <p class="text-secondary-fg">
           The page you are looking for doesn't exist or has been moved.
         </p>
       </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="card p-4">
     <div class="mb-4 flex items-center justify-between gap-3">
-      <h3 class="text-sm font-semibold text-dust-900 dark:text-pearl-50">
+      <h3 class="text-sm font-semibold text-primary-fg">
         {{ t('admin.dashboard.groupDistribution') }}
       </h3>
       <div
@@ -40,7 +40,7 @@
       <div class="max-h-48 flex-1 overflow-y-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="text-dust-500 dark:text-pearl-300">
+            <tr class="text-secondary-fg">
               <th class="pb-2 text-left">{{ t('admin.dashboard.group') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.requests') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.tokens') }}</th>
@@ -52,12 +52,12 @@
             <template v-for="group in displayGroupStats" :key="group.group_id">
               <tr
                 class="border-t border-paper-200 transition-colors dark:border-ink-700"
-                :class="group.group_id > 0 ? 'cursor-pointer hover:bg-paper-100 dark:hover:bg-white/[0.04]' : ''"
+                :class="group.group_id > 0 ? 'cursor-pointer hover-tint' : ''"
                 @click="group.group_id > 0 && toggleBreakdown('group', group.group_id)"
               >
                 <td
                   class="max-w-[100px] truncate py-1.5 font-medium"
-                  :class="group.group_id > 0 ? 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300' : 'text-dust-900 dark:text-pearl-50'"
+                  :class="group.group_id > 0 ? 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300' : 'text-primary-fg'"
                   :title="group.group_name || String(group.group_id)"
                 >
                   <span class="inline-flex items-center gap-1">
@@ -95,7 +95,7 @@
     </div>
     <div
       v-else
-      class="flex h-48 items-center justify-center text-sm text-dust-500 dark:text-pearl-300"
+      class="flex h-48 items-center justify-center text-sm text-secondary-fg"
     >
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>

@@ -366,7 +366,7 @@ onUnmounted(() => {
 .date-picker-preset {
   @apply rounded-md px-3 py-1.5 text-xs font-medium;
   @apply text-dust-600 dark:text-pearl-300;
-  @apply hover:bg-paper-100 dark:hover:bg-white/[0.04];
+  @apply hover-tint;
   @apply transition-colors duration-150;
 }
 
@@ -388,14 +388,14 @@ onUnmounted(() => {
 }
 
 .date-picker-label {
-  @apply mb-1 block text-xs font-medium text-dust-500 dark:text-pearl-300;
+  @apply mb-1 block text-xs font-medium text-secondary-fg;
 }
 
 .date-picker-input {
   @apply w-full rounded-md px-2 py-1.5 text-sm;
   @apply bg-paper-50 dark:bg-ink-700;
   @apply border border-paper-200 dark:border-ink-600;
-  @apply text-dust-900 dark:text-pearl-50;
+  @apply text-primary-fg;
   @apply focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30 dark:focus:border-gold-300 dark:focus:ring-gold-300/30;
 }
 

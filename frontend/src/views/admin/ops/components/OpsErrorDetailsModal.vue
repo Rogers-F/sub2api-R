@@ -241,7 +241,7 @@ watch(
 
       <!-- Body -->
       <div class="flex min-h-0 flex-1 flex-col">
-        <div class="mb-2 flex-shrink-0 text-xs text-dust-500 dark:text-pearl-300">
+        <div class="mb-2 flex-shrink-0 text-xs text-secondary-fg">
           {{ t('admin.ops.errorDetails.total') }} {{ total }}
         </div>
 

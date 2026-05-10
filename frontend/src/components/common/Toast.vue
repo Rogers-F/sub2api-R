@@ -37,7 +37,7 @@
 
               <!-- Content -->
               <div class="min-w-0 flex-1">
-                <p v-if="toast.title" class="text-sm font-semibold text-dust-900 dark:text-pearl-50">
+                <p v-if="toast.title" class="text-sm font-semibold text-primary-fg">
                   {{ toast.title }}
                 </p>
                 <p
@@ -45,7 +45,7 @@
                     'text-sm leading-relaxed',
                     toast.title
                       ? 'mt-1 text-dust-600 dark:text-pearl-100'
-                      : 'text-dust-900 dark:text-pearl-50'
+                      : 'text-primary-fg'
                   ]"
                 >
                   {{ toast.message }}

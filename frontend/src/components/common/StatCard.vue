@@ -74,7 +74,7 @@ const trendClass = computed(() => {
   const classes: Record<ChangeType, string> = {
     up: 'stat-trend-up',
     down: 'stat-trend-down',
-    neutral: 'text-dust-500 dark:text-pearl-300'
+    neutral: 'text-secondary-fg'
   }
   return classes[props.changeType]
 })

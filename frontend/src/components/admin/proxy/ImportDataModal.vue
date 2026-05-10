@@ -25,7 +25,7 @@
             <div class="truncate text-sm text-dust-700 dark:text-pearl-100">
               {{ fileName || t('admin.proxies.dataImportSelectFile') }}
             </div>
-            <div class="text-xs text-dust-500 dark:text-pearl-300">JSON (.json)</div>
+            <div class="text-xs text-secondary-fg">JSON (.json)</div>
           </div>
           <button type="button" class="btn btn-secondary shrink-0" @click="openFilePicker">
             {{ t('common.chooseFile') }}
@@ -44,7 +44,7 @@
         v-if="result"
         class="space-y-2 rounded-xl border border-paper-200 p-4 dark:border-ink-700"
       >
-        <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+        <div class="text-sm font-medium text-primary-fg">
           {{ t('admin.proxies.dataImportResult') }}
         </div>
         <div class="text-sm text-dust-700 dark:text-pearl-200">

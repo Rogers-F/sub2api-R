@@ -40,7 +40,7 @@
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3 text-ink-900 dark:text-white">
           {{ t('keyUsage.title') }}
         </h1>
-        <p class="text-dust-500 dark:text-pearl-300 text-base max-w-md mx-auto">
+        <p class="text-secondary-fg text-base max-w-md mx-auto">
           {{ t('keyUsage.subtitle') }}
         </p>
       </div>
@@ -96,7 +96,7 @@
         <!-- Date Range Picker -->
         <div v-if="showDatePicker" class="mt-4">
           <div class="flex flex-wrap items-center gap-2 justify-center">
-            <span class="text-xs text-dust-500 dark:text-pearl-300">{{ t('keyUsage.dateRange') }}</span>
+            <span class="text-xs text-secondary-fg">{{ t('keyUsage.dateRange') }}</span>
             <button
               v-for="range in dateRanges"
               :key="range.key"
@@ -163,7 +163,7 @@
               ></span>
               <span class="text-sm font-medium text-ink-900 dark:text-white">{{ statusInfo.label }}</span>
               <span class="text-xs text-dust-400 dark:text-pearl-400">|</span>
-              <span class="text-xs text-dust-500 dark:text-pearl-300">{{ statusInfo.statusText }}</span>
+              <span class="text-xs text-secondary-fg">{{ statusInfo.statusText }}</span>
             </div>
           </div>
 
@@ -176,7 +176,7 @@
               :class="`fade-up-delay-${Math.min(i + 1, 4)}`"
             >
               <div class="flex items-center justify-between mb-6">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-secondary-fg">
                   {{ ring.title }}
                 </h3>
                 <!-- Clock icon -->
@@ -221,7 +221,7 @@
                       <span class="text-3xl font-bold tabular-nums text-ink-900 dark:text-white">
                         {{ displayPcts[i] ?? 0 }}%
                       </span>
-                      <span class="text-xs text-dust-500 dark:text-pearl-300 mt-0.5">{{ t('keyUsage.used') }}</span>
+                      <span class="text-xs text-secondary-fg mt-0.5">{{ t('keyUsage.used') }}</span>
                       <span
                         class="text-sm font-semibold mt-1 tabular-nums"
                         :style="{ color: RING_GRADIENTS[i % 4].from }"
@@ -242,7 +242,7 @@
             class="fade-up fade-up-delay-3 rounded-2xl border border-paper-200 bg-white/90 backdrop-blur-sm overflow-hidden dark:border-ink-700 dark:bg-ink-900/90"
           >
             <div class="px-8 py-5 border-b border-paper-200 dark:border-ink-700">
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.detailInfo') }}</h3>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.detailInfo') }}</h3>
             </div>
             <div class="divide-y divide-paper-200 dark:divide-ink-700">
               <div
@@ -275,7 +275,7 @@
             class="fade-up fade-up-delay-3 rounded-2xl border border-paper-200 bg-white/90 backdrop-blur-sm overflow-hidden dark:border-ink-700 dark:bg-ink-900/90"
           >
             <div class="px-8 py-5 border-b border-paper-200 dark:border-ink-700">
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.tokenStats') }}</h3>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.tokenStats') }}</h3>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-paper-100 dark:bg-ink-700">
               <div
@@ -283,7 +283,7 @@
                 :key="i"
                 class="bg-white px-6 py-4 dark:bg-ink-900"
               >
-                <div class="text-xs text-dust-500 dark:text-pearl-300 mb-1">{{ cell.label }}</div>
+                <div class="text-xs text-secondary-fg mb-1">{{ cell.label }}</div>
                 <div class="text-sm font-semibold tabular-nums text-ink-900 dark:text-white">{{ cell.value }}</div>
               </div>
             </div>
@@ -295,20 +295,20 @@
             class="fade-up fade-up-delay-4 rounded-2xl border border-paper-200 bg-white/90 backdrop-blur-sm overflow-hidden dark:border-ink-700 dark:bg-ink-900/90"
           >
             <div class="px-8 py-5 border-b border-paper-200 dark:border-ink-700">
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.modelStats') }}</h3>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.modelStats') }}</h3>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
                   <tr class="border-b border-paper-200 bg-paper-50 dark:border-ink-700 dark:bg-ink-950">
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.model') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.requests') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.inputTokens') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.outputTokens') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.cacheCreationTokens') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.cacheReadTokens') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.totalTokens') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-dust-500 dark:text-pearl-300">{{ t('keyUsage.cost') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.model') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.requests') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.inputTokens') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.outputTokens') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.cacheCreationTokens') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.cacheReadTokens') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.totalTokens') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-secondary-fg">{{ t('keyUsage.cost') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -337,7 +337,7 @@
     <!-- Footer (same pattern as HomeView) -->
     <footer class="relative z-10 border-t border-paper-200/50 px-6 py-8 dark:border-ink-700/50">
       <div class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4 text-center sm:flex-row sm:text-left">
-        <p class="text-sm text-dust-500 dark:text-pearl-300">
+        <p class="text-sm text-secondary-fg">
           &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
         </p>
         <div class="flex items-center gap-4">

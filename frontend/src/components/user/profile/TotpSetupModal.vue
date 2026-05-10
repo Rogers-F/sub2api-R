@@ -9,7 +9,7 @@
           <h3 class="text-xl font-semibold text-dust-900 dark:text-white">
             {{ t('profile.totp.setupTitle') }}
           </h3>
-          <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+          <p class="mt-2 text-sm text-secondary-fg">
             {{ stepDescription }}
           </p>
         </div>
@@ -92,7 +92,7 @@
             </div>
 
             <div class="text-center">
-              <p class="text-sm text-dust-500 dark:text-pearl-300 mb-2">
+              <p class="text-sm text-secondary-fg mb-2">
                 {{ t('profile.totp.manualEntry') }}
               </p>
               <div class="flex items-center justify-center gap-2">
@@ -101,7 +101,7 @@
                 </code>
                 <button
                   type="button"
-                  class="rounded p-1.5 text-dust-500 hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                  class="rounded p-1.5 text-dust-500 hover-tint"
                   @click="copySecret"
                 >
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">

@@ -8,7 +8,7 @@
           {{ t('admin.groups.platforms.' + group.platform) }}
         </span>
         <span class="text-dust-400">|</span>
-        <span class="font-medium text-dust-900 dark:text-pearl-50">{{ group.name }}</span>
+        <span class="font-medium text-primary-fg">{{ group.name }}</span>
         <span class="text-dust-400">|</span>
         <span class="text-dust-600 dark:text-pearl-300">
           {{ t('admin.groups.columns.rateMultiplier') }}: {{ group.rate_multiplier }}x
@@ -44,7 +44,7 @@
                 @click="selectUser(user)"
               >
                 <span class="text-dust-400">#{{ user.id }}</span>
-                <span class="text-dust-900 dark:text-pearl-50">{{ user.username || user.email }}</span>
+                <span class="text-primary-fg">{{ user.username || user.email }}</span>
                 <span v-if="user.username" class="text-xs text-dust-400">{{ user.email }}</span>
               </button>
             </div>
@@ -72,7 +72,7 @@
 
         <!-- 批量调整 + 全部清空 -->
         <div v-if="localEntries.length > 0" class="mt-3 flex items-center gap-3 border-t border-paper-200 pt-3 dark:border-ink-700">
-          <span class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('admin.groups.batchAdjust') }}</span>
+          <span class="text-xs font-medium text-secondary-fg">{{ t('admin.groups.batchAdjust') }}</span>
           <div class="flex items-center gap-1.5">
             <span class="text-xs text-dust-400">×</span>
             <input
@@ -130,12 +130,12 @@
               <table class="w-full text-sm">
                 <thead class="sticky top-0 z-[1]">
                   <tr class="border-b border-paper-200 bg-paper-50 dark:border-ink-700 dark:bg-ink-700">
-                    <th class="px-3 py-2 text-left text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('admin.groups.columns.userEmail') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-dust-500 dark:text-pearl-300">ID</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('admin.groups.columns.userName') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('admin.groups.columns.userNotes') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('admin.groups.columns.userStatus') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('admin.groups.columns.rateMultiplier') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-secondary-fg">{{ t('admin.groups.columns.userEmail') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-secondary-fg">ID</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-secondary-fg">{{ t('admin.groups.columns.userName') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-secondary-fg">{{ t('admin.groups.columns.userNotes') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-secondary-fg">{{ t('admin.groups.columns.userStatus') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-secondary-fg">{{ t('admin.groups.columns.rateMultiplier') }}</th>
                     <th v-if="showFinalRate" class="px-3 py-2 text-left text-xs font-medium text-gold-600 dark:text-gold-300">{{ t('admin.groups.finalRate') }}</th>
                     <th class="w-10 px-2 py-2"></th>
                   </tr>
@@ -148,8 +148,8 @@
                   >
                     <td class="px-3 py-2 text-dust-600 dark:text-pearl-300">{{ entry.user_email }}</td>
                     <td class="whitespace-nowrap px-3 py-2 text-dust-400 dark:text-pearl-400">{{ entry.user_id }}</td>
-                    <td class="whitespace-nowrap px-3 py-2 text-dust-900 dark:text-pearl-50">{{ entry.user_name || '-' }}</td>
-                    <td class="max-w-[160px] truncate px-3 py-2 text-dust-500 dark:text-pearl-300" :title="entry.user_notes">{{ entry.user_notes || '-' }}</td>
+                    <td class="whitespace-nowrap px-3 py-2 text-primary-fg">{{ entry.user_name || '-' }}</td>
+                    <td class="max-w-[160px] truncate px-3 py-2 text-secondary-fg" :title="entry.user_notes">{{ entry.user_notes || '-' }}</td>
                     <td class="whitespace-nowrap px-3 py-2">
                       <span
                         :class="[

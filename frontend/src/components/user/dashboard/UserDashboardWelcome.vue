@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold text-dust-900 dark:text-white">
         {{ t('dashboard.welcomeBack') }}, {{ userName }}
       </h1>
-      <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+      <p class="mt-1 text-sm text-secondary-fg">
         {{ t('dashboard.welcomeSubtitle') }}
       </p>
     </div>

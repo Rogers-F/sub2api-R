@@ -344,7 +344,7 @@ watch(
   <div class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-sm ring-1 ring-ink-900/5 dark:bg-ink-800 dark:ring-ink-700">
     <!-- 头部 -->
     <div class="mb-4 flex shrink-0 items-center justify-between gap-3">
-      <h3 class="flex items-center gap-2 text-sm font-bold text-dust-900 dark:text-pearl-50">
+      <h3 class="flex items-center gap-2 text-sm font-bold text-primary-fg">
         <svg class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
@@ -386,7 +386,7 @@ watch(
     <!-- 禁用状态 -->
     <div
       v-if="!realtimeEnabled"
-      class="flex flex-1 items-center justify-center rounded-xl border border-dashed hairline text-sm text-dust-500 dark:text-pearl-300"
+      class="flex flex-1 items-center justify-center rounded-xl border border-dashed hairline text-sm text-secondary-fg"
     >
       {{ t('admin.ops.concurrency.disabledHint') }}
     </div>
@@ -395,16 +395,16 @@ watch(
     <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border hairline">
       <!-- 维度标题栏 -->
       <div class="flex shrink-0 items-center justify-between border-b hairline bg-paper-50 px-3 py-2 dark:bg-ink-900">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-dust-500 dark:text-pearl-300">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-secondary-fg">
           {{ displayTitle }}
         </span>
-        <span class="text-[10px] text-dust-500 dark:text-pearl-300">
+        <span class="text-[10px] text-secondary-fg">
           {{ t('admin.ops.concurrency.totalRows', { count: displayRows.length }) }}
         </span>
       </div>
 
       <!-- 空状态 -->
-      <div v-if="displayRows.length === 0" class="flex flex-1 items-center justify-center text-sm text-dust-500 dark:text-pearl-300">
+      <div v-if="displayRows.length === 0" class="flex flex-1 items-center justify-center text-sm text-secondary-fg">
         {{ t('admin.ops.concurrency.empty') }}
       </div>
 
@@ -414,7 +414,7 @@ watch(
           <!-- 用户信息和并发 -->
           <div class="mb-1.5 flex items-center justify-between gap-2">
             <div class="flex min-w-0 flex-1 items-center gap-1.5">
-              <span class="truncate text-[11px] font-bold text-dust-900 dark:text-pearl-50" :title="row.username || row.user_email">
+              <span class="truncate text-[11px] font-bold text-primary-fg" :title="row.username || row.user_email">
                 {{ row.username || row.user_email }}
               </span>
               <span v-if="row.username" class="shrink-0 truncate text-[10px] text-dust-400 dark:text-pearl-400" :title="row.user_email">
@@ -422,7 +422,7 @@ watch(
               </span>
             </div>
             <div class="flex shrink-0 items-center gap-2 text-[10px]">
-              <span class="font-mono font-bold text-dust-900 dark:text-pearl-50"> {{ row.current_in_use }}/{{ row.max_capacity }} </span>
+              <span class="font-mono font-bold text-primary-fg"> {{ row.current_in_use }}/{{ row.max_capacity }} </span>
               <span :class="['font-bold', getLoadTextClass(row.load_percentage)]"> {{ Math.round(row.load_percentage) }}% </span>
             </div>
           </div>
@@ -447,7 +447,7 @@ watch(
           <!-- 标题行 -->
           <div class="mb-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <div class="truncate text-[11px] font-bold text-dust-900 dark:text-pearl-50" :title="row.name">
+              <div class="truncate text-[11px] font-bold text-primary-fg" :title="row.name">
                 {{ row.name }}
               </div>
               <span v-if="displayDimension === 'group' && row.platform" class="text-[10px] text-dust-400 dark:text-pearl-400">
@@ -455,7 +455,7 @@ watch(
               </span>
             </div>
             <div class="flex shrink-0 items-center gap-2 text-[10px]">
-              <span class="font-mono font-bold text-dust-900 dark:text-pearl-50"> {{ row.used_concurrency }}/{{ row.total_concurrency }} </span>
+              <span class="font-mono font-bold text-primary-fg"> {{ row.used_concurrency }}/{{ row.total_concurrency }} </span>
               <span :class="['font-bold', getLoadTextClass(row.concurrency_percentage)]"> {{ row.concurrency_percentage }}% </span>
             </div>
           </div>
@@ -521,7 +521,7 @@ watch(
           <!-- 账号名称和并发 -->
           <div class="mb-1.5 flex items-center justify-between gap-2">
             <div class="min-w-0 flex-1">
-              <div class="truncate text-[11px] font-bold text-dust-900 dark:text-pearl-50" :title="row.name">
+              <div class="truncate text-[11px] font-bold text-primary-fg" :title="row.name">
                 {{ row.name }}
               </div>
               <div class="mt-0.5 text-[9px] text-dust-400 dark:text-pearl-400">
@@ -530,7 +530,7 @@ watch(
             </div>
             <div class="flex shrink-0 items-center gap-2">
               <!-- 并发使用 -->
-              <span class="font-mono text-[11px] font-bold text-dust-900 dark:text-pearl-50"> {{ row.current_in_use }}/{{ row.max_capacity }} </span>
+              <span class="font-mono text-[11px] font-bold text-primary-fg"> {{ row.current_in_use }}/{{ row.max_capacity }} </span>
               <!-- 状态徽章 -->
               <span
                 v-if="row.is_available"

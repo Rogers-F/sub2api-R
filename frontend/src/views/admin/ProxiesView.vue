@@ -111,7 +111,7 @@
           </template>
 
           <template #cell-name="{ value }">
-            <span class="font-medium text-dust-900 dark:text-pearl-50">{{ value }}</span>
+            <span class="font-medium text-primary-fg">{{ value }}</span>
           </template>
 
           <template #cell-protocol="{ value }">
@@ -145,7 +145,7 @@
                   <button
                     v-for="fmt in getCopyFormats(row)"
                     :key="fmt.label"
-                    class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                    class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover-tint"
                     @click.stop="copyFormat(fmt.value)"
                   >
                     <span class="truncate font-mono text-dust-600 dark:text-pearl-100">{{ fmt.label }}</span>
@@ -159,7 +159,7 @@
             <div v-if="row.username || row.password" class="flex items-center gap-1.5">
               <div class="flex flex-col text-xs">
                 <span v-if="row.username" class="text-dust-700 dark:text-pearl-100">{{ row.username }}</span>
-                <span v-if="row.password" class="font-mono text-dust-500 dark:text-pearl-300">
+                <span v-if="row.password" class="font-mono text-secondary-fg">
                   {{ visiblePasswordIds.has(row.id) ? row.password : '••••••' }}
                 </span>
               </div>
@@ -225,7 +225,7 @@
               <span v-else class="text-sm text-dust-400">-</span>
               <div
                 v-if="typeof row.quality_checked === 'number'"
-                class="flex items-center gap-1 text-xs text-dust-500 dark:text-pearl-300"
+                class="flex items-center gap-1 text-xs text-secondary-fg"
                 :title="row.quality_summary || undefined"
               >
                 <span>{{ t('admin.proxies.qualityInline', { grade: row.quality_grade || '-', score: row.quality_score ?? '-' }) }}</span>
@@ -515,7 +515,7 @@
                   d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
                 />
               </svg>
-              <span class="text-dust-500 dark:text-pearl-300">
+              <span class="text-secondary-fg">
                 {{ t('admin.proxies.duplicateCount', { count: batchParseResult.duplicate }) }}
               </span>
             </div>
@@ -750,7 +750,7 @@
         <div class="rounded-lg border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-700">
           <div class="flex items-center justify-between gap-4">
             <div>
-              <div class="text-sm text-dust-500 dark:text-pearl-300">
+              <div class="text-sm text-secondary-fg">
                 {{ qualityReportProxy?.name || '-' }}
               </div>
               <div class="mt-1 text-sm text-dust-700 dark:text-pearl-100">
@@ -758,10 +758,10 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="text-2xl font-semibold text-dust-900 dark:text-pearl-50">
+              <div class="text-2xl font-semibold text-primary-fg">
                 {{ qualityReport.score }}
               </div>
-              <div class="text-xs text-dust-500 dark:text-pearl-300">
+              <div class="text-xs text-secondary-fg">
                 {{ t('admin.proxies.qualityGrade', { grade: qualityReport.grade }) }}
               </div>
             </div>
@@ -790,7 +790,7 @@
             </thead>
             <tbody class="divide-y divide-paper-200 bg-white dark:divide-ink-700 dark:bg-ink-900">
               <tr v-for="item in qualityReport.items" :key="item.target">
-                <td class="px-3 py-2 text-dust-900 dark:text-pearl-50">{{ qualityTargetLabel(item.target) }}</td>
+                <td class="px-3 py-2 text-primary-fg">{{ qualityTargetLabel(item.target) }}</td>
                 <td class="px-3 py-2">
                   <span class="badge" :class="qualityStatusClass(item.status)">{{ qualityStatusLabel(item.status) }}</span>
                 </td>
@@ -841,7 +841,7 @@
           </thead>
           <tbody class="divide-y divide-paper-200 bg-white dark:divide-ink-700 dark:bg-ink-900">
             <tr v-for="account in proxyAccounts" :key="account.id">
-              <td class="px-4 py-2 font-medium text-dust-900 dark:text-pearl-50">{{ account.name }}</td>
+              <td class="px-4 py-2 font-medium text-primary-fg">{{ account.name }}</td>
               <td class="px-4 py-2">
                 <PlatformTypeBadge :platform="account.platform" :type="account.type" />
               </td>

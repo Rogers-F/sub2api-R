@@ -27,12 +27,12 @@
         <div class="flex items-center gap-6">
           <div class="h-48 w-48">
             <Doughnut v-if="modelData" :data="modelData" :options="doughnutOptions" />
-            <div v-else class="flex h-full items-center justify-center text-sm text-dust-500 dark:text-pearl-300">{{ t('dashboard.noDataAvailable') }}</div>
+            <div v-else class="flex h-full items-center justify-center text-sm text-secondary-fg">{{ t('dashboard.noDataAvailable') }}</div>
           </div>
           <div class="max-h-48 flex-1 overflow-y-auto">
             <table class="w-full text-xs">
               <thead>
-                <tr class="text-dust-500 dark:text-pearl-300">
+                <tr class="text-secondary-fg">
                   <th class="pb-2 text-left">{{ t('dashboard.model') }}</th>
                   <th class="pb-2 text-right">{{ t('dashboard.requests') }}</th>
                   <th class="pb-2 text-right">{{ t('dashboard.tokens') }}</th>

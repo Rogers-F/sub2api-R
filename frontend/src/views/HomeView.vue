@@ -13,7 +13,7 @@
   <div v-else class="min-h-screen">
     <!-- ==================== Top announcement bar ==================== -->
     <div class="border-b hairline bg-paper-100/80 dark:bg-ink-900/60">
-      <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-2.5 text-xs text-dust-500 dark:text-pearl-300">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-2.5 text-xs text-secondary-fg">
         <span class="flex items-center gap-2">
           <span class="xs-pulse-dot"></span>
           {{ t('home.announcement.statusOk') }}
@@ -50,7 +50,7 @@
             </svg>
           </div>
           <div class="leading-tight">
-            <div class="font-display text-xl tracking-wide text-dust-900 dark:text-pearl-50">{{ siteName }}</div>
+            <div class="font-display text-xl tracking-wide text-primary-fg">{{ siteName }}</div>
             <div class="text-[10px] uppercase tracking-[0.22em] text-dust-400 dark:text-pearl-400">{{ t('home.tagline') }}</div>
           </div>
         </a>
@@ -151,7 +151,7 @@
                 <span class="h-2.5 w-2.5 rounded-full bg-[#FF5F57]"></span>
                 <span class="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]"></span>
                 <span class="h-2.5 w-2.5 rounded-full bg-[#28C840]"></span>
-                <span class="ml-3 text-xs text-dust-500 dark:text-pearl-300 font-mono">~/projects/{{ siteSlug }}-quickstart</span>
+                <span class="ml-3 text-xs text-secondary-fg font-mono">~/projects/{{ siteSlug }}-quickstart</span>
               </div>
               <div class="text-xs text-dust-400 dark:text-pearl-400 font-mono">node · v22</div>
             </div>
@@ -166,7 +166,7 @@
               <div class="pl-6">max_tokens: <span class="text-aurora-600 dark:text-aurora-400">1024</span>,</div>
               <div class="pl-6">messages: [{ role: <span class="text-mint-600 dark:text-mint-500">"user"</span>, content: <span class="text-mint-600 dark:text-mint-500">"hello"</span> }]</div>
               <div>})</div>
-              <div class="mt-4 flex items-center gap-2 text-dust-500 dark:text-pearl-300">
+              <div class="mt-4 flex items-center gap-2 text-secondary-fg">
                 <span class="text-mint-600 dark:text-mint-500">✓</span> 200 OK
                 <span class="text-dust-300 dark:text-pearl-500">·</span>
                 <span class="text-dust-400 dark:text-pearl-400">cache</span>
@@ -199,7 +199,7 @@
               </div>
               <span class="pill bg-paper-100 dark:bg-white/[0.06] text-dust-600 dark:text-pearl-200 border hairline">Flagship</span>
             </div>
-            <p class="mt-3 text-xs text-dust-500 dark:text-pearl-300 leading-relaxed">{{ t('home.pricing.models.opus.desc') }}</p>
+            <p class="mt-3 text-xs text-secondary-fg leading-relaxed">{{ t('home.pricing.models.opus.desc') }}</p>
             <div class="mt-5 grid grid-cols-2 gap-2">
               <div class="rounded-lg bg-paper-50 dark:bg-white/[0.03] border hairline p-3">
                 <div class="text-[10px] uppercase tracking-widest text-dust-400 dark:text-pearl-400">{{ t('home.pricing.input') }}</div>
@@ -230,15 +230,15 @@
             <p class="mt-3 text-xs text-dust-600 dark:text-pearl-200 leading-relaxed">{{ t('home.pricing.models.sonnet.desc') }}</p>
             <div class="mt-5 grid grid-cols-2 gap-2">
               <div class="rounded-lg bg-paper-50 dark:bg-ink-900/60 border border-gold-400/30 dark:border-gold-300/20 p-3">
-                <div class="text-[10px] uppercase tracking-widest text-dust-500 dark:text-pearl-300">{{ t('home.pricing.input') }}</div>
+                <div class="text-[10px] uppercase tracking-widest text-secondary-fg">{{ t('home.pricing.input') }}</div>
                 <div class="mt-1 font-display text-xl gold-text">$3<span class="text-[11px] text-dust-500 dark:text-pearl-200 ml-0.5 font-sans">/M</span></div>
               </div>
               <div class="rounded-lg bg-paper-50 dark:bg-ink-900/60 border border-gold-400/30 dark:border-gold-300/20 p-3">
-                <div class="text-[10px] uppercase tracking-widest text-dust-500 dark:text-pearl-300">{{ t('home.pricing.output') }}</div>
+                <div class="text-[10px] uppercase tracking-widest text-secondary-fg">{{ t('home.pricing.output') }}</div>
                 <div class="mt-1 font-display text-xl gold-text">$15<span class="text-[11px] text-dust-500 dark:text-pearl-200 ml-0.5 font-sans">/M</span></div>
               </div>
             </div>
-            <div class="mt-2.5 flex items-center justify-between text-[11px] text-dust-500 dark:text-pearl-300 px-0.5">
+            <div class="mt-2.5 flex items-center justify-between text-[11px] text-secondary-fg px-0.5">
               <span>{{ t('home.pricing.cacheWrite') }} $3.75</span>
               <span>{{ t('home.pricing.cacheRead') }} <span class="text-mint-600 dark:text-mint-500">$0.30</span></span>
             </div>
@@ -254,7 +254,7 @@
               </div>
               <span class="pill bg-mint-500/10 text-mint-600 dark:text-mint-400 border border-mint-500/20">Fast</span>
             </div>
-            <p class="mt-3 text-xs text-dust-500 dark:text-pearl-300 leading-relaxed">{{ t('home.pricing.models.haiku.desc') }}</p>
+            <p class="mt-3 text-xs text-secondary-fg leading-relaxed">{{ t('home.pricing.models.haiku.desc') }}</p>
             <div class="mt-5 grid grid-cols-2 gap-2">
               <div class="rounded-lg bg-paper-50 dark:bg-white/[0.03] border hairline p-3">
                 <div class="text-[10px] uppercase tracking-widest text-dust-400 dark:text-pearl-400">{{ t('home.pricing.input') }}</div>
@@ -280,7 +280,7 @@
               </div>
               <span class="pill bg-aurora-500/10 text-aurora-600 dark:text-aurora-400 border border-aurora-500/20">Coding</span>
             </div>
-            <p class="mt-3 text-xs text-dust-500 dark:text-pearl-300 leading-relaxed">{{ t('home.pricing.models.gpt.desc') }}</p>
+            <p class="mt-3 text-xs text-secondary-fg leading-relaxed">{{ t('home.pricing.models.gpt.desc') }}</p>
             <div class="mt-5 grid grid-cols-2 gap-2">
               <div class="rounded-lg bg-paper-50 dark:bg-white/[0.03] border hairline p-3">
                 <div class="text-[10px] uppercase tracking-widest text-dust-400 dark:text-pearl-400">{{ t('home.pricing.input') }}</div>
@@ -314,7 +314,7 @@
           <div v-for="(feat, i) in whyFeatures" :key="i" class="bg-paper-0 dark:bg-ink-900 p-8">
             <div class="text-3xl gold-text" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 500;">{{ String(i + 1).padStart(2, '0') }}</div>
             <h3 class="mt-4 font-display text-xl">{{ feat.title }}</h3>
-            <p class="mt-3 text-sm text-dust-500 dark:text-pearl-300 leading-relaxed">{{ feat.desc }}</p>
+            <p class="mt-3 text-sm text-secondary-fg leading-relaxed">{{ feat.desc }}</p>
           </div>
         </div>
       </div>
@@ -356,7 +356,7 @@
       <div class="mx-auto max-w-7xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-dust-400 dark:text-pearl-400">
         <div>© {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}</div>
         <div class="flex items-center gap-4">
-          <span class="inline-flex items-center gap-1.5"><span class="xs-pulse-dot"></span><span class="text-dust-500 dark:text-pearl-300">{{ t('home.footer.systemsOk') }}</span></span>
+          <span class="inline-flex items-center gap-1.5"><span class="xs-pulse-dot"></span><span class="text-secondary-fg">{{ t('home.footer.systemsOk') }}</span></span>
           <a v-if="docUrl" :href="docUrl" target="_blank" class="hover:text-dust-700 dark:hover:text-white transition-colors">{{ t('home.docs') }}</a>
         </div>
       </div>

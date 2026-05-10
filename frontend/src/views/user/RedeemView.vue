@@ -216,7 +216,7 @@
       <!-- Recent Activity -->
       <div class="card">
         <div class="hairline border-b px-6 py-4">
-          <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+          <h2 class="text-lg font-semibold text-primary-fg">
             {{ t('redeem.recentActivity') }}
           </h2>
         </div>
@@ -293,10 +293,10 @@
                   />
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+                  <p class="text-sm font-medium text-primary-fg">
                     {{ getHistoryItemTitle(item) }}
                   </p>
-                  <p class="text-xs text-dust-500 dark:text-pearl-300">
+                  <p class="text-xs text-secondary-fg">
                     {{ formatDateTime(item.used_at) }}
                   </p>
                 </div>
@@ -330,7 +330,7 @@
                 <!-- Display notes for admin adjustments -->
                 <p
                   v-if="item.notes"
-                  class="mt-1 text-xs text-dust-500 dark:text-pearl-300 italic max-w-[200px] truncate"
+                  class="mt-1 text-xs text-secondary-fg italic max-w-[200px] truncate"
                   :title="item.notes"
                 >
                   {{ item.notes }}
@@ -346,7 +346,7 @@
             >
               <Icon name="clock" size="xl" class="text-dust-400 dark:text-pearl-400" />
             </div>
-            <p class="text-sm text-dust-500 dark:text-pearl-300">
+            <p class="text-sm text-secondary-fg">
               {{ t('redeem.historyWillAppear') }}
             </p>
           </div>

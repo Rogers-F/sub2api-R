@@ -8,7 +8,7 @@
     <div class="space-y-4">
       <!-- Header -->
       <div class="flex items-center justify-between">
-        <p class="text-sm text-dust-500 dark:text-pearl-300">
+        <p class="text-sm text-secondary-fg">
           {{ t('admin.errorPassthrough.description') }}
         </p>
         <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
@@ -26,10 +26,10 @@
         <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-paper-100 dark:bg-ink-700">
           <Icon name="shield" size="lg" class="text-dust-400" />
         </div>
-        <h4 class="mb-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+        <h4 class="mb-1 text-sm font-medium text-primary-fg">
           {{ t('admin.errorPassthrough.noRules') }}
         </h4>
-        <p class="text-sm text-dust-500 dark:text-pearl-300">
+        <p class="text-sm text-secondary-fg">
           {{ t('admin.errorPassthrough.createFirstRule') }}
         </p>
       </div>
@@ -38,25 +38,25 @@
         <table class="min-w-full divide-y divide-paper-200 dark:divide-ink-700">
           <thead class="sticky top-0 bg-paper-50 dark:bg-ink-700">
             <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.priority') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.name') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.conditions') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.platforms') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.behavior') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.status') }}
               </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-dust-500 dark:text-pearl-300">
+              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-secondary-fg">
                 {{ t('admin.errorPassthrough.columns.actions') }}
               </th>
             </tr>
@@ -69,8 +69,8 @@
                 </span>
               </td>
               <td class="px-3 py-2">
-                <div class="font-medium text-dust-900 dark:text-pearl-50 text-sm">{{ rule.name }}</div>
-                <div v-if="rule.description" class="mt-0.5 text-xs text-dust-500 dark:text-pearl-300 max-w-xs truncate">
+                <div class="font-medium text-primary-fg text-sm">{{ rule.name }}</div>
+                <div v-if="rule.description" class="mt-0.5 text-xs text-secondary-fg max-w-xs truncate">
                   {{ rule.description }}
                 </div>
               </td>
@@ -103,12 +103,12 @@
                     +{{ rule.keywords.length - 1 }}
                   </span>
                 </div>
-                <div class="mt-0.5 text-xs text-dust-500 dark:text-pearl-300">
+                <div class="mt-0.5 text-xs text-secondary-fg">
                   {{ t('admin.errorPassthrough.matchMode.' + rule.match_mode) }}
                 </div>
               </td>
               <td class="px-3 py-2">
-                <div v-if="rule.platforms.length === 0" class="text-xs text-dust-500 dark:text-pearl-300">
+                <div v-if="rule.platforms.length === 0" class="text-xs text-secondary-fg">
                   {{ t('admin.errorPassthrough.allPlatforms') }}
                 </div>
                 <div v-else class="flex flex-wrap gap-1">
@@ -252,7 +252,7 @@
 
         <!-- Match Conditions -->
         <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-700">
-          <h4 class="mb-2 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <h4 class="mb-2 text-sm font-medium text-primary-fg">
             {{ t('admin.errorPassthrough.form.matchConditions') }}
           </h4>
 
@@ -295,7 +295,7 @@
                 />
                 <div class="flex-1">
                   <span class="text-xs font-medium text-dust-700 dark:text-pearl-100">{{ option.label }}</span>
-                  <p class="text-xs text-dust-500 dark:text-pearl-300">{{ option.description }}</p>
+                  <p class="text-xs text-secondary-fg">{{ option.description }}</p>
                 </div>
               </label>
             </div>
@@ -324,7 +324,7 @@
 
         <!-- Response Behavior -->
         <div class="rounded-lg border border-paper-200 p-3 dark:border-ink-700">
-          <h4 class="mb-2 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <h4 class="mb-2 text-sm font-medium text-primary-fg">
             {{ t('admin.errorPassthrough.form.responseBehavior') }}
           </h4>
 

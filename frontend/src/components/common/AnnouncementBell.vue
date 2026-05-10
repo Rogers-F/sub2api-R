@@ -38,7 +38,7 @@
                     <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30">
                       <Icon name="bell" size="sm" />
                     </div>
-                    <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+                    <h2 class="text-lg font-semibold text-primary-fg">
                       {{ t('announcements.title') }}
                     </h2>
                   </div>
@@ -115,11 +115,11 @@
                   <!-- Content -->
                   <div class="flex min-w-0 flex-1 items-center justify-between gap-4">
                     <div class="min-w-0 flex-1">
-                      <h3 class="truncate text-sm font-medium text-dust-900 dark:text-pearl-50">
+                      <h3 class="truncate text-sm font-medium text-primary-fg">
                         {{ item.title }}
                       </h3>
                       <div class="mt-1 flex items-center gap-2">
-                        <time class="text-xs text-dust-500 dark:text-pearl-300">
+                        <time class="text-xs text-secondary-fg">
                           {{ formatRelativeTime(item.created_at) }}
                         </time>
                         <span
@@ -169,8 +169,8 @@
                     </svg>
                   </div>
                 </div>
-                <p class="text-sm font-medium text-dust-900 dark:text-pearl-50">{{ t('announcements.empty') }}</p>
-                <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">{{ t('announcements.emptyDescription') }}</p>
+                <p class="text-sm font-medium text-primary-fg">{{ t('announcements.empty') }}</p>
+                <p class="mt-1 text-xs text-secondary-fg">{{ t('announcements.emptyDescription') }}</p>
               </div>
             </div>
           </div>
@@ -224,7 +224,7 @@
                   </div>
 
                   <!-- Title -->
-                  <h2 class="mb-3 text-2xl font-bold leading-tight text-dust-900 dark:text-pearl-50">
+                  <h2 class="mb-3 text-2xl font-bold leading-tight text-primary-fg">
                     {{ selectedAnnouncement.title }}
                   </h2>
 
@@ -276,7 +276,7 @@
             <!-- Footer with Actions -->
             <div class="border-t border-paper-100 bg-paper-50/50 px-8 py-5 dark:border-ink-700 dark:bg-ink-900/30">
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-xs text-dust-500 dark:text-pearl-300">
+                <div class="flex items-center gap-2 text-xs text-secondary-fg">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -488,11 +488,11 @@ watch(
 }
 
 .markdown-body h3 {
-  @apply mb-3 mt-6 text-xl font-semibold text-dust-900 dark:text-pearl-50;
+  @apply mb-3 mt-6 text-xl font-semibold text-primary-fg;
 }
 
 .markdown-body h4 {
-  @apply mb-2 mt-5 text-lg font-semibold text-dust-900 dark:text-pearl-50;
+  @apply mb-2 mt-5 text-lg font-semibold text-primary-fg;
 }
 
 .markdown-body p {
@@ -581,7 +581,7 @@ watch(
 }
 
 .markdown-body strong {
-  @apply font-semibold text-dust-900 dark:text-pearl-50;
+  @apply font-semibold text-primary-fg;
 }
 
 .markdown-body em {

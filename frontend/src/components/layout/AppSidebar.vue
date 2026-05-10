@@ -14,7 +14,7 @@
       </div>
       <transition name="fade">
         <div v-if="!sidebarCollapsed" class="flex flex-col">
-          <span class="text-lg font-bold text-dust-900 dark:text-pearl-50">
+          <span class="text-lg font-bold text-primary-fg">
             {{ siteName }}
           </span>
           <!-- Version Badge -->

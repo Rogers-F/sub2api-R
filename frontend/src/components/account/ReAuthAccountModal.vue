@@ -26,10 +26,10 @@
             <Icon name="sparkles" size="md" class="text-white" />
           </div>
           <div>
-            <span class="block font-semibold text-dust-900 dark:text-pearl-50">{{
+            <span class="block font-semibold text-primary-fg">{{
               account.name
             }}</span>
-            <span class="text-sm text-dust-500 dark:text-pearl-300">
+            <span class="text-sm text-secondary-fg">
               {{
                 isOpenAI
                   ? t('admin.accounts.openaiAccount')
@@ -96,7 +96,7 @@
             <Icon v-else name="sparkles" size="sm" />
           </div>
           <div>
-            <span class="block text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <span class="block text-sm font-medium text-primary-fg">
               {{
                 geminiOAuthType === 'google_one'
                   ? 'Google One'
@@ -105,7 +105,7 @@
                     : t('admin.accounts.gemini.oauthType.customTitle')
               }}
             </span>
-            <span class="text-xs text-dust-500 dark:text-pearl-300">
+            <span class="text-xs text-secondary-fg">
               {{
                 geminiOAuthType === 'google_one'
                   ? '个人账号'

@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-paper-50 px-4 py-10 dark:bg-ink-900">
     <div class="mx-auto max-w-2xl">
       <div class="card p-6">
-        <h1 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">OAuth Callback</h1>
+        <h1 class="text-lg font-semibold text-primary-fg">OAuth Callback</h1>
         <p class="mt-2 text-sm text-dust-600 dark:text-pearl-300">
           Copy the <code>code</code> (and <code>state</code> if needed) back to the admin
           authorization flow.

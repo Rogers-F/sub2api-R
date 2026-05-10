@@ -31,7 +31,7 @@
 
     <div class="flex items-center gap-3">
       <div class="h-px flex-1 bg-paper-200 dark:bg-ink-700"></div>
-      <span class="text-xs text-dust-500 dark:text-pearl-300">
+      <span class="text-xs text-secondary-fg">
         {{ t('auth.linuxdo.orContinue') }}
       </span>
       <div class="h-px flex-1 bg-paper-200 dark:bg-ink-700"></div>

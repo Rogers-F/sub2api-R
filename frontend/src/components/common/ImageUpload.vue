@@ -62,7 +62,7 @@
           {{ removeLabel }}
         </button>
       </div>
-      <p v-if="hint" class="text-xs text-dust-500 dark:text-pearl-300">{{ hint }}</p>
+      <p v-if="hint" class="text-xs text-secondary-fg">{{ hint }}</p>
       <p v-if="error" class="text-xs text-coral-500">{{ error }}</p>
     </div>
   </div>

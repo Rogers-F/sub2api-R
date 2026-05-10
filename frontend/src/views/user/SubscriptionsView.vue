@@ -15,10 +15,10 @@
         >
           <Icon name="creditCard" size="xl" class="text-dust-400" />
         </div>
-        <h3 class="mb-2 text-lg font-semibold text-dust-900 dark:text-pearl-50">
+        <h3 class="mb-2 text-lg font-semibold text-primary-fg">
           {{ t('userSubscriptions.noActiveSubscriptions') }}
         </h3>
-        <p class="text-dust-500 dark:text-pearl-300">
+        <p class="text-secondary-fg">
           {{ t('userSubscriptions.noActiveSubscriptionsDesc') }}
         </p>
       </div>
@@ -41,10 +41,10 @@
                 <Icon name="creditCard" size="md" class="text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 class="font-semibold text-dust-900 dark:text-pearl-50">
+                <h3 class="font-semibold text-primary-fg">
                   {{ subscription.group?.name || `Group #${subscription.group_id}` }}
                 </h3>
-                <p class="text-xs text-dust-500 dark:text-pearl-300">
+                <p class="text-xs text-secondary-fg">
                   {{ subscription.group?.description || '' }}
                 </p>
               </div>
@@ -67,7 +67,7 @@
           <div class="space-y-4 p-4">
             <!-- Expiration Info -->
             <div v-if="subscription.expires_at" class="flex items-center justify-between text-sm">
-              <span class="text-dust-500 dark:text-pearl-300">{{
+              <span class="text-secondary-fg">{{
                 t('userSubscriptions.expires')
               }}</span>
               <span :class="getExpirationClass(subscription.expires_at)">
@@ -75,7 +75,7 @@
               </span>
             </div>
             <div v-else class="flex items-center justify-between text-sm">
-              <span class="text-dust-500 dark:text-pearl-300">{{
+              <span class="text-secondary-fg">{{
                 t('userSubscriptions.expires')
               }}</span>
               <span class="text-dust-700 dark:text-pearl-100">{{
@@ -89,7 +89,7 @@
                 <span class="text-sm font-medium text-dust-700 dark:text-pearl-100">
                   {{ t('userSubscriptions.daily') }}
                 </span>
-                <span class="text-sm text-dust-500 dark:text-pearl-300">
+                <span class="text-sm text-secondary-fg">
                   ${{ (subscription.daily_usage_usd || 0).toFixed(2) }} / ${{
                     subscription.group.daily_limit_usd.toFixed(2)
                   }}
@@ -114,7 +114,7 @@
               </div>
               <p
                 v-if="formatWindowStatus(subscription.daily_reset_status)"
-                class="text-xs text-dust-500 dark:text-pearl-300 whitespace-pre-line"
+                class="text-xs text-secondary-fg whitespace-pre-line"
                 :class="getResetStatusClass(subscription.daily_reset_status)"
               >
                 {{ formatWindowStatus(subscription.daily_reset_status) }}
@@ -127,7 +127,7 @@
                 <span class="text-sm font-medium text-dust-700 dark:text-pearl-100">
                   {{ t('userSubscriptions.weekly') }}
                 </span>
-                <span class="text-sm text-dust-500 dark:text-pearl-300">
+                <span class="text-sm text-secondary-fg">
                   ${{ (subscription.weekly_usage_usd || 0).toFixed(2) }} / ${{
                     subscription.group.weekly_limit_usd.toFixed(2)
                   }}
@@ -152,7 +152,7 @@
               </div>
               <p
                 v-if="formatWindowStatus(subscription.weekly_reset_status)"
-                class="text-xs text-dust-500 dark:text-pearl-300 whitespace-pre-line"
+                class="text-xs text-secondary-fg whitespace-pre-line"
                 :class="getResetStatusClass(subscription.weekly_reset_status)"
               >
                 {{ formatWindowStatus(subscription.weekly_reset_status) }}
@@ -165,7 +165,7 @@
                 <span class="text-sm font-medium text-dust-700 dark:text-pearl-100">
                   {{ t('userSubscriptions.monthly') }}
                 </span>
-                <span class="text-sm text-dust-500 dark:text-pearl-300">
+                <span class="text-sm text-secondary-fg">
                   ${{ (subscription.monthly_usage_usd || 0).toFixed(2) }} / ${{
                     subscription.group.monthly_limit_usd.toFixed(2)
                   }}
@@ -190,7 +190,7 @@
               </div>
               <p
                 v-if="formatWindowStatus(subscription.monthly_reset_status)"
-                class="text-xs text-dust-500 dark:text-pearl-300 whitespace-pre-line"
+                class="text-xs text-secondary-fg whitespace-pre-line"
                 :class="getResetStatusClass(subscription.monthly_reset_status)"
               >
                 {{ formatWindowStatus(subscription.monthly_reset_status) }}

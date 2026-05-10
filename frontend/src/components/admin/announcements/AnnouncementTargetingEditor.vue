@@ -2,10 +2,10 @@
   <div class="rounded-2xl border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-800/50">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+        <div class="text-sm font-medium text-primary-fg">
           {{ t('admin.announcements.form.targetingMode') }}
         </div>
-        <div class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+        <div class="mt-1 text-xs text-secondary-fg">
           {{ mode === 'all' ? t('admin.announcements.form.targetingAll') : t('admin.announcements.form.targetingCustom') }}
         </div>
       </div>
@@ -38,9 +38,9 @@
 
     <div v-if="mode === 'custom'" class="mt-4 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+        <div class="text-sm font-medium text-primary-fg">
           OR
-          <span class="ml-1 text-xs font-normal text-dust-500 dark:text-pearl-300">
+          <span class="ml-1 text-xs font-normal text-secondary-fg">
             ({{ anyOf.length }}/50)
           </span>
         </div>
@@ -66,11 +66,11 @@
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+            <div class="text-sm font-medium text-primary-fg">
               {{ t('admin.announcements.form.targetingCustom') }} #{{ groupIndex + 1 }}
-              <span class="ml-2 text-xs font-normal text-dust-500 dark:text-pearl-300">AND ({{ (group.all_of?.length || 0) }}/50)</span>
+              <span class="ml-2 text-xs font-normal text-secondary-fg">AND ({{ (group.all_of?.length || 0) }}/50)</span>
             </div>
-            <div class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <div class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.announcements.form.addAndCondition') }}
             </div>
           </div>

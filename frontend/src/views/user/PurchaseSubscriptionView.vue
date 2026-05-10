@@ -18,10 +18,10 @@
             >
               <Icon name="creditCard" size="lg" class="text-dust-400" />
             </div>
-            <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h3 class="text-lg font-semibold text-primary-fg">
               {{ t('purchase.notEnabledTitle') }}
             </h3>
-            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-2 text-sm text-secondary-fg">
               {{ t('purchase.notEnabledDesc') }}
             </p>
           </div>
@@ -37,10 +37,10 @@
             >
               <Icon name="link" size="lg" class="text-dust-400" />
             </div>
-            <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h3 class="text-lg font-semibold text-primary-fg">
               {{ t('purchase.notConfiguredTitle') }}
             </h3>
-            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-2 text-sm text-secondary-fg">
               {{ t('purchase.notConfiguredDesc') }}
             </p>
           </div>

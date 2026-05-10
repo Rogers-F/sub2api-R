@@ -382,7 +382,7 @@ function cancelDelete() {
   <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-ink-900/5 dark:bg-ink-800 dark:ring-ink-700">
     <div class="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h3 class="text-sm font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.alertRules.title') }}</h3>
+        <h3 class="text-sm font-bold text-primary-fg">{{ t('admin.ops.alertRules.title') }}</h3>
         <p class="mt-1 text-xs text-dust-500 dark:text-dust-400">{{ t('admin.ops.alertRules.description') }}</p>
       </div>
 
@@ -436,7 +436,7 @@ function cancelDelete() {
           <tbody class="divide-y divide-paper-200 bg-white dark:divide-ink-700 dark:bg-ink-800">
             <tr v-for="row in sortedRules" :key="row.id" class="hover:bg-paper-50 dark:hover:bg-ink-700/50">
               <td class="px-4 py-3">
-                <div class="text-xs font-bold text-dust-900 dark:text-pearl-50">{{ row.name }}</div>
+                <div class="text-xs font-bold text-primary-fg">{{ row.name }}</div>
                 <div v-if="row.description" class="mt-0.5 line-clamp-2 text-[11px] text-dust-500 dark:text-dust-400">
                   {{ row.description }}
                 </div>

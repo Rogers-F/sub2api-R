@@ -358,7 +358,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
   <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-ink-900/5 dark:bg-ink-800 dark:ring-ink-700">
     <div class="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h3 class="text-sm font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.alertEvents.title') }}</h3>
+        <h3 class="text-sm font-bold text-primary-fg">{{ t('admin.ops.alertEvents.title') }}</h3>
         <p class="mt-1 text-xs text-dust-500 dark:text-dust-400">{{ t('admin.ops.alertEvents.description') }}</p>
       </div>
 
@@ -527,7 +527,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
                   {{ formatStatusLabel(selected.status) }}
                 </span>
               </div>
-              <div class="mt-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">
+              <div class="mt-2 text-sm font-semibold text-primary-fg">
                 {{ selected.title || '-' }}
               </div>
               <div v-if="selected.description" class="mt-1 whitespace-pre-wrap text-xs text-dust-600 dark:text-dust-300">
@@ -561,16 +561,16 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
               <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.alertEvents.detail.firedAt') }}</div>
-              <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">{{ formatDateTime(selected.fired_at || selected.created_at) }}</div>
+              <div class="mt-1 text-sm font-medium text-primary-fg">{{ formatDateTime(selected.fired_at || selected.created_at) }}</div>
             </div>
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
               <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.alertEvents.detail.resolvedAt') }}</div>
-              <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">{{ selected.resolved_at ? formatDateTime(selected.resolved_at) : '-' }}</div>
+              <div class="mt-1 text-sm font-medium text-primary-fg">{{ selected.resolved_at ? formatDateTime(selected.resolved_at) : '-' }}</div>
             </div>
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
               <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.alertEvents.detail.ruleId') }}</div>
               <div class="mt-1 flex flex-wrap items-center gap-2">
-                <div class="font-mono text-sm font-bold text-dust-900 dark:text-pearl-50">#{{ selected.rule_id }}</div>
+                <div class="font-mono text-sm font-bold text-primary-fg">#{{ selected.rule_id }}</div>
                 <a
                   class="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-dust-700 ring-1 ring-paper-200 hover:bg-paper-50 dark:bg-ink-800 dark:text-pearl-200 dark:ring-ink-700 dark:hover:bg-ink-700"
                   :href="`/admin/ops?open_alert_rules=1&alert_rule_id=${selected.rule_id}`"
@@ -589,7 +589,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
             </div>
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
               <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.alertEvents.detail.dimensions') }}</div>
-              <div class="mt-1 text-sm text-dust-900 dark:text-pearl-50">
+              <div class="mt-1 text-sm text-primary-fg">
                 <div v-if="getDimensionString(selected, 'platform')">platform={{ getDimensionString(selected, 'platform') }}</div>
                 <div v-if="selected.dimensions?.group_id">group_id={{ selected.dimensions.group_id }}</div>
                 <div v-if="getDimensionString(selected, 'region')">region={{ getDimensionString(selected, 'region') }}</div>
@@ -601,7 +601,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
         <div class="rounded-xl border border-paper-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
           <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.alertEvents.detail.historyTitle') }}</div>
+              <div class="text-sm font-bold text-primary-fg">{{ t('admin.ops.alertEvents.detail.historyTitle') }}</div>
               <div class="mt-0.5 text-xs text-dust-500 dark:text-dust-400">{{ t('admin.ops.alertEvents.detail.historyHint') }}</div>
             </div>
             <Select :model-value="historyRange" :options="historyRangeOptions" class="w-[140px]" @change="historyRange = String($event || '7d')" />

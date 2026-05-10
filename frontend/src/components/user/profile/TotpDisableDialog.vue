@@ -14,7 +14,7 @@
           <h3 class="mt-4 text-center text-xl font-semibold text-dust-900 dark:text-white">
             {{ t('profile.totp.disableTitle') }}
           </h3>
-          <p class="mt-2 text-center text-sm text-dust-500 dark:text-pearl-300">
+          <p class="mt-2 text-center text-sm text-secondary-fg">
             {{ t('profile.totp.disableWarning') }}
           </p>
         </div>

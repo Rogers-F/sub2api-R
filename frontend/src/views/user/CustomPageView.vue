@@ -18,10 +18,10 @@
             >
               <Icon name="link" size="lg" class="text-dust-400" />
             </div>
-            <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h3 class="text-lg font-semibold text-primary-fg">
               {{ t('customPage.notFoundTitle') }}
             </h3>
-            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-2 text-sm text-secondary-fg">
               {{ t('customPage.notFoundDesc') }}
             </p>
           </div>
@@ -34,10 +34,10 @@
             >
               <Icon name="link" size="lg" class="text-dust-400" />
             </div>
-            <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h3 class="text-lg font-semibold text-primary-fg">
               {{ t('customPage.notConfiguredTitle') }}
             </h3>
-            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-2 text-sm text-secondary-fg">
               {{ t('customPage.notConfiguredDesc') }}
             </p>
           </div>

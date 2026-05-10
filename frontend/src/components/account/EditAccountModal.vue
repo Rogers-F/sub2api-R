@@ -136,7 +136,7 @@
             <!-- Whitelist Mode -->
             <div v-if="modelRestrictionMode === 'whitelist'">
               <ModelWhitelistSelector v-model="allowedModels" :platform="account?.platform || 'anthropic'" />
-              <p class="text-xs text-dust-500 dark:text-pearl-300">
+              <p class="text-xs text-secondary-fg">
                 {{ t('admin.accounts.selectedModels', { count: allowedModels.length }) }}
                 <span v-if="allowedModels.length === 0">{{
                   t('admin.accounts.supportsAllModels')
@@ -256,7 +256,7 @@
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.poolMode') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.poolModeHint') }}
               </p>
             </div>
@@ -292,7 +292,7 @@
               step="1"
               class="input"
             />
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{
                 t('admin.accounts.poolModeRetryCountHint', {
                   default: DEFAULT_POOL_MODE_RETRY_COUNT,
@@ -308,7 +308,7 @@
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.customErrorCodes') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.customErrorCodesHint') }}
               </p>
             </div>
@@ -451,7 +451,7 @@
           <!-- Whitelist Mode -->
           <div v-if="modelRestrictionMode === 'whitelist'">
             <ModelWhitelistSelector v-model="allowedModels" :platform="account?.platform || 'anthropic'" />
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.selectedModels', { count: allowedModels.length }) }}
               <span v-if="allowedModels.length === 0">{{
                 t('admin.accounts.supportsAllModels')
@@ -670,7 +670,7 @@
           <!-- Whitelist Mode -->
           <div v-if="modelRestrictionMode === 'whitelist'">
             <ModelWhitelistSelector v-model="allowedModels" platform="anthropic" />
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.selectedModels', { count: allowedModels.length }) }}
               <span v-if="allowedModels.length === 0">{{ t('admin.accounts.supportsAllModels') }}</span>
             </p>
@@ -709,7 +709,7 @@
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.poolMode') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.poolModeHint') }}
               </p>
             </div>
@@ -745,7 +745,7 @@
               step="1"
               class="input"
             />
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{
                 t('admin.accounts.poolModeRetryCountHint', {
                   default: DEFAULT_POOL_MODE_RETRY_COUNT,
@@ -852,7 +852,7 @@
         <div class="mb-3 flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.tempUnschedulable.title') }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.tempUnschedulable.hint') }}
             </p>
           </div>
@@ -900,7 +900,7 @@
               class="rounded-lg border border-paper-200 p-3 dark:border-ink-600"
             >
               <div class="mb-2 flex items-center justify-between">
-                <span class="text-xs font-medium text-dust-500 dark:text-pearl-300">
+                <span class="text-xs font-medium text-secondary-fg">
                   {{ t('admin.accounts.tempUnschedulable.ruleIndex', { index: index + 1 }) }}
                 </span>
                 <div class="flex items-center gap-2">
@@ -1005,7 +1005,7 @@
             <label class="input-label mb-0">{{
               t('admin.accounts.interceptWarmupRequests')
             }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.interceptWarmupRequestsDesc') }}
             </p>
           </div>
@@ -1076,7 +1076,7 @@
         <div class="flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.openai.oauthPassthrough') }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.openai.oauthPassthroughDesc') }}
             </p>
           </div>
@@ -1106,10 +1106,10 @@
         <div class="flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.openai.wsMode') }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.openai.wsModeDesc') }}
             </p>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t(openAIWSModeConcurrencyHintKey) }}
             </p>
           </div>
@@ -1127,7 +1127,7 @@
         <div class="flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.anthropic.apiKeyPassthrough') }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.anthropic.apiKeyPassthroughDesc') }}
             </p>
           </div>
@@ -1153,7 +1153,7 @@
       <div v-if="account?.type === 'apikey' || account?.type === 'bedrock'" class="border-t border-paper-200 pt-4 dark:border-ink-600 space-y-4">
         <div class="mb-3">
           <h3 class="input-label mb-0 text-base font-semibold">{{ t('admin.accounts.quotaLimit') }}</h3>
-          <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="mt-1 text-xs text-secondary-fg">
             {{ t('admin.accounts.quotaLimitHint') }}
           </p>
         </div>
@@ -1187,7 +1187,7 @@
         <div class="flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.openai.codexCLIOnly') }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.openai.codexCLIOnlyDesc') }}
             </p>
           </div>
@@ -1215,7 +1215,7 @@
             <label class="input-label mb-0">{{
               t('admin.accounts.autoPauseOnExpired')
             }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.autoPauseOnExpiredDesc') }}
             </p>
           </div>
@@ -1244,7 +1244,7 @@
       >
         <div class="mb-3">
           <h3 class="input-label mb-0 text-base font-semibold">{{ t('admin.accounts.quotaControl.title') }}</h3>
-          <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="mt-1 text-xs text-secondary-fg">
             {{ t('admin.accounts.quotaControl.hint') }}
           </p>
         </div>
@@ -1254,7 +1254,7 @@
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.windowCost.label') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.quotaControl.windowCost.hint') }}
               </p>
             </div>
@@ -1279,7 +1279,7 @@
             <div>
               <label class="input-label">{{ t('admin.accounts.quotaControl.windowCost.limit') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dust-500 dark:text-pearl-300">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-fg">$</span>
                 <input
                   v-model.number="windowCostLimit"
                   type="number"
@@ -1294,7 +1294,7 @@
             <div>
               <label class="input-label">{{ t('admin.accounts.quotaControl.windowCost.stickyReserve') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dust-500 dark:text-pearl-300">$</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-fg">$</span>
                 <input
                   v-model.number="windowCostStickyReserve"
                   type="number"
@@ -1314,7 +1314,7 @@
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.sessionLimit.label') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.quotaControl.sessionLimit.hint') }}
               </p>
             </div>
@@ -1359,7 +1359,7 @@
                   class="input pr-12"
                   :placeholder="t('admin.accounts.quotaControl.sessionLimit.idleTimeoutPlaceholder')"
                 />
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-dust-500 dark:text-pearl-300">{{ t('common.minutes') }}</span>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-fg">{{ t('common.minutes') }}</span>
               </div>
               <p class="input-hint">{{ t('admin.accounts.quotaControl.sessionLimit.idleTimeoutHint') }}</p>
             </div>
@@ -1371,7 +1371,7 @@
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.rpmLimit.label') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.quotaControl.rpmLimit.hint') }}
               </p>
             </div>
@@ -1461,7 +1461,7 @@
           <!-- 用户消息限速模式（独立于 RPM 开关，始终可见） -->
           <div class="mt-4">
             <label class="input-label">{{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueue') }}</label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300 mb-2">
+            <p class="mt-1 text-xs text-secondary-fg mb-2">
               {{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueueHint') }}
             </p>
             <div class="flex space-x-2">
@@ -1484,7 +1484,7 @@
           <div class="flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.tlsFingerprint.label') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.quotaControl.tlsFingerprint.hint') }}
               </p>
             </div>
@@ -1511,7 +1511,7 @@
           <div class="flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.sessionIdMasking.label') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.quotaControl.sessionIdMasking.hint') }}
               </p>
             </div>
@@ -1538,7 +1538,7 @@
           <div class="flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.cacheTTLOverride.label') }}</label>
-              <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+              <p class="mt-1 text-xs text-secondary-fg">
                 {{ t('admin.accounts.quotaControl.cacheTTLOverride.hint') }}
               </p>
             </div>
@@ -1567,7 +1567,7 @@
               <option value="5m">5m</option>
               <option value="1h">1h</option>
             </select>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.quotaControl.cacheTTLOverride.targetHint') }}
             </p>
           </div>

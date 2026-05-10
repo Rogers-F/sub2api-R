@@ -185,7 +185,7 @@ app.mount('#app')
 <template>
   <AppLayout>
     <div class="space-y-6">
-      <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <h1 class="text-3xl font-bold text-dust-900 dark:text-pearl-50">Dashboard</h1>
 
       <!-- Your content here -->
     </div>
@@ -205,12 +205,12 @@ import { AppLayout } from '@/components/layout'
 <!-- src/views/auth/LoginView.vue -->
 <template>
   <AuthLayout>
-    <h2 class="mb-6 text-2xl font-bold text-gray-900">Login</h2>
+    <h2 class="mb-6 text-2xl font-bold text-dust-900 dark:text-pearl-50">Login</h2>
 
     <!-- Your login form here -->
 
     <template #footer>
-      <p class="text-gray-600">
+      <p class="text-dust-600">
         Don't have an account?
         <router-link to="/register" class="text-indigo-600 hover:underline"> Sign up </router-link>
       </p>
@@ -273,7 +273,7 @@ Modify user dropdown in `AppHeader.vue`:
 <router-link
   to="/settings"
   @click="closeDropdown"
-  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+  class="flex items-center px-4 py-2 text-sm text-dust-700 hover:bg-paper-100"
 >
   <span class="mr-2">&#9881;</span>
   Settings

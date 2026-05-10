@@ -11,7 +11,7 @@
           <Icon name="cog" size="xl" class="text-white" />
         </div>
         <h1 class="text-3xl font-bold text-ink-900 dark:text-white">{{ t('setup.title') }}</h1>
-        <p class="mt-2 text-dust-500 dark:text-pearl-300">{{ t('setup.description') }}</p>
+        <p class="mt-2 text-secondary-fg">{{ t('setup.description') }}</p>
       </div>
 
       <!-- Progress Steps -->
@@ -65,7 +65,7 @@
             <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
               {{ t('setup.database.title') }}
             </h2>
-            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-sm text-secondary-fg">
               {{ t('setup.database.description') }}
             </p>
           </div>
@@ -96,7 +96,7 @@
               <p class="text-sm font-medium text-ink-900 dark:text-white">
                 {{ t("setup.redis.enableTls") }}
               </p>
-              <p class="text-xs text-dust-500 dark:text-pearl-300">
+              <p class="text-xs text-secondary-fg">
                 {{ t("setup.redis.enableTlsHint") }}
               </p>
             </div>
@@ -190,7 +190,7 @@
             <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
               {{ t('setup.redis.title') }}
             </h2>
-            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-sm text-secondary-fg">
               {{ t('setup.redis.description') }}
             </p>
           </div>
@@ -242,7 +242,7 @@
               <p class="text-sm font-medium text-ink-900 dark:text-white">
                 {{ t("setup.redis.enableTls") }}
               </p>
-              <p class="text-xs text-dust-500 dark:text-pearl-300">
+              <p class="text-xs text-secondary-fg">
                 {{ t("setup.redis.enableTlsHint") }}
               </p>
             </div>
@@ -297,7 +297,7 @@
             <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
               {{ t('setup.admin.title') }}
             </h2>
-            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-sm text-secondary-fg">
               {{ t('setup.admin.description') }}
             </p>
           </div>
@@ -345,14 +345,14 @@
             <h2 class="text-xl font-semibold text-ink-900 dark:text-white">
               {{ t('setup.ready.title') }}
             </h2>
-            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-sm text-secondary-fg">
               {{ t('setup.ready.description') }}
             </p>
           </div>
 
           <div class="space-y-4">
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-700">
-              <h3 class="mb-2 text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <h3 class="mb-2 text-sm font-medium text-secondary-fg">
                 {{ t('setup.ready.database') }}
               </h3>
               <p class="text-ink-900 dark:text-white">
@@ -363,7 +363,7 @@
             </div>
 
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-700">
-              <h3 class="mb-2 text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <h3 class="mb-2 text-sm font-medium text-secondary-fg">
                 {{ t('setup.ready.redis') }}
               </h3>
               <p class="text-ink-900 dark:text-white">
@@ -372,7 +372,7 @@
             </div>
 
             <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-700">
-              <h3 class="mb-2 text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <h3 class="mb-2 text-sm font-medium text-secondary-fg">
                 {{ t('setup.ready.adminEmail') }}
               </h3>
               <p class="text-ink-900 dark:text-white">{{ formData.admin.email }}</p>

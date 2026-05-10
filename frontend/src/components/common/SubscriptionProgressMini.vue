@@ -30,10 +30,10 @@
         class="absolute right-0 z-50 mt-2 w-[340px] overflow-hidden rounded-xl border border-paper-200 bg-white shadow-xl dark:border-ink-700 dark:bg-ink-800"
       >
         <div class="border-b border-paper-100 p-3 dark:border-ink-700">
-          <h3 class="text-sm font-semibold text-dust-900 dark:text-pearl-50">
+          <h3 class="text-sm font-semibold text-primary-fg">
             {{ t('subscriptionProgress.title') }}
           </h3>
-          <p class="mt-0.5 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="mt-0.5 text-xs text-secondary-fg">
             {{ t('subscriptionProgress.activeCount', { count: activeSubscriptions.length }) }}
           </p>
         </div>
@@ -45,7 +45,7 @@
             class="border-b border-paper-100 p-3 last:border-b-0 dark:border-ink-700/50"
           >
             <div class="mb-2 flex items-center justify-between">
-              <span class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+              <span class="text-sm font-medium text-primary-fg">
                 {{ subscription.group?.name || `Group #${subscription.group_id}` }}
               </span>
               <span
@@ -73,7 +73,7 @@
               <!-- Progress bars for limited subscriptions -->
               <template v-else>
                 <div v-if="subscription.group?.daily_limit_usd" class="flex items-center gap-2">
-                  <span class="w-8 flex-shrink-0 text-[10px] text-dust-500 dark:text-pearl-300">{{
+                  <span class="w-8 flex-shrink-0 text-[10px] text-secondary-fg">{{
                     t('subscriptionProgress.daily')
                   }}</span>
                   <div class="h-1.5 min-w-0 flex-1 rounded-full bg-paper-200 dark:bg-ink-600">
@@ -93,7 +93,7 @@
                       }"
                     ></div>
                   </div>
-                  <span class="w-24 flex-shrink-0 text-right text-[10px] text-dust-500 dark:text-pearl-300">
+                  <span class="w-24 flex-shrink-0 text-right text-[10px] text-secondary-fg">
                     {{
                       formatUsage(subscription.daily_usage_usd, subscription.group?.daily_limit_usd)
                     }}
@@ -101,7 +101,7 @@
                 </div>
 
                 <div v-if="subscription.group?.weekly_limit_usd" class="flex items-center gap-2">
-                  <span class="w-8 flex-shrink-0 text-[10px] text-dust-500 dark:text-pearl-300">{{
+                  <span class="w-8 flex-shrink-0 text-[10px] text-secondary-fg">{{
                     t('subscriptionProgress.weekly')
                   }}</span>
                   <div class="h-1.5 min-w-0 flex-1 rounded-full bg-paper-200 dark:bg-ink-600">
@@ -121,7 +121,7 @@
                       }"
                     ></div>
                   </div>
-                  <span class="w-24 flex-shrink-0 text-right text-[10px] text-dust-500 dark:text-pearl-300">
+                  <span class="w-24 flex-shrink-0 text-right text-[10px] text-secondary-fg">
                     {{
                       formatUsage(subscription.weekly_usage_usd, subscription.group?.weekly_limit_usd)
                     }}
@@ -129,7 +129,7 @@
                 </div>
 
                 <div v-if="subscription.group?.monthly_limit_usd" class="flex items-center gap-2">
-                  <span class="w-8 flex-shrink-0 text-[10px] text-dust-500 dark:text-pearl-300">{{
+                  <span class="w-8 flex-shrink-0 text-[10px] text-secondary-fg">{{
                     t('subscriptionProgress.monthly')
                   }}</span>
                   <div class="h-1.5 min-w-0 flex-1 rounded-full bg-paper-200 dark:bg-ink-600">
@@ -149,7 +149,7 @@
                       }"
                     ></div>
                   </div>
-                  <span class="w-24 flex-shrink-0 text-right text-[10px] text-dust-500 dark:text-pearl-300">
+                  <span class="w-24 flex-shrink-0 text-right text-[10px] text-secondary-fg">
                     {{
                       formatUsage(
                         subscription.monthly_usage_usd,
@@ -275,7 +275,7 @@ function getDaysRemainingClass(expiresAt: string): string {
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
   if (days <= 3) return 'text-coral-600 dark:text-coral-500'
   if (days <= 7) return 'text-orange-600 dark:text-orange-400'
-  return 'text-dust-500 dark:text-pearl-300'
+  return 'text-secondary-fg'
 }
 
 function toggleTooltip() {

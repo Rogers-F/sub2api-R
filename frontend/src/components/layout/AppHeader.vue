@@ -12,10 +12,10 @@
         </button>
 
         <div class="hidden lg:block">
-          <h1 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+          <h1 class="text-lg font-semibold text-primary-fg">
             {{ pageTitle }}
           </h1>
-          <p v-if="pageDescription" class="text-xs text-dust-500 dark:text-pearl-300">
+          <p v-if="pageDescription" class="text-xs text-secondary-fg">
             {{ pageDescription }}
           </p>
         </div>
@@ -71,7 +71,7 @@
         <div v-if="user" class="relative" ref="dropdownRef">
           <button
             @click="toggleDropdown"
-            class="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+            class="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover-tint"
             aria-label="User Menu"
           >
             <div
@@ -80,10 +80,10 @@
               {{ userInitials }}
             </div>
             <div class="hidden text-left md:block">
-              <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+              <div class="text-sm font-medium text-primary-fg">
                 {{ displayName }}
               </div>
-              <div class="text-xs capitalize text-dust-500 dark:text-pearl-300">
+              <div class="text-xs capitalize text-secondary-fg">
                 {{ user.role }}
               </div>
             </div>
@@ -95,15 +95,15 @@
             <div v-if="dropdownOpen" class="dropdown right-0 mt-2 w-56">
               <!-- User Info -->
               <div class="border-b hairline px-4 py-3">
-                <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+                <div class="text-sm font-medium text-primary-fg">
                   {{ displayName }}
                 </div>
-                <div class="text-xs text-dust-500 dark:text-pearl-300">{{ user.email }}</div>
+                <div class="text-xs text-secondary-fg">{{ user.email }}</div>
               </div>
 
               <!-- Balance (mobile only) -->
               <div class="border-b hairline px-4 py-2 sm:hidden">
-                <div class="text-xs text-dust-500 dark:text-pearl-300">
+                <div class="text-xs text-secondary-fg">
                   {{ t('common.balance') }}
                 </div>
                 <div class="font-mono text-sm font-semibold tabular-nums text-gold-600 dark:text-gold-300">
@@ -147,7 +147,7 @@
                 v-if="contactInfo"
                 class="border-t hairline px-4 py-2.5"
               >
-                <div class="flex items-center gap-2 text-xs text-dust-500 dark:text-pearl-300">
+                <div class="flex items-center gap-2 text-xs text-secondary-fg">
                   <svg
                     class="h-3.5 w-3.5 flex-shrink-0"
                     fill="none"

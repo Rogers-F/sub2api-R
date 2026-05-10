@@ -41,13 +41,13 @@
               >
                 <div
                   v-if="filterUserLoading"
-                  class="px-4 py-3 text-sm text-dust-500 dark:text-pearl-300"
+                  class="px-4 py-3 text-sm text-secondary-fg"
                 >
                   {{ t('common.loading') }}
                 </div>
                 <div
                   v-else-if="filterUserResults.length === 0 && filterUserKeyword"
-                  class="px-4 py-3 text-sm text-dust-500 dark:text-pearl-300"
+                  class="px-4 py-3 text-sm text-secondary-fg"
                 >
                   {{ t('common.noOptionsFound') }}
                 </div>
@@ -56,10 +56,10 @@
                   :key="user.id"
                   type="button"
                   @click="selectFilterUser(user)"
-                  class="w-full px-4 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                  class="w-full px-4 py-2 text-left text-sm hover-tint"
                 >
-                  <span class="font-medium text-dust-900 dark:text-pearl-50">{{ user.email }}</span>
-                  <span class="ml-2 text-dust-500 dark:text-pearl-300">#{{ user.id }}</span>
+                  <span class="font-medium text-primary-fg">{{ user.email }}</span>
+                  <span class="ml-2 text-secondary-fg">#{{ user.id }}</span>
                 </button>
               </div>
             </div>
@@ -121,7 +121,7 @@
                 <div class="p-2">
                   <!-- User column mode selection -->
                   <div class="mb-2 hairline border-b pb-2">
-                    <div class="px-3 py-1 text-xs font-medium text-dust-500 dark:text-pearl-300">
+                    <div class="px-3 py-1 text-xs font-medium text-secondary-fg">
                       {{ t('admin.subscriptions.columns.user') }}
                     </div>
                     <button
@@ -188,7 +188,7 @@
                   }}
                 </span>
               </div>
-              <span class="font-medium text-dust-900 dark:text-pearl-50">
+              <span class="font-medium text-primary-fg">
                 {{ userColumnMode === 'email'
                   ? (row.user?.email || t('admin.redeem.userPrefix', { id: row.user_id }))
                   : (row.user?.username || '-')
@@ -467,13 +467,13 @@
             >
               <div
                 v-if="userSearchLoading"
-                class="px-4 py-3 text-sm text-dust-500 dark:text-pearl-300"
+                class="px-4 py-3 text-sm text-secondary-fg"
               >
                 {{ t('common.loading') }}
               </div>
               <div
                 v-else-if="userSearchResults.length === 0 && userSearchKeyword"
-                class="px-4 py-3 text-sm text-dust-500 dark:text-pearl-300"
+                class="px-4 py-3 text-sm text-secondary-fg"
               >
                 {{ t('common.noOptionsFound') }}
               </div>
@@ -482,10 +482,10 @@
                 :key="user.id"
                 type="button"
                 @click="selectUser(user)"
-                class="w-full px-4 py-2 text-left text-sm hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                class="w-full px-4 py-2 text-left text-sm hover-tint"
               >
-                <span class="font-medium text-dust-900 dark:text-pearl-50">{{ user.email }}</span>
-                <span class="ml-2 text-dust-500 dark:text-pearl-300">#{{ user.id }}</span>
+                <span class="font-medium text-primary-fg">{{ user.email }}</span>
+                <span class="ml-2 text-secondary-fg">#{{ user.id }}</span>
               </button>
             </div>
           </div>
@@ -579,13 +579,13 @@
         <div class="rounded-lg bg-paper-50 p-4 dark:bg-ink-700">
           <p class="text-sm text-dust-600 dark:text-pearl-300">
             {{ t('admin.subscriptions.adjustingFor') }}
-            <span class="font-medium text-dust-900 dark:text-pearl-50">{{
+            <span class="font-medium text-primary-fg">{{
               extendingSubscription.user?.email
             }}</span>
           </p>
           <p class="mt-1 text-sm text-dust-600 dark:text-pearl-300">
             {{ t('admin.subscriptions.currentExpiration') }}:
-            <span class="font-medium text-dust-900 dark:text-pearl-50">
+            <span class="font-medium text-primary-fg">
               {{
                 extendingSubscription.expires_at
                   ? formatDateOnly(extendingSubscription.expires_at)
@@ -595,7 +595,7 @@
           </p>
           <p v-if="extendingSubscription.expires_at" class="mt-1 text-sm text-dust-600 dark:text-pearl-300">
             {{ t('admin.subscriptions.remainingDays') }}:
-            <span class="font-medium text-dust-900 dark:text-pearl-50">
+            <span class="font-medium text-primary-fg">
               {{ getDaysRemaining(extendingSubscription.expires_at) ?? 0 }}
             </span>
           </p>
@@ -663,12 +663,12 @@
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
 
-            <h2 class="mb-4 text-lg font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.subscriptions.guide.title') }}</h2>
+            <h2 class="mb-4 text-lg font-bold text-primary-fg">{{ t('admin.subscriptions.guide.title') }}</h2>
             <p class="mb-5 text-sm text-dust-500 dark:text-dust-400">{{ t('admin.subscriptions.guide.subtitle') }}</p>
 
             <!-- Step 1 -->
             <div class="mb-5">
-              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-primary-fg">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-gold-500/15 text-xs font-bold text-gold-700 dark:bg-gold-300/15 dark:text-gold-300">1</span>
                 {{ t('admin.subscriptions.guide.step1.title') }}
               </h3>
@@ -691,7 +691,7 @@
 
             <!-- Step 2 -->
             <div class="mb-5">
-              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-primary-fg">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-gold-500/15 text-xs font-bold text-gold-700 dark:bg-gold-300/15 dark:text-gold-300">2</span>
                 {{ t('admin.subscriptions.guide.step2.title') }}
               </h3>
@@ -704,7 +704,7 @@
 
             <!-- Step 3 -->
             <div class="mb-5">
-              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-primary-fg">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-gold-500/15 text-xs font-bold text-gold-700 dark:bg-gold-300/15 dark:text-gold-300">3</span>
                 {{ t('admin.subscriptions.guide.step3.title') }}
               </h3>
@@ -1385,7 +1385,7 @@ onUnmounted(() => {
 }
 
 .usage-label {
-  @apply w-10 flex-shrink-0 text-xs font-medium text-dust-500 dark:text-pearl-300;
+  @apply w-10 flex-shrink-0 text-xs font-medium text-secondary-fg;
 }
 
 .usage-amount {

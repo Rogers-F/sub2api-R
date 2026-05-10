@@ -57,7 +57,7 @@
               </code>
               <button
                 @click="copyToClipboard(value, row.id)"
-                class="rounded-lg p-1 transition-colors hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                class="rounded-lg p-1 transition-colors hover-tint"
                 :class="
                   copiedKeyId === row.id
                     ? 'text-mint-500'
@@ -78,7 +78,7 @@
 
           <template #cell-name="{ value, row }">
             <div class="flex items-center gap-1.5">
-              <span class="font-medium text-dust-900 dark:text-pearl-50">{{ value }}</span>
+              <span class="font-medium text-primary-fg">{{ value }}</span>
               <Icon
                 v-if="row.ip_whitelist?.length > 0 || row.ip_blacklist?.length > 0"
                 name="shield"
@@ -94,7 +94,7 @@
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
-                class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover-tint"
                 :title="t('keys.clickToChangeGroup')"
               >
                 <GroupBadge
@@ -108,7 +108,7 @@
                 <span v-else class="text-sm text-dust-400 dark:text-pearl-400">{{
                   t('keys.noGroup')
                 }}</span>
-                <span class="text-xs text-dust-500 dark:text-pearl-300">{{ t('keys.selectGroup') }}</span>
+                <span class="text-xs text-secondary-fg">{{ t('keys.selectGroup') }}</span>
                 <svg
                   class="h-3.5 w-3.5 text-dust-400 opacity-60 transition-opacity group-hover/dropdown:opacity-100"
                   fill="none"
@@ -129,26 +129,26 @@
           <template #cell-usage="{ row }">
             <div class="text-sm">
               <div class="flex items-center gap-1.5">
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('keys.today') }}:</span>
-                <span class="font-medium text-dust-900 dark:text-pearl-50">
+                <span class="text-secondary-fg">{{ t('keys.today') }}:</span>
+                <span class="font-medium text-primary-fg">
                   ${{ (usageStats[row.id]?.today_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
               <div class="mt-0.5 flex items-center gap-1.5">
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('keys.total') }}:</span>
-                <span class="font-medium text-dust-900 dark:text-pearl-50">
+                <span class="text-secondary-fg">{{ t('keys.total') }}:</span>
+                <span class="font-medium text-primary-fg">
                   ${{ (usageStats[row.id]?.total_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
               <!-- Quota progress (if quota is set) -->
               <div v-if="row.quota > 0" class="mt-1.5">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-dust-500 dark:text-pearl-300">{{ t('keys.quota') }}:</span>
+                  <span class="text-secondary-fg">{{ t('keys.quota') }}:</span>
                   <span :class="[
                     'font-medium',
                     row.quota_used >= row.quota ? 'text-coral-600 dark:text-coral-500' :
                     row.quota_used >= row.quota * 0.8 ? 'text-yellow-500' :
-                    'text-dust-900 dark:text-pearl-50'
+                    'text-primary-fg'
                   ]">
                     ${{ row.quota_used?.toFixed(2) || '0.00' }} / ${{ row.quota?.toFixed(2) }}
                   </span>
@@ -173,7 +173,7 @@
               <!-- 5h window -->
               <div v-if="row.rate_limit_5h > 0">
                 <div class="flex items-center justify-between text-xs">
-                  <span class="text-dust-500 dark:text-pearl-300">5h</span>
+                  <span class="text-secondary-fg">5h</span>
                   <span :class="[
                     'font-medium tabular-nums',
                     row.usage_5h >= row.rate_limit_5h ? 'text-coral-600 dark:text-coral-500' :
@@ -201,7 +201,7 @@
               <!-- 1d window -->
               <div v-if="row.rate_limit_1d > 0">
                 <div class="flex items-center justify-between text-xs">
-                  <span class="text-dust-500 dark:text-pearl-300">1d</span>
+                  <span class="text-secondary-fg">1d</span>
                   <span :class="[
                     'font-medium tabular-nums',
                     row.usage_1d >= row.rate_limit_1d ? 'text-coral-600 dark:text-coral-500' :
@@ -229,7 +229,7 @@
               <!-- 7d window -->
               <div v-if="row.rate_limit_7d > 0">
                 <div class="flex items-center justify-between text-xs">
-                  <span class="text-dust-500 dark:text-pearl-300">7d</span>
+                  <span class="text-secondary-fg">7d</span>
                   <span :class="[
                     'font-medium tabular-nums',
                     row.usage_7d >= row.rate_limit_7d ? 'text-coral-600 dark:text-coral-500' :
@@ -271,7 +271,7 @@
           <template #cell-expires_at="{ value }">
             <span v-if="value" :class="[
               'text-sm',
-              new Date(value) < new Date() ? 'text-coral-600 dark:text-coral-500' : 'text-dust-500 dark:text-pearl-300'
+              new Date(value) < new Date() ? 'text-coral-600 dark:text-coral-500' : 'text-secondary-fg'
             ]">
               {{ formatDateTime(value) }}
             </span>
@@ -291,14 +291,14 @@
           </template>
 
           <template #cell-last_used_at="{ value }">
-            <span v-if="value" class="text-sm text-dust-500 dark:text-pearl-300">
+            <span v-if="value" class="text-sm text-secondary-fg">
               {{ formatDateTime(value) }}
             </span>
             <span v-else class="text-sm text-dust-400 dark:text-pearl-400">-</span>
           </template>
 
           <template #cell-created_at="{ value }">
-            <span class="text-sm text-dust-500 dark:text-pearl-300">{{ formatDateTime(value) }}</span>
+            <span class="text-sm text-secondary-fg">{{ formatDateTime(value) }}</span>
           </template>
 
           <template #cell-actions="{ row }">
@@ -518,11 +518,11 @@
               <label class="input-label">{{ t('keys.quotaUsed') }}</label>
               <div class="flex items-center gap-2">
                 <div class="flex-1 rounded-lg bg-paper-100 px-3 py-2 dark:bg-ink-700">
-                  <span class="font-medium text-dust-900 dark:text-pearl-50">
+                  <span class="font-medium text-primary-fg">
                     ${{ selectedKey.quota_used?.toFixed(4) || '0.0000' }}
                   </span>
                   <span class="mx-2 text-dust-400">/</span>
-                  <span class="text-dust-500 dark:text-pearl-300">
+                  <span class="text-secondary-fg">
                     ${{ selectedKey.quota?.toFixed(2) || '0.00' }}
                   </span>
                 </div>
@@ -584,12 +584,12 @@
                       'font-medium',
                       selectedKey.usage_5h >= selectedKey.rate_limit_5h ? 'text-coral-600 dark:text-coral-500' :
                       selectedKey.usage_5h >= selectedKey.rate_limit_5h * 0.8 ? 'text-yellow-500' :
-                      'text-dust-900 dark:text-pearl-50'
+                      'text-primary-fg'
                     ]">
                       ${{ selectedKey.usage_5h?.toFixed(4) || '0.0000' }}
                     </span>
                     <span class="mx-2 text-dust-400">/</span>
-                    <span class="text-dust-500 dark:text-pearl-300">
+                    <span class="text-secondary-fg">
                       ${{ selectedKey.rate_limit_5h?.toFixed(2) || '0.00' }}
                     </span>
                   </div>
@@ -630,12 +630,12 @@
                       'font-medium',
                       selectedKey.usage_1d >= selectedKey.rate_limit_1d ? 'text-coral-600 dark:text-coral-500' :
                       selectedKey.usage_1d >= selectedKey.rate_limit_1d * 0.8 ? 'text-yellow-500' :
-                      'text-dust-900 dark:text-pearl-50'
+                      'text-primary-fg'
                     ]">
                       ${{ selectedKey.usage_1d?.toFixed(4) || '0.0000' }}
                     </span>
                     <span class="mx-2 text-dust-400">/</span>
-                    <span class="text-dust-500 dark:text-pearl-300">
+                    <span class="text-secondary-fg">
                       ${{ selectedKey.rate_limit_1d?.toFixed(2) || '0.00' }}
                     </span>
                   </div>
@@ -676,12 +676,12 @@
                       'font-medium',
                       selectedKey.usage_7d >= selectedKey.rate_limit_7d ? 'text-coral-600 dark:text-coral-500' :
                       selectedKey.usage_7d >= selectedKey.rate_limit_7d * 0.8 ? 'text-yellow-500' :
-                      'text-dust-900 dark:text-pearl-50'
+                      'text-primary-fg'
                     ]">
                       ${{ selectedKey.usage_7d?.toFixed(4) || '0.0000' }}
                     </span>
                     <span class="mx-2 text-dust-400">/</span>
-                    <span class="text-dust-500 dark:text-pearl-300">
+                    <span class="text-secondary-fg">
                       ${{ selectedKey.rate_limit_7d?.toFixed(2) || '0.00' }}
                     </span>
                   </div>
@@ -778,8 +778,8 @@
 
             <!-- Current expiration display (only in edit mode) -->
             <div v-if="showEditModal && selectedKey?.expires_at" class="text-sm">
-              <span class="text-dust-500 dark:text-pearl-300">{{ t('keys.currentExpiration') }}: </span>
-              <span class="font-medium text-dust-900 dark:text-pearl-50">
+              <span class="text-secondary-fg">{{ t('keys.currentExpiration') }}: </span>
+              <span class="font-medium text-primary-fg">
                 {{ formatDateTime(selectedKey.expires_at) }}
               </span>
             </div>
@@ -893,10 +893,10 @@
 	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 hairline-strong hover:border-gold-500 dark:hover:border-gold-300 hover:bg-gold-500/10 dark:hover:bg-gold-300/10 transition-all"
 	          >
 	            <Icon name="terminal" size="xl" class="text-dust-600 dark:text-pearl-300" />
-	            <span class="font-medium text-dust-900 dark:text-pearl-50">{{
+	            <span class="font-medium text-primary-fg">{{
 	              t('keys.ccsClientSelect.claudeCode')
 	            }}</span>
-	            <span class="text-xs text-dust-500 dark:text-pearl-300">{{
+	            <span class="text-xs text-secondary-fg">{{
 	              t('keys.ccsClientSelect.claudeCodeDesc')
 	            }}</span>
 	          </button>
@@ -905,10 +905,10 @@
 	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 hairline-strong hover:border-gold-500 dark:hover:border-gold-300 hover:bg-gold-500/10 dark:hover:bg-gold-300/10 transition-all"
 	          >
 	            <Icon name="sparkles" size="xl" class="text-dust-600 dark:text-pearl-300" />
-	            <span class="font-medium text-dust-900 dark:text-pearl-50">{{
+	            <span class="font-medium text-primary-fg">{{
 	              t('keys.ccsClientSelect.geminiCli')
 	            }}</span>
-	            <span class="text-xs text-dust-500 dark:text-pearl-300">{{
+	            <span class="text-xs text-secondary-fg">{{
 	              t('keys.ccsClientSelect.geminiCliDesc')
 	            }}</span>
 	          </button>
@@ -963,7 +963,7 @@
               selectedKeyForGroup?.group_id === option.value ||
               (!selectedKeyForGroup?.group_id && option.value === null)
                 ? 'bg-gold-500/10 dark:bg-gold-300/10'
-                : 'hover:bg-paper-100 dark:hover:bg-white/[0.04]'
+                : 'hover-tint'
             ]"
             :title="option.description || undefined"
           >

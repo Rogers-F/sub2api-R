@@ -1,7 +1,7 @@
 <template>
   <div class="card p-4">
     <div class="mb-4 flex items-center justify-between gap-3">
-      <h3 class="text-sm font-semibold text-dust-900 dark:text-pearl-50">
+      <h3 class="text-sm font-semibold text-primary-fg">
         {{ !enableRankingView || activeView === 'model_distribution'
           ? t('admin.dashboard.modelDistribution')
           : t('admin.dashboard.spendingRankingTitle') }}
@@ -109,7 +109,7 @@
       <div class="max-h-48 flex-1 overflow-y-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="text-dust-500 dark:text-pearl-300">
+            <tr class="text-secondary-fg">
               <th class="pb-2 text-left">{{ t('admin.dashboard.model') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.requests') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.tokens') }}</th>
@@ -161,7 +161,7 @@
     </div>
     <div
       v-else-if="activeView === 'model_distribution'"
-      class="flex h-48 items-center justify-center text-sm text-dust-500 dark:text-pearl-300"
+      class="flex h-48 items-center justify-center text-sm text-secondary-fg"
     >
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>
@@ -171,7 +171,7 @@
     </div>
     <div
       v-else-if="rankingError"
-      class="flex h-48 items-center justify-center text-sm text-dust-500 dark:text-pearl-300"
+      class="flex h-48 items-center justify-center text-sm text-secondary-fg"
     >
       {{ t('admin.dashboard.failedToLoad') }}
     </div>
@@ -182,7 +182,7 @@
       <div class="max-h-48 flex-1 overflow-y-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="text-dust-500 dark:text-pearl-300">
+            <tr class="text-secondary-fg">
               <th class="pb-2 text-left">{{ t('admin.dashboard.spendingRankingUser') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingRequests') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.spendingRankingTokens') }}</th>
@@ -196,16 +196,16 @@
               class="border-t border-paper-200 transition-colors dark:border-ink-700"
               :class="item.isOther
                 ? 'bg-paper-100/70 dark:bg-white/[0.02]'
-                : 'cursor-pointer hover:bg-paper-100 dark:hover:bg-white/[0.04]'"
+                : 'cursor-pointer hover-tint'"
               @click="item.isOther ? undefined : emit('ranking-click', item)"
             >
               <td class="py-1.5">
                 <div class="flex min-w-0 items-center gap-2">
-                  <span class="shrink-0 text-[11px] font-semibold text-dust-500 dark:text-pearl-300">
+                  <span class="shrink-0 text-[11px] font-semibold text-secondary-fg">
                     {{ item.isOther ? 'Σ' : `#${index + 1}` }}
                   </span>
                   <span
-                    class="block max-w-[140px] truncate font-medium text-dust-900 dark:text-pearl-50"
+                    class="block max-w-[140px] truncate font-medium text-primary-fg"
                     :title="getRankingRowLabel(item)"
                   >
                     {{ getRankingRowLabel(item) }}
@@ -228,7 +228,7 @@
     </div>
     <div
       v-else
-      class="flex h-48 items-center justify-center text-sm text-dust-500 dark:text-pearl-300"
+      class="flex h-48 items-center justify-center text-sm text-secondary-fg"
     >
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>

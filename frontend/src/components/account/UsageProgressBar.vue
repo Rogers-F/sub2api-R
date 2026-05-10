@@ -5,7 +5,7 @@
       v-if="windowStats && (windowStats.requests > 0 || windowStats.tokens > 0)"
       class="mb-0.5 flex items-center"
     >
-      <div class="flex items-center gap-1.5 text-[9px] text-dust-500 dark:text-pearl-300">
+      <div class="flex items-center gap-1.5 text-[9px] text-secondary-fg">
         <span class="rounded bg-paper-100 px-1.5 py-0.5 dark:bg-ink-800">
           {{ formatRequests }} req
         </span>

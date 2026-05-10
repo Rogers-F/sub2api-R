@@ -34,7 +34,7 @@
               </div>
 
               <!-- Title -->
-              <h2 class="mb-2 text-2xl font-bold leading-tight text-dust-900 dark:text-pearl-50">
+              <h2 class="mb-2 text-2xl font-bold leading-tight text-primary-fg">
                 {{ announcementStore.currentPopup.title }}
               </h2>
 

@@ -2,10 +2,10 @@
   <AuthLayout>
     <div class="space-y-6">
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
+        <h2 class="text-2xl font-bold text-primary-fg">
           {{ t('auth.linuxdo.callbackTitle') }}
         </h2>
-        <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+        <p class="mt-2 text-sm text-secondary-fg">
           {{ isProcessing ? t('auth.linuxdo.callbackProcessing') : t('auth.linuxdo.callbackHint') }}
         </p>
       </div>

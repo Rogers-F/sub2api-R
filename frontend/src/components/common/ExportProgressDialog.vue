@@ -6,7 +6,7 @@
       </div>
       <div class="flex items-center justify-between text-sm text-dust-700 dark:text-pearl-100">
         <span>{{ t('usage.exportedCount', { current, total }) }}</span>
-        <span class="font-medium text-dust-900 dark:text-pearl-50">{{ normalizedProgress }}%</span>
+        <span class="font-medium text-primary-fg">{{ normalizedProgress }}%</span>
       </div>
       <div class="h-2 w-full rounded-full bg-paper-200 dark:bg-ink-700">
         <div
@@ -19,7 +19,7 @@
           :style="{ width: `${normalizedProgress}%` }"
         ></div>
       </div>
-      <div v-if="estimatedTime" class="text-xs text-dust-500 dark:text-pearl-300" aria-live="polite" aria-atomic="true">
+      <div v-if="estimatedTime" class="text-xs text-secondary-fg" aria-live="polite" aria-atomic="true">
         {{ t('usage.estimatedTime', { time: estimatedTime }) }}
       </div>
     </div>

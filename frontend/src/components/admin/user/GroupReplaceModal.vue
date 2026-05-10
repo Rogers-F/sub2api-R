@@ -10,7 +10,7 @@
       <div class="rounded-lg border border-paper-200 bg-paper-50 p-3 dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center gap-2">
           <Icon name="shield" size="sm" class="text-purple-500" />
-          <span class="font-medium text-dust-900 dark:text-pearl-50">{{ oldGroup.name }}</span>
+          <span class="font-medium text-primary-fg">{{ oldGroup.name }}</span>
           <Icon name="arrowRight" size="sm" class="ml-auto text-dust-400" />
           <span v-if="selectedGroupId" class="font-medium text-gold-600 dark:text-gold-300">
             {{ availableGroups.find(g => g.id === selectedGroupId)?.name }}
@@ -44,7 +44,7 @@
             <div v-if="selectedGroupId === group.id" class="h-2 w-2 rounded-full bg-white"></div>
           </div>
           <div class="flex-1">
-            <span class="font-medium text-dust-900 dark:text-pearl-50">{{ group.name }}</span>
+            <span class="font-medium text-primary-fg">{{ group.name }}</span>
             <span class="ml-2 text-xs text-dust-400">{{ group.platform }}</span>
           </div>
         </label>

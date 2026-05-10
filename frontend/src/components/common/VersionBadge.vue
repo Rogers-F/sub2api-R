@@ -82,7 +82,7 @@
                 <div class="inline-flex items-center gap-2">
                   <span
                     v-if="currentVersion"
-                    class="text-2xl font-bold text-dust-900 dark:text-pearl-50"
+                    class="text-2xl font-bold text-primary-fg"
                     >v{{ currentVersion }}</span
                   >
                   <span v-else class="text-2xl font-bold text-dust-400 dark:text-pearl-300">--</span>
@@ -104,7 +104,7 @@
                     </svg>
                   </span>
                 </div>
-                <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+                <p class="mt-1 text-xs text-secondary-fg">
                   {{
                     hasUpdate
                       ? t('version.latestVersion') + ': v' + latestVersion
@@ -332,7 +332,7 @@
     </template>
 
     <!-- Non-admin: Simple static version text -->
-    <span v-else-if="version" class="text-xs text-dust-500 dark:text-pearl-300">
+    <span v-else-if="version" class="text-xs text-secondary-fg">
       v{{ version }}
     </span>
   </div>

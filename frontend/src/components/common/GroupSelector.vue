@@ -31,7 +31,7 @@
       </label>
       <div
         v-if="filteredGroups.length === 0"
-        class="col-span-2 py-2 text-center text-sm text-dust-500 dark:text-pearl-300"
+        class="col-span-2 py-2 text-center text-sm text-secondary-fg"
       >
         {{ t('common.noGroupsAvailable') }}
       </div>

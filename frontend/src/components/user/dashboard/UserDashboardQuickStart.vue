@@ -17,7 +17,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-dust-900 dark:text-white">{{ t('dashboard.documentation') }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.viewDocumentation') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.viewDocumentation') }}</p>
         </div>
         <Icon
           name="externalLink"
@@ -36,7 +36,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-dust-900 dark:text-white">{{ t('dashboard.apiEndpoint') }}</p>
-          <p class="text-xs font-mono text-dust-500 dark:text-pearl-300 truncate">{{ apiBaseUrl }}</p>
+          <p class="text-xs font-mono text-secondary-fg truncate">{{ apiBaseUrl }}</p>
         </div>
         <button
           @click="copyApiUrl"

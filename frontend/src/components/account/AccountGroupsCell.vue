@@ -40,7 +40,7 @@
           :style="popoverStyle"
         >
           <div class="mb-2 flex items-center justify-between">
-            <span class="text-xs font-medium text-dust-500 dark:text-pearl-300">
+            <span class="text-xs font-medium text-secondary-fg">
               {{ t('admin.accounts.groupCountTotal', { count: groups.length }) }}
             </span>
             <button

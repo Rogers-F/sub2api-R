@@ -240,7 +240,7 @@ onMounted(() => {
   <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-ink-900/5 dark:bg-ink-800 dark:ring-ink-700">
     <div class="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h3 class="text-sm font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.runtime.title') }}</h3>
+        <h3 class="text-sm font-bold text-primary-fg">{{ t('admin.ops.runtime.title') }}</h3>
         <p class="mt-1 text-xs text-dust-500 dark:text-dust-400">{{ t('admin.ops.runtime.description') }}</p>
       </div>
       <button
@@ -263,20 +263,20 @@ onMounted(() => {
     <div v-else class="space-y-6">
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
         <div class="mb-3 flex items-center justify-between">
-          <h4 class="text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.runtime.alertTitle') }}</h4>
+          <h4 class="text-sm font-semibold text-primary-fg">{{ t('admin.ops.runtime.alertTitle') }}</h4>
           <button class="btn btn-sm btn-secondary" @click="openAlertEditor">{{ t('common.edit') }}</button>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('admin.ops.runtime.evalIntervalSeconds') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">{{ alertSettings.evaluation_interval_seconds }}s</span>
+            <span class="ml-1 font-medium text-primary-fg">{{ alertSettings.evaluation_interval_seconds }}s</span>
           </div>
           <div
             v-if="alertSettings.silencing?.enabled && alertSettings.silencing.global_until_rfc3339"
             class="text-xs text-dust-600 dark:text-dust-300 md:col-span-2"
           >
             {{ t('admin.ops.runtime.silencing.globalUntil') }}:
-            <span class="ml-1 font-mono text-dust-900 dark:text-pearl-50">{{ alertSettings.silencing.global_until_rfc3339 }}</span>
+            <span class="ml-1 font-mono text-primary-fg">{{ alertSettings.silencing.global_until_rfc3339 }}</span>
           </div>
 
           <details class="col-span-1 md:col-span-2">
@@ -329,7 +329,7 @@ onMounted(() => {
       </div>
 
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
-        <div class="mb-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.runtime.metricThresholds') }}</div>
+        <div class="mb-2 text-sm font-semibold text-primary-fg">{{ t('admin.ops.runtime.metricThresholds') }}</div>
         <p class="mb-4 text-xs text-dust-500 dark:text-dust-400">{{ t('admin.ops.runtime.metricThresholdsHint') }}</p>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -393,7 +393,7 @@ onMounted(() => {
       </div>
 
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
-        <div class="mb-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.runtime.silencing.title') }}</div>
+        <div class="mb-2 text-sm font-semibold text-primary-fg">{{ t('admin.ops.runtime.silencing.title') }}</div>
 
         <label class="inline-flex items-center gap-2 text-sm text-dust-700 dark:text-dust-300">
           <input v-model="draftAlert.silencing.enabled" type="checkbox" class="h-4 w-4 rounded border-paper-300" />
@@ -425,7 +425,7 @@ onMounted(() => {
           <div class="rounded-xl border border-paper-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <div class="text-xs font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.runtime.silencing.entries.title') }}</div>
+                <div class="text-xs font-bold text-primary-fg">{{ t('admin.ops.runtime.silencing.entries.title') }}</div>
                 <p class="text-[11px] text-dust-500 dark:text-dust-400">{{ t('admin.ops.runtime.silencing.entries.hint') }}</p>
               </div>
               <button class="btn btn-sm btn-secondary" type="button" @click="addSilenceEntry">
@@ -444,7 +444,7 @@ onMounted(() => {
                 class="rounded-lg border border-paper-200 bg-paper-50 p-4 dark:border-ink-700 dark:bg-ink-900"
               >
                 <div class="mb-3 flex items-center justify-between">
-                  <div class="text-xs font-bold text-dust-900 dark:text-pearl-50">
+                  <div class="text-xs font-bold text-primary-fg">
                     {{ t('admin.ops.runtime.silencing.entries.entryTitle', { n: idx + 1 }) }}
                   </div>
                   <button class="btn btn-sm btn-danger" type="button" @click="removeSilenceEntry(idx)">{{ t('common.delete') }}</button>

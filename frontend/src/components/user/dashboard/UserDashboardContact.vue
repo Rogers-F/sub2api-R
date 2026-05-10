@@ -12,7 +12,7 @@
           class="flex items-center gap-3"
         >
           <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-paper-100 dark:bg-ink-700">
-            <Icon :name="getContactIcon(line)" size="sm" class="text-dust-500 dark:text-pearl-300" />
+            <Icon :name="getContactIcon(line)" size="sm" class="text-secondary-fg" />
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-dust-700 dark:text-pearl-100">{{ line }}</p>

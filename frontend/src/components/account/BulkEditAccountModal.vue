@@ -169,7 +169,7 @@
               :platforms="selectedPlatforms"
             />
 
-            <p class="text-xs text-dust-500 dark:text-pearl-300">
+            <p class="text-xs text-secondary-fg">
               {{ t('admin.accounts.selectedModels', { count: allowedModels.length }) }}
               <span v-if="allowedModels.length === 0">{{
                 t('admin.accounts.supportsAllModels')
@@ -295,7 +295,7 @@
             >
               {{ t('admin.accounts.customErrorCodes') }}
             </label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.customErrorCodesHint') }}
             </p>
           </div>
@@ -393,7 +393,7 @@
             >
               {{ t('admin.accounts.interceptWarmupRequests') }}
             </label>
-            <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-xs text-secondary-fg">
               {{ t('admin.accounts.interceptWarmupRequestsDesc') }}
             </p>
           </div>
@@ -621,10 +621,10 @@
           id="bulk-edit-openai-ws-mode"
           :class="!enableOpenAIWSMode && 'pointer-events-none opacity-50'"
         >
-          <p class="mb-3 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="mb-3 text-xs text-secondary-fg">
             {{ t('admin.accounts.openai.wsModeDesc') }}
           </p>
-          <p class="mb-3 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="mb-3 text-xs text-secondary-fg">
             {{ t(openAIWSModeConcurrencyHintKey) }}
           </p>
           <Select
@@ -744,7 +744,7 @@
         <!-- 用户消息限速模式（独立于 RPM 开关，始终可见） -->
         <div class="mt-4">
           <label class="input-label">{{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueue') }}</label>
-          <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300 mb-2">
+          <p class="mt-1 text-xs text-secondary-fg mb-2">
             {{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueueHint') }}
           </p>
           <div class="flex space-x-2">

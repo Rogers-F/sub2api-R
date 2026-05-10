@@ -156,7 +156,7 @@ function onNextPage() {
 <template>
   <section class="card p-4 md:p-5">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <h3 class="text-sm font-bold text-dust-900 dark:text-pearl-50">
+      <h3 class="text-sm font-bold text-primary-fg">
         {{ t('admin.ops.openaiTokenStats.title') }}
       </h3>
       <div class="flex flex-wrap items-center gap-2">
@@ -187,7 +187,7 @@ function onNextPage() {
           >
             {{ t('admin.ops.openaiTokenStats.nextPage') }}
           </button>
-          <span class="text-xs text-dust-500 dark:text-pearl-300">
+          <span class="text-xs text-secondary-fg">
             {{ t('admin.ops.openaiTokenStats.pageInfo', { page, total: totalPages }) }}
           </span>
         </template>
@@ -198,7 +198,7 @@ function onNextPage() {
       {{ errorMessage }}
     </div>
 
-    <div v-if="loading" class="py-8 text-center text-sm text-dust-500 dark:text-pearl-300">
+    <div v-if="loading" class="py-8 text-center text-sm text-secondary-fg">
       {{ t('admin.ops.loadingText') }}
     </div>
 
@@ -213,7 +213,7 @@ function onNextPage() {
         <div class="max-h-[420px] overflow-auto">
           <table class="min-w-full text-left text-xs md:text-sm">
             <thead class="sticky top-0 z-10 bg-white dark:bg-ink-800">
-              <tr class="border-b hairline text-dust-500 dark:text-pearl-300">
+              <tr class="border-b hairline text-secondary-fg">
                 <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.model') }}</th>
                 <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.requestCount') }}</th>
                 <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgTokensPerSec') }}</th>
@@ -241,7 +241,7 @@ function onNextPage() {
           </table>
         </div>
       </div>
-      <div v-if="viewMode === 'topn'" class="mt-3 text-xs text-dust-500 dark:text-pearl-300">
+      <div v-if="viewMode === 'topn'" class="mt-3 text-xs text-secondary-fg">
         {{ t('admin.ops.openaiTokenStats.totalModels', { total }) }}
       </div>
     </div>

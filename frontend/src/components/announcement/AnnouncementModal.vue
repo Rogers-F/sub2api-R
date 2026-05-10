@@ -14,7 +14,7 @@
       <!-- Empty state -->
       <div v-else-if="announcements.length === 0" class="text-center py-8">
         <Icon name="megaphone" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
-        <p class="mt-2 text-dust-500 dark:text-pearl-300">{{ t('announcement.noAnnouncements') }}</p>
+        <p class="mt-2 text-secondary-fg">{{ t('announcement.noAnnouncements') }}</p>
       </div>
 
       <!-- Announcements list -->
@@ -24,7 +24,7 @@
           :key="announcement.id"
           class="rounded-lg border border-paper-200 bg-paper-100 p-4 dark:border-ink-700 dark:bg-ink-800"
         >
-          <h4 class="font-medium text-dust-900 dark:text-pearl-50">
+          <h4 class="font-medium text-primary-fg">
             {{ announcement.title }}
           </h4>
           <div class="mt-2 text-sm text-dust-700 dark:text-pearl-100">

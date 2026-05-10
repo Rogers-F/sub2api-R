@@ -184,7 +184,7 @@ onMounted(() => {
   <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-ink-900/5 dark:bg-ink-800 dark:ring-ink-700">
     <div class="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h3 class="text-sm font-bold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.email.title') }}</h3>
+        <h3 class="text-sm font-bold text-primary-fg">{{ t('admin.ops.email.title') }}</h3>
         <p class="mt-1 text-xs text-dust-500 dark:text-dust-400">{{ t('admin.ops.email.description') }}</p>
       </div>
       <div class="flex items-center gap-2">
@@ -209,43 +209,43 @@ onMounted(() => {
 
     <div v-else class="space-y-6">
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
-        <h4 class="mb-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.email.alertTitle') }}</h4>
+        <h4 class="mb-2 text-sm font-semibold text-primary-fg">{{ t('admin.ops.email.alertTitle') }}</h4>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('common.enabled') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">
+            <span class="ml-1 font-medium text-primary-fg">
               {{ config.alert.enabled ? t('common.enabled') : t('common.disabled') }}
             </span>
           </div>
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('admin.ops.email.recipients') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">{{ config.alert.recipients.length }}</span>
+            <span class="ml-1 font-medium text-primary-fg">{{ config.alert.recipients.length }}</span>
           </div>
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('admin.ops.email.minSeverity') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">{{
+            <span class="ml-1 font-medium text-primary-fg">{{
               config.alert.min_severity || t('admin.ops.email.minSeverityAll')
             }}</span>
           </div>
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('admin.ops.email.rateLimitPerHour') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">{{ config.alert.rate_limit_per_hour }}</span>
+            <span class="ml-1 font-medium text-primary-fg">{{ config.alert.rate_limit_per_hour }}</span>
           </div>
         </div>
       </div>
 
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
-        <h4 class="mb-2 text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.email.reportTitle') }}</h4>
+        <h4 class="mb-2 text-sm font-semibold text-primary-fg">{{ t('admin.ops.email.reportTitle') }}</h4>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('common.enabled') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">
+            <span class="ml-1 font-medium text-primary-fg">
               {{ config.report.enabled ? t('common.enabled') : t('common.disabled') }}
             </span>
           </div>
           <div class="text-xs text-dust-600 dark:text-dust-300">
             {{ t('admin.ops.email.recipients') }}:
-            <span class="ml-1 font-medium text-dust-900 dark:text-pearl-50">{{ config.report.recipients.length }}</span>
+            <span class="ml-1 font-medium text-primary-fg">{{ config.report.recipients.length }}</span>
           </div>
         </div>
       </div>
@@ -264,7 +264,7 @@ onMounted(() => {
         </ul>
       </div>
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
-        <h4 class="mb-3 text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.email.alertTitle') }}</h4>
+        <h4 class="mb-3 text-sm font-semibold text-primary-fg">{{ t('admin.ops.email.alertTitle') }}</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <div class="mb-1 text-xs font-medium text-dust-600 dark:text-dust-300">{{ t('common.enabled') }}</div>
@@ -334,7 +334,7 @@ onMounted(() => {
       </div>
 
       <div class="rounded-2xl bg-paper-50 p-4 dark:bg-ink-700/50">
-        <h4 class="mb-3 text-sm font-semibold text-dust-900 dark:text-pearl-50">{{ t('admin.ops.email.reportTitle') }}</h4>
+        <h4 class="mb-3 text-sm font-semibold text-primary-fg">{{ t('admin.ops.email.reportTitle') }}</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <div class="mb-1 text-xs font-medium text-dust-600 dark:text-dust-300">{{ t('common.enabled') }}</div>

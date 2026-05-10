@@ -135,7 +135,7 @@ const onWeeklyModeChange = (e: Event) => {
       <div class="mb-3 flex items-center justify-between">
         <div>
           <label class="input-label mb-0">{{ t('admin.accounts.quotaLimitToggle') }}</label>
-          <p class="mt-1 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="mt-1 text-xs text-secondary-fg">
             {{ t('admin.accounts.quotaLimitToggleHint') }}
           </p>
         </div>
@@ -161,7 +161,7 @@ const onWeeklyModeChange = (e: Event) => {
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaDailyLimit') }}</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dust-500 dark:text-pearl-300">$</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-fg">$</span>
             <input
               :value="dailyLimit"
               @input="onDailyInput"
@@ -174,7 +174,7 @@ const onWeeklyModeChange = (e: Event) => {
           </div>
           <!-- 日配额重置模式 -->
           <div class="mt-2 flex items-center gap-2">
-            <label class="text-xs text-dust-500 dark:text-pearl-300 whitespace-nowrap">{{ t('admin.accounts.quotaResetMode') }}</label>
+            <label class="text-xs text-secondary-fg whitespace-nowrap">{{ t('admin.accounts.quotaResetMode') }}</label>
             <select
               :value="dailyResetMode || 'rolling'"
               @change="onDailyModeChange"
@@ -186,7 +186,7 @@ const onWeeklyModeChange = (e: Event) => {
           </div>
           <!-- 固定模式：小时选择 -->
           <div v-if="dailyResetMode === 'fixed'" class="mt-2 flex items-center gap-2">
-            <label class="text-xs text-dust-500 dark:text-pearl-300 whitespace-nowrap">{{ t('admin.accounts.quotaResetHour') }}</label>
+            <label class="text-xs text-secondary-fg whitespace-nowrap">{{ t('admin.accounts.quotaResetHour') }}</label>
             <select
               :value="dailyResetHour ?? 0"
               @change="emit('update:dailyResetHour', Number(($event.target as HTMLSelectElement).value))"
@@ -209,7 +209,7 @@ const onWeeklyModeChange = (e: Event) => {
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaWeeklyLimit') }}</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dust-500 dark:text-pearl-300">$</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-fg">$</span>
             <input
               :value="weeklyLimit"
               @input="onWeeklyInput"
@@ -222,7 +222,7 @@ const onWeeklyModeChange = (e: Event) => {
           </div>
           <!-- 周配额重置模式 -->
           <div class="mt-2 flex items-center gap-2">
-            <label class="text-xs text-dust-500 dark:text-pearl-300 whitespace-nowrap">{{ t('admin.accounts.quotaResetMode') }}</label>
+            <label class="text-xs text-secondary-fg whitespace-nowrap">{{ t('admin.accounts.quotaResetMode') }}</label>
             <select
               :value="weeklyResetMode || 'rolling'"
               @change="onWeeklyModeChange"
@@ -234,7 +234,7 @@ const onWeeklyModeChange = (e: Event) => {
           </div>
           <!-- 固定模式：星期几 + 小时 -->
           <div v-if="weeklyResetMode === 'fixed'" class="mt-2 flex items-center gap-2 flex-wrap">
-            <label class="text-xs text-dust-500 dark:text-pearl-300 whitespace-nowrap">{{ t('admin.accounts.quotaWeeklyResetDay') }}</label>
+            <label class="text-xs text-secondary-fg whitespace-nowrap">{{ t('admin.accounts.quotaWeeklyResetDay') }}</label>
             <select
               :value="weeklyResetDay ?? 1"
               @change="emit('update:weeklyResetDay', Number(($event.target as HTMLSelectElement).value))"
@@ -242,7 +242,7 @@ const onWeeklyModeChange = (e: Event) => {
             >
               <option v-for="d in dayOptions" :key="d.value" :value="d.value">{{ t('admin.accounts.dayOfWeek.' + d.key) }}</option>
             </select>
-            <label class="text-xs text-dust-500 dark:text-pearl-300 whitespace-nowrap">{{ t('admin.accounts.quotaResetHour') }}</label>
+            <label class="text-xs text-secondary-fg whitespace-nowrap">{{ t('admin.accounts.quotaResetHour') }}</label>
             <select
               :value="weeklyResetHour ?? 0"
               @change="emit('update:weeklyResetHour', Number(($event.target as HTMLSelectElement).value))"
@@ -277,7 +277,7 @@ const onWeeklyModeChange = (e: Event) => {
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaTotalLimit') }}</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-dust-500 dark:text-pearl-300">$</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-fg">$</span>
             <input
               :value="totalLimit"
               @input="onTotalInput"

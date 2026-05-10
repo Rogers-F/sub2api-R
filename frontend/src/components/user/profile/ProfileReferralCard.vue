@@ -4,7 +4,7 @@
       <h2 class="text-lg font-medium text-dust-900 dark:text-white">
         {{ t('profile.referral.title') }}
       </h2>
-      <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+      <p class="mt-1 text-sm text-secondary-fg">
         {{ t('profile.referral.description') }}
       </p>
     </div>
@@ -59,13 +59,13 @@
         <!-- Stats -->
         <div class="grid grid-cols-2 gap-4">
           <div class="rounded-lg border hairline bg-paper-50 p-4 dark:bg-ink-800">
-            <p class="text-sm text-dust-500 dark:text-pearl-300">{{ t('profile.referral.invitedCount') }}</p>
+            <p class="text-sm text-secondary-fg">{{ t('profile.referral.invitedCount') }}</p>
             <p class="mt-1 text-2xl font-semibold text-dust-900 dark:text-white">
               {{ referralInfo?.total_invited || 0 }}
             </p>
           </div>
           <div class="rounded-lg border hairline bg-paper-50 p-4 dark:bg-ink-800">
-            <p class="text-sm text-dust-500 dark:text-pearl-300">{{ t('profile.referral.totalRewards') }}</p>
+            <p class="text-sm text-secondary-fg">{{ t('profile.referral.totalRewards') }}</p>
             <p class="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
               ${{ (referralInfo?.total_reward || 0).toFixed(2) }}
             </p>

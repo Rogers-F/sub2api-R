@@ -10,9 +10,9 @@
           </svg>
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.balance') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.balance') }}</p>
           <p class="text-xl font-bold text-mint-600 dark:text-mint-400">${{ formatBalance(balance) }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('common.available') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('common.available') }}</p>
         </div>
       </div>
     </div>
@@ -24,7 +24,7 @@
           <Icon name="key" size="md" class="text-blue-600 dark:text-blue-400" :stroke-width="2" />
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.apiKeys') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.apiKeys') }}</p>
           <p class="text-xl font-bold text-dust-900 dark:text-white">{{ stats?.total_api_keys || 0 }}</p>
           <p class="text-xs text-green-600 dark:text-green-400">{{ stats?.active_api_keys || 0 }} {{ t('common.active') }}</p>
         </div>
@@ -38,9 +38,9 @@
           <Icon name="chart" size="md" class="text-green-600 dark:text-green-400" :stroke-width="2" />
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.todayRequests') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.todayRequests') }}</p>
           <p class="text-xl font-bold text-dust-900 dark:text-white">{{ stats?.today_requests || 0 }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('common.total') }}: {{ formatNumber(stats?.total_requests || 0) }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('common.total') }}: {{ formatNumber(stats?.total_requests || 0) }}</p>
         </div>
       </div>
     </div>
@@ -52,13 +52,13 @@
           <Icon name="dollar" size="md" class="text-purple-600 dark:text-purple-400" :stroke-width="2" />
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.todayCost') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.todayCost') }}</p>
           <p class="text-xl font-bold text-dust-900 dark:text-white">
             <span class="text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">${{ formatCost(stats?.today_actual_cost || 0) }}</span>
             <span class="text-sm font-normal text-dust-400 dark:text-pearl-300" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.today_cost || 0) }}</span>
           </p>
           <p class="text-xs">
-            <span class="text-dust-500 dark:text-pearl-300">{{ t('common.total') }}: </span>
+            <span class="text-secondary-fg">{{ t('common.total') }}: </span>
             <span class="text-purple-600 dark:text-purple-400" :title="t('dashboard.actual')">${{ formatCost(stats?.total_actual_cost || 0) }}</span>
             <span class="text-dust-400 dark:text-pearl-300" :title="t('dashboard.standard')"> / ${{ formatCost(stats?.total_cost || 0) }}</span>
           </p>
@@ -76,9 +76,9 @@
           <Icon name="cube" size="md" class="text-amber-600 dark:text-amber-400" :stroke-width="2" />
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.todayTokens') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.todayTokens') }}</p>
           <p class="text-xl font-bold text-dust-900 dark:text-white">{{ formatTokens(stats?.today_tokens || 0) }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.input') }}: {{ formatTokens(stats?.today_input_tokens || 0) }} / {{ t('dashboard.output') }}: {{ formatTokens(stats?.today_output_tokens || 0) }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.input') }}: {{ formatTokens(stats?.today_input_tokens || 0) }} / {{ t('dashboard.output') }}: {{ formatTokens(stats?.today_output_tokens || 0) }}</p>
         </div>
       </div>
     </div>
@@ -90,9 +90,9 @@
           <Icon name="database" size="md" class="text-indigo-600 dark:text-indigo-400" :stroke-width="2" />
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.totalTokens') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.totalTokens') }}</p>
           <p class="text-xl font-bold text-dust-900 dark:text-white">{{ formatTokens(stats?.total_tokens || 0) }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.input') }}: {{ formatTokens(stats?.total_input_tokens || 0) }} / {{ t('dashboard.output') }}: {{ formatTokens(stats?.total_output_tokens || 0) }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.input') }}: {{ formatTokens(stats?.total_input_tokens || 0) }} / {{ t('dashboard.output') }}: {{ formatTokens(stats?.total_output_tokens || 0) }}</p>
         </div>
       </div>
     </div>
@@ -104,14 +104,14 @@
           <Icon name="bolt" size="md" class="text-violet-600 dark:text-violet-400" :stroke-width="2" />
         </div>
         <div class="flex-1">
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.performance') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.performance') }}</p>
           <div class="flex items-baseline gap-2">
             <p class="text-xl font-bold text-dust-900 dark:text-white">{{ formatTokens(stats?.rpm || 0) }}</p>
-            <span class="text-xs text-dust-500 dark:text-pearl-300">RPM</span>
+            <span class="text-xs text-secondary-fg">RPM</span>
           </div>
           <div class="flex items-baseline gap-2">
             <p class="text-sm font-semibold text-violet-600 dark:text-violet-400">{{ formatTokens(stats?.tpm || 0) }}</p>
-            <span class="text-xs text-dust-500 dark:text-pearl-300">TPM</span>
+            <span class="text-xs text-secondary-fg">TPM</span>
           </div>
         </div>
       </div>
@@ -124,9 +124,9 @@
           <Icon name="clock" size="md" class="text-rose-600 dark:text-rose-400" :stroke-width="2" />
         </div>
         <div>
-          <p class="text-xs font-medium text-dust-500 dark:text-pearl-300">{{ t('dashboard.avgResponse') }}</p>
+          <p class="text-xs font-medium text-secondary-fg">{{ t('dashboard.avgResponse') }}</p>
           <p class="text-xl font-bold text-dust-900 dark:text-white">{{ formatDuration(stats?.average_duration_ms || 0) }}</p>
-          <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('dashboard.averageTime') }}</p>
+          <p class="text-xs text-secondary-fg">{{ t('dashboard.averageTime') }}</p>
         </div>
       </div>
     </div>

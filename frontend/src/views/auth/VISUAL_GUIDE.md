@@ -26,7 +26,7 @@ Both LoginView and RegisterView use the AuthLayout component, which provides:
 │                                             │
 └─────────────────────────────────────────────┘
 
-Background: Gradient (Indigo → White → Purple)
+Background: Gradient (Paper → White → Pearl)
 Card: White with rounded corners and shadow
 Max Width: 28rem (448px)
 Centered: Both horizontally and vertically
@@ -242,31 +242,31 @@ Centered: Both horizontally and vertically
 
 ### Neutral Colors
 
-- **Gray-900**: `#111827` - Headings
-- **Gray-700**: `#374151` - Labels
-- **Gray-600**: `#4B5563` - Body text
-- **Gray-500**: `#6B7280` - Helper text
-- **Gray-300**: `#D1D5DB` - Borders
-- **Gray-100**: `#F3F4F6` - Disabled backgrounds
+- **Dust-900**: `#111827` - Headings
+- **Dust-700**: `#374151` - Labels
+- **Dust-600**: `#4B5563` - Body text
+- **Dust-500**: `#6B7280` - Helper text
+- **Dust-300**: `#D1D5DB` - Borders
+- **Paper-100**: `#F3F4F6` - Disabled backgrounds
 - **White**: `#FFFFFF` - Card backgrounds
 
 ### Error Colors
 
-- **Red-600**: `#DC2626` - Error text
-- **Red-500**: `#EF4444` - Error border, focus ring
-- **Red-50**: `#FEF2F2` - Error banner background
-- **Red-200**: `#FECACA` - Error banner border
+- **Coral-600**: `#DC2626` - Error text
+- **Coral-500**: `#EF4444` - Error border, focus ring
+- **Coral-500/10**: `#FEF2F2` - Error banner background
+- **Coral-400**: `#FECACA` - Error banner border
 
 ### Success Colors
 
-- **Green-600**: `#16A34A` - Success text
-- **Green-50**: `#F0FDF4` - Success banner background
+- **Mint-600**: `#16A34A` - Success text
+- **Mint-500/15**: `#F0FDF4` - Success banner background
 
 ### Background Gradient
 
-- **From**: Indigo-100 (`#E0E7FF`)
+- **From**: Paper-50
 - **Via**: White (`#FFFFFF`)
-- **To**: Purple-100 (`#F3E8FF`)
+- **To**: Pearl-100
 
 ## Typography
 
@@ -314,21 +314,21 @@ Centered: Both horizontally and vertically
 **Default:**
 
 ```css
-border: 1px solid #D1D5DB (gray-300)
+border: 1px solid #D1D5DB (dust-300)
 focus: 2px ring #6366F1 (indigo-500)
 ```
 
 **Error:**
 
 ```css
-border: 1px solid #EF4444 (red-500)
-focus: 2px ring #EF4444 (red-500)
+border: 1px solid #EF4444 (coral-500)
+focus: 2px ring #EF4444 (coral-500)
 ```
 
 **Disabled:**
 
 ```css
-background: #F3F4F6 (gray-100)
+background: #F3F4F6 (paper-100)
 cursor: not-allowed
 opacity: 0.6
 ```
@@ -497,7 +497,7 @@ animation: spin 1s linear infinite;
 ### Error Icon
 
 ```svg
-<svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+<svg class="h-5 w-5 text-coral-400" fill="currentColor" viewBox="0 0 20 20">
   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
 </svg>
 ```
@@ -543,9 +543,9 @@ animation: spin 1s linear infinite;
 
 ```css
 /* Example dark mode colors (not implemented yet) */
-dark:bg-gray-900
-dark:text-white
-dark:border-gray-700
+dark:bg-ink-900
+dark:text-pearl-50
+dark:border-ink-700
 ```
 
 ## Performance Metrics

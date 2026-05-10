@@ -12,33 +12,33 @@
             >
               {{ row.user.email }}
             </button>
-            <span v-else class="font-medium text-dust-900 dark:text-pearl-50">-</span>
-            <span class="ml-1 text-dust-500 dark:text-pearl-300">#{{ row.user_id }}</span>
+            <span v-else class="font-medium text-primary-fg">-</span>
+            <span class="ml-1 text-secondary-fg">#{{ row.user_id }}</span>
           </div>
         </template>
 
         <template #cell-api_key="{ row }">
-          <span class="text-sm text-dust-900 dark:text-pearl-50">{{ row.api_key?.name || '-' }}</span>
+          <span class="text-sm text-primary-fg">{{ row.api_key?.name || '-' }}</span>
         </template>
 
         <template #cell-account="{ row }">
-          <span class="text-sm text-dust-900 dark:text-pearl-50">{{ row.account?.name || '-' }}</span>
+          <span class="text-sm text-primary-fg">{{ row.account?.name || '-' }}</span>
         </template>
 
         <template #cell-model="{ row }">
           <div v-if="row.upstream_model && row.upstream_model !== row.model" class="space-y-0.5 text-xs">
-            <div class="break-all font-medium text-dust-900 dark:text-pearl-50">
+            <div class="break-all font-medium text-primary-fg">
               {{ row.model }}
             </div>
-            <div class="break-all text-dust-500 dark:text-pearl-300">
+            <div class="break-all text-secondary-fg">
               <span class="mr-0.5">↳</span>{{ row.upstream_model }}
             </div>
           </div>
-          <span v-else class="font-medium text-dust-900 dark:text-pearl-50">{{ row.model }}</span>
+          <span v-else class="font-medium text-primary-fg">{{ row.model }}</span>
         </template>
 
         <template #cell-reasoning_effort="{ row }">
-          <span class="text-sm text-dust-900 dark:text-pearl-50">
+          <span class="text-sm text-primary-fg">
             {{ formatReasoningEffort(row.reasoning_effort) }}
           </span>
         </template>
@@ -46,11 +46,11 @@
         <template #cell-endpoint="{ row }">
           <div class="max-w-[320px] space-y-1 text-xs">
             <div class="break-all text-dust-700 dark:text-pearl-100">
-              <span class="font-medium text-dust-500 dark:text-pearl-300">{{ t('usage.inbound') }}:</span>
+              <span class="font-medium text-secondary-fg">{{ t('usage.inbound') }}:</span>
               <span class="ml-1">{{ row.inbound_endpoint?.trim() || '-' }}</span>
             </div>
             <div class="break-all text-dust-700 dark:text-pearl-100">
-              <span class="font-medium text-dust-500 dark:text-pearl-300">{{ t('usage.upstream') }}:</span>
+              <span class="font-medium text-secondary-fg">{{ t('usage.upstream') }}:</span>
               <span class="ml-1">{{ row.upstream_endpoint?.trim() || '-' }}</span>
             </div>
           </div>
@@ -75,7 +75,7 @@
             <svg class="h-4 w-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span class="font-medium text-dust-900 dark:text-pearl-50">{{ row.image_count }}{{ t('usage.imageUnit') }}</span>
+            <span class="font-medium text-primary-fg">{{ row.image_count }}{{ t('usage.imageUnit') }}</span>
             <span class="text-dust-400">({{ row.image_size || '2K' }})</span>
           </div>
           <!-- Token 请求 -->
@@ -84,11 +84,11 @@
               <div class="flex items-center gap-2">
                 <div class="inline-flex items-center gap-1">
                   <Icon name="arrowDown" size="sm" class="h-3.5 w-3.5 text-mint-500" />
-                  <span class="font-medium text-dust-900 dark:text-pearl-50">{{ row.input_tokens?.toLocaleString() || 0 }}</span>
+                  <span class="font-medium text-primary-fg">{{ row.input_tokens?.toLocaleString() || 0 }}</span>
                 </div>
                 <div class="inline-flex items-center gap-1">
                   <Icon name="arrowUp" size="sm" class="h-3.5 w-3.5 text-violet-500" />
-                  <span class="font-medium text-dust-900 dark:text-pearl-50">{{ row.output_tokens?.toLocaleString() || 0 }}</span>
+                  <span class="font-medium text-primary-fg">{{ row.output_tokens?.toLocaleString() || 0 }}</span>
                 </div>
               </div>
               <div v-if="row.cache_read_tokens > 0 || row.cache_creation_tokens > 0" class="flex items-center gap-2">

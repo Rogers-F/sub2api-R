@@ -16,10 +16,10 @@
           <td class="max-w-[120px] truncate py-1 pl-6 text-dust-700 dark:text-pearl-100" :title="user.email">
             {{ user.email || `User #${user.user_id}` }}
           </td>
-          <td class="py-1 text-right text-dust-500 dark:text-pearl-300">
+          <td class="py-1 text-right text-secondary-fg">
             {{ user.requests.toLocaleString() }}
           </td>
-          <td class="py-1 text-right text-dust-500 dark:text-pearl-300">
+          <td class="py-1 text-right text-secondary-fg">
             {{ formatTokens(user.total_tokens) }}
           </td>
           <td class="py-1 text-right text-green-600 dark:text-green-400">

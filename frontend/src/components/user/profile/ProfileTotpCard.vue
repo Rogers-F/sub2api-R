@@ -4,7 +4,7 @@
       <h2 class="text-lg font-medium text-dust-900 dark:text-white">
         {{ t('profile.totp.title') }}
       </h2>
-      <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+      <p class="mt-1 text-sm text-secondary-fg">
         {{ t('profile.totp.description') }}
       </p>
     </div>
@@ -25,7 +25,7 @@
           <p class="font-medium text-dust-700 dark:text-pearl-100">
             {{ t('profile.totp.featureDisabled') }}
           </p>
-          <p class="text-sm text-dust-500 dark:text-pearl-300">
+          <p class="text-sm text-secondary-fg">
             {{ t('profile.totp.featureDisabledHint') }}
           </p>
         </div>
@@ -43,7 +43,7 @@
             <p class="font-medium text-dust-900 dark:text-white">
               {{ t('profile.totp.enabled') }}
             </p>
-            <p v-if="status.enabled_at" class="text-sm text-dust-500 dark:text-pearl-300">
+            <p v-if="status.enabled_at" class="text-sm text-secondary-fg">
               {{ t('profile.totp.enabledAt') }}: {{ formatDate(status.enabled_at) }}
             </p>
           </div>
@@ -69,7 +69,7 @@
             <p class="font-medium text-dust-700 dark:text-pearl-100">
               {{ t('profile.totp.notEnabled') }}
             </p>
-            <p class="text-sm text-dust-500 dark:text-pearl-300">
+            <p class="text-sm text-secondary-fg">
               {{ t('profile.totp.notEnabledHint') }}
             </p>
           </div>

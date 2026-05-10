@@ -997,6 +997,38 @@
   .dark .sla-bars > i.bad {
     background: rgba(232, 130, 107, 0.8);
   }
+
+  /* ============================================================
+   * Phase D-C — DRY 工具类(高频 utility chain 抽离)
+   * ============================================================ */
+
+  /* 数字 mono 等宽 + tabular-nums(防 fallback 数字宽度跳动) */
+  .num-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* hover 中性 tint(替代 hover:bg-paper-100 dark:hover:bg-white/[0.04]) */
+  .hover-tint:hover {
+    background: rgba(60, 40, 30, 0.04);
+  }
+  .dark .hover-tint:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  /* 文字层级语义(高频组合) — fg = foreground */
+  .text-primary-fg {
+    color: #1A1308; /* dust-900 light */
+  }
+  .dark .text-primary-fg {
+    color: #F4F5F8; /* pearl-50 dark */
+  }
+  .text-secondary-fg {
+    color: #5C5C5C; /* dust-500 light */
+  }
+  .dark .text-secondary-fg {
+    color: #8B91A0; /* pearl-300 dark */
+  }
 }
 
 @layer utilities {

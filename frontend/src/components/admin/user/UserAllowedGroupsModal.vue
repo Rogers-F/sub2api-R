@@ -7,7 +7,7 @@
           <span class="text-2xl font-semibold text-gold-600 dark:text-gold-300">{{ user.email.charAt(0).toUpperCase() }}</span>
         </div>
         <div class="flex-1">
-          <p class="text-lg font-semibold text-dust-900 dark:text-pearl-50">{{ user.email }}</p>
+          <p class="text-lg font-semibold text-primary-fg">{{ user.email }}</p>
           <p class="mt-1 text-sm text-dust-600 dark:text-pearl-300">{{ t('admin.users.groupConfigHint', { email: user.email }) }}</p>
         </div>
       </div>
@@ -58,18 +58,18 @@
                 <!-- 分组信息 -->
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="text-base font-semibold text-dust-900 dark:text-pearl-50">{{ config.groupName }}</span>
+                    <span class="text-base font-semibold text-primary-fg">{{ config.groupName }}</span>
                     <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
                       {{ t('admin.groups.exclusive') }}
                     </span>
                   </div>
                   <div class="mt-1.5 flex items-center gap-3 text-sm">
-                    <span class="inline-flex items-center gap-1 text-dust-500 dark:text-pearl-300">
+                    <span class="inline-flex items-center gap-1 text-secondary-fg">
                       <PlatformIcon :platform="config.platform" size="xs" />
                       <span>{{ config.platform }}</span>
                     </span>
                     <span class="text-dust-300 dark:text-pearl-400">•</span>
-                    <span class="text-dust-500 dark:text-pearl-300">
+                    <span class="text-secondary-fg">
                       {{ t('admin.users.defaultRate') }}: <span class="font-medium text-dust-700 dark:text-pearl-100">{{ config.defaultRate }}x</span>
                     </span>
                   </div>
@@ -119,15 +119,15 @@
                 <!-- 分组信息 -->
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="text-base font-semibold text-dust-900 dark:text-pearl-50">{{ config.groupName }}</span>
+                    <span class="text-base font-semibold text-primary-fg">{{ config.groupName }}</span>
                   </div>
                   <div class="mt-1.5 flex items-center gap-3 text-sm">
-                    <span class="inline-flex items-center gap-1 text-dust-500 dark:text-pearl-300">
+                    <span class="inline-flex items-center gap-1 text-secondary-fg">
                       <PlatformIcon :platform="config.platform" size="xs" />
                       <span>{{ config.platform }}</span>
                     </span>
                     <span class="text-dust-300 dark:text-pearl-400">•</span>
-                    <span class="text-dust-500 dark:text-pearl-300">
+                    <span class="text-secondary-fg">
                       {{ t('admin.users.defaultRate') }}: <span class="font-medium text-dust-700 dark:text-pearl-100">{{ config.defaultRate }}x</span>
                     </span>
                   </div>
@@ -158,7 +158,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <p class="text-dust-500 dark:text-pearl-300">{{ t('common.noGroupsAvailable') }}</p>
+          <p class="text-secondary-fg">{{ t('common.noGroupsAvailable') }}</p>
         </div>
       </div>
     </div>

@@ -245,7 +245,7 @@
                   {{ value.charAt(0).toUpperCase() }}
                 </span>
               </div>
-              <span class="font-medium text-dust-900 dark:text-pearl-50">{{ value }}</span>
+              <span class="font-medium text-primary-fg">{{ value }}</span>
             </div>
           </template>
 
@@ -298,7 +298,7 @@
               >
                 <Icon name="shield" size="xs" class="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
                 <span class="font-medium text-purple-600 dark:text-purple-400">{{ getUserGroups(row).exclusive.length }}</span>
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.users.exclusiveLabel') }}</span>
+                <span class="text-secondary-fg">{{ t('admin.users.exclusiveLabel') }}</span>
                 <!-- Hover tooltip（操作菜单未打开时显示） -->
                 <div
                   v-if="expandedGroupUserId !== row.id"
@@ -406,14 +406,14 @@
           <template #cell-usage="{ row }">
             <div class="text-sm">
               <div class="flex items-center gap-1.5">
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.users.today') }}:</span>
-                <span class="font-medium text-dust-900 dark:text-pearl-50">
+                <span class="text-secondary-fg">{{ t('admin.users.today') }}:</span>
+                <span class="font-medium text-primary-fg">
                   ${{ (usageStats[row.id]?.today_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
               <div class="mt-0.5 flex items-center gap-1.5">
-                <span class="text-dust-500 dark:text-pearl-300">{{ t('admin.users.total') }}:</span>
-                <span class="font-medium text-dust-900 dark:text-pearl-50">
+                <span class="text-secondary-fg">{{ t('admin.users.total') }}:</span>
+                <span class="font-medium text-primary-fg">
                   ${{ (usageStats[row.id]?.total_actual_cost ?? 0).toFixed(4) }}
                 </span>
               </div>
@@ -442,7 +442,7 @@
           </template>
 
           <template #cell-created_at="{ value }">
-            <span class="text-sm text-dust-500 dark:text-pearl-300">{{ formatDateTime(value) }}</span>
+            <span class="text-sm text-secondary-fg">{{ formatDateTime(value) }}</span>
           </template>
 
           <template #cell-actions="{ row }">

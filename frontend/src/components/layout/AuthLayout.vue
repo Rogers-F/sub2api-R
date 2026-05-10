@@ -38,7 +38,7 @@
           <h1 class="gold-text mb-2 text-3xl font-bold">
             {{ siteName }}
           </h1>
-          <p class="text-sm text-dust-500 dark:text-pearl-300">
+          <p class="text-sm text-secondary-fg">
             {{ siteSubtitle }}
           </p>
         </template>

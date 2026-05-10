@@ -16,14 +16,14 @@
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.requestId') }}</div>
-          <div class="mt-1 break-all font-mono text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 break-all font-mono text-sm font-medium text-primary-fg">
             {{ requestId || '—' }}
           </div>
         </div>
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.time') }}</div>
-          <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 text-sm font-medium text-primary-fg">
             {{ formatDateTime(detail.created_at) }}
           </div>
         </div>
@@ -32,7 +32,7 @@
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">
             {{ isUpstreamError(detail) ? t('admin.ops.errorDetail.account') : t('admin.ops.errorDetail.user') }}
           </div>
-          <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 text-sm font-medium text-primary-fg">
             <template v-if="isUpstreamError(detail)">
               {{ detail.account_name || (detail.account_id != null ? String(detail.account_id) : '—') }}
             </template>
@@ -44,21 +44,21 @@
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.platform') }}</div>
-          <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 text-sm font-medium text-primary-fg">
             {{ detail.platform || '—' }}
           </div>
         </div>
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.group') }}</div>
-          <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 text-sm font-medium text-primary-fg">
             {{ detail.group_name || (detail.group_id != null ? String(detail.group_id) : '—') }}
           </div>
         </div>
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.model') }}</div>
-          <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 text-sm font-medium text-primary-fg">
             <template v-if="hasModelMapping(detail)">
               <span class="font-mono">{{ detail.requested_model }}</span>
               <span class="mx-1 text-dust-400">→</span>
@@ -72,14 +72,14 @@
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.inboundEndpoint') }}</div>
-          <div class="mt-1 break-all font-mono text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 break-all font-mono text-sm font-medium text-primary-fg">
             {{ detail.inbound_endpoint || '—' }}
           </div>
         </div>
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.upstreamEndpoint') }}</div>
-          <div class="mt-1 break-all font-mono text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 break-all font-mono text-sm font-medium text-primary-fg">
             {{ detail.upstream_endpoint || '—' }}
           </div>
         </div>
@@ -95,14 +95,14 @@
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.requestType') }}</div>
-          <div class="mt-1 text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="mt-1 text-sm font-medium text-primary-fg">
             {{ formatRequestTypeLabel(detail.request_type) }}
           </div>
         </div>
 
         <div class="rounded-xl bg-paper-50 p-4 dark:bg-ink-900">
           <div class="text-xs font-bold uppercase tracking-wider text-dust-400">{{ t('admin.ops.errorDetail.message') }}</div>
-          <div class="mt-1 truncate text-sm font-medium text-dust-900 dark:text-pearl-50" :title="detail.message">
+          <div class="mt-1 truncate text-sm font-medium text-primary-fg" :title="detail.message">
             {{ detail.message || '—' }}
           </div>
         </div>
@@ -110,14 +110,14 @@
 
       <!-- Response content (client request -> error_body; upstream -> upstream_error_detail/message) -->
       <div class="rounded-xl bg-paper-50 p-6 dark:bg-ink-900">
-        <h3 class="text-sm font-black uppercase tracking-wider text-dust-900 dark:text-pearl-50">{{ t('admin.ops.errorDetail.responseBody') }}</h3>
+        <h3 class="text-sm font-black uppercase tracking-wider text-primary-fg">{{ t('admin.ops.errorDetail.responseBody') }}</h3>
         <pre class="mt-4 max-h-[520px] overflow-auto rounded-xl border border-paper-200 bg-white p-4 text-xs text-dust-800 dark:border-ink-700 dark:bg-ink-800 dark:text-pearl-100"><code>{{ prettyJSON(primaryResponseBody || '') }}</code></pre>
       </div>
 
       <!-- Upstream errors list (only for request errors) -->
       <div v-if="showUpstreamList" class="rounded-xl bg-paper-50 p-6 dark:bg-ink-900">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="text-sm font-black uppercase tracking-wider text-dust-900 dark:text-pearl-50">{{ t('admin.ops.errorDetails.upstreamErrors') }}</h3>
+          <h3 class="text-sm font-black uppercase tracking-wider text-primary-fg">{{ t('admin.ops.errorDetails.upstreamErrors') }}</h3>
           <div class="text-xs text-dust-500 dark:text-dust-400" v-if="correlatedUpstreamLoading">{{ t('common.loading') }}</div>
         </div>
 
@@ -132,7 +132,7 @@
             class="rounded-xl border border-paper-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="text-xs font-black text-dust-900 dark:text-pearl-50">
+              <div class="text-xs font-black text-primary-fg">
                 #{{ idx + 1 }}
                 <span v-if="ev.type" class="ml-2 rounded-md bg-paper-100 px-2 py-0.5 font-mono text-[10px] font-bold text-dust-700 dark:bg-ink-700 dark:text-pearl-200">{{ ev.type }}</span>
               </div>
@@ -174,7 +174,7 @@
               </div>
             </div>
 
-            <div v-if="ev.message" class="mt-3 break-words text-sm font-medium text-dust-900 dark:text-pearl-50">{{ ev.message }}</div>
+            <div v-if="ev.message" class="mt-3 break-words text-sm font-medium text-primary-fg">{{ ev.message }}</div>
 
             <pre
               v-if="expandedUpstreamDetailIds.has(ev.id)"

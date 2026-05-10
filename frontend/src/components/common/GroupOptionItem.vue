@@ -16,7 +16,7 @@
       <!-- Row 2: description with top spacing -->
       <span
         v-if="description"
-        class="mt-1.5 w-full text-left text-xs leading-relaxed text-dust-500 dark:text-pearl-300 line-clamp-2"
+        class="mt-1.5 w-full text-left text-xs leading-relaxed text-secondary-fg line-clamp-2"
       >
         {{ description }}
       </span>

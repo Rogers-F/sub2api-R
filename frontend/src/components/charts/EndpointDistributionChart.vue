@@ -1,7 +1,7 @@
 <template>
   <div class="card p-4">
     <div class="mb-4 flex items-center justify-between gap-3">
-      <h3 class="text-sm font-semibold text-dust-900 dark:text-pearl-50">
+      <h3 class="text-sm font-semibold text-primary-fg">
         {{ title || t('usage.endpointDistribution') }}
       </h3>
       <div class="flex flex-wrap items-center justify-end gap-2">
@@ -78,7 +78,7 @@
       <div class="max-h-48 flex-1 overflow-y-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="text-dust-500 dark:text-pearl-300">
+            <tr class="text-secondary-fg">
               <th class="pb-2 text-left">{{ t('usage.endpoint') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.requests') }}</th>
               <th class="pb-2 text-right">{{ t('admin.dashboard.tokens') }}</th>
@@ -125,7 +125,7 @@
         </table>
       </div>
     </div>
-    <div v-else class="flex h-48 items-center justify-center text-sm text-dust-500 dark:text-pearl-300">
+    <div v-else class="flex h-48 items-center justify-center text-sm text-secondary-fg">
       {{ t('admin.dashboard.noDataAvailable') }}
     </div>
   </div>

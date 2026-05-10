@@ -12,7 +12,7 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <p class="truncate font-medium text-dust-900 dark:text-pearl-50">{{ user.email }}</p>
+              <p class="truncate font-medium text-primary-fg">{{ user.email }}</p>
               <span
                 v-if="user.username"
                 class="flex-shrink-0 rounded bg-gold-500/10 px-1.5 py-0.5 text-xs text-gold-600 dark:bg-gold-300/10 dark:text-gold-300"
@@ -26,19 +26,19 @@
           </div>
           <!-- Current balance: prominent display on the right -->
           <div class="flex-shrink-0 text-right">
-            <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('admin.users.currentBalance') }}</p>
-            <p class="text-xl font-bold text-dust-900 dark:text-pearl-50">
+            <p class="text-xs text-secondary-fg">{{ t('admin.users.currentBalance') }}</p>
+            <p class="text-xl font-bold text-primary-fg">
               ${{ user.balance?.toFixed(2) || '0.00' }}
             </p>
           </div>
         </div>
         <!-- Row 2: notes + total recharged -->
         <div class="mt-2.5 flex items-center justify-between border-t border-paper-200/60 pt-2.5 dark:border-ink-700/60">
-          <p class="min-w-0 flex-1 truncate text-xs text-dust-500 dark:text-pearl-300" :title="user.notes || ''">
+          <p class="min-w-0 flex-1 truncate text-xs text-secondary-fg" :title="user.notes || ''">
             <template v-if="user.notes">{{ t('admin.users.notes') }}: {{ user.notes }}</template>
             <template v-else>&nbsp;</template>
           </p>
-          <p class="ml-4 flex-shrink-0 text-xs text-dust-500 dark:text-pearl-300">
+          <p class="ml-4 flex-shrink-0 text-xs text-secondary-fg">
             {{ t('admin.users.totalRecharged') }}: <span class="font-semibold text-mint-600 dark:text-mint-400">${{ totalRecharged.toFixed(2) }}</span>
           </p>
         </div>
@@ -106,13 +106,13 @@
                 <Icon :name="getIconName(item)" size="sm" :class="getIconColor(item)" />
               </div>
               <div>
-                <p class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+                <p class="text-sm font-medium text-primary-fg">
                   {{ getItemTitle(item) }}
                 </p>
                 <!-- Notes (admin adjustment reason) -->
                 <p
                   v-if="item.notes"
-                  class="mt-0.5 text-xs text-dust-500 dark:text-pearl-300"
+                  class="mt-0.5 text-xs text-secondary-fg"
                   :title="item.notes"
                 >
                   {{ item.notes.length > 60 ? item.notes.substring(0, 55) + '...' : item.notes }}
@@ -153,7 +153,7 @@
         >
           {{ t('pagination.previous') }}
         </button>
-        <span class="text-sm text-dust-500 dark:text-pearl-300">
+        <span class="text-sm text-secondary-fg">
           {{ currentPage }} / {{ totalPages }}
         </span>
         <button

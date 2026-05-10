@@ -14,7 +14,7 @@
       <!-- Empty state -->
       <div v-else-if="rewards.length === 0" class="text-center py-8">
         <Icon name="gift" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
-        <p class="mt-2 text-dust-500 dark:text-pearl-300">{{ t('profile.referral.noRewards') }}</p>
+        <p class="mt-2 text-secondary-fg">{{ t('profile.referral.noRewards') }}</p>
       </div>
 
       <!-- Rewards list -->
@@ -22,16 +22,16 @@
         <table class="w-full">
           <thead class="sticky top-0 bg-white dark:bg-ink-800">
             <tr class="border-b hairline">
-              <th class="px-4 py-3 text-left text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <th class="px-4 py-3 text-left text-sm font-medium text-secondary-fg">
                 {{ t('profile.referral.rewardType.register') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <th class="px-4 py-3 text-left text-sm font-medium text-secondary-fg">
                 {{ t('profile.referral.referee') }}
               </th>
-              <th class="px-4 py-3 text-right text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <th class="px-4 py-3 text-right text-sm font-medium text-secondary-fg">
                 {{ t('profile.referral.amount') }}
               </th>
-              <th class="px-4 py-3 text-right text-sm font-medium text-dust-500 dark:text-pearl-300">
+              <th class="px-4 py-3 text-right text-sm font-medium text-secondary-fg">
                 {{ t('profile.referral.time') }}
               </th>
             </tr>
@@ -60,7 +60,7 @@
               <td class="px-4 py-3 text-right text-sm font-medium text-green-600 dark:text-green-400">
                 +${{ reward.reward_amount.toFixed(2) }}
               </td>
-              <td class="px-4 py-3 text-right text-sm text-dust-500 dark:text-pearl-300">
+              <td class="px-4 py-3 text-right text-sm text-secondary-fg">
                 {{ formatDate(reward.created_at) }}
               </td>
             </tr>

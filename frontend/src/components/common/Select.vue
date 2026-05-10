@@ -83,7 +83,7 @@
                   size="sm"
                   class="flex-shrink-0 text-dust-400"
                 />
-                <span class="select-option-label" :class="option._creatable && 'italic text-dust-500 dark:text-pearl-300'">{{ getOptionLabel(option) }}</span>
+                <span class="select-option-label" :class="option._creatable && 'italic text-secondary-fg'">{{ getOptionLabel(option) }}</span>
                 <Icon
                   v-if="isSelected(option)"
                   name="check"
@@ -430,7 +430,7 @@ onUnmounted(() => {
   @apply rounded-xl px-4 py-2.5 text-sm;
   @apply bg-white dark:bg-ink-800;
   @apply border border-paper-200 dark:border-ink-600;
-  @apply text-dust-900 dark:text-pearl-50;
+  @apply text-primary-fg;
   @apply transition-all duration-200;
   @apply focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30 dark:focus:border-gold-300 dark:focus:ring-gold-300/30;
   @apply hover:border-paper-300 dark:hover:border-ink-500;
@@ -476,7 +476,7 @@ onUnmounted(() => {
 
 .select-dropdown-portal .select-search-input {
   @apply flex-1 bg-transparent text-sm;
-  @apply text-dust-900 dark:text-pearl-50;
+  @apply text-primary-fg;
   @apply placeholder:text-dust-400 dark:placeholder:text-pearl-300;
   @apply focus:outline-none;
 }
@@ -511,7 +511,7 @@ onUnmounted(() => {
   @apply cursor-default select-none;
   @apply bg-paper-50 dark:bg-ink-900;
   @apply text-[11px] font-bold uppercase tracking-wider;
-  @apply text-dust-500 dark:text-pearl-300;
+  @apply text-secondary-fg;
 }
 
 .select-dropdown-portal .select-option-group:hover {
@@ -524,7 +524,7 @@ onUnmounted(() => {
 
 .select-dropdown-portal .select-empty {
   @apply px-4 py-8 text-center text-sm;
-  @apply text-dust-500 dark:text-pearl-300;
+  @apply text-secondary-fg;
 }
 
 .select-dropdown-enter-active,

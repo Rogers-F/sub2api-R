@@ -23,7 +23,7 @@
               size="xl"
               class="mb-4 h-12 w-12 text-dust-400 dark:text-pearl-300"
             />
-            <p class="text-lg font-medium text-dust-900 dark:text-pearl-50">
+            <p class="text-lg font-medium text-primary-fg">
               {{ t('empty.noData') }}
             </p>
           </div>
@@ -43,10 +43,10 @@
             :key="column.key"
             class="flex items-start justify-between gap-4"
           >
-            <span class="text-xs font-medium uppercase tracking-wider text-dust-500 dark:text-pearl-300">
+            <span class="text-xs font-medium uppercase tracking-wider text-secondary-fg">
               {{ column.label }}
             </span>
-            <div class="text-right text-sm text-dust-900 dark:text-pearl-50">
+            <div class="text-right text-sm text-primary-fg">
               <slot :name="`cell-${column.key}`" :row="row" :value="row[column.key]" :expanded="actionsExpanded">
                 {{ column.formatter ? column.formatter(row[column.key], row) : row[column.key] }}
               </slot>
@@ -76,9 +76,9 @@
             :key="column.key"
             scope="col"
             :class="[
-              'sticky-header-cell py-3 text-left text-xs font-medium uppercase tracking-wider text-dust-500 dark:text-pearl-300',
+              'sticky-header-cell py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary-fg',
               getAdaptivePaddingClass(),
-              { 'cursor-pointer hover:bg-paper-100 dark:hover:bg-white/[0.04]': column.sortable },
+              { 'cursor-pointer hover-tint': column.sortable },
               getStickyColumnClass(column, index),
               column.class
             ]"
@@ -131,7 +131,7 @@
         <tr v-else-if="!data || data.length === 0">
           <td
             :colspan="columns.length"
-            :class="['py-12 text-center text-dust-500 dark:text-pearl-300', getAdaptivePaddingClass()]"
+            :class="['py-12 text-center text-secondary-fg', getAdaptivePaddingClass()]"
           >
             <slot name="empty">
               <div class="flex flex-col items-center">
@@ -140,7 +140,7 @@
                   size="xl"
                   class="mb-4 h-12 w-12 text-dust-400 dark:text-pearl-300"
                 />
-                <p class="text-lg font-medium text-dust-900 dark:text-pearl-50">
+                <p class="text-lg font-medium text-primary-fg">
                   {{ t('empty.noData') }}
                 </p>
               </div>
@@ -167,7 +167,7 @@
               v-for="(column, colIndex) in columns"
               :key="column.key"
               :class="[
-                'whitespace-nowrap py-4 text-sm text-dust-900 dark:text-pearl-50',
+                'whitespace-nowrap py-4 text-sm text-primary-fg',
                 getAdaptivePaddingClass(),
                 getStickyColumnClass(column, colIndex),
                 column.class

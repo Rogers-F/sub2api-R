@@ -3,10 +3,10 @@
     <div class="space-y-6">
       <!-- Title -->
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
+        <h2 class="text-2xl font-bold text-primary-fg">
           {{ t('auth.createAccount') }}
         </h2>
-        <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+        <p class="mt-2 text-sm text-secondary-fg">
           {{ t('auth.signUpToStart', { siteName }) }}
         </p>
       </div>
@@ -294,7 +294,7 @@
 
     <!-- Footer -->
     <template #footer>
-      <p class="text-dust-500 dark:text-pearl-300">
+      <p class="text-secondary-fg">
         {{ t('auth.alreadyHaveAccount') }}
         <router-link
           to="/login"

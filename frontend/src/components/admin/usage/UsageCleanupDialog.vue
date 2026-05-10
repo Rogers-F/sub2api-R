@@ -25,10 +25,10 @@
         </div>
 
         <div class="mt-3 space-y-2">
-          <div v-if="tasksLoading" class="text-sm text-dust-500 dark:text-pearl-300">
+          <div v-if="tasksLoading" class="text-sm text-secondary-fg">
             {{ t('admin.usage.cleanup.loadingTasks') }}
           </div>
-          <div v-else-if="tasks.length === 0" class="text-sm text-dust-500 dark:text-pearl-300">
+          <div v-else-if="tasks.length === 0" class="text-sm text-secondary-fg">
             {{ t('admin.usage.cleanup.noTasks') }}
           </div>
           <div v-else class="space-y-2">
@@ -56,7 +56,7 @@
                   {{ formatDateTime(task.created_at) }}
                 </div>
               </div>
-              <div class="flex flex-wrap items-center gap-4 text-xs text-dust-500 dark:text-pearl-300">
+              <div class="flex flex-wrap items-center gap-4 text-xs text-secondary-fg">
                 <span>{{ t('admin.usage.cleanup.range') }}: {{ formatRange(task) }}</span>
                 <span>{{ t('admin.usage.cleanup.deletedRows') }}: {{ task.deleted_rows.toLocaleString() }}</span>
               </div>

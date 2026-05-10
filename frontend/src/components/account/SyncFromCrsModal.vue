@@ -80,7 +80,7 @@
           {{ t('admin.accounts.crsExistingAccounts') }}
           <span class="ml-1 text-xs text-dust-400">({{ previewResult.existing_accounts.length }})</span>
         </div>
-        <div class="max-h-32 overflow-auto text-xs text-dust-500 dark:text-pearl-300">
+        <div class="max-h-32 overflow-auto text-xs text-secondary-fg">
           <div
             v-for="acc in previewResult.existing_accounts"
             :key="acc.crs_account_id"
@@ -97,7 +97,7 @@
       <!-- New accounts (selectable) -->
       <div v-if="previewResult.new_accounts.length">
         <div class="mb-2 flex items-center justify-between">
-          <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+          <div class="text-sm font-medium text-primary-fg">
             {{ t('admin.accounts.crsNewAccounts') }}
             <span class="ml-1 text-xs text-dust-400">({{ previewResult.new_accounts.length }})</span>
           </div>
@@ -120,7 +120,7 @@
           <label
             v-for="acc in previewResult.new_accounts"
             :key="acc.crs_account_id"
-            class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+            class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover-tint"
           >
             <input
               type="checkbox"
@@ -140,7 +140,7 @@
       </div>
 
       <!-- Sync options summary -->
-      <div class="flex items-center gap-2 text-xs text-dust-500 dark:text-pearl-300">
+      <div class="flex items-center gap-2 text-xs text-secondary-fg">
         <span>{{ t('admin.accounts.syncProxies') }}:</span>
         <span :class="form.sync_proxies ? 'text-green-600 dark:text-green-400' : 'text-dust-400 dark:text-pearl-400'">
           {{ form.sync_proxies ? t('common.yes') : t('common.no') }}
@@ -164,7 +164,7 @@
       <div
         class="space-y-2 rounded-xl border border-paper-200 p-4 dark:border-ink-700"
       >
-        <div class="text-sm font-medium text-dust-900 dark:text-pearl-50">
+        <div class="text-sm font-medium text-primary-fg">
           {{ t('admin.accounts.syncResult') }}
         </div>
         <div class="text-sm text-dust-700 dark:text-pearl-100">

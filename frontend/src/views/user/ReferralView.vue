@@ -3,10 +3,10 @@
     <div class="mx-auto max-w-4xl space-y-6">
       <!-- Page Header -->
       <div>
-        <h1 class="text-2xl font-bold text-dust-900 dark:text-pearl-50">
+        <h1 class="text-2xl font-bold text-primary-fg">
           {{ t('nav.referral') }}
         </h1>
-        <p class="mt-1 text-dust-500 dark:text-pearl-300">
+        <p class="mt-1 text-secondary-fg">
           {{ t('profile.referral.description') }}
         </p>
       </div>
@@ -35,7 +35,7 @@
         <!-- Reward Rules Card -->
         <div class="card">
           <div class="hairline border-b px-6 py-4">
-            <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h2 class="text-lg font-semibold text-primary-fg">
               {{ t('referral.rewardRules') }}
             </h2>
           </div>
@@ -45,27 +45,27 @@
               <!-- Referrer register bonus -->
               <div class="rounded-lg hairline-strong border p-4">
                 <div class="flex items-center justify-between">
-                  <span class="font-medium text-dust-900 dark:text-pearl-50">{{ t('referral.referrerRegister') }}</span>
+                  <span class="font-medium text-primary-fg">{{ t('referral.referrerRegister') }}</span>
                   <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                     {{ t('referral.basicReward') }}
                   </span>
                 </div>
-                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">{{ t('referral.referrerRegisterDesc') }}</p>
-                <p class="mt-2 text-2xl font-bold font-mono tabular-nums text-green-600 dark:text-green-400">+${{ settings?.register_bonus?.toFixed(2) || '0.00' }}</p>
-                <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('referral.perInvite') }}</p>
+                <p class="mt-1 text-sm text-secondary-fg">{{ t('referral.referrerRegisterDesc') }}</p>
+                <p class="mt-2 text-2xl font-bold num-mono text-green-600 dark:text-green-400">+${{ settings?.register_bonus?.toFixed(2) || '0.00' }}</p>
+                <p class="text-xs text-secondary-fg">{{ t('referral.perInvite') }}</p>
               </div>
 
               <!-- Referrer commission -->
               <div class="rounded-lg hairline-strong border p-4">
                 <div class="flex items-center justify-between">
-                  <span class="font-medium text-dust-900 dark:text-pearl-50">{{ t('referral.referrerCommission') }}</span>
+                  <span class="font-medium text-primary-fg">{{ t('referral.referrerCommission') }}</span>
                   <span class="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                     {{ t('referral.advancedRebate') }}
                   </span>
                 </div>
-                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">{{ t('referral.referrerCommissionDesc') }}</p>
-                <p class="mt-2 text-2xl font-bold font-mono tabular-nums text-orange-600 dark:text-orange-400">{{ ((referralInfo?.commission_rate || settings?.commission_rate || 0) * 100).toFixed(0) }}%</p>
-                <p class="text-xs text-dust-500 dark:text-pearl-300">{{ t('referral.ofPurchase') }}</p>
+                <p class="mt-1 text-sm text-secondary-fg">{{ t('referral.referrerCommissionDesc') }}</p>
+                <p class="mt-2 text-2xl font-bold num-mono text-orange-600 dark:text-orange-400">{{ ((referralInfo?.commission_rate || settings?.commission_rate || 0) * 100).toFixed(0) }}%</p>
+                <p class="text-xs text-secondary-fg">{{ t('referral.ofPurchase') }}</p>
               </div>
             </div>
           </div>
@@ -74,7 +74,7 @@
         <!-- My Referral Link Card -->
         <div class="card">
           <div class="hairline border-b px-6 py-4">
-            <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h2 class="text-lg font-semibold text-primary-fg">
               {{ t('referral.myLink') }}
             </h2>
           </div>
@@ -110,10 +110,10 @@
                 </button>
               </div>
             </div>
-            <p class="mt-2 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-2 text-sm text-secondary-fg">
               {{ t('referral.linkHint') }}
             </p>
-            <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">
+            <p class="mt-1 text-sm text-secondary-fg">
               {{ t('profile.referral.myCode') }}: <span class="font-mono font-medium text-dust-700 dark:text-pearl-200">{{ referralInfo?.referral_code || '-' }}</span>
             </p>
           </div>
@@ -122,7 +122,7 @@
         <!-- Statistics Card -->
         <div class="card">
           <div class="hairline border-b px-6 py-4">
-            <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h2 class="text-lg font-semibold text-primary-fg">
               {{ t('referral.statistics') }}
             </h2>
           </div>
@@ -130,34 +130,34 @@
             <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
               <!-- Total Reward -->
               <div class="rounded-lg hairline-strong border p-4 text-center">
-                <p class="text-2xl font-bold font-mono tabular-nums text-green-600 dark:text-green-400">
+                <p class="text-2xl font-bold num-mono text-green-600 dark:text-green-400">
                   ${{ (referralInfo?.total_reward || 0).toFixed(2) }}
                 </p>
-                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">{{ t('referral.totalEarned') }}</p>
+                <p class="mt-1 text-sm text-secondary-fg">{{ t('referral.totalEarned') }}</p>
               </div>
 
               <!-- Total Invited -->
               <div class="rounded-lg hairline-strong border p-4 text-center">
-                <p class="text-2xl font-bold font-mono tabular-nums text-dust-900 dark:text-pearl-50">
+                <p class="text-2xl font-bold num-mono text-primary-fg">
                   {{ referralInfo?.total_invited || 0 }}
                 </p>
-                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">{{ t('referral.totalInvited') }}</p>
+                <p class="mt-1 text-sm text-secondary-fg">{{ t('referral.totalInvited') }}</p>
               </div>
 
               <!-- Register Reward -->
               <div class="rounded-lg hairline-strong border p-4 text-center">
-                <p class="text-2xl font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400">
+                <p class="text-2xl font-bold num-mono text-blue-600 dark:text-blue-400">
                   ${{ (referralInfo?.register_reward || 0).toFixed(2) }}
                 </p>
-                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">{{ t('referral.registerReward') }}</p>
+                <p class="mt-1 text-sm text-secondary-fg">{{ t('referral.registerReward') }}</p>
               </div>
 
               <!-- Commission Reward -->
               <div class="rounded-lg hairline-strong border p-4 text-center">
-                <p class="text-2xl font-bold font-mono tabular-nums text-orange-600 dark:text-orange-400">
+                <p class="text-2xl font-bold num-mono text-orange-600 dark:text-orange-400">
                   ${{ (referralInfo?.commission_reward || 0).toFixed(2) }}
                 </p>
-                <p class="mt-1 text-sm text-dust-500 dark:text-pearl-300">{{ t('referral.commissionReward') }}</p>
+                <p class="mt-1 text-sm text-secondary-fg">{{ t('referral.commissionReward') }}</p>
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@
         <!-- Referral Records Card -->
         <div class="card">
           <div class="hairline border-b px-6 py-4">
-            <h2 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+            <h2 class="text-lg font-semibold text-primary-fg">
               {{ t('referral.records') }}
             </h2>
           </div>
@@ -179,7 +179,7 @@
             <!-- Empty state -->
             <div v-else-if="rewards.length === 0" class="py-8 text-center">
               <Icon name="gift" size="xl" class="mx-auto text-dust-300 dark:text-pearl-400" />
-              <p class="mt-2 text-dust-500 dark:text-pearl-300">{{ t('profile.referral.noRewards') }}</p>
+              <p class="mt-2 text-secondary-fg">{{ t('profile.referral.noRewards') }}</p>
             </div>
 
             <!-- Records table -->
@@ -187,16 +187,16 @@
               <table class="w-full">
                 <thead>
                   <tr class="hairline-strong border-b">
-                    <th class="px-4 py-3 text-left text-sm font-medium text-dust-500 dark:text-pearl-300">
+                    <th class="px-4 py-3 text-left text-sm font-medium text-secondary-fg">
                       {{ t('referral.referredUser') }}
                     </th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-dust-500 dark:text-pearl-300">
+                    <th class="px-4 py-3 text-left text-sm font-medium text-secondary-fg">
                       {{ t('referral.time') }}
                     </th>
-                    <th class="px-4 py-3 text-center text-sm font-medium text-dust-500 dark:text-pearl-300">
+                    <th class="px-4 py-3 text-center text-sm font-medium text-secondary-fg">
                       {{ t('referral.rewardType') }}
                     </th>
-                    <th class="px-4 py-3 text-right text-sm font-medium text-dust-500 dark:text-pearl-300">
+                    <th class="px-4 py-3 text-right text-sm font-medium text-secondary-fg">
                       {{ t('referral.rewardAmount') }}
                     </th>
                   </tr>
@@ -205,10 +205,10 @@
                   <tr
                     v-for="reward in rewards"
                     :key="reward.id"
-                    class="hover:bg-paper-100 dark:hover:bg-white/[0.04]"
+                    class="hover-tint"
                   >
                     <td class="px-4 py-3">
-                      <p class="text-sm text-dust-900 dark:text-pearl-50">{{ maskEmail(reward.referee_email) }}</p>
+                      <p class="text-sm text-primary-fg">{{ maskEmail(reward.referee_email) }}</p>
                     </td>
                     <td class="px-4 py-3 text-sm text-dust-600 dark:text-pearl-200">
                       {{ formatDate(reward.created_at) }}
@@ -226,7 +226,7 @@
                       </span>
                     </td>
                     <td class="px-4 py-3 text-right">
-                      <span class="text-sm font-medium font-mono tabular-nums text-green-600 dark:text-green-400">
+                      <span class="text-sm font-medium num-mono text-green-600 dark:text-green-400">
                         +${{ reward.reward_amount.toFixed(2) }}
                       </span>
                     </td>
@@ -236,7 +236,7 @@
 
               <!-- Pagination -->
               <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between hairline-strong border-t pt-4">
-                <div class="text-sm text-dust-500 dark:text-pearl-300">
+                <div class="text-sm text-secondary-fg">
                   {{ t('pagination.pageOf', { page, total: totalPages }) }}
                 </div>
                 <nav class="flex items-center gap-1">
@@ -274,7 +274,7 @@
         >
           <div class="mx-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-ink-800">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-dust-900 dark:text-pearl-50">
+              <h3 class="text-lg font-semibold text-primary-fg">
                 {{ t('referral.qrCodeTitle') }}
               </h3>
               <button
@@ -294,7 +294,7 @@
                   class="h-64 w-64"
                 />
               </div>
-              <p class="mt-4 text-center text-sm text-dust-500 dark:text-pearl-300">
+              <p class="mt-4 text-center text-sm text-secondary-fg">
                 {{ t('referral.qrCodeHint') }}
               </p>
             </div>

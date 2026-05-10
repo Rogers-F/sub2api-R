@@ -113,7 +113,7 @@
                   </span>
                 </template>
               </div>
-              <div class="truncate text-xs text-dust-500 dark:text-pearl-300">
+              <div class="truncate text-xs text-secondary-fg">
                 {{ proxy.protocol }}://{{ proxy.host }}:{{ proxy.port }}
               </div>
             </div>
@@ -324,7 +324,7 @@ onUnmounted(() => {
   @apply rounded-xl px-4 py-2.5 text-sm;
   @apply bg-white dark:bg-ink-800;
   @apply border border-paper-200 dark:border-ink-600;
-  @apply text-dust-900 dark:text-pearl-50;
+  @apply text-primary-fg;
   @apply transition-all duration-200;
   @apply focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30 dark:focus:border-gold-300 dark:focus:ring-gold-300/30;
   @apply hover:border-paper-300 dark:hover:border-ink-500;
@@ -367,7 +367,7 @@ onUnmounted(() => {
 
 .select-search-input {
   @apply flex-1 bg-transparent text-sm;
-  @apply text-dust-900 dark:text-pearl-50;
+  @apply text-primary-fg;
   @apply placeholder:text-dust-400 dark:placeholder:text-pearl-300;
   @apply focus:outline-none;
 }
@@ -402,7 +402,7 @@ onUnmounted(() => {
 
 .select-empty {
   @apply px-4 py-8 text-center text-sm;
-  @apply text-dust-500 dark:text-pearl-300;
+  @apply text-secondary-fg;
 }
 
 .test-btn {

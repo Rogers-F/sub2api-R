@@ -328,7 +328,7 @@ onMounted(async () => {
   <section class="rounded-2xl border border-paper-200 bg-white p-4 shadow-sm dark:border-ink-700 dark:bg-ink-900/60">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h3 class="text-sm font-bold text-dust-900 dark:text-pearl-50">系统日志</h3>
+        <h3 class="text-sm font-bold text-primary-fg">系统日志</h3>
         <p class="mt-1 text-xs text-dust-500 dark:text-dust-400">默认按最新时间倒序，支持筛选搜索与按条件清理。</p>
       </div>
       <div class="flex flex-wrap items-center gap-2 text-xs">
