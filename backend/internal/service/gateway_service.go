@@ -6131,7 +6131,7 @@ func (s *GatewayService) shouldRectifySignatureError(ctx context.Context, accoun
 }
 
 func (s *GatewayService) signatureRectifierEnabled(ctx context.Context) bool {
-	if ThinkingSignatureCompatEnabledFromContext(ctx) {
+	if ThinkingSignatureCompatEnabledFromContext(ctx) || ClaudeRequestCompatEnabledFromContext(ctx) {
 		return true
 	}
 	if s.settingService == nil {

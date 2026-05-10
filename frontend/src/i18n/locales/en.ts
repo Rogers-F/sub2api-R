@@ -1857,12 +1857,12 @@ export default {
         hint: 'Recommended for groups that mix Claude Max / Anthropic / AWS Bedrock accounts.'
       },
       claudeToolUseRepair: {
-        title: 'Claude Tool History Auto-repair (Safe Mode)',
+        title: 'Claude Request Compatibility Repair (Safe Mode)',
         tooltip:
-          'When enabled, if malformed historical tool_use / tool_result chains cause Anthropic-compatible upstreams to return 400, the gateway removes the invalid tool chain and retries once so end users usually do not see the raw error.',
-        enabled: 'Auto-repair enabled',
-        disabled: 'Auto-repair disabled',
-        hint: 'Recommended for groups that switch Claude conversations between Claude Max, native Anthropic, AWS Bedrock, and similar channels.'
+          'When enabled, the gateway automatically normalizes common Claude request-shape issues: broken tool_use/tool_result history, thinking budget/max_tokens constraints, temperature/top_p conflicts, assistant prefill, MessageContent shape, thinking signatures, MCP config fields, and image media_type mismatches.',
+        enabled: 'Request compatibility enabled',
+        disabled: 'Request compatibility disabled',
+        hint: 'Recommended for groups serving multiple clients or mixing Claude Max, native Anthropic, AWS Bedrock, and similar channels.'
       },
       claudeToolArgumentsRepair: {
         title: 'Claude Tool Arguments Empty-object Repair',

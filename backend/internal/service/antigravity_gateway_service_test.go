@@ -259,6 +259,26 @@ func TestAntigravityGatewayService_SignatureRectifierEnabled_GroupOverrideWhenGl
 	require.True(t, svc.signatureRectifierEnabled(ctx))
 }
 
+func TestAntigravityGatewayService_SignatureRectifierEnabled_ClaudeCompatSwitchEnablesSignatureRetry(t *testing.T) {
+	repo := &antigravityRectifierSettingsRepoStub{
+		value: `{"enabled":false,"thinking_signature_enabled":false,"thinking_budget_enabled":true,"apikey_signature_enabled":false}`,
+	}
+	svc := &AntigravityGatewayService{
+		settingService: &SettingService{settingRepo: repo},
+	}
+
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                         102,
+		Name:                       "compat-group",
+		Platform:                   PlatformAntigravity,
+		Status:                     StatusActive,
+		Hydrated:                   true,
+		ClaudeToolUseRepairEnabled: true,
+	})
+
+	require.True(t, svc.signatureRectifierEnabled(ctx))
+}
+
 func TestAntigravityGatewayService_WriteMappedClaudeError_StripsNestedRequestIDs(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

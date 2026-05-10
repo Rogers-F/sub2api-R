@@ -1944,12 +1944,12 @@ export default {
         hint: '建议在混用 Claude Max / Anthropic / AWS Bedrock 的分组中开启。'
       },
       claudeToolUseRepair: {
-        title: 'Claude 工具链历史自动修复（安全模式）',
+        title: 'Claude 请求兼容修复（安全模式）',
         tooltip:
-          '开启后，当历史消息里的 tool_use / tool_result 不成对，导致 Anthropic 或兼容渠道返回 400 时，网关会自动移除无效工具链并重试一次，尽量不让终端用户感知到该错误。',
-        enabled: '已启用自动修复',
-        disabled: '未启用自动修复',
-        hint: '适用于 Claude Max、官方 Anthropic、AWS Bedrock 等渠道切换后出现 tool_use/tool_result 历史不兼容的场景。'
+          '开启后，网关会自动兼容常见 Claude 请求形态问题：tool_use/tool_result 历史不成对、thinking budget/max_tokens 约束、temperature/top_p 冲突、assistant prefill、MessageContent 形态、thinking 签名、MCP 配置字段和图片 media_type 不匹配。',
+        enabled: '已启用请求兼容',
+        disabled: '未启用请求兼容',
+        hint: '建议在面向多客户端或混合 Claude Max / Anthropic / AWS Bedrock 渠道的分组中开启。'
       },
       claudeToolArgumentsRepair: {
         title: 'Claude 工具参数空对象修复',

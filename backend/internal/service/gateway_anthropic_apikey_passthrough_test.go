@@ -211,29 +211,15 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardStreamPreservesBodyAnd
 	require.Equal(t, "claude-3-haiku-20240307", gjson.GetBytes(bodyBytes, "model").String(), "缓存的上游请求体应包含映射后的模型")
 }
 
-func TestGatewayService_AnthropicAPIKeyPassthrough_RetriesWithRepairedToolHistory(t *testing.T) {
-	firstRespBody := []byte(`{
-		"type":"error",
-		"error":{
-			"type":"invalid_request_error",
-			"message":"messages.1: 'tool_use' ids were found without 'tool_result' blocks immediately after: toolu_1. Each 'tool_use' block must have a corresponding 'tool_result' block in the next message."
-		}
-	}`)
-	runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t, firstRespBody)
+func TestGatewayService_AnthropicAPIKeyPassthrough_PreflightsRepairedToolHistory(t *testing.T) {
+	runAnthropicAPIKeyPassthroughToolHistoryCompatTest(t, true)
 }
 
-func TestGatewayService_AnthropicAPIKeyPassthrough_RetriesWithRepairedToolHistoryOnGenericInvalidRequest(t *testing.T) {
-	firstRespBody := []byte(`{
-		"type":"error",
-		"error":{
-			"type":"E005",
-			"message":"Invalid request (request id: 20260426053101382941840wVYh82QJ)"
-		}
-	}`)
-	runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t, firstRespBody)
+func TestGatewayService_AnthropicAPIKeyPassthrough_CompatSwitchDisabledLeavesToolHistory(t *testing.T) {
+	runAnthropicAPIKeyPassthroughToolHistoryCompatTest(t, false)
 }
 
-func runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t *testing.T, firstRespBody []byte) {
+func runAnthropicAPIKeyPassthroughToolHistoryCompatTest(t *testing.T, compatEnabled bool) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -261,7 +247,7 @@ func runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t *testing.T, firstRespB
 	parsed, err := ParseGatewayRequest(body, "")
 	require.NoError(t, err)
 
-	secondRespBody := []byte(`{
+	okRespBody := []byte(`{
 		"id":"msg_test_repaired",
 		"type":"message",
 		"role":"assistant",
@@ -270,26 +256,39 @@ func runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t *testing.T, firstRespB
 		"stop_reason":"end_turn",
 		"usage":{"input_tokens":8,"output_tokens":2}
 	}`)
+	errorRespBody := []byte(`{
+		"type":"error",
+		"error":{
+			"type":"invalid_request_error",
+			"message":"messages.1: 'tool_use' ids were found without 'tool_result' blocks immediately after: toolu_1. Each 'tool_use' block must have a corresponding 'tool_result' block in the next message."
+		}
+	}`)
 
-	upstream := &queuedHTTPUpstreamStub{
-		responses: []*http.Response{
+	responses := []*http.Response{
+		{
+			StatusCode: http.StatusOK,
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+				"X-Request-Id": []string{"rid-tool-compat-ok"},
+			},
+			Body: io.NopCloser(bytes.NewReader(okRespBody)),
+		},
+	}
+	if !compatEnabled {
+		responses = []*http.Response{
 			{
 				StatusCode: http.StatusBadRequest,
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
-					"X-Request-Id": []string{"rid-tool-repair-1"},
+					"X-Request-Id": []string{"rid-tool-compat-disabled"},
 				},
-				Body: io.NopCloser(bytes.NewReader(firstRespBody)),
+				Body: io.NopCloser(bytes.NewReader(errorRespBody)),
 			},
-			{
-				StatusCode: http.StatusOK,
-				Header: http.Header{
-					"Content-Type": []string{"application/json"},
-					"X-Request-Id": []string{"rid-tool-repair-2"},
-				},
-				Body: io.NopCloser(bytes.NewReader(secondRespBody)),
-			},
-		},
+		}
+	}
+
+	upstream := &queuedHTTPUpstreamStub{
+		responses: responses,
 	}
 
 	cfg := &config.Config{
@@ -306,24 +305,33 @@ func runAnthropicAPIKeyPassthroughToolHistoryRepairTest(t *testing.T, firstRespB
 	}
 
 	result, err := svc.Forward(
-		newAnthropicGroupContextForTestWithFlags(true, false, true),
+		newAnthropicGroupContextForTestWithFlags(true, false, compatEnabled),
 		c,
 		newAnthropicAPIKeyAccountForTest(),
 		parsed,
 	)
+
+	if !compatEnabled {
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "tool_use")
+		require.Nil(t, result)
+		require.Len(t, upstream.requestBodies, 1, "disabled compat switch should not repair or retry tool history")
+		req := string(upstream.requestBodies[0])
+		require.Contains(t, req, `"type":"tool_use"`)
+		require.Contains(t, req, `"type":"tool_result"`)
+		return
+	}
+
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.Len(t, upstream.requestBodies, 2, "tool history repair should retry once")
+	require.Len(t, upstream.requestBodies, 1, "compat switch should repair tool history before the first upstream request")
 
-	firstReq := string(upstream.requestBodies[0])
-	secondReq := string(upstream.requestBodies[1])
-	require.Contains(t, firstReq, `"type":"tool_use"`)
-	require.Contains(t, firstReq, `"type":"tool_result"`)
-	require.NotContains(t, secondReq, `"type":"tool_use"`)
-	require.NotContains(t, secondReq, `"type":"tool_result","tool_use_id":"toolu_1"`)
-	require.Contains(t, secondReq, `"text":"call tool"`)
-	require.Contains(t, secondReq, `"text":"continue"`)
-	require.Contains(t, secondReq, `"text":"real user"`)
+	req := string(upstream.requestBodies[0])
+	require.NotContains(t, req, `"type":"tool_use"`)
+	require.NotContains(t, req, `"type":"tool_result","tool_use_id":"toolu_1"`)
+	require.Contains(t, req, `"text":"call tool"`)
+	require.Contains(t, req, `"text":"continue"`)
+	require.Contains(t, req, `"text":"real user"`)
 }
 
 func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardCountTokensPreservesBody(t *testing.T) {

@@ -35,7 +35,8 @@ type Group struct {
 	// 当 Max / Anthropic / Bedrock 等不同渠道切换导致历史 thinking 签名失效时，
 	// 是否强制触发兼容重试（剥离历史 thinking / tool 签名块）。
 	ThinkingSignatureCompatEnabled bool
-	// 当历史 Claude tool_use / tool_result 链不完整时，是否自动修复并重试。
+	// Claude 请求兼容总开关：tool_use/tool_result、thinking budget、prefill、
+	// MessageContent、thinking signature、MCP 配置和图片 media_type 修复。
 	ClaudeToolUseRepairEnabled bool
 	// 是否修复 Claude tool arguments 前导占位 {}，避免输出 {}{"k":"v"}。
 	ClaudeToolArgumentsRepairEnabled bool
@@ -160,6 +161,10 @@ func ThinkingSignatureCompatEnabledFromContext(ctx context.Context) bool {
 func ClaudeToolUseRepairEnabledFromContext(ctx context.Context) bool {
 	group, ok := GroupFromContext(ctx)
 	return ok && group.ClaudeToolUseRepairEnabled
+}
+
+func ClaudeRequestCompatEnabledFromContext(ctx context.Context) bool {
+	return ClaudeToolUseRepairEnabledFromContext(ctx)
 }
 
 func ClaudeToolArgumentsRepairEnabledFromContext(ctx context.Context) bool {

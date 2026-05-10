@@ -102,3 +102,24 @@ func TestGatewayService_ShouldRectifySignatureError_GroupOverrideWhenGlobalDisab
 	got := svc.shouldRectifySignatureError(ctx, &Account{Type: AccountTypeOAuth}, []byte(`{"error":{"message":"thinking block signatures in the conversation history are no longer valid. (request id: upstream-1)"}}`))
 	require.True(t, got)
 }
+
+func TestGatewayService_ShouldRectifySignatureError_ClaudeCompatSwitchEnablesSignatureRetry(t *testing.T) {
+	repo := &rectifierSettingsRepoStub{
+		value: `{"enabled":false,"thinking_signature_enabled":false,"thinking_budget_enabled":true,"apikey_signature_enabled":false}`,
+	}
+	svc := &GatewayService{
+		settingService: &SettingService{settingRepo: repo},
+	}
+
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                         99,
+		Name:                       "compat-group",
+		Platform:                   PlatformAnthropic,
+		Status:                     StatusActive,
+		Hydrated:                   true,
+		ClaudeToolUseRepairEnabled: true,
+	})
+
+	got := svc.shouldRectifySignatureError(ctx, &Account{Type: AccountTypeOAuth}, []byte(`{"error":{"message":"messages.0.content.0: Invalid signature in thinking block"}}`))
+	require.True(t, got)
+}

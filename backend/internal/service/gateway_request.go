@@ -381,7 +381,248 @@ func NormalizeClaudeHistoryForUpstream(ctx context.Context, body []byte) []byte 
 	if StrongSafetyModeEnabledFromContext(ctx) {
 		body = StripInternalToolTranscriptText(body)
 	}
+	if ClaudeRequestCompatEnabledFromContext(ctx) {
+		body, _ = NormalizeClaudeRequestCompatibility(body)
+	}
 	return body
+}
+
+// NormalizeClaudeRequestCompatibility applies request-shape fixes that are safe
+// enough to run before forwarding when the group-level Claude compatibility
+// switch is enabled.
+func NormalizeClaudeRequestCompatibility(body []byte) ([]byte, bool) {
+	if len(bytes.TrimSpace(body)) == 0 || !gjson.ValidBytes(body) {
+		return body, false
+	}
+
+	var req map[string]any
+	if err := json.Unmarshal(body, &req); err != nil {
+		return body, false
+	}
+
+	changed := false
+
+	if _, hasTemperature := req["temperature"]; hasTemperature {
+		if _, hasTopP := req["top_p"]; hasTopP {
+			delete(req, "top_p")
+			changed = true
+		}
+	}
+
+	if _, hasContextManagement := req["context_management"]; hasContextManagement {
+		delete(req, "context_management")
+		changed = true
+	}
+	for _, field := range []string{"mcp_servers", "mcp_config", "mcp"} {
+		if _, exists := req[field]; exists {
+			delete(req, field)
+			changed = true
+		}
+	}
+
+	if normalizeClaudeThinkingBudget(req) {
+		changed = true
+	}
+
+	if rawMessages, ok := req["messages"].([]any); ok {
+		messages, messagesChanged := normalizeClaudeCompatMessages(rawMessages)
+		if messagesChanged {
+			req["messages"] = messages
+			changed = true
+		}
+	}
+
+	normalized := body
+	if changed {
+		out, err := json.Marshal(req)
+		if err != nil {
+			return body, false
+		}
+		normalized = out
+	}
+
+	repaired, repairedChanged := RepairAnthropicToolUseHistory(normalized)
+	if repairedChanged {
+		return repaired, true
+	}
+	return normalized, changed
+}
+
+func normalizeClaudeThinkingBudget(req map[string]any) bool {
+	thinking, ok := req["thinking"].(map[string]any)
+	if !ok || thinking == nil {
+		return false
+	}
+
+	thinkingType, _ := thinking["type"].(string)
+	if strings.EqualFold(strings.TrimSpace(thinkingType), "adaptive") {
+		return false
+	}
+
+	changed := false
+	budget, hasBudget := integralNumberFromAny(thinking["budget_tokens"])
+	if hasBudget && budget > 0 && budget < 1024 {
+		thinking["budget_tokens"] = float64(1024)
+		budget = 1024
+		changed = true
+	}
+
+	if hasBudget && budget > 0 {
+		if maxTokens, hasMaxTokens := integralNumberFromAny(req["max_tokens"]); hasMaxTokens && maxTokens <= budget {
+			req["max_tokens"] = float64(budget + 1)
+			changed = true
+		}
+	}
+
+	return changed
+}
+
+func integralNumberFromAny(v any) (int64, bool) {
+	switch n := v.(type) {
+	case float64:
+		if math.Trunc(n) != n {
+			return 0, false
+		}
+		return int64(n), true
+	case int:
+		return int64(n), true
+	case int64:
+		return n, true
+	case json.Number:
+		i, err := n.Int64()
+		return i, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func normalizeClaudeCompatMessages(messages []any) ([]any, bool) {
+	if len(messages) == 0 {
+		return messages, false
+	}
+
+	changed := false
+	out := make([]any, 0, len(messages))
+	for _, rawMsg := range messages {
+		msg, ok := rawMsg.(map[string]any)
+		if !ok {
+			out = append(out, rawMsg)
+			continue
+		}
+
+		if normalizeClaudeMessageContent(msg) {
+			changed = true
+		}
+		out = append(out, msg)
+	}
+
+	for len(out) > 1 {
+		msg, ok := out[len(out)-1].(map[string]any)
+		if !ok {
+			break
+		}
+		role, _ := msg["role"].(string)
+		if role != "assistant" {
+			break
+		}
+		out = out[:len(out)-1]
+		changed = true
+	}
+
+	return out, changed
+}
+
+func normalizeClaudeMessageContent(msg map[string]any) bool {
+	role, _ := msg["role"].(string)
+	placeholder := "(content removed)"
+	if role == "assistant" {
+		placeholder = "(assistant content removed)"
+	}
+
+	rawContent, exists := msg["content"]
+	if !exists || rawContent == nil {
+		msg["content"] = []any{map[string]any{"type": "text", "text": placeholder}}
+		return true
+	}
+
+	content, ok := rawContent.([]any)
+	if !ok {
+		return false
+	}
+
+	changed := false
+	filtered := make([]any, 0, len(content))
+	for _, rawBlock := range content {
+		if rawBlock == nil {
+			changed = true
+			continue
+		}
+		block, ok := rawBlock.(map[string]any)
+		if !ok {
+			filtered = append(filtered, rawBlock)
+			continue
+		}
+		if normalizeClaudeImageMediaType(block) {
+			changed = true
+		}
+		filtered = append(filtered, block)
+	}
+
+	if len(filtered) == 0 {
+		msg["content"] = []any{map[string]any{"type": "text", "text": placeholder}}
+		return true
+	}
+	if changed {
+		msg["content"] = filtered
+	}
+	return changed
+}
+
+func normalizeClaudeImageMediaType(block map[string]any) bool {
+	blockType, _ := block["type"].(string)
+	if blockType != "image" {
+		return false
+	}
+	source, ok := block["source"].(map[string]any)
+	if !ok || source == nil {
+		return false
+	}
+	sourceType, _ := source["type"].(string)
+	if sourceType != "base64" {
+		return false
+	}
+	data, _ := source["data"].(string)
+	detected := detectBase64ImageMediaType(data)
+	if detected == "" {
+		return false
+	}
+	current, _ := source["media_type"].(string)
+	if strings.EqualFold(strings.TrimSpace(current), detected) {
+		return false
+	}
+	source["media_type"] = detected
+	return true
+}
+
+func detectBase64ImageMediaType(data string) string {
+	data = strings.TrimSpace(data)
+	if strings.HasPrefix(data, "data:") {
+		if comma := strings.IndexByte(data, ','); comma >= 0 {
+			data = data[comma+1:]
+		}
+	}
+	switch {
+	case strings.HasPrefix(data, "iVBORw0KGgo"):
+		return "image/png"
+	case strings.HasPrefix(data, "/9j/"):
+		return "image/jpeg"
+	case strings.HasPrefix(data, "R0lGOD"):
+		return "image/gif"
+	case strings.HasPrefix(data, "UklGR"):
+		return "image/webp"
+	default:
+		return ""
+	}
 }
 
 func SanitizeClaudeResponseForClient(ctx context.Context, body []byte) []byte {
@@ -1574,6 +1815,9 @@ func isThinkingBudgetConstraintError(errMsg string) bool {
 		return true
 	}
 	if strings.Contains(m, "1024") && strings.Contains(m, "input should be") {
+		return true
+	}
+	if strings.Contains(m, "max_tokens") && strings.Contains(m, "greater than") && strings.Contains(m, "thinking.budget_tokens") {
 		return true
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestParseGatewayRequest(t *testing.T) {
@@ -946,6 +947,114 @@ func TestRepairAnthropicToolUseHistory_PreservesValidToolChain(t *testing.T) {
 	require.JSONEq(t, string(input), string(out))
 }
 
+func TestNormalizeClaudeHistoryForUpstream_ClaudeCompatSwitchDisabledLeavesRequestShape(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                         99,
+		Platform:                   PlatformAnthropic,
+		Status:                     StatusActive,
+		Hydrated:                   true,
+		ClaudeToolUseRepairEnabled: false,
+		StrongSafetyModeEnabled:    true,
+	})
+	input := []byte(`{
+		"model":"claude-sonnet-4-6",
+		"temperature":0.4,
+		"top_p":0.9,
+		"context_management":{"edits":[{"type":"clear_thinking_20251015"}]},
+		"thinking":{"type":"enabled","budget_tokens":512},
+		"max_tokens":512,
+		"messages":[
+			{"role":"assistant","content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"ls"}}]},
+			{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"}]}
+		]
+	}`)
+
+	out := NormalizeClaudeHistoryForUpstream(ctx, input)
+
+	require.JSONEq(t, string(input), string(out))
+}
+
+func TestNormalizeClaudeHistoryForUpstream_ClaudeCompatSwitchRepairsObservedRequestErrors(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                         99,
+		Platform:                   PlatformAnthropic,
+		Status:                     StatusActive,
+		Hydrated:                   true,
+		ClaudeToolUseRepairEnabled: true,
+		StrongSafetyModeEnabled:    true,
+	})
+	input := []byte(`{
+		"model":"claude-sonnet-4-6",
+		"temperature":0.4,
+		"top_p":0.9,
+		"context_management":{"edits":[{"type":"clear_thinking_20251015"}]},
+		"mcp_servers":[{"name":"bad-server","command":"node"}],
+		"mcp_config":{"servers":{"bad-server":{"command":"node"}}},
+		"mcp":{"servers":[{"name":"bad-server"}]},
+		"thinking":{"type":"enabled","budget_tokens":512},
+		"max_tokens":512,
+		"messages":[
+			{"role":"assistant","content":[
+				{"type":"text","text":"call tool"},
+				{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"ls"}}
+			]},
+			{"role":"assistant","content":[{"type":"text","text":"continued without result"}]},
+			{"role":"user","content":[
+				{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"},
+				{"type":"text","text":"next"}
+			]}
+		]
+	}`)
+
+	out := NormalizeClaudeHistoryForUpstream(ctx, input)
+
+	require.False(t, gjson.GetBytes(out, "top_p").Exists())
+	require.Equal(t, 0.4, gjson.GetBytes(out, "temperature").Float())
+	require.False(t, gjson.GetBytes(out, "context_management").Exists())
+	require.False(t, gjson.GetBytes(out, "mcp_servers").Exists())
+	require.False(t, gjson.GetBytes(out, "mcp_config").Exists())
+	require.False(t, gjson.GetBytes(out, "mcp").Exists())
+	require.Equal(t, int64(1024), gjson.GetBytes(out, "thinking.budget_tokens").Int())
+	require.Equal(t, int64(1025), gjson.GetBytes(out, "max_tokens").Int())
+	require.False(t, strings.Contains(string(out), `"type":"tool_use"`))
+	require.False(t, strings.Contains(string(out), `"type":"tool_result"`))
+	require.JSONEq(t, `[
+		{"role":"assistant","content":[{"type":"text","text":"call tool"}]},
+		{"role":"assistant","content":[{"type":"text","text":"continued without result"}]},
+		{"role":"user","content":[{"type":"text","text":"next"}]}
+	]`, gjson.GetBytes(out, "messages").Raw)
+}
+
+func TestNormalizeClaudeHistoryForUpstream_ClaudeCompatSwitchNormalizesMessageContentAndMediaType(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                         99,
+		Platform:                   PlatformAnthropic,
+		Status:                     StatusActive,
+		Hydrated:                   true,
+		ClaudeToolUseRepairEnabled: true,
+		StrongSafetyModeEnabled:    true,
+	})
+	input := []byte(`{
+		"model":"claude-sonnet-4-6",
+		"messages":[
+			{"role":"user","content":null},
+			{"role":"user","content":[
+				null,
+				{"type":"image","source":{"type":"base64","media_type":"image/jpeg","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB"}}
+			]},
+			{"role":"assistant","content":[{"type":"text","text":"prefill"}]}
+		]
+	}`)
+
+	out := NormalizeClaudeHistoryForUpstream(ctx, input)
+
+	require.Equal(t, "text", gjson.GetBytes(out, "messages.0.content.0.type").String())
+	require.NotEmpty(t, gjson.GetBytes(out, "messages.0.content.0.text").String())
+	require.Equal(t, 1, len(gjson.GetBytes(out, "messages.1.content").Array()))
+	require.Equal(t, "image/png", gjson.GetBytes(out, "messages.1.content.0.source.media_type").String())
+	require.Len(t, gjson.GetBytes(out, "messages").Array(), 2, "final assistant prefill should be removed")
+}
+
 func TestIsAnthropicToolUseHistoryError(t *testing.T) {
 	require.True(t, isAnthropicToolUseHistoryError([]byte(`{
 		"error":{
@@ -955,6 +1064,12 @@ func TestIsAnthropicToolUseHistoryError(t *testing.T) {
 	require.False(t, isAnthropicToolUseHistoryError([]byte(`{
 		"error":{"message":"invalid max_tokens"}
 	}`)))
+}
+
+func TestIsThinkingBudgetConstraintError_DetectsMaxTokensMustExceedBudget(t *testing.T) {
+	msg := "anthropic error: `max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation"
+
+	require.True(t, isThinkingBudgetConstraintError(msg))
 }
 
 // ============ Group 7: ParseGatewayRequest 补充单元测试 ============

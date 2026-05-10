@@ -3640,7 +3640,7 @@ func (s *AntigravityGatewayService) WriteMappedClaudeError(c *gin.Context, accou
 }
 
 func (s *AntigravityGatewayService) signatureRectifierEnabled(ctx context.Context) bool {
-	if ThinkingSignatureCompatEnabledFromContext(ctx) {
+	if ThinkingSignatureCompatEnabledFromContext(ctx) || ClaudeRequestCompatEnabledFromContext(ctx) {
 		return true
 	}
 	if s.settingService == nil {
