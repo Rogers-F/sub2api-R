@@ -51,24 +51,24 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool   `json:"linuxdo_connect_client_secret_configured"`
 	LinuxDoConnectRedirectURL            string `json:"linuxdo_connect_redirect_url"`
 
-	SiteName                    string           `json:"site_name"`
-	SiteLogo                    string           `json:"site_logo"`
-	SiteSubtitle                string           `json:"site_subtitle"`
-	APIBaseURL                  string           `json:"api_base_url"`
-	ContactInfo                 string           `json:"contact_info"`
-	DocURL                      string           `json:"doc_url"`
-	HomeContent                 string           `json:"home_content"`
-	HideCcsImportButton         bool             `json:"hide_ccs_import_button"`
-	PurchaseSubscriptionEnabled bool             `json:"purchase_subscription_enabled"`
-	PurchaseSubscriptionURL     string           `json:"purchase_subscription_url"`
-	PaygEnabled                 bool             `json:"payg_enabled"`
-	PaygExchangeRate            float64          `json:"payg_exchange_rate"`
-	PaygFixedAmountOptions      []float64        `json:"payg_fixed_amount_options"`
-	ShouqianbaTerminalSN        string           `json:"shouqianba_terminal_sn"`
-	ShouqianbaTerminalKeyConfigured bool        `json:"shouqianba_terminal_key_configured"`
-	SoraClientEnabled           bool             `json:"sora_client_enabled"`
-	CustomMenuItems             []CustomMenuItem `json:"custom_menu_items"`
-	CustomEndpoints             []CustomEndpoint `json:"custom_endpoints"`
+	SiteName                        string           `json:"site_name"`
+	SiteLogo                        string           `json:"site_logo"`
+	SiteSubtitle                    string           `json:"site_subtitle"`
+	APIBaseURL                      string           `json:"api_base_url"`
+	ContactInfo                     string           `json:"contact_info"`
+	DocURL                          string           `json:"doc_url"`
+	HomeContent                     string           `json:"home_content"`
+	HideCcsImportButton             bool             `json:"hide_ccs_import_button"`
+	PurchaseSubscriptionEnabled     bool             `json:"purchase_subscription_enabled"`
+	PurchaseSubscriptionURL         string           `json:"purchase_subscription_url"`
+	PaygEnabled                     bool             `json:"payg_enabled"`
+	PaygExchangeRate                float64          `json:"payg_exchange_rate"`
+	PaygFixedAmountOptions          []float64        `json:"payg_fixed_amount_options"`
+	ShouqianbaTerminalSN            string           `json:"shouqianba_terminal_sn"`
+	ShouqianbaTerminalKeyConfigured bool             `json:"shouqianba_terminal_key_configured"`
+	SoraClientEnabled               bool             `json:"sora_client_enabled"`
+	CustomMenuItems                 []CustomMenuItem `json:"custom_menu_items"`
+	CustomEndpoints                 []CustomEndpoint `json:"custom_endpoints"`
 
 	DefaultConcurrency   int                          `json:"default_concurrency"`
 	DefaultBalance       float64                      `json:"default_balance"`

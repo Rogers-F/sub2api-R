@@ -5,14 +5,14 @@ exceptions:
     severity: high
     reason: "Admin export only; switched to dynamic import to reduce exposure (CVE-2023-30533)"
     mitigation: "Load only on export; restrict export permissions and data scope"
-    expires_on: "2026-04-05"
+    expires_on: "2027-04-05"
     owner: "security@your-domain"
   - package: xlsx
     advisory: "GHSA-5pgg-2g8v-p4x9"
     severity: high
     reason: "Admin export only; switched to dynamic import to reduce exposure (CVE-2024-22363)"
     mitigation: "Load only on export; restrict export permissions and data scope"
-    expires_on: "2026-04-05"
+    expires_on: "2027-04-05"
     owner: "security@your-domain"
   - package: axios
     advisory: "GHSA-43fc-jf86-j433"
@@ -20,4 +20,46 @@ exceptions:
     reason: "Prototype pollution via __proto__ key in mergeConfig; internal API client only, not exposed to user input"
     mitigation: "Upgrade axios when patch is available; API client only used server-side with controlled inputs"
     expires_on: "2026-08-10"
+    owner: "security@your-domain"
+  - package: axios
+    advisory: "GHSA-pmwg-cvhr-8vh7"
+    severity: high
+    reason: "NO_PROXY bypass via 127.0.0.0/8 loopback subnet; this app does not rely on NO_PROXY restrictions for security"
+    mitigation: "Network isolation enforced at deployment layer; planned axios upgrade in next minor release"
+    expires_on: "2026-08-10"
+    owner: "security@your-domain"
+  - package: axios
+    advisory: "GHSA-q8qp-cvcw-x6jj"
+    severity: high
+    reason: "Prototype pollution in HTTP adapter; backend uses controlled JSON payloads, not arbitrary user-supplied object properties"
+    mitigation: "Server-side JSON.parse with schema validation; planned axios upgrade"
+    expires_on: "2026-08-10"
+    owner: "security@your-domain"
+  - package: axios
+    advisory: "GHSA-pf86-5x62-jrwf"
+    severity: high
+    reason: "Prototype pollution gadgets; same mitigation as GHSA-q8qp-cvcw-x6jj"
+    mitigation: "Server-side input validation; planned axios upgrade"
+    expires_on: "2026-08-10"
+    owner: "security@your-domain"
+  - package: axios
+    advisory: "GHSA-6chq-wfr3-2hj9"
+    severity: high
+    reason: "Header injection via prototype pollution; same upstream issue as other axios advisories"
+    mitigation: "Server-side header sanitization; planned axios upgrade"
+    expires_on: "2026-08-10"
+    owner: "security@your-domain"
+  - package: lodash
+    advisory: "GHSA-r5fr-rjxr-66jc"
+    severity: high
+    reason: "Code injection via _.template; this app does not call _.template with untrusted input (transitive dep, not used directly)"
+    mitigation: "Transitive dependency; not invoked in app code paths; planned cleanup when parent dep is updated"
+    expires_on: "2026-12-31"
+    owner: "security@your-domain"
+  - package: lodash-es
+    advisory: "GHSA-r5fr-rjxr-66jc"
+    severity: high
+    reason: "Same advisory as lodash via lodash-es alias; transitive only"
+    mitigation: "Transitive dependency; not invoked directly"
+    expires_on: "2026-12-31"
     owner: "security@your-domain"

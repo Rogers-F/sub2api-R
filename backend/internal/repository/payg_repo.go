@@ -29,13 +29,6 @@ func (r *paygOrderRepository) sqlQueryerFromContext(ctx context.Context) sqlQuer
 	return r.sql
 }
 
-func (r *paygOrderRepository) sqlExecutorFromContext(ctx context.Context) sqlExecutor {
-	if tx := dbent.TxFromContext(ctx); tx != nil {
-		return tx.Client()
-	}
-	return r.sql
-}
-
 func (r *paygOrderRepository) Create(ctx context.Context, order *service.PaygOrder) error {
 	query := `
 		INSERT INTO payg_orders (
