@@ -1055,6 +1055,32 @@ func TestNormalizeClaudeHistoryForUpstream_ClaudeCompatSwitchNormalizesMessageCo
 	require.Len(t, gjson.GetBytes(out, "messages").Array(), 2, "final assistant prefill should be removed")
 }
 
+func TestNormalizeClaudeHistoryForUpstream_ClaudeCompatSwitchRemovesAssistantExposedAfterToolResultRepair(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                         99,
+		Platform:                   PlatformAnthropic,
+		Status:                     StatusActive,
+		Hydrated:                   true,
+		ClaudeToolUseRepairEnabled: true,
+		StrongSafetyModeEnabled:    true,
+	})
+	input := []byte(`{
+		"model":"claude-sonnet-4-6",
+		"messages":[
+			{"role":"user","content":[{"type":"text","text":"review this code"}]},
+			{"role":"assistant","content":[{"type":"text","text":"I need to inspect the file first."}]},
+			{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_orphan","content":[{"type":"text","text":"file contents"}]}]}
+		]
+	}`)
+
+	out := NormalizeClaudeHistoryForUpstream(ctx, input)
+
+	require.False(t, strings.Contains(string(out), `"type":"tool_result"`))
+	messages := gjson.GetBytes(out, "messages").Array()
+	require.NotEmpty(t, messages)
+	require.Equal(t, "user", messages[len(messages)-1].Get("role").String())
+}
+
 func TestIsAnthropicToolUseHistoryError(t *testing.T) {
 	require.True(t, isAnthropicToolUseHistoryError([]byte(`{
 		"error":{

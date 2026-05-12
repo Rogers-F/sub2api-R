@@ -424,12 +424,8 @@ func NormalizeClaudeRequestCompatibility(body []byte) ([]byte, bool) {
 		changed = true
 	}
 
-	if rawMessages, ok := req["messages"].([]any); ok {
-		messages, messagesChanged := normalizeClaudeCompatMessages(rawMessages)
-		if messagesChanged {
-			req["messages"] = messages
-			changed = true
-		}
+	if normalizeClaudeCompatMessagesInRequest(req) {
+		changed = true
 	}
 
 	normalized := body
@@ -443,9 +439,29 @@ func NormalizeClaudeRequestCompatibility(body []byte) ([]byte, bool) {
 
 	repaired, repairedChanged := RepairAnthropicToolUseHistory(normalized)
 	if repairedChanged {
+		var repairedReq map[string]any
+		if err := json.Unmarshal(repaired, &repairedReq); err == nil {
+			if normalizeClaudeCompatMessagesInRequest(repairedReq) {
+				if out, err := json.Marshal(repairedReq); err == nil {
+					return out, true
+				}
+			}
+		}
 		return repaired, true
 	}
 	return normalized, changed
+}
+
+func normalizeClaudeCompatMessagesInRequest(req map[string]any) bool {
+	rawMessages, ok := req["messages"].([]any)
+	if !ok {
+		return false
+	}
+	messages, changed := normalizeClaudeCompatMessages(rawMessages)
+	if changed {
+		req["messages"] = messages
+	}
+	return changed
 }
 
 func normalizeClaudeThinkingBudget(req map[string]any) bool {
