@@ -96,7 +96,10 @@ func (Group) Fields() []ent.Field {
 			Comment("是否启用 Claude prompt cache（缓存创建与缓存读取）"),
 		field.Bool("thinking_signature_compat_enabled").
 			Default(false).
-			Comment("是否启用历史 thinking 签名兼容重试（适用于 Max/AWS 等混合渠道）"),
+			Comment("是否启用历史 thinking 签名兼容重试（适用于 Max/Anthropic 等混合渠道）"),
+		field.Bool("bedrock_thinking_signature_compat_enabled").
+			Default(false).
+			Comment("是否启用 Bedrock thinking 签名错误过滤重试（会关闭本次重试 thinking）"),
 		field.Bool("claude_tool_use_repair_enabled").
 			Default(false).
 			Comment("是否启用 Claude tool_use/tool_result 历史自动修复重试"),

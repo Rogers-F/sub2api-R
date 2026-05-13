@@ -155,6 +155,11 @@ func ThinkingSignatureCompatEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldThinkingSignatureCompatEnabled, v))
 }
 
+// BedrockThinkingSignatureCompatEnabled applies equality check predicate on the "bedrock_thinking_signature_compat_enabled" field. It's identical to BedrockThinkingSignatureCompatEnabledEQ.
+func BedrockThinkingSignatureCompatEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldBedrockThinkingSignatureCompatEnabled, v))
+}
+
 // ClaudeToolUseRepairEnabled applies equality check predicate on the "claude_tool_use_repair_enabled" field. It's identical to ClaudeToolUseRepairEnabledEQ.
 func ClaudeToolUseRepairEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudeToolUseRepairEnabled, v))
@@ -1103,6 +1108,16 @@ func ThinkingSignatureCompatEnabledEQ(v bool) predicate.Group {
 // ThinkingSignatureCompatEnabledNEQ applies the NEQ predicate on the "thinking_signature_compat_enabled" field.
 func ThinkingSignatureCompatEnabledNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldThinkingSignatureCompatEnabled, v))
+}
+
+// BedrockThinkingSignatureCompatEnabledEQ applies the EQ predicate on the "bedrock_thinking_signature_compat_enabled" field.
+func BedrockThinkingSignatureCompatEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldBedrockThinkingSignatureCompatEnabled, v))
+}
+
+// BedrockThinkingSignatureCompatEnabledNEQ applies the NEQ predicate on the "bedrock_thinking_signature_compat_enabled" field.
+func BedrockThinkingSignatureCompatEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldBedrockThinkingSignatureCompatEnabled, v))
 }
 
 // ClaudeToolUseRepairEnabledEQ applies the EQ predicate on the "claude_tool_use_repair_enabled" field.

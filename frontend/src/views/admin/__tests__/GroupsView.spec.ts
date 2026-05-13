@@ -157,6 +157,7 @@ function makeGroup() {
     claude_code_only: false,
     claude_prompt_caching_enabled: true,
     thinking_signature_compat_enabled: false,
+    bedrock_thinking_signature_compat_enabled: false,
     claude_tool_use_repair_enabled: false,
     claude_tool_arguments_repair_enabled: false,
     strong_safety_mode_enabled: true,

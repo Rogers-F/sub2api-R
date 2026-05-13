@@ -92,17 +92,18 @@ type CreateGroupRequest struct {
 	WeeklyLimitUSD   optionalLimitField `json:"weekly_limit_usd"`
 	MonthlyLimitUSD  optionalLimitField `json:"monthly_limit_usd"`
 	// 图片生成计费配置（antigravity 和 gemini 平台使用，负数表示清除配置）
-	ImagePrice1K                     *float64 `json:"image_price_1k"`
-	ImagePrice2K                     *float64 `json:"image_price_2k"`
-	ImagePrice4K                     *float64 `json:"image_price_4k"`
-	ClaudeCodeOnly                   bool     `json:"claude_code_only"`
-	ClaudePromptCachingEnabled       *bool    `json:"claude_prompt_caching_enabled"`
-	ThinkingSignatureCompatEnabled   bool     `json:"thinking_signature_compat_enabled"`
-	ClaudeToolUseRepairEnabled       bool     `json:"claude_tool_use_repair_enabled"`
-	ClaudeToolArgumentsRepairEnabled bool     `json:"claude_tool_arguments_repair_enabled"`
-	StrongSafetyModeEnabled          *bool    `json:"strong_safety_mode_enabled"`
-	FallbackGroupID                  *int64   `json:"fallback_group_id"`
-	FallbackGroupIDOnInvalidRequest  *int64   `json:"fallback_group_id_on_invalid_request"`
+	ImagePrice1K                          *float64 `json:"image_price_1k"`
+	ImagePrice2K                          *float64 `json:"image_price_2k"`
+	ImagePrice4K                          *float64 `json:"image_price_4k"`
+	ClaudeCodeOnly                        bool     `json:"claude_code_only"`
+	ClaudePromptCachingEnabled            *bool    `json:"claude_prompt_caching_enabled"`
+	ThinkingSignatureCompatEnabled        bool     `json:"thinking_signature_compat_enabled"`
+	BedrockThinkingSignatureCompatEnabled bool     `json:"bedrock_thinking_signature_compat_enabled"`
+	ClaudeToolUseRepairEnabled            bool     `json:"claude_tool_use_repair_enabled"`
+	ClaudeToolArgumentsRepairEnabled      bool     `json:"claude_tool_arguments_repair_enabled"`
+	StrongSafetyModeEnabled               *bool    `json:"strong_safety_mode_enabled"`
+	FallbackGroupID                       *int64   `json:"fallback_group_id"`
+	FallbackGroupIDOnInvalidRequest       *int64   `json:"fallback_group_id_on_invalid_request"`
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64 `json:"model_routing"`
 	ModelRoutingEnabled bool               `json:"model_routing_enabled"`
@@ -133,17 +134,18 @@ type UpdateGroupRequest struct {
 	WeeklyLimitUSD   optionalLimitField `json:"weekly_limit_usd"`
 	MonthlyLimitUSD  optionalLimitField `json:"monthly_limit_usd"`
 	// 图片生成计费配置（antigravity 和 gemini 平台使用，负数表示清除配置）
-	ImagePrice1K                     *float64 `json:"image_price_1k"`
-	ImagePrice2K                     *float64 `json:"image_price_2k"`
-	ImagePrice4K                     *float64 `json:"image_price_4k"`
-	ClaudeCodeOnly                   *bool    `json:"claude_code_only"`
-	ClaudePromptCachingEnabled       *bool    `json:"claude_prompt_caching_enabled"`
-	ThinkingSignatureCompatEnabled   *bool    `json:"thinking_signature_compat_enabled"`
-	ClaudeToolUseRepairEnabled       *bool    `json:"claude_tool_use_repair_enabled"`
-	ClaudeToolArgumentsRepairEnabled *bool    `json:"claude_tool_arguments_repair_enabled"`
-	StrongSafetyModeEnabled          *bool    `json:"strong_safety_mode_enabled"`
-	FallbackGroupID                  *int64   `json:"fallback_group_id"`
-	FallbackGroupIDOnInvalidRequest  *int64   `json:"fallback_group_id_on_invalid_request"`
+	ImagePrice1K                          *float64 `json:"image_price_1k"`
+	ImagePrice2K                          *float64 `json:"image_price_2k"`
+	ImagePrice4K                          *float64 `json:"image_price_4k"`
+	ClaudeCodeOnly                        *bool    `json:"claude_code_only"`
+	ClaudePromptCachingEnabled            *bool    `json:"claude_prompt_caching_enabled"`
+	ThinkingSignatureCompatEnabled        *bool    `json:"thinking_signature_compat_enabled"`
+	BedrockThinkingSignatureCompatEnabled *bool    `json:"bedrock_thinking_signature_compat_enabled"`
+	ClaudeToolUseRepairEnabled            *bool    `json:"claude_tool_use_repair_enabled"`
+	ClaudeToolArgumentsRepairEnabled      *bool    `json:"claude_tool_arguments_repair_enabled"`
+	StrongSafetyModeEnabled               *bool    `json:"strong_safety_mode_enabled"`
+	FallbackGroupID                       *int64   `json:"fallback_group_id"`
+	FallbackGroupIDOnInvalidRequest       *int64   `json:"fallback_group_id_on_invalid_request"`
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64 `json:"model_routing"`
 	ModelRoutingEnabled *bool              `json:"model_routing_enabled"`
@@ -248,36 +250,37 @@ func (h *GroupHandler) Create(c *gin.Context) {
 	}
 
 	group, err := h.adminService.CreateGroup(c.Request.Context(), &service.CreateGroupInput{
-		Name:                             req.Name,
-		Description:                      req.Description,
-		Platform:                         req.Platform,
-		RateMultiplier:                   req.RateMultiplier,
-		IsExclusive:                      req.IsExclusive,
-		SubscriptionType:                 req.SubscriptionType,
-		DailyLimitUSD:                    req.DailyLimitUSD.ToServiceInput(),
-		WeeklyLimitUSD:                   req.WeeklyLimitUSD.ToServiceInput(),
-		MonthlyLimitUSD:                  req.MonthlyLimitUSD.ToServiceInput(),
-		ImagePrice1K:                     req.ImagePrice1K,
-		ImagePrice2K:                     req.ImagePrice2K,
-		ImagePrice4K:                     req.ImagePrice4K,
-		ClaudeCodeOnly:                   req.ClaudeCodeOnly,
-		ClaudePromptCachingEnabled:       req.ClaudePromptCachingEnabled,
-		ThinkingSignatureCompatEnabled:   req.ThinkingSignatureCompatEnabled,
-		ClaudeToolUseRepairEnabled:       req.ClaudeToolUseRepairEnabled,
-		ClaudeToolArgumentsRepairEnabled: req.ClaudeToolArgumentsRepairEnabled,
-		StrongSafetyModeEnabled:          req.StrongSafetyModeEnabled,
-		FallbackGroupID:                  req.FallbackGroupID,
-		FallbackGroupIDOnInvalidRequest:  req.FallbackGroupIDOnInvalidRequest,
-		ModelRouting:                     req.ModelRouting,
-		ModelRoutingEnabled:              req.ModelRoutingEnabled,
-		MCPXMLInject:                     req.MCPXMLInject,
-		SupportedModelScopes:             req.SupportedModelScopes,
-		AllowMessagesDispatch:            req.AllowMessagesDispatch,
-		RequireOAuthOnly:                 req.RequireOAuthOnly,
-		RequirePrivacySet:                req.RequirePrivacySet,
-		DefaultMappedModel:               req.DefaultMappedModel,
-		ForceApplicationJSONForNonStream: req.ForceApplicationJSONForNonStream,
-		CopyAccountsFromGroupIDs:         req.CopyAccountsFromGroupIDs,
+		Name:                                  req.Name,
+		Description:                           req.Description,
+		Platform:                              req.Platform,
+		RateMultiplier:                        req.RateMultiplier,
+		IsExclusive:                           req.IsExclusive,
+		SubscriptionType:                      req.SubscriptionType,
+		DailyLimitUSD:                         req.DailyLimitUSD.ToServiceInput(),
+		WeeklyLimitUSD:                        req.WeeklyLimitUSD.ToServiceInput(),
+		MonthlyLimitUSD:                       req.MonthlyLimitUSD.ToServiceInput(),
+		ImagePrice1K:                          req.ImagePrice1K,
+		ImagePrice2K:                          req.ImagePrice2K,
+		ImagePrice4K:                          req.ImagePrice4K,
+		ClaudeCodeOnly:                        req.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:            req.ClaudePromptCachingEnabled,
+		ThinkingSignatureCompatEnabled:        req.ThinkingSignatureCompatEnabled,
+		BedrockThinkingSignatureCompatEnabled: req.BedrockThinkingSignatureCompatEnabled,
+		ClaudeToolUseRepairEnabled:            req.ClaudeToolUseRepairEnabled,
+		ClaudeToolArgumentsRepairEnabled:      req.ClaudeToolArgumentsRepairEnabled,
+		StrongSafetyModeEnabled:               req.StrongSafetyModeEnabled,
+		FallbackGroupID:                       req.FallbackGroupID,
+		FallbackGroupIDOnInvalidRequest:       req.FallbackGroupIDOnInvalidRequest,
+		ModelRouting:                          req.ModelRouting,
+		ModelRoutingEnabled:                   req.ModelRoutingEnabled,
+		MCPXMLInject:                          req.MCPXMLInject,
+		SupportedModelScopes:                  req.SupportedModelScopes,
+		AllowMessagesDispatch:                 req.AllowMessagesDispatch,
+		RequireOAuthOnly:                      req.RequireOAuthOnly,
+		RequirePrivacySet:                     req.RequirePrivacySet,
+		DefaultMappedModel:                    req.DefaultMappedModel,
+		ForceApplicationJSONForNonStream:      req.ForceApplicationJSONForNonStream,
+		CopyAccountsFromGroupIDs:              req.CopyAccountsFromGroupIDs,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -303,37 +306,38 @@ func (h *GroupHandler) Update(c *gin.Context) {
 	}
 
 	group, err := h.adminService.UpdateGroup(c.Request.Context(), groupID, &service.UpdateGroupInput{
-		Name:                             req.Name,
-		Description:                      req.Description,
-		Platform:                         req.Platform,
-		RateMultiplier:                   req.RateMultiplier,
-		IsExclusive:                      req.IsExclusive,
-		Status:                           req.Status,
-		SubscriptionType:                 req.SubscriptionType,
-		DailyLimitUSD:                    req.DailyLimitUSD.ToServiceInput(),
-		WeeklyLimitUSD:                   req.WeeklyLimitUSD.ToServiceInput(),
-		MonthlyLimitUSD:                  req.MonthlyLimitUSD.ToServiceInput(),
-		ImagePrice1K:                     req.ImagePrice1K,
-		ImagePrice2K:                     req.ImagePrice2K,
-		ImagePrice4K:                     req.ImagePrice4K,
-		ClaudeCodeOnly:                   req.ClaudeCodeOnly,
-		ClaudePromptCachingEnabled:       req.ClaudePromptCachingEnabled,
-		ThinkingSignatureCompatEnabled:   req.ThinkingSignatureCompatEnabled,
-		ClaudeToolUseRepairEnabled:       req.ClaudeToolUseRepairEnabled,
-		ClaudeToolArgumentsRepairEnabled: req.ClaudeToolArgumentsRepairEnabled,
-		StrongSafetyModeEnabled:          req.StrongSafetyModeEnabled,
-		FallbackGroupID:                  req.FallbackGroupID,
-		FallbackGroupIDOnInvalidRequest:  req.FallbackGroupIDOnInvalidRequest,
-		ModelRouting:                     req.ModelRouting,
-		ModelRoutingEnabled:              req.ModelRoutingEnabled,
-		MCPXMLInject:                     req.MCPXMLInject,
-		SupportedModelScopes:             req.SupportedModelScopes,
-		AllowMessagesDispatch:            req.AllowMessagesDispatch,
-		RequireOAuthOnly:                 req.RequireOAuthOnly,
-		RequirePrivacySet:                req.RequirePrivacySet,
-		DefaultMappedModel:               req.DefaultMappedModel,
-		ForceApplicationJSONForNonStream: req.ForceApplicationJSONForNonStream,
-		CopyAccountsFromGroupIDs:         req.CopyAccountsFromGroupIDs,
+		Name:                                  req.Name,
+		Description:                           req.Description,
+		Platform:                              req.Platform,
+		RateMultiplier:                        req.RateMultiplier,
+		IsExclusive:                           req.IsExclusive,
+		Status:                                req.Status,
+		SubscriptionType:                      req.SubscriptionType,
+		DailyLimitUSD:                         req.DailyLimitUSD.ToServiceInput(),
+		WeeklyLimitUSD:                        req.WeeklyLimitUSD.ToServiceInput(),
+		MonthlyLimitUSD:                       req.MonthlyLimitUSD.ToServiceInput(),
+		ImagePrice1K:                          req.ImagePrice1K,
+		ImagePrice2K:                          req.ImagePrice2K,
+		ImagePrice4K:                          req.ImagePrice4K,
+		ClaudeCodeOnly:                        req.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:            req.ClaudePromptCachingEnabled,
+		ThinkingSignatureCompatEnabled:        req.ThinkingSignatureCompatEnabled,
+		BedrockThinkingSignatureCompatEnabled: req.BedrockThinkingSignatureCompatEnabled,
+		ClaudeToolUseRepairEnabled:            req.ClaudeToolUseRepairEnabled,
+		ClaudeToolArgumentsRepairEnabled:      req.ClaudeToolArgumentsRepairEnabled,
+		StrongSafetyModeEnabled:               req.StrongSafetyModeEnabled,
+		FallbackGroupID:                       req.FallbackGroupID,
+		FallbackGroupIDOnInvalidRequest:       req.FallbackGroupIDOnInvalidRequest,
+		ModelRouting:                          req.ModelRouting,
+		ModelRoutingEnabled:                   req.ModelRoutingEnabled,
+		MCPXMLInject:                          req.MCPXMLInject,
+		SupportedModelScopes:                  req.SupportedModelScopes,
+		AllowMessagesDispatch:                 req.AllowMessagesDispatch,
+		RequireOAuthOnly:                      req.RequireOAuthOnly,
+		RequirePrivacySet:                     req.RequirePrivacySet,
+		DefaultMappedModel:                    req.DefaultMappedModel,
+		ForceApplicationJSONForNonStream:      req.ForceApplicationJSONForNonStream,
+		CopyAccountsFromGroupIDs:              req.CopyAccountsFromGroupIDs,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

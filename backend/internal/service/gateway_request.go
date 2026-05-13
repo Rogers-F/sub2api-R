@@ -1717,6 +1717,10 @@ func NormalizeClaudeOutputEffort(raw string) *string {
 }
 
 func normalizeClaudeOpus47RequestBody(body []byte, modelID string) ([]byte, string, bool, error) {
+	return normalizeClaudeThinkingAliasRequestBody(body, modelID)
+}
+
+func normalizeClaudeThinkingAliasRequestBody(body []byte, modelID string) ([]byte, string, bool, error) {
 	if len(body) == 0 {
 		return body, modelID, false, nil
 	}
@@ -1727,12 +1731,13 @@ func normalizeClaudeOpus47RequestBody(body []byte, modelID string) ([]byte, stri
 		rawModel = modelValue.String()
 	}
 
-	aliasBase, aliasEffort, _, aliasMatched := claude.ParseOpus47AliasModel(rawModel)
+	aliasBase, aliasEffort, _, aliasMatched := claude.ParseClaudeThinkingAliasModel(rawModel)
 	finalModel := strings.ToLower(strings.TrimSpace(rawModel))
 	if aliasMatched {
 		finalModel = aliasBase
 	}
-	if !claude.IsOpus47Model(finalModel) {
+	legacyOpus47 := claude.IsOpus47Model(finalModel)
+	if !aliasMatched && !legacyOpus47 {
 		return body, modelID, false, nil
 	}
 
@@ -1783,10 +1788,12 @@ func normalizeClaudeOpus47RequestBody(body []byte, modelID string) ([]byte, stri
 		}
 	}
 
-	for _, path := range []string{"temperature", "top_p", "top_k"} {
-		if next, ok := deleteJSONPathBytes(out, path); ok {
-			out = next
-			changed = true
+	if needsThinkingCompat || legacyOpus47 {
+		for _, path := range []string{"temperature", "top_p", "top_k"} {
+			if next, ok := deleteJSONPathBytes(out, path); ok {
+				out = next
+				changed = true
+			}
 		}
 	}
 

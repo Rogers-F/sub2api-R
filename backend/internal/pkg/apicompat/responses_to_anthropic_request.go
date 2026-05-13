@@ -66,17 +66,21 @@ func ResponsesToAnthropicRequest(req *ResponsesRequest) (*AnthropicRequest, erro
 		}
 	}
 
-	normalizeOpus47AnthropicRequest(out, req.Model, req.Reasoning != nil && req.Reasoning.Effort != "")
+	normalizeClaudeAdaptiveThinkingAnthropicRequest(out, req.Model, req.Reasoning != nil && req.Reasoning.Effort != "")
 
 	return out, nil
 }
 
 func normalizeOpus47AnthropicRequest(out *AnthropicRequest, requestedModel string, explicitReasoning bool) {
+	normalizeClaudeAdaptiveThinkingAnthropicRequest(out, requestedModel, explicitReasoning)
+}
+
+func normalizeClaudeAdaptiveThinkingAnthropicRequest(out *AnthropicRequest, requestedModel string, explicitReasoning bool) {
 	if out == nil {
 		return
 	}
 
-	baseModel, suffixEffort, _, aliasMatched := claude.ParseOpus47AliasModel(requestedModel)
+	baseModel, suffixEffort, _, aliasMatched := claude.ParseClaudeThinkingAliasModel(requestedModel)
 	if aliasMatched {
 		out.Model = baseModel
 		if !explicitReasoning {
@@ -84,7 +88,7 @@ func normalizeOpus47AnthropicRequest(out *AnthropicRequest, requestedModel strin
 		}
 	}
 
-	if !claude.IsOpus47Model(out.Model) {
+	if !claude.IsClaudeAdaptiveThinkingModel(out.Model) {
 		return
 	}
 

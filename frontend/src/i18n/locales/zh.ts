@@ -1938,10 +1938,18 @@ export default {
       thinkingSignatureCompat: {
         title: '跨渠道历史上下文兼容（安全模式）',
         tooltip:
-          '开启后，当 Claude Max、官方 Anthropic、AWS Bedrock 等不同渠道之间切换导致历史消息里的 thinking 签名失效时，网关会自动剥离历史 thinking / tool 签名块并重试一次。',
+          '开启后，当 Claude Max、官方 Anthropic 等不同渠道之间切换导致历史消息里的 thinking 签名失效时，网关会自动剥离历史 thinking / tool 签名块并重试一次。',
         enabled: '已启用兼容重试',
         disabled: '未启用兼容重试',
-        hint: '建议在混用 Claude Max / Anthropic / AWS Bedrock 的分组中开启。'
+        hint: '建议在混用 Claude Max / Anthropic 的分组中开启。Bedrock 使用下方独立开关。'
+      },
+      bedrockThinkingSignatureCompat: {
+        title: 'Bedrock Thinking 签名兜底',
+        tooltip:
+          '开启后，AWS Bedrock 返回 thinking signature 校验失败时，网关会剥离历史 thinking / redacted_thinking blocks 并关闭本次重试的顶层 thinking 后重试一次。该兜底可能影响回答质量，默认关闭。',
+        enabled: '已启用 Bedrock 兜底',
+        disabled: '未启用 Bedrock 兜底',
+        hint: '仅在 Bedrock 账号频繁遇到 thinking signature verification failed 时开启。'
       },
       claudeToolUseRepair: {
         title: 'Claude 请求兼容修复（安全模式）',
@@ -2228,10 +2236,12 @@ export default {
         status: '状态',
         schedulable: '调度',
         todayStats: '今日统计',
+        totalStats: '总计统计',
         groups: '分组',
         usageWindows: '用量窗口',
         proxy: '代理',
         lastUsed: '最近使用',
+        createdAt: '创建时间',
         expiresAt: '过期时间',
         actions: '操作'
       },

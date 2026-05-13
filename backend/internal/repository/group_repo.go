@@ -53,6 +53,7 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetClaudePromptCachingEnabled(groupIn.ClaudePromptCachingEnabled).
 		SetThinkingSignatureCompatEnabled(groupIn.ThinkingSignatureCompatEnabled).
+		SetBedrockThinkingSignatureCompatEnabled(groupIn.BedrockThinkingSignatureCompatEnabled).
 		SetClaudeToolUseRepairEnabled(groupIn.ClaudeToolUseRepairEnabled).
 		SetClaudeToolArgumentsRepairEnabled(groupIn.ClaudeToolArgumentsRepairEnabled).
 		SetStrongSafetyModeEnabled(groupIn.StrongSafetyModeEnabled).
@@ -127,6 +128,7 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetClaudePromptCachingEnabled(groupIn.ClaudePromptCachingEnabled).
 		SetThinkingSignatureCompatEnabled(groupIn.ThinkingSignatureCompatEnabled).
+		SetBedrockThinkingSignatureCompatEnabled(groupIn.BedrockThinkingSignatureCompatEnabled).
 		SetClaudeToolUseRepairEnabled(groupIn.ClaudeToolUseRepairEnabled).
 		SetClaudeToolArgumentsRepairEnabled(groupIn.ClaudeToolArgumentsRepairEnabled).
 		SetStrongSafetyModeEnabled(groupIn.StrongSafetyModeEnabled).

@@ -40,26 +40,27 @@ type APIKeyAuthUserSnapshot struct {
 
 // APIKeyAuthGroupSnapshot 分组快照
 type APIKeyAuthGroupSnapshot struct {
-	ID                               int64    `json:"id"`
-	Name                             string   `json:"name"`
-	Platform                         string   `json:"platform"`
-	Status                           string   `json:"status"`
-	SubscriptionType                 string   `json:"subscription_type"`
-	RateMultiplier                   float64  `json:"rate_multiplier"`
-	DailyLimitUSD                    *float64 `json:"daily_limit_usd,omitempty"`
-	WeeklyLimitUSD                   *float64 `json:"weekly_limit_usd,omitempty"`
-	MonthlyLimitUSD                  *float64 `json:"monthly_limit_usd,omitempty"`
-	ImagePrice1K                     *float64 `json:"image_price_1k,omitempty"`
-	ImagePrice2K                     *float64 `json:"image_price_2k,omitempty"`
-	ImagePrice4K                     *float64 `json:"image_price_4k,omitempty"`
-	ClaudeCodeOnly                   bool     `json:"claude_code_only"`
-	ClaudePromptCachingEnabled       bool     `json:"claude_prompt_caching_enabled"`
-	ThinkingSignatureCompatEnabled   bool     `json:"thinking_signature_compat_enabled"`
-	ClaudeToolUseRepairEnabled       bool     `json:"claude_tool_use_repair_enabled"`
-	ClaudeToolArgumentsRepairEnabled bool     `json:"claude_tool_arguments_repair_enabled"`
-	StrongSafetyModeEnabled          bool     `json:"strong_safety_mode_enabled"`
-	FallbackGroupID                  *int64   `json:"fallback_group_id,omitempty"`
-	FallbackGroupIDOnInvalidRequest  *int64   `json:"fallback_group_id_on_invalid_request,omitempty"`
+	ID                                    int64    `json:"id"`
+	Name                                  string   `json:"name"`
+	Platform                              string   `json:"platform"`
+	Status                                string   `json:"status"`
+	SubscriptionType                      string   `json:"subscription_type"`
+	RateMultiplier                        float64  `json:"rate_multiplier"`
+	DailyLimitUSD                         *float64 `json:"daily_limit_usd,omitempty"`
+	WeeklyLimitUSD                        *float64 `json:"weekly_limit_usd,omitempty"`
+	MonthlyLimitUSD                       *float64 `json:"monthly_limit_usd,omitempty"`
+	ImagePrice1K                          *float64 `json:"image_price_1k,omitempty"`
+	ImagePrice2K                          *float64 `json:"image_price_2k,omitempty"`
+	ImagePrice4K                          *float64 `json:"image_price_4k,omitempty"`
+	ClaudeCodeOnly                        bool     `json:"claude_code_only"`
+	ClaudePromptCachingEnabled            bool     `json:"claude_prompt_caching_enabled"`
+	ThinkingSignatureCompatEnabled        bool     `json:"thinking_signature_compat_enabled"`
+	BedrockThinkingSignatureCompatEnabled bool     `json:"bedrock_thinking_signature_compat_enabled"`
+	ClaudeToolUseRepairEnabled            bool     `json:"claude_tool_use_repair_enabled"`
+	ClaudeToolArgumentsRepairEnabled      bool     `json:"claude_tool_arguments_repair_enabled"`
+	StrongSafetyModeEnabled               bool     `json:"strong_safety_mode_enabled"`
+	FallbackGroupID                       *int64   `json:"fallback_group_id,omitempty"`
+	FallbackGroupIDOnInvalidRequest       *int64   `json:"fallback_group_id_on_invalid_request,omitempty"`
 
 	// Model routing is used by gateway account selection, so it must be part of auth cache snapshot.
 	// Only anthropic groups use these fields; others may leave them empty.

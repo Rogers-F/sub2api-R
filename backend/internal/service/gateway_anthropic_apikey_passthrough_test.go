@@ -211,6 +211,43 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardStreamPreservesBodyAnd
 	require.Equal(t, "claude-3-haiku-20240307", gjson.GetBytes(bodyBytes, "model").String(), "缓存的上游请求体应包含映射后的模型")
 }
 
+func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardNormalizesClaudeThinkingAlias(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{"model":"claude-sonnet-4-6-thinking","stream":false,"temperature":0.7,"thinking":{"type":"enabled","budget_tokens":2048},"messages":[{"role":"user","content":[{"type":"text","text":"hello"}]}]}`)
+	parsed, err := ParseGatewayRequest(body, "")
+	require.NoError(t, err)
+
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"id":"msg_1","type":"message","usage":{"input_tokens":5,"output_tokens":3}}`)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:              &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}},
+		httpUpstream:     upstream,
+		rateLimitService: &RateLimitService{},
+		deferredService:  &DeferredService{},
+	}
+
+	result, err := svc.Forward(context.Background(), c, newAnthropicAPIKeyAccountForTest(), parsed)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	require.Equal(t, "claude-sonnet-4-6", gjson.GetBytes(upstream.lastBody, "model").String())
+	require.Equal(t, "adaptive", gjson.GetBytes(upstream.lastBody, "thinking.type").String())
+	require.Equal(t, "summarized", gjson.GetBytes(upstream.lastBody, "thinking.display").String())
+	require.Equal(t, "high", gjson.GetBytes(upstream.lastBody, "output_config.effort").String())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "thinking.budget_tokens").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "temperature").Exists())
+}
+
 func TestGatewayService_AnthropicAPIKeyPassthrough_PreflightsRepairedToolHistory(t *testing.T) {
 	runAnthropicAPIKeyPassthroughToolHistoryCompatTest(t, true)
 }
@@ -403,6 +440,39 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardCountTokensPreservesBo
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.JSONEq(t, upstreamRespBody, rec.Body.String())
 	require.Empty(t, rec.Header().Get("Set-Cookie"))
+}
+
+func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardCountTokensNormalizesClaudeThinkingAlias(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages/count_tokens", nil)
+
+	body := []byte(`{"model":"claude-opus-4-6-xhigh","messages":[{"role":"user","content":[{"type":"text","text":"hello"}]}]}`)
+	parsed, err := ParseGatewayRequest(body, "")
+	require.NoError(t, err)
+
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"input_tokens":42}`)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:              &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}},
+		httpUpstream:     upstream,
+		rateLimitService: &RateLimitService{},
+	}
+
+	err = svc.ForwardCountTokens(context.Background(), c, newAnthropicAPIKeyAccountForTest(), parsed)
+	require.NoError(t, err)
+
+	require.Equal(t, "claude-opus-4-6", gjson.GetBytes(upstream.lastBody, "model").String())
+	require.Equal(t, "adaptive", gjson.GetBytes(upstream.lastBody, "thinking.type").String())
+	require.Equal(t, "summarized", gjson.GetBytes(upstream.lastBody, "thinking.display").String())
+	require.Equal(t, "max", gjson.GetBytes(upstream.lastBody, "output_config.effort").String())
 }
 
 func TestGatewayService_AnthropicAPIKeyPassthrough_GroupFlagForcesNonStreaming(t *testing.T) {

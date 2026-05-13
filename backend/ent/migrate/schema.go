@@ -438,6 +438,7 @@ var (
 		{Name: "claude_code_only", Type: field.TypeBool, Default: false},
 		{Name: "claude_prompt_caching_enabled", Type: field.TypeBool, Default: true},
 		{Name: "thinking_signature_compat_enabled", Type: field.TypeBool, Default: false},
+		{Name: "bedrock_thinking_signature_compat_enabled", Type: field.TypeBool, Default: false},
 		{Name: "claude_tool_use_repair_enabled", Type: field.TypeBool, Default: false},
 		{Name: "claude_tool_arguments_repair_enabled", Type: field.TypeBool, Default: false},
 		{Name: "strong_safety_mode_enabled", Type: field.TypeBool, Default: true},
@@ -488,7 +489,7 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[30]},
+				Columns: []*schema.Column{GroupsColumns[31]},
 			},
 		},
 	}

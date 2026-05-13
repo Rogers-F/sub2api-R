@@ -9063,78 +9063,79 @@ func (m *ErrorPassthroughRuleMutation) ResetEdge(name string) error {
 // GroupMutation represents an operation that mutates the Group nodes in the graph.
 type GroupMutation struct {
 	config
-	op                                      Op
-	typ                                     string
-	id                                      *int64
-	created_at                              *time.Time
-	updated_at                              *time.Time
-	deleted_at                              *time.Time
-	name                                    *string
-	description                             *string
-	rate_multiplier                         *float64
-	addrate_multiplier                      *float64
-	is_exclusive                            *bool
-	status                                  *string
-	platform                                *string
-	subscription_type                       *string
-	daily_limit_usd                         *float64
-	adddaily_limit_usd                      *float64
-	weekly_limit_usd                        *float64
-	addweekly_limit_usd                     *float64
-	monthly_limit_usd                       *float64
-	addmonthly_limit_usd                    *float64
-	default_validity_days                   *int
-	adddefault_validity_days                *int
-	image_price_1k                          *float64
-	addimage_price_1k                       *float64
-	image_price_2k                          *float64
-	addimage_price_2k                       *float64
-	image_price_4k                          *float64
-	addimage_price_4k                       *float64
-	claude_code_only                        *bool
-	claude_prompt_caching_enabled           *bool
-	thinking_signature_compat_enabled       *bool
-	claude_tool_use_repair_enabled          *bool
-	claude_tool_arguments_repair_enabled    *bool
-	strong_safety_mode_enabled              *bool
-	fallback_group_id                       *int64
-	addfallback_group_id                    *int64
-	fallback_group_id_on_invalid_request    *int64
-	addfallback_group_id_on_invalid_request *int64
-	model_routing                           *map[string][]int64
-	model_routing_enabled                   *bool
-	mcp_xml_inject                          *bool
-	supported_model_scopes                  *[]string
-	appendsupported_model_scopes            []string
-	sort_order                              *int
-	addsort_order                           *int
-	allow_messages_dispatch                 *bool
-	require_oauth_only                      *bool
-	require_privacy_set                     *bool
-	default_mapped_model                    *string
-	force_application_json_for_non_stream   *bool
-	clearedFields                           map[string]struct{}
-	api_keys                                map[int64]struct{}
-	removedapi_keys                         map[int64]struct{}
-	clearedapi_keys                         bool
-	redeem_codes                            map[int64]struct{}
-	removedredeem_codes                     map[int64]struct{}
-	clearedredeem_codes                     bool
-	subscriptions                           map[int64]struct{}
-	removedsubscriptions                    map[int64]struct{}
-	clearedsubscriptions                    bool
-	usage_logs                              map[int64]struct{}
-	removedusage_logs                       map[int64]struct{}
-	clearedusage_logs                       bool
-	accounts                                map[int64]struct{}
-	removedaccounts                         map[int64]struct{}
-	clearedaccounts                         bool
-	allowed_users                           map[int64]struct{}
-	removedallowed_users                    map[int64]struct{}
-	clearedallowed_users                    bool
-	done                                    bool
-	oldValue                                func(context.Context) (*Group, error)
-	predicates                              []predicate.Group
+	op                                        Op
+	typ                                       string
+	id                                        *int64
+	created_at                                *time.Time
+	updated_at                                *time.Time
+	deleted_at                                *time.Time
+	name                                      *string
+	description                               *string
+	rate_multiplier                           *float64
+	addrate_multiplier                        *float64
+	is_exclusive                              *bool
+	status                                    *string
+	platform                                  *string
+	subscription_type                         *string
+	daily_limit_usd                           *float64
+	adddaily_limit_usd                        *float64
+	weekly_limit_usd                          *float64
+	addweekly_limit_usd                       *float64
+	monthly_limit_usd                         *float64
+	addmonthly_limit_usd                      *float64
+	default_validity_days                     *int
+	adddefault_validity_days                  *int
+	image_price_1k                            *float64
+	addimage_price_1k                         *float64
+	image_price_2k                            *float64
+	addimage_price_2k                         *float64
+	image_price_4k                            *float64
+	addimage_price_4k                         *float64
+	claude_code_only                          *bool
+	claude_prompt_caching_enabled             *bool
+	thinking_signature_compat_enabled         *bool
+	bedrock_thinking_signature_compat_enabled *bool
+	claude_tool_use_repair_enabled            *bool
+	claude_tool_arguments_repair_enabled      *bool
+	strong_safety_mode_enabled                *bool
+	fallback_group_id                         *int64
+	addfallback_group_id                      *int64
+	fallback_group_id_on_invalid_request      *int64
+	addfallback_group_id_on_invalid_request   *int64
+	model_routing                             *map[string][]int64
+	model_routing_enabled                     *bool
+	mcp_xml_inject                            *bool
+	supported_model_scopes                    *[]string
+	appendsupported_model_scopes              []string
+	sort_order                                *int
+	addsort_order                             *int
+	allow_messages_dispatch                   *bool
+	require_oauth_only                        *bool
+	require_privacy_set                       *bool
+	default_mapped_model                      *string
+	force_application_json_for_non_stream     *bool
+	clearedFields                             map[string]struct{}
+	api_keys                                  map[int64]struct{}
+	removedapi_keys                           map[int64]struct{}
+	clearedapi_keys                           bool
+	redeem_codes                              map[int64]struct{}
+	removedredeem_codes                       map[int64]struct{}
+	clearedredeem_codes                       bool
+	subscriptions                             map[int64]struct{}
+	removedsubscriptions                      map[int64]struct{}
+	clearedsubscriptions                      bool
+	usage_logs                                map[int64]struct{}
+	removedusage_logs                         map[int64]struct{}
+	clearedusage_logs                         bool
+	accounts                                  map[int64]struct{}
+	removedaccounts                           map[int64]struct{}
+	clearedaccounts                           bool
+	allowed_users                             map[int64]struct{}
+	removedallowed_users                      map[int64]struct{}
+	clearedallowed_users                      bool
+	done                                      bool
+	oldValue                                  func(context.Context) (*Group, error)
+	predicates                                []predicate.Group
 }
 
 var _ ent.Mutation = (*GroupMutation)(nil)
@@ -10225,6 +10226,42 @@ func (m *GroupMutation) ResetThinkingSignatureCompatEnabled() {
 	m.thinking_signature_compat_enabled = nil
 }
 
+// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
+func (m *GroupMutation) SetBedrockThinkingSignatureCompatEnabled(b bool) {
+	m.bedrock_thinking_signature_compat_enabled = &b
+}
+
+// BedrockThinkingSignatureCompatEnabled returns the value of the "bedrock_thinking_signature_compat_enabled" field in the mutation.
+func (m *GroupMutation) BedrockThinkingSignatureCompatEnabled() (r bool, exists bool) {
+	v := m.bedrock_thinking_signature_compat_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBedrockThinkingSignatureCompatEnabled returns the old "bedrock_thinking_signature_compat_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldBedrockThinkingSignatureCompatEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBedrockThinkingSignatureCompatEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBedrockThinkingSignatureCompatEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBedrockThinkingSignatureCompatEnabled: %w", err)
+	}
+	return oldValue.BedrockThinkingSignatureCompatEnabled, nil
+}
+
+// ResetBedrockThinkingSignatureCompatEnabled resets all changes to the "bedrock_thinking_signature_compat_enabled" field.
+func (m *GroupMutation) ResetBedrockThinkingSignatureCompatEnabled() {
+	m.bedrock_thinking_signature_compat_enabled = nil
+}
+
 // SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
 func (m *GroupMutation) SetClaudeToolUseRepairEnabled(b bool) {
 	m.claude_tool_use_repair_enabled = &b
@@ -11239,7 +11276,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 36)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -11299,6 +11336,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.thinking_signature_compat_enabled != nil {
 		fields = append(fields, group.FieldThinkingSignatureCompatEnabled)
+	}
+	if m.bedrock_thinking_signature_compat_enabled != nil {
+		fields = append(fields, group.FieldBedrockThinkingSignatureCompatEnabled)
 	}
 	if m.claude_tool_use_repair_enabled != nil {
 		fields = append(fields, group.FieldClaudeToolUseRepairEnabled)
@@ -11393,6 +11433,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ClaudePromptCachingEnabled()
 	case group.FieldThinkingSignatureCompatEnabled:
 		return m.ThinkingSignatureCompatEnabled()
+	case group.FieldBedrockThinkingSignatureCompatEnabled:
+		return m.BedrockThinkingSignatureCompatEnabled()
 	case group.FieldClaudeToolUseRepairEnabled:
 		return m.ClaudeToolUseRepairEnabled()
 	case group.FieldClaudeToolArgumentsRepairEnabled:
@@ -11472,6 +11514,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldClaudePromptCachingEnabled(ctx)
 	case group.FieldThinkingSignatureCompatEnabled:
 		return m.OldThinkingSignatureCompatEnabled(ctx)
+	case group.FieldBedrockThinkingSignatureCompatEnabled:
+		return m.OldBedrockThinkingSignatureCompatEnabled(ctx)
 	case group.FieldClaudeToolUseRepairEnabled:
 		return m.OldClaudeToolUseRepairEnabled(ctx)
 	case group.FieldClaudeToolArgumentsRepairEnabled:
@@ -11650,6 +11694,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetThinkingSignatureCompatEnabled(v)
+		return nil
+	case group.FieldBedrockThinkingSignatureCompatEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBedrockThinkingSignatureCompatEnabled(v)
 		return nil
 	case group.FieldClaudeToolUseRepairEnabled:
 		v, ok := value.(bool)
@@ -12068,6 +12119,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldThinkingSignatureCompatEnabled:
 		m.ResetThinkingSignatureCompatEnabled()
+		return nil
+	case group.FieldBedrockThinkingSignatureCompatEnabled:
+		m.ResetBedrockThinkingSignatureCompatEnabled()
 		return nil
 	case group.FieldClaudeToolUseRepairEnabled:
 		m.ResetClaudeToolUseRepairEnabled()
