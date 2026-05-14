@@ -820,53 +820,6 @@
           </p>
         </div>
 
-        <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
-          <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('admin.groups.bedrockThinkingSignatureCompat.title') }}
-            </label>
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-80 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t('admin.groups.bedrockThinkingSignatureCompat.tooltip') }}
-                  </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button
-              type="button"
-              @click="createForm.bedrock_thinking_signature_compat_enabled = !createForm.bedrock_thinking_signature_compat_enabled"
-              :class="[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                createForm.bedrock_thinking_signature_compat_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
-              ]"
-            >
-              <span
-                :class="[
-                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                  createForm.bedrock_thinking_signature_compat_enabled ? 'translate-x-6' : 'translate-x-1'
-                ]"
-              />
-            </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
-              {{ createForm.bedrock_thinking_signature_compat_enabled ? t('admin.groups.bedrockThinkingSignatureCompat.enabled') : t('admin.groups.bedrockThinkingSignatureCompat.disabled') }}
-            </span>
-          </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {{ t('admin.groups.bedrockThinkingSignatureCompat.hint') }}
-          </p>
-        </div>
-
         <div v-if="['anthropic', 'antigravity'].includes(createForm.platform)" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1832,53 +1785,6 @@
           </p>
         </div>
 
-        <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
-          <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('admin.groups.bedrockThinkingSignatureCompat.title') }}
-            </label>
-            <div class="group relative inline-flex">
-              <Icon
-                name="questionCircle"
-                size="sm"
-                :stroke-width="2"
-                class="cursor-help text-gray-400 transition-colors hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400"
-              />
-              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-80 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                <div class="rounded-lg bg-gray-900 p-3 text-white shadow-lg dark:bg-gray-800">
-                  <p class="text-xs leading-relaxed text-gray-300">
-                    {{ t('admin.groups.bedrockThinkingSignatureCompat.tooltip') }}
-                  </p>
-                  <div class="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button
-              type="button"
-              @click="editForm.bedrock_thinking_signature_compat_enabled = !editForm.bedrock_thinking_signature_compat_enabled"
-              :class="[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                editForm.bedrock_thinking_signature_compat_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
-              ]"
-            >
-              <span
-                :class="[
-                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                  editForm.bedrock_thinking_signature_compat_enabled ? 'translate-x-6' : 'translate-x-1'
-                ]"
-              />
-            </button>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
-              {{ editForm.bedrock_thinking_signature_compat_enabled ? t('admin.groups.bedrockThinkingSignatureCompat.enabled') : t('admin.groups.bedrockThinkingSignatureCompat.disabled') }}
-            </span>
-          </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {{ t('admin.groups.bedrockThinkingSignatureCompat.hint') }}
-          </p>
-        </div>
-
         <div v-if="['anthropic', 'antigravity'].includes(editForm.platform)" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -2608,7 +2514,6 @@ const createForm = reactive({
   claude_prompt_caching_enabled: true,
   strong_safety_mode_enabled: true,
   thinking_signature_compat_enabled: false,
-  bedrock_thinking_signature_compat_enabled: false,
   claude_tool_use_repair_enabled: false,
   claude_tool_arguments_repair_enabled: false,
   fallback_group_id: null as number | null,
@@ -2856,7 +2761,6 @@ const editForm = reactive({
   claude_prompt_caching_enabled: true,
   strong_safety_mode_enabled: true,
   thinking_signature_compat_enabled: false,
-  bedrock_thinking_signature_compat_enabled: false,
   claude_tool_use_repair_enabled: false,
   claude_tool_arguments_repair_enabled: false,
   fallback_group_id: null as number | null,
@@ -3008,7 +2912,6 @@ const closeCreateModal = () => {
   createForm.claude_prompt_caching_enabled = true
   createForm.strong_safety_mode_enabled = true
   createForm.thinking_signature_compat_enabled = false
-  createForm.bedrock_thinking_signature_compat_enabled = false
   createForm.claude_tool_use_repair_enabled = false
   createForm.claude_tool_arguments_repair_enabled = false
   createForm.fallback_group_id = null
@@ -3098,7 +3001,6 @@ const handleEdit = (group: AdminGroup) => {
   editForm.claude_prompt_caching_enabled = group.claude_prompt_caching_enabled ?? true
   editForm.strong_safety_mode_enabled = group.strong_safety_mode_enabled ?? true
   editForm.thinking_signature_compat_enabled = group.thinking_signature_compat_enabled ?? false
-  editForm.bedrock_thinking_signature_compat_enabled = group.bedrock_thinking_signature_compat_enabled ?? false
   editForm.claude_tool_use_repair_enabled = group.claude_tool_use_repair_enabled ?? false
   editForm.claude_tool_arguments_repair_enabled = group.claude_tool_arguments_repair_enabled ?? false
   editForm.fallback_group_id = group.fallback_group_id
@@ -3225,9 +3127,6 @@ watch(
       createForm.claude_tool_use_repair_enabled = false
       createForm.claude_tool_arguments_repair_enabled = false
     }
-    if (newVal !== 'anthropic') {
-      createForm.bedrock_thinking_signature_compat_enabled = false
-    }
     if (!['anthropic', 'antigravity'].includes(newVal)) {
       createForm.fallback_group_id_on_invalid_request = null
     }
@@ -3249,9 +3148,6 @@ watch(
       editForm.thinking_signature_compat_enabled = false
       editForm.claude_tool_use_repair_enabled = false
       editForm.claude_tool_arguments_repair_enabled = false
-    }
-    if (newVal !== 'anthropic') {
-      editForm.bedrock_thinking_signature_compat_enabled = false
     }
     if (!['anthropic', 'antigravity'].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null

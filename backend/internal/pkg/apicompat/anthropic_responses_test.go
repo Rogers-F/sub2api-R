@@ -822,23 +822,6 @@ func TestResponsesToAnthropicRequest_Opus47ThinkingSuffixMapsToAdaptiveHigh(t *t
 	assert.Zero(t, anth.Thinking.BudgetTokens)
 }
 
-func TestResponsesToAnthropicRequest_ClaudeThinkingSuffixMapsToAdaptiveHigh(t *testing.T) {
-	req := &ResponsesRequest{
-		Model: "claude-sonnet-4-6-thinking",
-		Input: json.RawMessage(`[{"role":"user","content":"hello"}]`),
-	}
-
-	anth, err := ResponsesToAnthropicRequest(req)
-	require.NoError(t, err)
-	require.Equal(t, "claude-sonnet-4-6", anth.Model)
-	require.NotNil(t, anth.OutputConfig)
-	assert.Equal(t, "high", anth.OutputConfig.Effort)
-	require.NotNil(t, anth.Thinking)
-	assert.Equal(t, "adaptive", anth.Thinking.Type)
-	assert.Equal(t, "summarized", anth.Thinking.Display)
-	assert.Zero(t, anth.Thinking.BudgetTokens)
-}
-
 // ---------------------------------------------------------------------------
 // tool_choice conversion tests
 // ---------------------------------------------------------------------------

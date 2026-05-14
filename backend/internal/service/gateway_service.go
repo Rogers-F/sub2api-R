@@ -3866,27 +3866,11 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		passthroughBody := parsed.Body
 		passthroughModel := parsed.Model
 		if passthroughModel != "" {
-			mappedModel := account.GetMappedModel(passthroughModel)
-			if mappedModel == passthroughModel {
-				if baseModel, _, _, ok := claude.ParseClaudeThinkingAliasModel(passthroughModel); ok {
-					if mappedBaseModel := account.GetMappedModel(baseModel); mappedBaseModel != baseModel {
-						mappedModel = mappedBaseModel
-					}
-				}
-			}
-			if mappedModel != passthroughModel {
+			if mappedModel := account.GetMappedModel(passthroughModel); mappedModel != passthroughModel {
 				passthroughBody = s.replaceModelInBody(passthroughBody, mappedModel)
 				logger.LegacyPrintf("service.gateway", "Passthrough model mapping: %s -> %s (account: %s)", parsed.Model, mappedModel, account.Name)
 				passthroughModel = mappedModel
 			}
-		}
-		normalizedBody, normalizedModel, normalizedThinking, normalizeErr := normalizeClaudeThinkingAliasRequestBody(passthroughBody, passthroughModel)
-		if normalizeErr != nil {
-			return nil, normalizeErr
-		}
-		if normalizedThinking {
-			passthroughBody = normalizedBody
-			passthroughModel = normalizedModel
 		}
 		return s.forwardAnthropicAPIKeyPassthroughWithInput(ctx, c, account, anthropicPassthroughForwardInput{
 			Body:          passthroughBody,
@@ -3951,11 +3935,11 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	// 按分组策略处理 Claude prompt cache，并保留 Anthropic 的块数量限制。
 	body = enforceCacheControlPolicy(body, anthropicPromptCachingEnabledFromContext(ctx))
 
-	normalizedBody, normalizedModel, normalizedThinking, normalizeErr := normalizeClaudeThinkingAliasRequestBody(body, reqModel)
+	normalizedBody, normalizedModel, normalizedOpus47, normalizeErr := normalizeClaudeOpus47RequestBody(body, reqModel)
 	if normalizeErr != nil {
 		return nil, normalizeErr
 	}
-	if normalizedThinking {
+	if normalizedOpus47 {
 		body = normalizedBody
 		reqModel = normalizedModel
 	}
@@ -3969,11 +3953,6 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		mappedModel = account.GetMappedModel(reqModel)
 		if mappedModel != reqModel {
 			mappingSource = "account"
-		} else if originalModel != "" && originalModel != reqModel {
-			if originalMappedModel := account.GetMappedModel(originalModel); originalMappedModel != originalModel {
-				mappedModel = originalMappedModel
-				mappingSource = "account"
-			}
 		}
 	}
 	if mappingSource == "" && account.Platform == PlatformAnthropic && account.Type != AccountTypeAPIKey {
@@ -3988,14 +3967,6 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		body = s.replaceModelInBody(body, mappedModel)
 		reqModel = mappedModel
 		logger.LegacyPrintf("service.gateway", "Model mapping applied: %s -> %s (account: %s, source=%s)", originalModel, mappedModel, account.Name, mappingSource)
-	}
-	normalizedBody, normalizedModel, normalizedThinking, normalizeErr = normalizeClaudeThinkingAliasRequestBody(body, reqModel)
-	if normalizeErr != nil {
-		return nil, normalizeErr
-	}
-	if normalizedThinking {
-		body = normalizedBody
-		reqModel = normalizedModel
 	}
 
 	// 获取凭证
@@ -5356,7 +5327,6 @@ func (s *GatewayService) executeBedrockUpstream(
 	var resp *http.Response
 	var err error
 	retryStart := time.Now()
-	signatureRetryApplied := false
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		var upstreamReq *http.Request
 		if account.IsBedrockAPIKey() {
@@ -5392,42 +5362,6 @@ func (s *GatewayService) executeBedrockUpstream(
 				},
 			})
 			return nil, fmt.Errorf("upstream request failed: %s", safeErr)
-		}
-
-		if resp.StatusCode == http.StatusBadRequest && !signatureRetryApplied {
-			respBody, readErr := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-			_ = resp.Body.Close()
-			if readErr != nil {
-				resp.Body = io.NopCloser(bytes.NewReader(respBody))
-				break
-			}
-			if s.shouldRectifyBedrockThinkingSignatureError(ctx, respBody) && time.Since(retryStart) < maxRetryElapsed {
-				filteredBody := FilterThinkingBlocksForRetryWithContext(ctx, body)
-				if !bytes.Equal(filteredBody, body) {
-					signatureRetryApplied = true
-					body = filteredBody
-					appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
-						Platform:           account.Platform,
-						AccountID:          account.ID,
-						AccountName:        account.Name,
-						UpstreamStatusCode: resp.StatusCode,
-						UpstreamRequestID:  firstNonEmpty(resp.Header.Get("x-amzn-requestid"), resp.Header.Get("x-request-id")),
-						UpstreamURL:        safeUpstreamURL(upstreamReq.URL.String()),
-						Kind:               "bedrock_signature_error",
-						Message:            extractUpstreamErrorMessage(respBody),
-						Detail: func() string {
-							if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
-								return truncateString(string(respBody), s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes)
-							}
-							return ""
-						}(),
-					})
-					logger.LegacyPrintf("service.gateway", "[Bedrock] Account %d: thinking signature error, retrying with filtered thinking blocks", account.ID)
-					continue
-				}
-			}
-			resp.Body = io.NopCloser(bytes.NewReader(respBody))
-			break
 		}
 
 		if resp.StatusCode >= 400 && resp.StatusCode != 400 && s.shouldRetryUpstreamError(account, resp.StatusCode) {
@@ -6194,10 +6128,6 @@ func (s *GatewayService) shouldRectifySignatureError(ctx context.Context, accoun
 		return matchSignaturePatterns(respBody, settings.APIKeySignaturePatterns)
 	}
 	return s.isThinkingBlockSignatureError(respBody) && s.signatureRectifierEnabled(ctx)
-}
-
-func (s *GatewayService) shouldRectifyBedrockThinkingSignatureError(ctx context.Context, respBody []byte) bool {
-	return BedrockThinkingSignatureCompatEnabledFromContext(ctx) && s.isThinkingBlockSignatureError(respBody)
 }
 
 func (s *GatewayService) signatureRectifierEnabled(ctx context.Context) bool {
@@ -8022,30 +7952,11 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 
 	if account != nil && account.IsAnthropicAPIKeyPassthroughEnabled() {
 		passthroughBody := parsed.Body
-		passthroughModel := parsed.Model
-		if passthroughModel != "" {
-			mappedModel := account.GetMappedModel(passthroughModel)
-			if mappedModel == passthroughModel {
-				if baseModel, _, _, ok := claude.ParseClaudeThinkingAliasModel(passthroughModel); ok {
-					if mappedBaseModel := account.GetMappedModel(baseModel); mappedBaseModel != baseModel {
-						mappedModel = mappedBaseModel
-					}
-				}
-			}
-			if mappedModel != passthroughModel {
+		if reqModel := parsed.Model; reqModel != "" {
+			if mappedModel := account.GetMappedModel(reqModel); mappedModel != reqModel {
 				passthroughBody = s.replaceModelInBody(passthroughBody, mappedModel)
-				logger.LegacyPrintf("service.gateway", "CountTokens passthrough model mapping: %s -> %s (account: %s)", passthroughModel, mappedModel, account.Name)
-				passthroughModel = mappedModel
+				logger.LegacyPrintf("service.gateway", "CountTokens passthrough model mapping: %s -> %s (account: %s)", reqModel, mappedModel, account.Name)
 			}
-		}
-		normalizedBody, normalizedModel, normalizedThinking, normalizeErr := normalizeClaudeThinkingAliasRequestBody(passthroughBody, passthroughModel)
-		if normalizeErr != nil {
-			s.countTokensError(c, http.StatusBadRequest, "invalid_request_error", "Invalid request body")
-			return normalizeErr
-		}
-		if normalizedThinking {
-			passthroughBody = normalizedBody
-			passthroughModel = normalizedModel
 		}
 		return s.forwardCountTokensAnthropicAPIKeyPassthrough(ctx, c, account, passthroughBody)
 	}
@@ -8071,16 +7982,6 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 
 	body = enforceCacheControlPolicy(body, anthropicPromptCachingEnabledFromContext(ctx))
 
-	normalizedBody, normalizedModel, normalizedThinking, normalizeErr := normalizeClaudeThinkingAliasRequestBody(body, reqModel)
-	if normalizeErr != nil {
-		s.countTokensError(c, http.StatusBadRequest, "invalid_request_error", "Invalid request body")
-		return normalizeErr
-	}
-	if normalizedThinking {
-		body = normalizedBody
-		reqModel = normalizedModel
-	}
-
 	// Antigravity 账户不支持 count_tokens，返回 404 让客户端 fallback 到本地估算。
 	// 返回 nil 避免 handler 层记录为错误，也不设置 ops 上游错误上下文。
 	if account.Platform == PlatformAntigravity {
@@ -8098,11 +7999,6 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 			mappedModel = account.GetMappedModel(reqModel)
 			if mappedModel != reqModel {
 				mappingSource = "account"
-			} else if parsed.Model != "" && parsed.Model != reqModel {
-				if originalMappedModel := account.GetMappedModel(parsed.Model); originalMappedModel != parsed.Model {
-					mappedModel = originalMappedModel
-					mappingSource = "account"
-				}
 			}
 		}
 		if mappingSource == "" && account.Platform == PlatformAnthropic && account.Type != AccountTypeAPIKey {
@@ -8117,15 +8013,6 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 			reqModel = mappedModel
 			logger.LegacyPrintf("service.gateway", "CountTokens model mapping applied: %s -> %s (account: %s, source=%s)", parsed.Model, mappedModel, account.Name, mappingSource)
 		}
-	}
-	normalizedBody, normalizedModel, normalizedThinking, normalizeErr = normalizeClaudeThinkingAliasRequestBody(body, reqModel)
-	if normalizeErr != nil {
-		s.countTokensError(c, http.StatusBadRequest, "invalid_request_error", "Invalid request body")
-		return normalizeErr
-	}
-	if normalizedThinking {
-		body = normalizedBody
-		reqModel = normalizedModel
 	}
 
 	// 获取凭证

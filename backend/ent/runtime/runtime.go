@@ -491,58 +491,54 @@ func init() {
 	groupDescThinkingSignatureCompatEnabled := groupFields[16].Descriptor()
 	// group.DefaultThinkingSignatureCompatEnabled holds the default value on creation for the thinking_signature_compat_enabled field.
 	group.DefaultThinkingSignatureCompatEnabled = groupDescThinkingSignatureCompatEnabled.Default.(bool)
-	// groupDescBedrockThinkingSignatureCompatEnabled is the schema descriptor for bedrock_thinking_signature_compat_enabled field.
-	groupDescBedrockThinkingSignatureCompatEnabled := groupFields[17].Descriptor()
-	// group.DefaultBedrockThinkingSignatureCompatEnabled holds the default value on creation for the bedrock_thinking_signature_compat_enabled field.
-	group.DefaultBedrockThinkingSignatureCompatEnabled = groupDescBedrockThinkingSignatureCompatEnabled.Default.(bool)
 	// groupDescClaudeToolUseRepairEnabled is the schema descriptor for claude_tool_use_repair_enabled field.
-	groupDescClaudeToolUseRepairEnabled := groupFields[18].Descriptor()
+	groupDescClaudeToolUseRepairEnabled := groupFields[17].Descriptor()
 	// group.DefaultClaudeToolUseRepairEnabled holds the default value on creation for the claude_tool_use_repair_enabled field.
 	group.DefaultClaudeToolUseRepairEnabled = groupDescClaudeToolUseRepairEnabled.Default.(bool)
 	// groupDescClaudeToolArgumentsRepairEnabled is the schema descriptor for claude_tool_arguments_repair_enabled field.
-	groupDescClaudeToolArgumentsRepairEnabled := groupFields[19].Descriptor()
+	groupDescClaudeToolArgumentsRepairEnabled := groupFields[18].Descriptor()
 	// group.DefaultClaudeToolArgumentsRepairEnabled holds the default value on creation for the claude_tool_arguments_repair_enabled field.
 	group.DefaultClaudeToolArgumentsRepairEnabled = groupDescClaudeToolArgumentsRepairEnabled.Default.(bool)
 	// groupDescStrongSafetyModeEnabled is the schema descriptor for strong_safety_mode_enabled field.
-	groupDescStrongSafetyModeEnabled := groupFields[20].Descriptor()
+	groupDescStrongSafetyModeEnabled := groupFields[19].Descriptor()
 	// group.DefaultStrongSafetyModeEnabled holds the default value on creation for the strong_safety_mode_enabled field.
 	group.DefaultStrongSafetyModeEnabled = groupDescStrongSafetyModeEnabled.Default.(bool)
 	// groupDescModelRoutingEnabled is the schema descriptor for model_routing_enabled field.
-	groupDescModelRoutingEnabled := groupFields[24].Descriptor()
+	groupDescModelRoutingEnabled := groupFields[23].Descriptor()
 	// group.DefaultModelRoutingEnabled holds the default value on creation for the model_routing_enabled field.
 	group.DefaultModelRoutingEnabled = groupDescModelRoutingEnabled.Default.(bool)
 	// groupDescMcpXMLInject is the schema descriptor for mcp_xml_inject field.
-	groupDescMcpXMLInject := groupFields[25].Descriptor()
+	groupDescMcpXMLInject := groupFields[24].Descriptor()
 	// group.DefaultMcpXMLInject holds the default value on creation for the mcp_xml_inject field.
 	group.DefaultMcpXMLInject = groupDescMcpXMLInject.Default.(bool)
 	// groupDescSupportedModelScopes is the schema descriptor for supported_model_scopes field.
-	groupDescSupportedModelScopes := groupFields[26].Descriptor()
+	groupDescSupportedModelScopes := groupFields[25].Descriptor()
 	// group.DefaultSupportedModelScopes holds the default value on creation for the supported_model_scopes field.
 	group.DefaultSupportedModelScopes = groupDescSupportedModelScopes.Default.([]string)
 	// groupDescSortOrder is the schema descriptor for sort_order field.
-	groupDescSortOrder := groupFields[27].Descriptor()
+	groupDescSortOrder := groupFields[26].Descriptor()
 	// group.DefaultSortOrder holds the default value on creation for the sort_order field.
 	group.DefaultSortOrder = groupDescSortOrder.Default.(int)
 	// groupDescAllowMessagesDispatch is the schema descriptor for allow_messages_dispatch field.
-	groupDescAllowMessagesDispatch := groupFields[28].Descriptor()
+	groupDescAllowMessagesDispatch := groupFields[27].Descriptor()
 	// group.DefaultAllowMessagesDispatch holds the default value on creation for the allow_messages_dispatch field.
 	group.DefaultAllowMessagesDispatch = groupDescAllowMessagesDispatch.Default.(bool)
 	// groupDescRequireOauthOnly is the schema descriptor for require_oauth_only field.
-	groupDescRequireOauthOnly := groupFields[29].Descriptor()
+	groupDescRequireOauthOnly := groupFields[28].Descriptor()
 	// group.DefaultRequireOauthOnly holds the default value on creation for the require_oauth_only field.
 	group.DefaultRequireOauthOnly = groupDescRequireOauthOnly.Default.(bool)
 	// groupDescRequirePrivacySet is the schema descriptor for require_privacy_set field.
-	groupDescRequirePrivacySet := groupFields[30].Descriptor()
+	groupDescRequirePrivacySet := groupFields[29].Descriptor()
 	// group.DefaultRequirePrivacySet holds the default value on creation for the require_privacy_set field.
 	group.DefaultRequirePrivacySet = groupDescRequirePrivacySet.Default.(bool)
 	// groupDescDefaultMappedModel is the schema descriptor for default_mapped_model field.
-	groupDescDefaultMappedModel := groupFields[31].Descriptor()
+	groupDescDefaultMappedModel := groupFields[30].Descriptor()
 	// group.DefaultDefaultMappedModel holds the default value on creation for the default_mapped_model field.
 	group.DefaultDefaultMappedModel = groupDescDefaultMappedModel.Default.(string)
 	// group.DefaultMappedModelValidator is a validator for the "default_mapped_model" field. It is called by the builders before save.
 	group.DefaultMappedModelValidator = groupDescDefaultMappedModel.Validators[0].(func(string) error)
 	// groupDescForceApplicationJSONForNonStream is the schema descriptor for force_application_json_for_non_stream field.
-	groupDescForceApplicationJSONForNonStream := groupFields[32].Descriptor()
+	groupDescForceApplicationJSONForNonStream := groupFields[31].Descriptor()
 	// group.DefaultForceApplicationJSONForNonStream holds the default value on creation for the force_application_json_for_non_stream field.
 	group.DefaultForceApplicationJSONForNonStream = groupDescForceApplicationJSONForNonStream.Default.(bool)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()

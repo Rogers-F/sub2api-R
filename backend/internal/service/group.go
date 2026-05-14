@@ -35,9 +35,6 @@ type Group struct {
 	// 当 Max / Anthropic / Bedrock 等不同渠道切换导致历史 thinking 签名失效时，
 	// 是否强制触发兼容重试（剥离历史 thinking / tool 签名块）。
 	ThinkingSignatureCompatEnabled bool
-	// Bedrock 专用 thinking 签名兼容重试。该兜底会禁用本次重试的顶层 thinking，
-	// 可能影响质量，因此独立开关控制，默认关闭。
-	BedrockThinkingSignatureCompatEnabled bool
 	// Claude 请求兼容总开关：tool_use/tool_result、thinking budget、prefill、
 	// MessageContent、thinking signature、MCP 配置和图片 media_type 修复。
 	ClaudeToolUseRepairEnabled bool
@@ -159,11 +156,6 @@ func ForceApplicationJSONForNonStreamFromContext(ctx context.Context) bool {
 func ThinkingSignatureCompatEnabledFromContext(ctx context.Context) bool {
 	group, ok := GroupFromContext(ctx)
 	return ok && group.ThinkingSignatureCompatEnabled
-}
-
-func BedrockThinkingSignatureCompatEnabledFromContext(ctx context.Context) bool {
-	group, ok := GroupFromContext(ctx)
-	return ok && group.BedrockThinkingSignatureCompatEnabled
 }
 
 func ClaudeToolUseRepairEnabledFromContext(ctx context.Context) bool {

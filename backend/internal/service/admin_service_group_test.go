@@ -294,44 +294,6 @@ func TestAdminService_UpdateGroup_ThinkingSignatureCompatEnabled(t *testing.T) {
 	require.True(t, repo.updated.ThinkingSignatureCompatEnabled)
 }
 
-func TestAdminService_CreateGroup_DefaultsBedrockThinkingSignatureCompatDisabled(t *testing.T) {
-	repo := &groupRepoStubForAdmin{}
-	svc := &adminServiceImpl{groupRepo: repo}
-
-	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
-		Name:           "test-group",
-		Platform:       PlatformAnthropic,
-		RateMultiplier: 1.0,
-	})
-	require.NoError(t, err)
-	require.NotNil(t, group)
-	require.NotNil(t, repo.created)
-	require.False(t, group.BedrockThinkingSignatureCompatEnabled)
-	require.False(t, repo.created.BedrockThinkingSignatureCompatEnabled)
-}
-
-func TestAdminService_UpdateGroup_BedrockThinkingSignatureCompatEnabled(t *testing.T) {
-	existingGroup := &Group{
-		ID:                                    1,
-		Name:                                  "existing-group",
-		Platform:                              PlatformAnthropic,
-		Status:                                StatusActive,
-		BedrockThinkingSignatureCompatEnabled: false,
-	}
-	repo := &groupRepoStubForAdmin{getByID: existingGroup}
-	svc := &adminServiceImpl{groupRepo: repo}
-
-	enabled := true
-	group, err := svc.UpdateGroup(context.Background(), 1, &UpdateGroupInput{
-		BedrockThinkingSignatureCompatEnabled: &enabled,
-	})
-	require.NoError(t, err)
-	require.NotNil(t, group)
-	require.NotNil(t, repo.updated)
-	require.True(t, group.BedrockThinkingSignatureCompatEnabled)
-	require.True(t, repo.updated.BedrockThinkingSignatureCompatEnabled)
-}
-
 func TestAdminService_CreateGroup_DefaultsClaudeToolUseRepairDisabled(t *testing.T) {
 	repo := &groupRepoStubForAdmin{}
 	svc := &adminServiceImpl{groupRepo: repo}

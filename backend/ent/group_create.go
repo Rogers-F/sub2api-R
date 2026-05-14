@@ -300,20 +300,6 @@ func (_c *GroupCreate) SetNillableThinkingSignatureCompatEnabled(v *bool) *Group
 	return _c
 }
 
-// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
-func (_c *GroupCreate) SetBedrockThinkingSignatureCompatEnabled(v bool) *GroupCreate {
-	_c.mutation.SetBedrockThinkingSignatureCompatEnabled(v)
-	return _c
-}
-
-// SetNillableBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableBedrockThinkingSignatureCompatEnabled(v *bool) *GroupCreate {
-	if v != nil {
-		_c.SetBedrockThinkingSignatureCompatEnabled(*v)
-	}
-	return _c
-}
-
 // SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
 func (_c *GroupCreate) SetClaudeToolUseRepairEnabled(v bool) *GroupCreate {
 	_c.mutation.SetClaudeToolUseRepairEnabled(v)
@@ -685,10 +671,6 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultThinkingSignatureCompatEnabled
 		_c.mutation.SetThinkingSignatureCompatEnabled(v)
 	}
-	if _, ok := _c.mutation.BedrockThinkingSignatureCompatEnabled(); !ok {
-		v := group.DefaultBedrockThinkingSignatureCompatEnabled
-		_c.mutation.SetBedrockThinkingSignatureCompatEnabled(v)
-	}
 	if _, ok := _c.mutation.ClaudeToolUseRepairEnabled(); !ok {
 		v := group.DefaultClaudeToolUseRepairEnabled
 		_c.mutation.SetClaudeToolUseRepairEnabled(v)
@@ -797,9 +779,6 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ThinkingSignatureCompatEnabled(); !ok {
 		return &ValidationError{Name: "thinking_signature_compat_enabled", err: errors.New(`ent: missing required field "Group.thinking_signature_compat_enabled"`)}
-	}
-	if _, ok := _c.mutation.BedrockThinkingSignatureCompatEnabled(); !ok {
-		return &ValidationError{Name: "bedrock_thinking_signature_compat_enabled", err: errors.New(`ent: missing required field "Group.bedrock_thinking_signature_compat_enabled"`)}
 	}
 	if _, ok := _c.mutation.ClaudeToolUseRepairEnabled(); !ok {
 		return &ValidationError{Name: "claude_tool_use_repair_enabled", err: errors.New(`ent: missing required field "Group.claude_tool_use_repair_enabled"`)}
@@ -948,10 +927,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
 		_node.ThinkingSignatureCompatEnabled = value
-	}
-	if value, ok := _c.mutation.BedrockThinkingSignatureCompatEnabled(); ok {
-		_spec.SetField(group.FieldBedrockThinkingSignatureCompatEnabled, field.TypeBool, value)
-		_node.BedrockThinkingSignatureCompatEnabled = value
 	}
 	if value, ok := _c.mutation.ClaudeToolUseRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
@@ -1490,18 +1465,6 @@ func (u *GroupUpsert) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsert {
 // UpdateThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateThinkingSignatureCompatEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldThinkingSignatureCompatEnabled)
-	return u
-}
-
-// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
-func (u *GroupUpsert) SetBedrockThinkingSignatureCompatEnabled(v bool) *GroupUpsert {
-	u.Set(group.FieldBedrockThinkingSignatureCompatEnabled, v)
-	return u
-}
-
-// UpdateBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateBedrockThinkingSignatureCompatEnabled() *GroupUpsert {
-	u.SetExcluded(group.FieldBedrockThinkingSignatureCompatEnabled)
 	return u
 }
 
@@ -2141,20 +2104,6 @@ func (u *GroupUpsertOne) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsertO
 func (u *GroupUpsertOne) UpdateThinkingSignatureCompatEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateThinkingSignatureCompatEnabled()
-	})
-}
-
-// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
-func (u *GroupUpsertOne) SetBedrockThinkingSignatureCompatEnabled(v bool) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetBedrockThinkingSignatureCompatEnabled(v)
-	})
-}
-
-// UpdateBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateBedrockThinkingSignatureCompatEnabled() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateBedrockThinkingSignatureCompatEnabled()
 	})
 }
 
@@ -2996,20 +2945,6 @@ func (u *GroupUpsertBulk) SetThinkingSignatureCompatEnabled(v bool) *GroupUpsert
 func (u *GroupUpsertBulk) UpdateThinkingSignatureCompatEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateThinkingSignatureCompatEnabled()
-	})
-}
-
-// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
-func (u *GroupUpsertBulk) SetBedrockThinkingSignatureCompatEnabled(v bool) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetBedrockThinkingSignatureCompatEnabled(v)
-	})
-}
-
-// UpdateBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateBedrockThinkingSignatureCompatEnabled() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateBedrockThinkingSignatureCompatEnabled()
 	})
 }
 

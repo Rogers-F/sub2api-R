@@ -55,8 +55,6 @@ const (
 	FieldClaudePromptCachingEnabled = "claude_prompt_caching_enabled"
 	// FieldThinkingSignatureCompatEnabled holds the string denoting the thinking_signature_compat_enabled field in the database.
 	FieldThinkingSignatureCompatEnabled = "thinking_signature_compat_enabled"
-	// FieldBedrockThinkingSignatureCompatEnabled holds the string denoting the bedrock_thinking_signature_compat_enabled field in the database.
-	FieldBedrockThinkingSignatureCompatEnabled = "bedrock_thinking_signature_compat_enabled"
 	// FieldClaudeToolUseRepairEnabled holds the string denoting the claude_tool_use_repair_enabled field in the database.
 	FieldClaudeToolUseRepairEnabled = "claude_tool_use_repair_enabled"
 	// FieldClaudeToolArgumentsRepairEnabled holds the string denoting the claude_tool_arguments_repair_enabled field in the database.
@@ -182,7 +180,6 @@ var Columns = []string{
 	FieldClaudeCodeOnly,
 	FieldClaudePromptCachingEnabled,
 	FieldThinkingSignatureCompatEnabled,
-	FieldBedrockThinkingSignatureCompatEnabled,
 	FieldClaudeToolUseRepairEnabled,
 	FieldClaudeToolArgumentsRepairEnabled,
 	FieldStrongSafetyModeEnabled,
@@ -259,8 +256,6 @@ var (
 	DefaultClaudePromptCachingEnabled bool
 	// DefaultThinkingSignatureCompatEnabled holds the default value on creation for the "thinking_signature_compat_enabled" field.
 	DefaultThinkingSignatureCompatEnabled bool
-	// DefaultBedrockThinkingSignatureCompatEnabled holds the default value on creation for the "bedrock_thinking_signature_compat_enabled" field.
-	DefaultBedrockThinkingSignatureCompatEnabled bool
 	// DefaultClaudeToolUseRepairEnabled holds the default value on creation for the "claude_tool_use_repair_enabled" field.
 	DefaultClaudeToolUseRepairEnabled bool
 	// DefaultClaudeToolArgumentsRepairEnabled holds the default value on creation for the "claude_tool_arguments_repair_enabled" field.
@@ -395,11 +390,6 @@ func ByClaudePromptCachingEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByThinkingSignatureCompatEnabled orders the results by the thinking_signature_compat_enabled field.
 func ByThinkingSignatureCompatEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldThinkingSignatureCompatEnabled, opts...).ToFunc()
-}
-
-// ByBedrockThinkingSignatureCompatEnabled orders the results by the bedrock_thinking_signature_compat_enabled field.
-func ByBedrockThinkingSignatureCompatEnabled(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBedrockThinkingSignatureCompatEnabled, opts...).ToFunc()
 }
 
 // ByClaudeToolUseRepairEnabled orders the results by the claude_tool_use_repair_enabled field.

@@ -397,20 +397,6 @@ func (_u *GroupUpdate) SetNillableThinkingSignatureCompatEnabled(v *bool) *Group
 	return _u
 }
 
-// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
-func (_u *GroupUpdate) SetBedrockThinkingSignatureCompatEnabled(v bool) *GroupUpdate {
-	_u.mutation.SetBedrockThinkingSignatureCompatEnabled(v)
-	return _u
-}
-
-// SetNillableBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableBedrockThinkingSignatureCompatEnabled(v *bool) *GroupUpdate {
-	if v != nil {
-		_u.SetBedrockThinkingSignatureCompatEnabled(*v)
-	}
-	return _u
-}
-
 // SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
 func (_u *GroupUpdate) SetClaudeToolUseRepairEnabled(v bool) *GroupUpdate {
 	_u.mutation.SetClaudeToolUseRepairEnabled(v)
@@ -1059,9 +1045,6 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.BedrockThinkingSignatureCompatEnabled(); ok {
-		_spec.SetField(group.FieldBedrockThinkingSignatureCompatEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ClaudeToolUseRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)
@@ -1807,20 +1790,6 @@ func (_u *GroupUpdateOne) SetNillableThinkingSignatureCompatEnabled(v *bool) *Gr
 	return _u
 }
 
-// SetBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field.
-func (_u *GroupUpdateOne) SetBedrockThinkingSignatureCompatEnabled(v bool) *GroupUpdateOne {
-	_u.mutation.SetBedrockThinkingSignatureCompatEnabled(v)
-	return _u
-}
-
-// SetNillableBedrockThinkingSignatureCompatEnabled sets the "bedrock_thinking_signature_compat_enabled" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableBedrockThinkingSignatureCompatEnabled(v *bool) *GroupUpdateOne {
-	if v != nil {
-		_u.SetBedrockThinkingSignatureCompatEnabled(*v)
-	}
-	return _u
-}
-
 // SetClaudeToolUseRepairEnabled sets the "claude_tool_use_repair_enabled" field.
 func (_u *GroupUpdateOne) SetClaudeToolUseRepairEnabled(v bool) *GroupUpdateOne {
 	_u.mutation.SetClaudeToolUseRepairEnabled(v)
@@ -2499,9 +2468,6 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.BedrockThinkingSignatureCompatEnabled(); ok {
-		_spec.SetField(group.FieldBedrockThinkingSignatureCompatEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ClaudeToolUseRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolUseRepairEnabled, field.TypeBool, value)

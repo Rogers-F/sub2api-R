@@ -142,17 +142,16 @@ type CreateGroupInput struct {
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K                          *float64
-	ImagePrice2K                          *float64
-	ImagePrice4K                          *float64
-	ClaudeCodeOnly                        bool  // 仅允许 Claude Code 客户端
-	ClaudePromptCachingEnabled            *bool // 是否启用 Claude prompt cache
-	ThinkingSignatureCompatEnabled        bool
-	BedrockThinkingSignatureCompatEnabled bool
-	ClaudeToolUseRepairEnabled            bool
-	ClaudeToolArgumentsRepairEnabled      bool
-	StrongSafetyModeEnabled               *bool
-	FallbackGroupID                       *int64 // 降级分组 ID
+	ImagePrice1K                     *float64
+	ImagePrice2K                     *float64
+	ImagePrice4K                     *float64
+	ClaudeCodeOnly                   bool  // 仅允许 Claude Code 客户端
+	ClaudePromptCachingEnabled       *bool // 是否启用 Claude prompt cache
+	ThinkingSignatureCompatEnabled   bool
+	ClaudeToolUseRepairEnabled       bool
+	ClaudeToolArgumentsRepairEnabled bool
+	StrongSafetyModeEnabled          *bool
+	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -184,17 +183,16 @@ type UpdateGroupInput struct {
 	WeeklyLimitUSD   *float64 // 周限额 (USD)
 	MonthlyLimitUSD  *float64 // 月限额 (USD)
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K                          *float64
-	ImagePrice2K                          *float64
-	ImagePrice4K                          *float64
-	ClaudeCodeOnly                        *bool // 仅允许 Claude Code 客户端
-	ClaudePromptCachingEnabled            *bool // 是否启用 Claude prompt cache
-	ThinkingSignatureCompatEnabled        *bool
-	BedrockThinkingSignatureCompatEnabled *bool
-	ClaudeToolUseRepairEnabled            *bool
-	ClaudeToolArgumentsRepairEnabled      *bool
-	StrongSafetyModeEnabled               *bool
-	FallbackGroupID                       *int64 // 降级分组 ID
+	ImagePrice1K                     *float64
+	ImagePrice2K                     *float64
+	ImagePrice4K                     *float64
+	ClaudeCodeOnly                   *bool // 仅允许 Claude Code 客户端
+	ClaudePromptCachingEnabled       *bool // 是否启用 Claude prompt cache
+	ThinkingSignatureCompatEnabled   *bool
+	ClaudeToolUseRepairEnabled       *bool
+	ClaudeToolArgumentsRepairEnabled *bool
+	StrongSafetyModeEnabled          *bool
+	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -962,36 +960,35 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 
 	group := &Group{
-		Name:                                  input.Name,
-		Description:                           input.Description,
-		Platform:                              platform,
-		RateMultiplier:                        input.RateMultiplier,
-		IsExclusive:                           input.IsExclusive,
-		Status:                                StatusActive,
-		SubscriptionType:                      subscriptionType,
-		DailyLimitUSD:                         dailyLimit,
-		WeeklyLimitUSD:                        weeklyLimit,
-		MonthlyLimitUSD:                       monthlyLimit,
-		ImagePrice1K:                          imagePrice1K,
-		ImagePrice2K:                          imagePrice2K,
-		ImagePrice4K:                          imagePrice4K,
-		ClaudeCodeOnly:                        input.ClaudeCodeOnly,
-		ClaudePromptCachingEnabled:            claudePromptCachingEnabled,
-		ThinkingSignatureCompatEnabled:        input.ThinkingSignatureCompatEnabled,
-		BedrockThinkingSignatureCompatEnabled: input.BedrockThinkingSignatureCompatEnabled,
-		ClaudeToolUseRepairEnabled:            input.ClaudeToolUseRepairEnabled,
-		ClaudeToolArgumentsRepairEnabled:      input.ClaudeToolArgumentsRepairEnabled,
-		StrongSafetyModeEnabled:               strongSafetyModeEnabled,
-		FallbackGroupID:                       input.FallbackGroupID,
-		FallbackGroupIDOnInvalidRequest:       fallbackOnInvalidRequest,
-		ModelRouting:                          input.ModelRouting,
-		MCPXMLInject:                          mcpXMLInject,
-		SupportedModelScopes:                  input.SupportedModelScopes,
-		AllowMessagesDispatch:                 input.AllowMessagesDispatch,
-		RequireOAuthOnly:                      input.RequireOAuthOnly,
-		RequirePrivacySet:                     input.RequirePrivacySet,
-		DefaultMappedModel:                    input.DefaultMappedModel,
-		ForceApplicationJSONForNonStream:      input.ForceApplicationJSONForNonStream,
+		Name:                             input.Name,
+		Description:                      input.Description,
+		Platform:                         platform,
+		RateMultiplier:                   input.RateMultiplier,
+		IsExclusive:                      input.IsExclusive,
+		Status:                           StatusActive,
+		SubscriptionType:                 subscriptionType,
+		DailyLimitUSD:                    dailyLimit,
+		WeeklyLimitUSD:                   weeklyLimit,
+		MonthlyLimitUSD:                  monthlyLimit,
+		ImagePrice1K:                     imagePrice1K,
+		ImagePrice2K:                     imagePrice2K,
+		ImagePrice4K:                     imagePrice4K,
+		ClaudeCodeOnly:                   input.ClaudeCodeOnly,
+		ClaudePromptCachingEnabled:       claudePromptCachingEnabled,
+		ThinkingSignatureCompatEnabled:   input.ThinkingSignatureCompatEnabled,
+		ClaudeToolUseRepairEnabled:       input.ClaudeToolUseRepairEnabled,
+		ClaudeToolArgumentsRepairEnabled: input.ClaudeToolArgumentsRepairEnabled,
+		StrongSafetyModeEnabled:          strongSafetyModeEnabled,
+		FallbackGroupID:                  input.FallbackGroupID,
+		FallbackGroupIDOnInvalidRequest:  fallbackOnInvalidRequest,
+		ModelRouting:                     input.ModelRouting,
+		MCPXMLInject:                     mcpXMLInject,
+		SupportedModelScopes:             input.SupportedModelScopes,
+		AllowMessagesDispatch:            input.AllowMessagesDispatch,
+		RequireOAuthOnly:                 input.RequireOAuthOnly,
+		RequirePrivacySet:                input.RequirePrivacySet,
+		DefaultMappedModel:               input.DefaultMappedModel,
+		ForceApplicationJSONForNonStream: input.ForceApplicationJSONForNonStream,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
@@ -1191,9 +1188,6 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ThinkingSignatureCompatEnabled != nil {
 		group.ThinkingSignatureCompatEnabled = *input.ThinkingSignatureCompatEnabled
-	}
-	if input.BedrockThinkingSignatureCompatEnabled != nil {
-		group.BedrockThinkingSignatureCompatEnabled = *input.BedrockThinkingSignatureCompatEnabled
 	}
 	if input.ClaudeToolUseRepairEnabled != nil {
 		group.ClaudeToolUseRepairEnabled = *input.ClaudeToolUseRepairEnabled

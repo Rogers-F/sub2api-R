@@ -501,7 +501,6 @@ export interface Group {
   claude_code_only: boolean
   claude_prompt_caching_enabled: boolean
   thinking_signature_compat_enabled: boolean
-  bedrock_thinking_signature_compat_enabled: boolean
   claude_tool_use_repair_enabled: boolean
   claude_tool_arguments_repair_enabled: boolean
   strong_safety_mode_enabled: boolean
@@ -615,7 +614,6 @@ export interface CreateGroupRequest {
   claude_code_only?: boolean
   claude_prompt_caching_enabled?: boolean
   thinking_signature_compat_enabled?: boolean
-  bedrock_thinking_signature_compat_enabled?: boolean
   claude_tool_use_repair_enabled?: boolean
   claude_tool_arguments_repair_enabled?: boolean
   strong_safety_mode_enabled?: boolean
@@ -650,7 +648,6 @@ export interface UpdateGroupRequest {
   claude_code_only?: boolean
   claude_prompt_caching_enabled?: boolean
   thinking_signature_compat_enabled?: boolean
-  bedrock_thinking_signature_compat_enabled?: boolean
   claude_tool_use_repair_enabled?: boolean
   claude_tool_arguments_repair_enabled?: boolean
   strong_safety_mode_enabled?: boolean

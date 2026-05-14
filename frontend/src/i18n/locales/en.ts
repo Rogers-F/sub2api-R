@@ -1851,18 +1851,10 @@ export default {
       thinkingSignatureCompat: {
         title: 'Cross-channel History Compat (Safe Mode)',
         tooltip:
-          'When enabled, if switching between Claude Max, native Anthropic, or similar channels invalidates historical thinking signatures, the gateway strips historical thinking / tool signature blocks and retries once.',
+          'When enabled, if switching between Claude Max, native Anthropic, AWS Bedrock, or other channels invalidates historical thinking signatures, the gateway strips historical thinking / tool signature blocks and retries once.',
         enabled: 'Compat retry enabled',
         disabled: 'Compat retry disabled',
-        hint: 'Recommended for groups that mix Claude Max / Anthropic accounts. Bedrock uses the separate switch below.'
-      },
-      bedrockThinkingSignatureCompat: {
-        title: 'Bedrock Thinking Signature Fallback',
-        tooltip:
-          'When enabled, if AWS Bedrock rejects a request with thinking signature verification failed, the gateway strips historical thinking / redacted_thinking blocks, disables top-level thinking for that retry, and tries once more. This can affect answer quality, so it is off by default.',
-        enabled: 'Bedrock fallback enabled',
-        disabled: 'Bedrock fallback disabled',
-        hint: 'Enable only for Bedrock groups that frequently hit thinking signature verification failed.'
+        hint: 'Recommended for groups that mix Claude Max / Anthropic / AWS Bedrock accounts.'
       },
       claudeToolUseRepair: {
         title: 'Claude Request Compatibility Repair (Safe Mode)',
@@ -2193,12 +2185,10 @@ export default {
         status: 'Status',
         schedulable: 'Schedulable',
         todayStats: 'Today Stats',
-        totalStats: 'Total Stats',
         groups: 'Groups',
         usageWindows: 'Usage Windows',
         proxy: 'Proxy',
         lastUsed: 'Last Used',
-        createdAt: 'Created At',
         expiresAt: 'Expires At',
         actions: 'Actions'
       },
