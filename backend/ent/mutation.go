@@ -9096,6 +9096,7 @@ type GroupMutation struct {
 	thinking_signature_compat_enabled       *bool
 	claude_tool_use_repair_enabled          *bool
 	claude_tool_arguments_repair_enabled    *bool
+	bedrock_request_compat_enabled          *bool
 	strong_safety_mode_enabled              *bool
 	fallback_group_id                       *int64
 	addfallback_group_id                    *int64
@@ -10297,6 +10298,42 @@ func (m *GroupMutation) ResetClaudeToolArgumentsRepairEnabled() {
 	m.claude_tool_arguments_repair_enabled = nil
 }
 
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (m *GroupMutation) SetBedrockRequestCompatEnabled(b bool) {
+	m.bedrock_request_compat_enabled = &b
+}
+
+// BedrockRequestCompatEnabled returns the value of the "bedrock_request_compat_enabled" field in the mutation.
+func (m *GroupMutation) BedrockRequestCompatEnabled() (r bool, exists bool) {
+	v := m.bedrock_request_compat_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBedrockRequestCompatEnabled returns the old "bedrock_request_compat_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldBedrockRequestCompatEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBedrockRequestCompatEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBedrockRequestCompatEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBedrockRequestCompatEnabled: %w", err)
+	}
+	return oldValue.BedrockRequestCompatEnabled, nil
+}
+
+// ResetBedrockRequestCompatEnabled resets all changes to the "bedrock_request_compat_enabled" field.
+func (m *GroupMutation) ResetBedrockRequestCompatEnabled() {
+	m.bedrock_request_compat_enabled = nil
+}
+
 // SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
 func (m *GroupMutation) SetStrongSafetyModeEnabled(b bool) {
 	m.strong_safety_mode_enabled = &b
@@ -11239,7 +11276,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 36)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -11305,6 +11342,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.claude_tool_arguments_repair_enabled != nil {
 		fields = append(fields, group.FieldClaudeToolArgumentsRepairEnabled)
+	}
+	if m.bedrock_request_compat_enabled != nil {
+		fields = append(fields, group.FieldBedrockRequestCompatEnabled)
 	}
 	if m.strong_safety_mode_enabled != nil {
 		fields = append(fields, group.FieldStrongSafetyModeEnabled)
@@ -11397,6 +11437,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ClaudeToolUseRepairEnabled()
 	case group.FieldClaudeToolArgumentsRepairEnabled:
 		return m.ClaudeToolArgumentsRepairEnabled()
+	case group.FieldBedrockRequestCompatEnabled:
+		return m.BedrockRequestCompatEnabled()
 	case group.FieldStrongSafetyModeEnabled:
 		return m.StrongSafetyModeEnabled()
 	case group.FieldFallbackGroupID:
@@ -11476,6 +11518,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldClaudeToolUseRepairEnabled(ctx)
 	case group.FieldClaudeToolArgumentsRepairEnabled:
 		return m.OldClaudeToolArgumentsRepairEnabled(ctx)
+	case group.FieldBedrockRequestCompatEnabled:
+		return m.OldBedrockRequestCompatEnabled(ctx)
 	case group.FieldStrongSafetyModeEnabled:
 		return m.OldStrongSafetyModeEnabled(ctx)
 	case group.FieldFallbackGroupID:
@@ -11664,6 +11708,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetClaudeToolArgumentsRepairEnabled(v)
+		return nil
+	case group.FieldBedrockRequestCompatEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBedrockRequestCompatEnabled(v)
 		return nil
 	case group.FieldStrongSafetyModeEnabled:
 		v, ok := value.(bool)
@@ -12074,6 +12125,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldClaudeToolArgumentsRepairEnabled:
 		m.ResetClaudeToolArgumentsRepairEnabled()
+		return nil
+	case group.FieldBedrockRequestCompatEnabled:
+		m.ResetBedrockRequestCompatEnabled()
 		return nil
 	case group.FieldStrongSafetyModeEnabled:
 		m.ResetStrongSafetyModeEnabled()

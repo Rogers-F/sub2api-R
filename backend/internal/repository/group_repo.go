@@ -55,6 +55,7 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetThinkingSignatureCompatEnabled(groupIn.ThinkingSignatureCompatEnabled).
 		SetClaudeToolUseRepairEnabled(groupIn.ClaudeToolUseRepairEnabled).
 		SetClaudeToolArgumentsRepairEnabled(groupIn.ClaudeToolArgumentsRepairEnabled).
+		SetBedrockRequestCompatEnabled(groupIn.BedrockRequestCompatEnabled).
 		SetStrongSafetyModeEnabled(groupIn.StrongSafetyModeEnabled).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
 		SetNillableFallbackGroupIDOnInvalidRequest(groupIn.FallbackGroupIDOnInvalidRequest).
@@ -129,6 +130,7 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetThinkingSignatureCompatEnabled(groupIn.ThinkingSignatureCompatEnabled).
 		SetClaudeToolUseRepairEnabled(groupIn.ClaudeToolUseRepairEnabled).
 		SetClaudeToolArgumentsRepairEnabled(groupIn.ClaudeToolArgumentsRepairEnabled).
+		SetBedrockRequestCompatEnabled(groupIn.BedrockRequestCompatEnabled).
 		SetStrongSafetyModeEnabled(groupIn.StrongSafetyModeEnabled).
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
 		SetMcpXMLInject(groupIn.MCPXMLInject).

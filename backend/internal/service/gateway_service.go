@@ -5210,6 +5210,20 @@ func (s *GatewayService) forwardBedrock(
 	reqModel := parsed.Model
 	reqStream := parsed.Stream
 	body := parsed.Body
+	bedrockRequestOpts := BedrockRequestBodyOptions{
+		RequestCompatEnabled: BedrockRequestCompatEnabledFromContext(ctx),
+	}
+	if bedrockRequestOpts.RequestCompatEnabled {
+		body = NormalizeClaudeHistoryForUpstream(ctx, body)
+		normalizedBody, normalizedModel, normalizedOpus47, normalizeErr := normalizeClaudeOpus47RequestBody(body, reqModel)
+		if normalizeErr != nil {
+			return nil, normalizeErr
+		}
+		if normalizedOpus47 {
+			body = normalizedBody
+			reqModel = normalizedModel
+		}
+	}
 
 	region := bedrockRuntimeRegion(account)
 	mappedModel, ok := ResolveBedrockModelID(account, reqModel)
@@ -5231,7 +5245,7 @@ func (s *GatewayService) forwardBedrock(
 		return nil, err
 	}
 
-	bedrockBody, err := PrepareBedrockRequestBodyWithTokens(body, mappedModel, betaTokens)
+	bedrockBody, err := PrepareBedrockRequestBodyWithTokensAndOptions(body, mappedModel, betaTokens, bedrockRequestOpts)
 	if err != nil {
 		return nil, fmt.Errorf("prepare bedrock request body: %w", err)
 	}
@@ -6020,7 +6034,9 @@ func (s *GatewayService) resolveBedrockBetaTokensForRequest(
 	}
 
 	// 2. 解析 header + body 自动注入 + Bedrock 转换/过滤
-	betaTokens := ResolveBedrockBetaTokens(betaHeader, body, modelID)
+	betaTokens := ResolveBedrockBetaTokensWithOptions(betaHeader, body, modelID, BedrockRequestBodyOptions{
+		RequestCompatEnabled: BedrockRequestCompatEnabledFromContext(ctx),
+	})
 
 	// 3. 对最终 token 列表再做 block 检查，捕获通过 body 自动注入绕过 header block 的情况。
 	//    例如：管理员 block 了 interleaved-thinking，客户端不在 header 中带该 token，

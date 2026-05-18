@@ -150,6 +150,7 @@ type CreateGroupInput struct {
 	ThinkingSignatureCompatEnabled   bool
 	ClaudeToolUseRepairEnabled       bool
 	ClaudeToolArgumentsRepairEnabled bool
+	BedrockRequestCompatEnabled      bool
 	StrongSafetyModeEnabled          *bool
 	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
@@ -191,6 +192,7 @@ type UpdateGroupInput struct {
 	ThinkingSignatureCompatEnabled   *bool
 	ClaudeToolUseRepairEnabled       *bool
 	ClaudeToolArgumentsRepairEnabled *bool
+	BedrockRequestCompatEnabled      *bool
 	StrongSafetyModeEnabled          *bool
 	FallbackGroupID                  *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
@@ -978,6 +980,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ThinkingSignatureCompatEnabled:   input.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       input.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: input.ClaudeToolArgumentsRepairEnabled,
+		BedrockRequestCompatEnabled:      input.BedrockRequestCompatEnabled,
 		StrongSafetyModeEnabled:          strongSafetyModeEnabled,
 		FallbackGroupID:                  input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  fallbackOnInvalidRequest,
@@ -1194,6 +1197,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ClaudeToolArgumentsRepairEnabled != nil {
 		group.ClaudeToolArgumentsRepairEnabled = *input.ClaudeToolArgumentsRepairEnabled
+	}
+	if input.BedrockRequestCompatEnabled != nil {
+		group.BedrockRequestCompatEnabled = *input.BedrockRequestCompatEnabled
 	}
 	if input.StrongSafetyModeEnabled != nil {
 		group.StrongSafetyModeEnabled = *input.StrongSafetyModeEnabled

@@ -103,6 +103,9 @@ func (Group) Fields() []ent.Field {
 		field.Bool("claude_tool_arguments_repair_enabled").
 			Default(false).
 			Comment("是否启用 Claude tool arguments 占位空对象修复"),
+		field.Bool("bedrock_request_compat_enabled").
+			Default(false).
+			Comment("是否启用 AWS Bedrock 请求体严格兼容归一化"),
 		field.Bool("strong_safety_mode_enabled").
 			Default(true).
 			Comment("是否启用强力安全模式：隔离内部工具 transcript，防止污染上下文或响应"),

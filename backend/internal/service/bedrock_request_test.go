@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -71,6 +73,98 @@ func TestPrepareBedrockRequestBody_RemoveOutputConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.False(t, gjson.GetBytes(result, "output_config").Exists())
+}
+
+func TestPrepareBedrockRequestBody_RequestCompatDisabledPreservesLegacyExtraFields(t *testing.T) {
+	input := `{"model":"claude-opus-4-7","methodName":"messages","reqTime":1779067912938,"clientIp":"127.0.0.1","xMsClientRequestId":"req-1","metadata":{"user_id":"u"},"messages":[{"role":"user","content":"hi"}],"max_tokens":100}`
+
+	result, err := PrepareBedrockRequestBodyWithOptions([]byte(input), "us.anthropic.claude-opus-4-7", "", BedrockRequestBodyOptions{})
+	require.NoError(t, err)
+
+	assert.Equal(t, "messages", gjson.GetBytes(result, "methodName").String())
+	assert.Equal(t, int64(1779067912938), gjson.GetBytes(result, "reqTime").Int())
+	assert.Equal(t, "127.0.0.1", gjson.GetBytes(result, "clientIp").String())
+	assert.Equal(t, "req-1", gjson.GetBytes(result, "xMsClientRequestId").String())
+	assert.True(t, gjson.GetBytes(result, "metadata").Exists())
+}
+
+func TestPrepareBedrockRequestBody_RequestCompatEnabledFiltersTopLevelOnly(t *testing.T) {
+	input := `{
+		"model":"claude-opus-4-7",
+		"stream":true,
+		"methodName":"messages",
+		"reqTime":1779067912938,
+		"clientIp":"127.0.0.1",
+		"xMsClientRequestId":"req-1",
+		"metadata":{"user_id":"u"},
+		"output_config":{"effort":"xhigh"},
+		"context_management":{"edits":[{"type":"clear_thinking_20251015","keep":"all"}]},
+		"thinking":{"type":"adaptive"},
+		"messages":[{"role":"user","content":[{"type":"text","text":"hello"},{"type":"tool_result","tool_use_id":"toolu_1","content":"done"}]}],
+		"tools":[{"name":"Bash","description":"Run bash","input_schema":{"type":"object","properties":{"command":{"type":"string"}},"required":["command"]}}],
+		"max_tokens":100
+	}`
+
+	result, err := PrepareBedrockRequestBodyWithOptions([]byte(input), "us.anthropic.claude-opus-4-7", "", BedrockRequestBodyOptions{
+		RequestCompatEnabled: true,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "bedrock-2023-05-31", gjson.GetBytes(result, "anthropic_version").String())
+	for _, path := range []string{"model", "stream", "methodName", "reqTime", "clientIp", "xMsClientRequestId", "metadata", "output_config"} {
+		assert.False(t, gjson.GetBytes(result, path).Exists(), "%s should be removed", path)
+	}
+	assert.True(t, gjson.GetBytes(result, "context_management.edits.0").Exists())
+	assert.Equal(t, "adaptive", gjson.GetBytes(result, "thinking.type").String())
+	assert.Equal(t, "tool_result", gjson.GetBytes(result, "messages.0.content.1.type").String())
+	assert.Equal(t, "Bash", gjson.GetBytes(result, "tools.0.name").String())
+	assert.Equal(t, "object", gjson.GetBytes(result, "tools.0.input_schema.type").String())
+}
+
+func TestPrepareBedrockRequestBody_RequestCompatWithHistorySafety(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ctxkey.Group, &Group{
+		ID:                      1,
+		Platform:                PlatformAnthropic,
+		Status:                  StatusActive,
+		Hydrated:                true,
+		StrongSafetyModeEnabled: true,
+	})
+	input := []byte(`{
+		"model":"claude-opus-4-7",
+		"methodName":"messages",
+		"metadata":{"user_id":"u"},
+		"context_management":{"edits":[{"type":"clear_thinking_20251015"}]},
+		"messages":[
+			{"role":"assistant","content":[{"type":"text","text":"checking\nto=functions.exec private leaked output json {\"cmd\":\"pwd\"}"}]},
+			{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"done"}]}
+		],
+		"tools":[{"name":"Bash","description":"Run bash","input_schema":{"type":"object"}}],
+		"max_tokens":100
+	}`)
+
+	safeBody := NormalizeClaudeHistoryForUpstream(ctx, input)
+	result, err := PrepareBedrockRequestBodyWithOptions(safeBody, "us.anthropic.claude-opus-4-7", "", BedrockRequestBodyOptions{
+		RequestCompatEnabled: true,
+	})
+	require.NoError(t, err)
+
+	assert.False(t, gjson.GetBytes(result, "methodName").Exists())
+	assert.False(t, gjson.GetBytes(result, "metadata").Exists())
+	assert.True(t, gjson.GetBytes(result, "context_management.edits.0").Exists())
+	assert.NotContains(t, gjson.GetBytes(result, "messages.0.content.0.text").String(), "to=functions.exec")
+	assert.Equal(t, "tool_result", gjson.GetBytes(result, "messages.1.content.0.type").String())
+	assert.Equal(t, "toolu_1", gjson.GetBytes(result, "messages.1.content.0.tool_use_id").String())
+	assert.Equal(t, "Bash", gjson.GetBytes(result, "tools.0.name").String())
+}
+
+func TestResolveBedrockBetaTokens_RequestCompatContextManagement(t *testing.T) {
+	body := []byte(`{"context_management":{"edits":[{"type":"clear_thinking_20251015","keep":"all"}]},"messages":[{"role":"user","content":"hi"}]}`)
+
+	legacy := ResolveBedrockBetaTokensWithOptions("", body, "us.anthropic.claude-opus-4-7", BedrockRequestBodyOptions{})
+	assert.NotContains(t, legacy, "context-management-2025-06-27")
+
+	compat := ResolveBedrockBetaTokensWithOptions("", body, "us.anthropic.claude-opus-4-7", BedrockRequestBodyOptions{RequestCompatEnabled: true})
+	assert.Contains(t, compat, "context-management-2025-06-27")
 }
 
 func TestRemoveCustomFieldFromTools(t *testing.T) {

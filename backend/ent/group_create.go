@@ -328,6 +328,20 @@ func (_c *GroupCreate) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *Gro
 	return _c
 }
 
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (_c *GroupCreate) SetBedrockRequestCompatEnabled(v bool) *GroupCreate {
+	_c.mutation.SetBedrockRequestCompatEnabled(v)
+	return _c
+}
+
+// SetNillableBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableBedrockRequestCompatEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetBedrockRequestCompatEnabled(*v)
+	}
+	return _c
+}
+
 // SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
 func (_c *GroupCreate) SetStrongSafetyModeEnabled(v bool) *GroupCreate {
 	_c.mutation.SetStrongSafetyModeEnabled(v)
@@ -679,6 +693,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultClaudeToolArgumentsRepairEnabled
 		_c.mutation.SetClaudeToolArgumentsRepairEnabled(v)
 	}
+	if _, ok := _c.mutation.BedrockRequestCompatEnabled(); !ok {
+		v := group.DefaultBedrockRequestCompatEnabled
+		_c.mutation.SetBedrockRequestCompatEnabled(v)
+	}
 	if _, ok := _c.mutation.StrongSafetyModeEnabled(); !ok {
 		v := group.DefaultStrongSafetyModeEnabled
 		_c.mutation.SetStrongSafetyModeEnabled(v)
@@ -785,6 +803,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); !ok {
 		return &ValidationError{Name: "claude_tool_arguments_repair_enabled", err: errors.New(`ent: missing required field "Group.claude_tool_arguments_repair_enabled"`)}
+	}
+	if _, ok := _c.mutation.BedrockRequestCompatEnabled(); !ok {
+		return &ValidationError{Name: "bedrock_request_compat_enabled", err: errors.New(`ent: missing required field "Group.bedrock_request_compat_enabled"`)}
 	}
 	if _, ok := _c.mutation.StrongSafetyModeEnabled(); !ok {
 		return &ValidationError{Name: "strong_safety_mode_enabled", err: errors.New(`ent: missing required field "Group.strong_safety_mode_enabled"`)}
@@ -935,6 +956,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
 		_node.ClaudeToolArgumentsRepairEnabled = value
+	}
+	if value, ok := _c.mutation.BedrockRequestCompatEnabled(); ok {
+		_spec.SetField(group.FieldBedrockRequestCompatEnabled, field.TypeBool, value)
+		_node.BedrockRequestCompatEnabled = value
 	}
 	if value, ok := _c.mutation.StrongSafetyModeEnabled(); ok {
 		_spec.SetField(group.FieldStrongSafetyModeEnabled, field.TypeBool, value)
@@ -1489,6 +1514,18 @@ func (u *GroupUpsert) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpsert {
 // UpdateClaudeToolArgumentsRepairEnabled sets the "claude_tool_arguments_repair_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldClaudeToolArgumentsRepairEnabled)
+	return u
+}
+
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (u *GroupUpsert) SetBedrockRequestCompatEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldBedrockRequestCompatEnabled, v)
+	return u
+}
+
+// UpdateBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateBedrockRequestCompatEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldBedrockRequestCompatEnabled)
 	return u
 }
 
@@ -2132,6 +2169,20 @@ func (u *GroupUpsertOne) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpser
 func (u *GroupUpsertOne) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudeToolArgumentsRepairEnabled()
+	})
+}
+
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (u *GroupUpsertOne) SetBedrockRequestCompatEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetBedrockRequestCompatEnabled(v)
+	})
+}
+
+// UpdateBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateBedrockRequestCompatEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateBedrockRequestCompatEnabled()
 	})
 }
 
@@ -2973,6 +3024,20 @@ func (u *GroupUpsertBulk) SetClaudeToolArgumentsRepairEnabled(v bool) *GroupUpse
 func (u *GroupUpsertBulk) UpdateClaudeToolArgumentsRepairEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudeToolArgumentsRepairEnabled()
+	})
+}
+
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (u *GroupUpsertBulk) SetBedrockRequestCompatEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetBedrockRequestCompatEnabled(v)
+	})
+}
+
+// UpdateBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateBedrockRequestCompatEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateBedrockRequestCompatEnabled()
 	})
 }
 

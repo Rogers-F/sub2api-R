@@ -165,6 +165,11 @@ func ClaudeToolArgumentsRepairEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudeToolArgumentsRepairEnabled, v))
 }
 
+// BedrockRequestCompatEnabled applies equality check predicate on the "bedrock_request_compat_enabled" field. It's identical to BedrockRequestCompatEnabledEQ.
+func BedrockRequestCompatEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldBedrockRequestCompatEnabled, v))
+}
+
 // StrongSafetyModeEnabled applies equality check predicate on the "strong_safety_mode_enabled" field. It's identical to StrongSafetyModeEnabledEQ.
 func StrongSafetyModeEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldStrongSafetyModeEnabled, v))
@@ -1123,6 +1128,16 @@ func ClaudeToolArgumentsRepairEnabledEQ(v bool) predicate.Group {
 // ClaudeToolArgumentsRepairEnabledNEQ applies the NEQ predicate on the "claude_tool_arguments_repair_enabled" field.
 func ClaudeToolArgumentsRepairEnabledNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldClaudeToolArgumentsRepairEnabled, v))
+}
+
+// BedrockRequestCompatEnabledEQ applies the EQ predicate on the "bedrock_request_compat_enabled" field.
+func BedrockRequestCompatEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldBedrockRequestCompatEnabled, v))
+}
+
+// BedrockRequestCompatEnabledNEQ applies the NEQ predicate on the "bedrock_request_compat_enabled" field.
+func BedrockRequestCompatEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldBedrockRequestCompatEnabled, v))
 }
 
 // StrongSafetyModeEnabledEQ applies the EQ predicate on the "strong_safety_mode_enabled" field.

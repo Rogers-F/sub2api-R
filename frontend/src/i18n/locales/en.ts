@@ -1856,6 +1856,14 @@ export default {
         disabled: 'Compat retry disabled',
         hint: 'Recommended for groups that mix Claude Max / Anthropic / AWS Bedrock accounts.'
       },
+      bedrockRequestCompat: {
+        title: 'AWS Bedrock Request Compat',
+        tooltip:
+          'Disabled by default. When enabled, only AWS Bedrock outbound requests are strictly normalized: Claude Code client-only top-level fields are removed while real messages/tools context is preserved.',
+        enabled: 'Bedrock compat enabled',
+        disabled: 'Bedrock compat disabled',
+        hint: 'Enable only for AWS Bedrock groups that hit request body compatibility errors.'
+      },
       claudeToolUseRepair: {
         title: 'Claude Request Compatibility Repair (Safe Mode)',
         tooltip:

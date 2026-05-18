@@ -425,6 +425,20 @@ func (_u *GroupUpdate) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *Gro
 	return _u
 }
 
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (_u *GroupUpdate) SetBedrockRequestCompatEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetBedrockRequestCompatEnabled(v)
+	return _u
+}
+
+// SetNillableBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableBedrockRequestCompatEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetBedrockRequestCompatEnabled(*v)
+	}
+	return _u
+}
+
 // SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
 func (_u *GroupUpdate) SetStrongSafetyModeEnabled(v bool) *GroupUpdate {
 	_u.mutation.SetStrongSafetyModeEnabled(v)
@@ -1051,6 +1065,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.BedrockRequestCompatEnabled(); ok {
+		_spec.SetField(group.FieldBedrockRequestCompatEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.StrongSafetyModeEnabled(); ok {
 		_spec.SetField(group.FieldStrongSafetyModeEnabled, field.TypeBool, value)
@@ -1818,6 +1835,20 @@ func (_u *GroupUpdateOne) SetNillableClaudeToolArgumentsRepairEnabled(v *bool) *
 	return _u
 }
 
+// SetBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field.
+func (_u *GroupUpdateOne) SetBedrockRequestCompatEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetBedrockRequestCompatEnabled(v)
+	return _u
+}
+
+// SetNillableBedrockRequestCompatEnabled sets the "bedrock_request_compat_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableBedrockRequestCompatEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetBedrockRequestCompatEnabled(*v)
+	}
+	return _u
+}
+
 // SetStrongSafetyModeEnabled sets the "strong_safety_mode_enabled" field.
 func (_u *GroupUpdateOne) SetStrongSafetyModeEnabled(v bool) *GroupUpdateOne {
 	_u.mutation.SetStrongSafetyModeEnabled(v)
@@ -2474,6 +2505,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ClaudeToolArgumentsRepairEnabled(); ok {
 		_spec.SetField(group.FieldClaudeToolArgumentsRepairEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.BedrockRequestCompatEnabled(); ok {
+		_spec.SetField(group.FieldBedrockRequestCompatEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.StrongSafetyModeEnabled(); ok {
 		_spec.SetField(group.FieldStrongSafetyModeEnabled, field.TypeBool, value)

@@ -110,6 +110,25 @@ func TestClaudeToolArgumentsRepairEnabledFromContext(t *testing.T) {
 	require.False(t, ClaudeToolArgumentsRepairEnabledFromContext(context.Background()))
 }
 
+func TestBedrockRequestCompatEnabledFromContext_DefaultsOff(t *testing.T) {
+	t.Parallel()
+
+	group := &Group{
+		ID:       1,
+		Name:     "claude",
+		Platform: PlatformAnthropic,
+		Status:   StatusActive,
+		Hydrated: true,
+	}
+	ctx := context.WithValue(context.Background(), ctxkey.Group, group)
+
+	require.False(t, BedrockRequestCompatEnabledFromContext(context.Background()))
+	require.False(t, BedrockRequestCompatEnabledFromContext(ctx))
+
+	group.BedrockRequestCompatEnabled = true
+	require.True(t, BedrockRequestCompatEnabledFromContext(ctx))
+}
+
 func TestStrongSafetyModeEnabledFromContext_DefaultsOn(t *testing.T) {
 	t.Parallel()
 

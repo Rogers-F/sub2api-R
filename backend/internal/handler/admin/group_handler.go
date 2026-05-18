@@ -100,6 +100,7 @@ type CreateGroupRequest struct {
 	ThinkingSignatureCompatEnabled   bool     `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       bool     `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled bool     `json:"claude_tool_arguments_repair_enabled"`
+	BedrockRequestCompatEnabled      bool     `json:"bedrock_request_compat_enabled"`
 	StrongSafetyModeEnabled          *bool    `json:"strong_safety_mode_enabled"`
 	FallbackGroupID                  *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest  *int64   `json:"fallback_group_id_on_invalid_request"`
@@ -141,6 +142,7 @@ type UpdateGroupRequest struct {
 	ThinkingSignatureCompatEnabled   *bool    `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       *bool    `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled *bool    `json:"claude_tool_arguments_repair_enabled"`
+	BedrockRequestCompatEnabled      *bool    `json:"bedrock_request_compat_enabled"`
 	StrongSafetyModeEnabled          *bool    `json:"strong_safety_mode_enabled"`
 	FallbackGroupID                  *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest  *int64   `json:"fallback_group_id_on_invalid_request"`
@@ -265,6 +267,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		ThinkingSignatureCompatEnabled:   req.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       req.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: req.ClaudeToolArgumentsRepairEnabled,
+		BedrockRequestCompatEnabled:      req.BedrockRequestCompatEnabled,
 		StrongSafetyModeEnabled:          req.StrongSafetyModeEnabled,
 		FallbackGroupID:                  req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  req.FallbackGroupIDOnInvalidRequest,
@@ -321,6 +324,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		ThinkingSignatureCompatEnabled:   req.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       req.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: req.ClaudeToolArgumentsRepairEnabled,
+		BedrockRequestCompatEnabled:      req.BedrockRequestCompatEnabled,
 		StrongSafetyModeEnabled:          req.StrongSafetyModeEnabled,
 		FallbackGroupID:                  req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  req.FallbackGroupIDOnInvalidRequest,

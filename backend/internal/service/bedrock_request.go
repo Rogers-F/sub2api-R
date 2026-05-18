@@ -17,6 +17,26 @@ const defaultBedrockRegion = "us-east-1"
 
 var bedrockCrossRegionPrefixes = []string{"us.", "eu.", "apac.", "jp.", "au.", "us-gov.", "global."}
 
+type BedrockRequestBodyOptions struct {
+	RequestCompatEnabled bool
+}
+
+var bedrockRequestCompatTopLevelFields = map[string]struct{}{
+	"anthropic_beta":     {},
+	"anthropic_version":  {},
+	"context_management": {},
+	"max_tokens":         {},
+	"messages":           {},
+	"stop_sequences":     {},
+	"system":             {},
+	"temperature":        {},
+	"thinking":           {},
+	"tool_choice":        {},
+	"tools":              {},
+	"top_k":              {},
+	"top_p":              {},
+}
+
 // BedrockCrossRegionPrefix 根据 AWS Region 返回 Bedrock 跨区域推理的模型 ID 前缀
 // 参考: https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
 func BedrockCrossRegionPrefix(region string) string {
@@ -180,12 +200,20 @@ func BuildBedrockURL(region, modelID string, stream bool) string {
 //  4. 移除工具定义中的 custom 字段（Claude Code 会发送 custom: {defer_loading: true}）
 //  5. 清理 cache_control 中 Bedrock 不支持的字段（scope, ttl）
 func PrepareBedrockRequestBody(body []byte, modelID string, betaHeader string) ([]byte, error) {
-	betaTokens := ResolveBedrockBetaTokens(betaHeader, body, modelID)
-	return PrepareBedrockRequestBodyWithTokens(body, modelID, betaTokens)
+	return PrepareBedrockRequestBodyWithOptions(body, modelID, betaHeader, BedrockRequestBodyOptions{})
+}
+
+func PrepareBedrockRequestBodyWithOptions(body []byte, modelID string, betaHeader string, opts BedrockRequestBodyOptions) ([]byte, error) {
+	betaTokens := ResolveBedrockBetaTokensWithOptions(betaHeader, body, modelID, opts)
+	return PrepareBedrockRequestBodyWithTokensAndOptions(body, modelID, betaTokens, opts)
 }
 
 // PrepareBedrockRequestBodyWithTokens prepares a Bedrock request using pre-resolved beta tokens.
 func PrepareBedrockRequestBodyWithTokens(body []byte, modelID string, betaTokens []string) ([]byte, error) {
+	return PrepareBedrockRequestBodyWithTokensAndOptions(body, modelID, betaTokens, BedrockRequestBodyOptions{})
+}
+
+func PrepareBedrockRequestBodyWithTokensAndOptions(body []byte, modelID string, betaTokens []string, opts BedrockRequestBodyOptions) ([]byte, error) {
 	var err error
 
 	// 注入 anthropic_version（Bedrock 要求）
@@ -235,6 +263,10 @@ func PrepareBedrockRequestBodyWithTokens(body []byte, modelID string, betaTokens
 	// 清理 cache_control 中 Bedrock 不支持的字段
 	body = sanitizeBedrockCacheControl(body, modelID)
 
+	if opts.RequestCompatEnabled {
+		body = filterBedrockRequestCompatTopLevelFields(body)
+	}
+
 	return body, nil
 }
 
@@ -243,6 +275,37 @@ func ResolveBedrockBetaTokens(betaHeader string, body []byte, modelID string) []
 	betaTokens := parseAnthropicBetaHeader(betaHeader)
 	betaTokens = autoInjectBedrockBetaTokens(betaTokens, body, modelID)
 	return filterBedrockBetaTokens(betaTokens)
+}
+
+func ResolveBedrockBetaTokensWithOptions(betaHeader string, body []byte, modelID string, opts BedrockRequestBodyOptions) []string {
+	betaTokens := parseAnthropicBetaHeader(betaHeader)
+	betaTokens = autoInjectBedrockBetaTokensWithOptions(betaTokens, body, modelID, opts)
+	return filterBedrockBetaTokens(betaTokens)
+}
+
+func filterBedrockRequestCompatTopLevelFields(body []byte) []byte {
+	root := gjson.ParseBytes(body)
+	if !root.IsObject() {
+		return body
+	}
+
+	out := body
+	root.ForEach(func(key, _ gjson.Result) bool {
+		name := key.String()
+		if _, ok := bedrockRequestCompatTopLevelFields[name]; ok {
+			return true
+		}
+		if next, err := sjson.DeleteBytes(out, escapeSJSONPathSegment(name)); err == nil {
+			out = next
+		}
+		return true
+	})
+	return out
+}
+
+func escapeSJSONPathSegment(segment string) string {
+	segment = strings.ReplaceAll(segment, `\`, `\\`)
+	return strings.ReplaceAll(segment, `.`, `\.`)
 }
 
 // convertOutputFormatToInlineSchema 将 output_format 中的 JSON schema 内联到最后一条 user message
@@ -470,6 +533,10 @@ var bedrockBetaTokenTransforms = map[string]string{
 // 客户端（特别是非 Claude Code 客户端）可能只在 body 中启用了功能而不在 header 中带对应 beta token，
 // 这里通过检测请求体特征自动补齐，确保 Bedrock Invoke 不会因缺少必要 beta 头而 400。
 func autoInjectBedrockBetaTokens(tokens []string, body []byte, modelID string) []string {
+	return autoInjectBedrockBetaTokensWithOptions(tokens, body, modelID, BedrockRequestBodyOptions{})
+}
+
+func autoInjectBedrockBetaTokensWithOptions(tokens []string, body []byte, modelID string, opts BedrockRequestBodyOptions) []string {
 	seen := make(map[string]bool, len(tokens))
 	for _, t := range tokens {
 		seen[t] = true
@@ -486,6 +553,9 @@ func autoInjectBedrockBetaTokens(tokens []string, body []byte, modelID string) [
 	// 请求体中有 "thinking" 字段 → 需要 interleaved-thinking beta
 	if gjson.GetBytes(body, "thinking").Exists() {
 		inject("interleaved-thinking-2025-05-14")
+	}
+	if opts.RequestCompatEnabled && gjson.GetBytes(body, "context_management").Exists() {
+		inject("context-management-2025-06-27")
 	}
 
 	// 检测 computer_use 工具

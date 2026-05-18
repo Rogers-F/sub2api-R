@@ -40,6 +40,8 @@ type Group struct {
 	ClaudeToolUseRepairEnabled bool
 	// 是否修复 Claude tool arguments 前导占位 {}，避免输出 {}{"k":"v"}。
 	ClaudeToolArgumentsRepairEnabled bool
+	// AWS Bedrock 请求兼容模式：默认关闭，开启后仅对 Bedrock 出站请求做严格字段归一化。
+	BedrockRequestCompatEnabled bool
 	// 强力安全模式：默认开启，隔离内部工具 transcript，防止污染上下文或响应。
 	StrongSafetyModeEnabled bool
 	FallbackGroupID         *int64
@@ -170,6 +172,11 @@ func ClaudeRequestCompatEnabledFromContext(ctx context.Context) bool {
 func ClaudeToolArgumentsRepairEnabledFromContext(ctx context.Context) bool {
 	group, ok := GroupFromContext(ctx)
 	return ok && group.ClaudeToolArgumentsRepairEnabled
+}
+
+func BedrockRequestCompatEnabledFromContext(ctx context.Context) bool {
+	group, ok := GroupFromContext(ctx)
+	return ok && group.BedrockRequestCompatEnabled
 }
 
 func StrongSafetyModeEnabledFromContext(ctx context.Context) bool {

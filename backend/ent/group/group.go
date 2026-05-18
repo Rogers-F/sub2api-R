@@ -59,6 +59,8 @@ const (
 	FieldClaudeToolUseRepairEnabled = "claude_tool_use_repair_enabled"
 	// FieldClaudeToolArgumentsRepairEnabled holds the string denoting the claude_tool_arguments_repair_enabled field in the database.
 	FieldClaudeToolArgumentsRepairEnabled = "claude_tool_arguments_repair_enabled"
+	// FieldBedrockRequestCompatEnabled holds the string denoting the bedrock_request_compat_enabled field in the database.
+	FieldBedrockRequestCompatEnabled = "bedrock_request_compat_enabled"
 	// FieldStrongSafetyModeEnabled holds the string denoting the strong_safety_mode_enabled field in the database.
 	FieldStrongSafetyModeEnabled = "strong_safety_mode_enabled"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
@@ -182,6 +184,7 @@ var Columns = []string{
 	FieldThinkingSignatureCompatEnabled,
 	FieldClaudeToolUseRepairEnabled,
 	FieldClaudeToolArgumentsRepairEnabled,
+	FieldBedrockRequestCompatEnabled,
 	FieldStrongSafetyModeEnabled,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
@@ -260,6 +263,8 @@ var (
 	DefaultClaudeToolUseRepairEnabled bool
 	// DefaultClaudeToolArgumentsRepairEnabled holds the default value on creation for the "claude_tool_arguments_repair_enabled" field.
 	DefaultClaudeToolArgumentsRepairEnabled bool
+	// DefaultBedrockRequestCompatEnabled holds the default value on creation for the "bedrock_request_compat_enabled" field.
+	DefaultBedrockRequestCompatEnabled bool
 	// DefaultStrongSafetyModeEnabled holds the default value on creation for the "strong_safety_mode_enabled" field.
 	DefaultStrongSafetyModeEnabled bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
@@ -400,6 +405,11 @@ func ByClaudeToolUseRepairEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByClaudeToolArgumentsRepairEnabled orders the results by the claude_tool_arguments_repair_enabled field.
 func ByClaudeToolArgumentsRepairEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClaudeToolArgumentsRepairEnabled, opts...).ToFunc()
+}
+
+// ByBedrockRequestCompatEnabled orders the results by the bedrock_request_compat_enabled field.
+func ByBedrockRequestCompatEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBedrockRequestCompatEnabled, opts...).ToFunc()
 }
 
 // ByStrongSafetyModeEnabled orders the results by the strong_safety_mode_enabled field.

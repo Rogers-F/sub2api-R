@@ -1943,6 +1943,14 @@ export default {
         disabled: '未启用兼容重试',
         hint: '建议在混用 Claude Max / Anthropic / AWS Bedrock 的分组中开启。'
       },
+      bedrockRequestCompat: {
+        title: 'AWS Bedrock 请求兼容',
+        tooltip:
+          '默认关闭。开启后，仅对 AWS Bedrock 出站请求执行严格字段归一化，移除 Claude Code 客户端内部顶层字段，并保留 messages/tools 中的真实工具上下文。',
+        enabled: '已启用 Bedrock 兼容',
+        disabled: '未启用 Bedrock 兼容',
+        hint: '仅在纯 AWS Bedrock 分组遇到请求体字段不兼容时开启。'
+      },
       claudeToolUseRepair: {
         title: 'Claude 请求兼容修复（安全模式）',
         tooltip:

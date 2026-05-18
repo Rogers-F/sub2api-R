@@ -202,6 +202,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		ThinkingSignatureCompatEnabled:   g.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       g.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: g.ClaudeToolArgumentsRepairEnabled,
+		BedrockRequestCompatEnabled:      g.BedrockRequestCompatEnabled,
 		StrongSafetyModeEnabled:          g.StrongSafetyModeEnabled,
 		FallbackGroupID:                  g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest:  g.FallbackGroupIDOnInvalidRequest,
