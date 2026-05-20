@@ -178,6 +178,68 @@
       </div>
     </section>
 
+    <!-- ==================== Stats ==================== -->
+    <section class="relative border-t hairline">
+      <div class="mx-auto max-w-7xl px-6 py-14 md:py-16">
+        <div class="text-center mb-10">
+          <div class="text-[11px] uppercase tracking-[0.3em] text-gold-600 dark:text-gold-300">{{ t('home.stats.eyebrow') }}</div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-paper-200 dark:bg-white/[0.05] rounded-2xl overflow-hidden">
+          <div
+            v-for="key in ['sla', 'latency', 'models'] as const"
+            :key="key"
+            class="bg-paper-0 dark:bg-ink-900 px-6 py-8 text-center"
+          >
+            <div class="font-display text-4xl md:text-5xl num-mono gold-text leading-none">{{ t(`home.stats.items.${key}.value`) }}</div>
+            <div class="mt-3 text-sm font-medium text-primary-fg">{{ t(`home.stats.items.${key}.label`) }}</div>
+            <div class="mt-1 text-xs text-secondary-fg">{{ t(`home.stats.items.${key}.hint`) }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== Providers ==================== -->
+    <section class="relative border-t hairline bg-paper-100 dark:bg-ink-950">
+      <div class="mx-auto max-w-7xl px-6 py-20">
+        <div class="text-center mb-12">
+          <div class="text-[11px] uppercase tracking-[0.3em] text-gold-600 dark:text-gold-300">{{ t('home.providersGrid.eyebrow') }}</div>
+          <h2 class="font-display text-3xl md:text-4xl mt-3 leading-tight">
+            {{ t('home.providersGrid.titleLead') }}<span class="italic gold-text">{{ t('home.providersGrid.titleAccent') }}</span>
+          </h2>
+          <p class="mt-3 text-sm text-secondary-fg max-w-xl mx-auto">{{ t('home.providersGrid.subtitle') }}</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div
+            v-for="prov in providers"
+            :key="prov.key"
+            class="group flex items-center gap-3 rounded-xl border hairline bg-paper-0 dark:bg-ink-900/60 px-4 py-4 hover:border-gold-400/40 dark:hover:border-gold-300/30 transition-colors"
+          >
+            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-paper-200 to-paper-300 dark:from-ink-700 dark:to-ink-800 text-base font-display font-semibold text-gold-700 dark:text-gold-300">
+              {{ prov.initial }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <div class="font-display text-base truncate">{{ t(`home.providersGrid.items.${prov.key}.name`) }}</div>
+                <span
+                  v-if="prov.beta"
+                  class="pill bg-aurora-500/10 text-aurora-600 dark:text-aurora-400 border border-aurora-500/20 text-[10px]"
+                >
+                  {{ t('home.providersGrid.tagBeta') }}
+                </span>
+                <span
+                  v-else
+                  class="pill bg-mint-500/10 text-mint-700 dark:text-mint-400 border border-mint-500/20 text-[10px]"
+                >
+                  {{ t('home.providersGrid.tagOfficial') }}
+                </span>
+              </div>
+              <div class="text-xs text-secondary-fg truncate">{{ t(`home.providersGrid.items.${prov.key}.desc`) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== Models / Pricing ==================== -->
     <section id="pricing" class="relative">
       <div class="mx-auto max-w-7xl px-6 py-24">
@@ -353,11 +415,60 @@
 
     <!-- ==================== Footer ==================== -->
     <footer class="border-t hairline bg-paper-100 dark:bg-ink-950">
-      <div class="mx-auto max-w-7xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-dust-400 dark:text-pearl-400">
-        <div>© {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}</div>
-        <div class="flex items-center gap-4">
-          <span class="inline-flex items-center gap-1.5"><span class="xs-pulse-dot"></span><span class="text-secondary-fg">{{ t('home.footer.systemsOk') }}</span></span>
-          <a v-if="docUrl" :href="docUrl" target="_blank" class="hover:text-dust-700 dark:hover:text-white transition-colors">{{ t('home.docs') }}</a>
+      <div class="mx-auto max-w-7xl px-6 py-14">
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-8 md:gap-10">
+          <!-- Brand column (spans 2) -->
+          <div class="col-span-2 md:col-span-2">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl border hairline bg-gradient-to-b from-paper-200 to-paper-300 dark:from-ink-700 dark:to-ink-900 flex items-center justify-center overflow-hidden">
+                <img v-if="siteLogo" :src="siteLogo" :alt="siteName" class="h-full w-full object-contain" />
+                <span v-else class="font-display text-lg gold-text">{{ siteName.slice(0, 1) }}</span>
+              </div>
+              <div class="leading-tight">
+                <div class="font-display text-lg text-primary-fg">{{ siteName }}</div>
+                <div class="text-[10px] uppercase tracking-[0.22em] text-dust-400 dark:text-pearl-400">{{ t('home.tagline') }}</div>
+              </div>
+            </div>
+            <p class="mt-4 text-xs text-secondary-fg leading-relaxed max-w-xs">{{ t('home.footer.tagline') }}</p>
+            <div class="mt-5 inline-flex items-center gap-1.5 text-[11px]">
+              <span class="xs-pulse-dot"></span>
+              <span class="text-secondary-fg">{{ t('home.footer.systemsOk') }}</span>
+            </div>
+          </div>
+
+          <!-- Link columns -->
+          <div
+            v-for="col in footerColumns"
+            :key="col.key"
+            class="space-y-3"
+          >
+            <div class="text-[11px] uppercase tracking-[0.2em] text-dust-500 dark:text-pearl-300 font-medium">
+              {{ t(`home.footer.columns.${col.key}.title`) }}
+            </div>
+            <ul class="space-y-2">
+              <li v-for="link in col.links" :key="link.labelKey">
+                <component
+                  :is="link.to ? 'router-link' : 'a'"
+                  :to="link.to"
+                  :href="link.href"
+                  :target="link.href ? '_blank' : undefined"
+                  :rel="link.href ? 'noopener' : undefined"
+                  class="text-xs text-secondary-fg hover:text-primary-fg transition-colors"
+                >
+                  {{ t(link.labelKey) }}
+                </component>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="mt-12 pt-6 border-t hairline flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-dust-400 dark:text-pearl-400">
+          <div>© {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}</div>
+          <div class="flex items-center gap-4">
+            <span class="font-mono">v{{ appVersion }}</span>
+            <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener" class="hover:text-dust-700 dark:hover:text-white transition-colors">{{ t('home.docs') }}</a>
+          </div>
         </div>
       </div>
     </footer>
@@ -421,6 +532,64 @@ const whyFeatures = computed(() => [
   { title: t('home.why.features.routing.title'), desc: t('home.why.features.routing.desc') },
   { title: t('home.why.features.audit.title'), desc: t('home.why.features.audit.desc') },
   { title: t('home.why.features.support.title'), desc: t('home.why.features.support.desc') }
+])
+
+const providers = [
+  { key: 'anthropic', initial: 'A', beta: false },
+  { key: 'openai', initial: 'O', beta: false },
+  { key: 'google', initial: 'G', beta: false },
+  { key: 'xai', initial: 'X', beta: true },
+  { key: 'meta', initial: 'M', beta: true },
+  { key: 'deepseek', initial: 'D', beta: true }
+] as const
+
+interface FooterLink {
+  labelKey: string
+  to?: string
+  href?: string
+}
+interface FooterColumn {
+  key: 'product' | 'models' | 'providers' | 'resources'
+  links: FooterLink[]
+}
+
+const footerColumns = computed<FooterColumn[]>(() => [
+  {
+    key: 'product',
+    links: [
+      { labelKey: 'home.footer.columns.product.dashboard', to: dashboardPath.value },
+      { labelKey: 'home.footer.columns.product.apiKeys', to: '/keys' },
+      { labelKey: 'home.footer.columns.product.usage', to: '/usage' },
+      { labelKey: 'home.footer.columns.product.pricing', href: '#pricing' }
+    ]
+  },
+  {
+    key: 'models',
+    links: [
+      { labelKey: 'home.footer.columns.models.opus', href: '#models' },
+      { labelKey: 'home.footer.columns.models.sonnet', href: '#models' },
+      { labelKey: 'home.footer.columns.models.haiku', href: '#models' },
+      { labelKey: 'home.footer.columns.models.gptCodex', href: '#models' }
+    ]
+  },
+  {
+    key: 'providers',
+    links: [
+      { labelKey: 'home.footer.columns.providers.anthropic', href: 'https://www.anthropic.com' },
+      { labelKey: 'home.footer.columns.providers.openai', href: 'https://openai.com' },
+      { labelKey: 'home.footer.columns.providers.google', href: 'https://ai.google' },
+      { labelKey: 'home.footer.columns.providers.xai', href: 'https://x.ai' }
+    ]
+  },
+  {
+    key: 'resources',
+    links: [
+      { labelKey: 'home.footer.columns.resources.docs', href: docUrl.value || '#' },
+      { labelKey: 'home.footer.columns.resources.status', href: '#' },
+      { labelKey: 'home.footer.columns.resources.support', href: '#' },
+      { labelKey: 'home.footer.columns.resources.changelog', href: '#' }
+    ]
+  }
 ])
 
 onMounted(() => {

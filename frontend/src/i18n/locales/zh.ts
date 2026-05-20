@@ -194,9 +194,64 @@ export default {
       description: '注册即可获得免费试用额度，体验一站式 AI 服务',
       button: '免费注册'
     },
+    stats: {
+      eyebrow: '关键指标',
+      items: {
+        sla: { value: '99.95%', label: '月度 SLA', hint: '多区域账号池自动故障转移' },
+        latency: { value: '< 200ms', label: '路由延迟', hint: '主备节点秒级切换' },
+        models: { value: '12+', label: '前沿模型', hint: 'Claude · GPT · Gemini · xAI 等' }
+      }
+    },
+    providersGrid: {
+      eyebrow: '官方协议',
+      titleLead: '所有主流厂商，',
+      titleAccent: '一个接入点',
+      subtitle: '原生兼容 Anthropic / OpenAI / Google 官方协议，您的 SDK 不改一行代码即可切换。',
+      tagOfficial: '官方原生',
+      tagBeta: 'Beta',
+      items: {
+        anthropic: { name: 'Anthropic', desc: 'Claude 全系' },
+        openai: { name: 'OpenAI', desc: 'GPT · Codex · Responses' },
+        google: { name: 'Google', desc: 'Gemini Pro · Flash' },
+        xai: { name: 'xAI', desc: 'Grok 系列' },
+        meta: { name: 'Meta', desc: 'Llama（合作伙伴接入）' },
+        deepseek: { name: 'DeepSeek', desc: 'Reasoning · Coder' }
+      }
+    },
     footer: {
       allRightsReserved: '保留所有权利。',
-      systemsOk: '所有系统正常'
+      systemsOk: '所有系统正常',
+      tagline: '企业级 AI 网关。官方原生协议，账单透明可审计。',
+      columns: {
+        product: {
+          title: '产品',
+          dashboard: '控制台',
+          apiKeys: 'API 密钥',
+          usage: '使用记录',
+          pricing: '定价'
+        },
+        models: {
+          title: '热门模型',
+          opus: 'Claude Opus 4.6',
+          sonnet: 'Claude Sonnet 4.6',
+          haiku: 'Claude Haiku 4.5',
+          gptCodex: 'GPT-5.2 Codex'
+        },
+        providers: {
+          title: '供应商',
+          anthropic: 'Anthropic',
+          openai: 'OpenAI',
+          google: 'Google',
+          xai: 'xAI'
+        },
+        resources: {
+          title: '资源',
+          docs: '接入文档',
+          status: '系统状态',
+          support: '技术支持',
+          changelog: '更新日志'
+        }
+      }
     }
   },
 

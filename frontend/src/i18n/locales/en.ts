@@ -194,9 +194,64 @@ export default {
       description: 'Sign up now and get free trial credits to experience seamless AI access',
       button: 'Sign Up Free'
     },
+    stats: {
+      eyebrow: 'BY THE NUMBERS',
+      items: {
+        sla: { value: '99.95%', label: 'Monthly SLA', hint: 'Auto-failover across multi-region pools' },
+        latency: { value: '< 200ms', label: 'Routing latency', hint: 'Sub-second primary/standby switching' },
+        models: { value: '12+', label: 'Frontier models', hint: 'Claude · GPT · Gemini · xAI · more' }
+      }
+    },
+    providersGrid: {
+      eyebrow: 'OFFICIAL PROTOCOLS',
+      titleLead: 'Every major provider,',
+      titleAccent: 'one endpoint',
+      subtitle: 'We speak the official Anthropic, OpenAI and Google protocols natively — your existing SDK works as-is.',
+      tagOfficial: 'Native',
+      tagBeta: 'Beta',
+      items: {
+        anthropic: { name: 'Anthropic', desc: 'Claude family' },
+        openai: { name: 'OpenAI', desc: 'GPT · Codex · Responses' },
+        google: { name: 'Google', desc: 'Gemini Pro · Flash' },
+        xai: { name: 'xAI', desc: 'Grok lineup' },
+        meta: { name: 'Meta', desc: 'Llama via partners' },
+        deepseek: { name: 'DeepSeek', desc: 'Reasoning · Coder' }
+      }
+    },
     footer: {
       allRightsReserved: 'All rights reserved.',
-      systemsOk: 'All systems operational'
+      systemsOk: 'All systems operational',
+      tagline: 'Enterprise AI gateway. Native protocols, transparent billing.',
+      columns: {
+        product: {
+          title: 'Product',
+          dashboard: 'Dashboard',
+          apiKeys: 'API Keys',
+          usage: 'Usage',
+          pricing: 'Pricing'
+        },
+        models: {
+          title: 'Hot Models',
+          opus: 'Claude Opus 4.6',
+          sonnet: 'Claude Sonnet 4.6',
+          haiku: 'Claude Haiku 4.5',
+          gptCodex: 'GPT-5.2 Codex'
+        },
+        providers: {
+          title: 'Providers',
+          anthropic: 'Anthropic',
+          openai: 'OpenAI',
+          google: 'Google',
+          xai: 'xAI'
+        },
+        resources: {
+          title: 'Resources',
+          docs: 'Documentation',
+          status: 'Status',
+          support: 'Support',
+          changelog: 'Changelog'
+        }
+      }
     }
   },
 
