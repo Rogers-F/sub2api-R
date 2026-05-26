@@ -569,6 +569,10 @@ func (r *stubApiKeyRepo) UpdateGroupIDByUserAndGroup(ctx context.Context, userID
 	return 0, errors.New("not implemented")
 }
 
+func (r *stubApiKeyRepo) BatchUpdateGroupIDByUserAndIDs(ctx context.Context, userID int64, ids []int64, groupID int64) (int64, error) {
+	return 0, errors.New("not implemented")
+}
+
 func (r *stubApiKeyRepo) CountByGroupID(ctx context.Context, groupID int64) (int64, error) {
 	return 0, errors.New("not implemented")
 }
@@ -578,6 +582,10 @@ func (r *stubApiKeyRepo) ListKeysByUserID(ctx context.Context, userID int64) ([]
 }
 
 func (r *stubApiKeyRepo) ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *stubApiKeyRepo) ListKeysByUserAndIDs(ctx context.Context, userID int64, ids []int64) ([]string, error) {
 	return nil, errors.New("not implemented")
 }
 
