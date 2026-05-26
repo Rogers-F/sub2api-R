@@ -4,7 +4,13 @@
  */
 
 import { apiClient } from './client'
-import type { ApiKey, CreateApiKeyRequest, UpdateApiKeyRequest, PaginatedResponse } from '@/types'
+import type {
+  ApiKey,
+  CreateApiKeyRequest,
+  UpdateApiKeyRequest,
+  PaginatedResponse,
+  BatchUpdateApiKeyGroupResponse
+} from '@/types'
 
 /**
  * List all API keys for current user
@@ -125,13 +131,22 @@ export async function toggleStatus(id: number, status: 'active' | 'inactive'): P
   return update(id, { status })
 }
 
+export async function batchUpdateGroup(ids: number[], groupId: number): Promise<BatchUpdateApiKeyGroupResponse> {
+  const { data } = await apiClient.post<BatchUpdateApiKeyGroupResponse>('/keys/batch/group', {
+    ids,
+    group_id: groupId
+  })
+  return data
+}
+
 export const keysAPI = {
   list,
   getById,
   create,
   update,
   delete: deleteKey,
-  toggleStatus
+  toggleStatus,
+  batchUpdateGroup
 }
 
 export default keysAPI

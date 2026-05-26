@@ -597,6 +597,15 @@ export interface UpdateApiKeyRequest {
   reset_rate_limit_usage?: boolean
 }
 
+export interface BatchUpdateApiKeyGroupRequest {
+  ids: number[]
+  group_id: number
+}
+
+export interface BatchUpdateApiKeyGroupResponse {
+  updated: number
+}
+
 export interface CreateGroupRequest {
   name: string
   description?: string | null
