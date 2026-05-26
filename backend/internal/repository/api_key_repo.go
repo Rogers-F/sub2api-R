@@ -420,6 +420,19 @@ func (r *apiKeyRepository) UpdateGroupIDByUserAndGroup(ctx context.Context, user
 	return int64(n), err
 }
 
+func (r *apiKeyRepository) BatchUpdateGroupIDByUserAndIDs(ctx context.Context, userID int64, ids []int64, groupID int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	client := clientFromContext(ctx, r.client)
+	n, err := client.APIKey.Update().
+		Where(apikey.UserIDEQ(userID), apikey.IDIn(ids...), apikey.DeletedAtIsNil()).
+		SetGroupID(groupID).
+		SetUpdatedAt(time.Now()).
+		Save(ctx)
+	return int64(n), err
+}
+
 // CountByGroupID 获取分组的 API Key 数量
 func (r *apiKeyRepository) CountByGroupID(ctx context.Context, groupID int64) (int64, error) {
 	count, err := r.activeQuery().Where(apikey.GroupIDEQ(groupID)).Count(ctx)
@@ -440,6 +453,20 @@ func (r *apiKeyRepository) ListKeysByUserID(ctx context.Context, userID int64) (
 func (r *apiKeyRepository) ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error) {
 	keys, err := r.activeQuery().
 		Where(apikey.GroupIDEQ(groupID)).
+		Select(apikey.FieldKey).
+		Strings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
+
+func (r *apiKeyRepository) ListKeysByUserAndIDs(ctx context.Context, userID int64, ids []int64) ([]string, error) {
+	if len(ids) == 0 {
+		return []string{}, nil
+	}
+	keys, err := r.activeQuery().
+		Where(apikey.UserIDEQ(userID), apikey.IDIn(ids...)).
 		Select(apikey.FieldKey).
 		Strings(ctx)
 	if err != nil {

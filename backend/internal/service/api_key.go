@@ -141,3 +141,8 @@ type APIKeyListFilters struct {
 	Status  string
 	GroupID *int64 // nil=不筛选, 0=无分组, >0=指定分组
 }
+
+type BatchUpdateAPIKeyGroupRequest struct {
+	IDs     []int64 `json:"ids"`
+	GroupID int64   `json:"group_id"`
+}

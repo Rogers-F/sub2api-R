@@ -20,13 +20,23 @@ import (
 )
 
 var (
-	ErrAPIKeyNotFound     = infraerrors.NotFound("API_KEY_NOT_FOUND", "api key not found")
-	ErrGroupNotAllowed    = infraerrors.Forbidden("GROUP_NOT_ALLOWED", "user is not allowed to bind this group")
-	ErrAPIKeyExists       = infraerrors.Conflict("API_KEY_EXISTS", "api key already exists")
-	ErrAPIKeyTooShort     = infraerrors.BadRequest("API_KEY_TOO_SHORT", "api key must be at least 16 characters")
-	ErrAPIKeyInvalidChars = infraerrors.BadRequest("API_KEY_INVALID_CHARS", "api key can only contain letters, numbers, underscores, and hyphens")
-	ErrAPIKeyRateLimited  = infraerrors.TooManyRequests("API_KEY_RATE_LIMITED", "too many failed attempts, please try again later")
-	ErrInvalidIPPattern   = infraerrors.BadRequest("INVALID_IP_PATTERN", "invalid IP or CIDR pattern")
+	ErrAPIKeyNotFound       = infraerrors.NotFound("API_KEY_NOT_FOUND", "api key not found")
+	ErrGroupNotAllowed      = infraerrors.Forbidden("GROUP_NOT_ALLOWED", "user is not allowed to bind this group")
+	ErrAPIKeyExists         = infraerrors.Conflict("API_KEY_EXISTS", "api key already exists")
+	ErrAPIKeyTooShort       = infraerrors.BadRequest("API_KEY_TOO_SHORT", "api key must be at least 16 characters")
+	ErrAPIKeyInvalidChars   = infraerrors.BadRequest("API_KEY_INVALID_CHARS", "api key can only contain letters, numbers, underscores, and hyphens")
+	ErrAPIKeyRateLimited    = infraerrors.TooManyRequests("API_KEY_RATE_LIMITED", "too many failed attempts, please try again later")
+	ErrInvalidIPPattern     = infraerrors.BadRequest("INVALID_IP_PATTERN", "invalid IP or CIDR pattern")
+	ErrNoAPIKeysSelected    = infraerrors.BadRequest("NO_API_KEYS_SELECTED", "no api keys selected")
+	ErrInvalidAPIKeyID      = infraerrors.BadRequest("INVALID_API_KEY_ID", "api key id must be positive")
+	ErrInvalidAPIKeyGroupID = infraerrors.BadRequest(
+		"INVALID_API_KEY_GROUP_ID",
+		"group_id must be positive",
+	)
+	ErrAPIKeyBatchUpdateFailed = infraerrors.Conflict(
+		"API_KEY_BATCH_UPDATE_FAILED",
+		"api key batch update did not update all requested keys",
+	)
 	// ErrAPIKeyExpired        = infraerrors.Forbidden("API_KEY_EXPIRED", "api key has expired")
 	ErrAPIKeyExpired = infraerrors.Forbidden("API_KEY_EXPIRED", "api key 已过期")
 	// ErrAPIKeyQuotaExhausted = infraerrors.TooManyRequests("API_KEY_QUOTA_EXHAUSTED", "api key quota exhausted")
@@ -65,9 +75,11 @@ type APIKeyRepository interface {
 	ClearGroupIDByGroupID(ctx context.Context, groupID int64) (int64, error)
 	// UpdateGroupIDByUserAndGroup 将用户下绑定 oldGroupID 的所有 Key 迁移到 newGroupID
 	UpdateGroupIDByUserAndGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (int64, error)
+	BatchUpdateGroupIDByUserAndIDs(ctx context.Context, userID int64, ids []int64, groupID int64) (int64, error)
 	CountByGroupID(ctx context.Context, groupID int64) (int64, error)
 	ListKeysByUserID(ctx context.Context, userID int64) ([]string, error)
 	ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error)
+	ListKeysByUserAndIDs(ctx context.Context, userID int64, ids []int64) ([]string, error)
 
 	// Quota methods
 	IncrementQuotaUsed(ctx context.Context, id int64, amount float64) (float64, error)
@@ -446,6 +458,78 @@ func (s *APIKeyService) VerifyOwnership(ctx context.Context, userID int64, apiKe
 		return nil, fmt.Errorf("verify api key ownership: %w", err)
 	}
 	return validIDs, nil
+}
+
+func uniquePositiveAPIKeyIDs(ids []int64) ([]int64, error) {
+	if len(ids) == 0 {
+		return nil, ErrNoAPIKeysSelected
+	}
+
+	seen := make(map[int64]struct{}, len(ids))
+	out := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 {
+			return nil, ErrInvalidAPIKeyID
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	if len(out) == 0 {
+		return nil, ErrNoAPIKeysSelected
+	}
+	return out, nil
+}
+
+func (s *APIKeyService) BatchUpdateGroup(ctx context.Context, userID int64, req BatchUpdateAPIKeyGroupRequest) (int64, error) {
+	if req.GroupID <= 0 {
+		return 0, ErrInvalidAPIKeyGroupID
+	}
+
+	ids, err := uniquePositiveAPIKeyIDs(req.IDs)
+	if err != nil {
+		return 0, err
+	}
+
+	validIDs, err := s.apiKeyRepo.VerifyOwnership(ctx, userID, ids)
+	if err != nil {
+		return 0, fmt.Errorf("verify api key ownership: %w", err)
+	}
+	if len(validIDs) != len(ids) {
+		return 0, ErrInsufficientPerms
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return 0, fmt.Errorf("get user: %w", err)
+	}
+	group, err := s.groupRepo.GetByID(ctx, req.GroupID)
+	if err != nil {
+		return 0, fmt.Errorf("get group: %w", err)
+	}
+	if !s.canUserBindGroup(ctx, user, group) {
+		return 0, ErrGroupNotAllowed
+	}
+
+	keys, err := s.apiKeyRepo.ListKeysByUserAndIDs(ctx, userID, ids)
+	if err != nil {
+		return 0, fmt.Errorf("list api keys for cache invalidation: %w", err)
+	}
+
+	updated, err := s.apiKeyRepo.BatchUpdateGroupIDByUserAndIDs(ctx, userID, ids, req.GroupID)
+	if err != nil {
+		return 0, fmt.Errorf("batch update api key group: %w", err)
+	}
+	if updated != int64(len(ids)) {
+		return 0, ErrAPIKeyBatchUpdateFailed
+	}
+
+	for _, key := range keys {
+		s.InvalidateAuthCacheByKey(ctx, key)
+	}
+	return updated, nil
 }
 
 // GetByID 根据ID获取API Key
