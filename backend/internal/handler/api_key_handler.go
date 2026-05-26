@@ -62,6 +62,11 @@ type UpdateAPIKeyRequest struct {
 	ResetRateLimitUsage *bool    `json:"reset_rate_limit_usage"` // 重置限速用量
 }
 
+type BatchUpdateAPIKeyGroupRequest struct {
+	IDs     []int64 `json:"ids" binding:"required"`
+	GroupID int64   `json:"group_id" binding:"required"`
+}
+
 // List handles listing user's API keys with pagination
 // GET /api/v1/api-keys
 func (h *APIKeyHandler) List(c *gin.Context) {
@@ -239,6 +244,33 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 	}
 
 	response.Success(c, dto.APIKeyFromService(key))
+}
+
+// BatchUpdateGroup handles moving multiple API keys to one group.
+// POST /api/v1/keys/batch/group
+func (h *APIKeyHandler) BatchUpdateGroup(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	var req BatchUpdateAPIKeyGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	updated, err := h.apiKeyService.BatchUpdateGroup(c.Request.Context(), subject.UserID, service.BatchUpdateAPIKeyGroupRequest{
+		IDs:     req.IDs,
+		GroupID: req.GroupID,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"updated": updated})
 }
 
 // Delete handles deleting an API key
