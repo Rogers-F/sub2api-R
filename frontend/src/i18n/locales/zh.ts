@@ -688,6 +688,17 @@ export default {
     clickToChangeGroup: '点击更换分组',
     groupChangedSuccess: '分组更换成功',
     failedToChangeGroup: '更换分组失败',
+    batchGroup: {
+      selected: '已选择 {count} 个密钥',
+      selectCurrentPage: '本页全选',
+      clear: '清除选择',
+      targetGroup: '目标分组',
+      selectTargetGroup: '选择目标分组',
+      submit: '批量切换分组',
+      submitting: '正在切换...',
+      success: '已切换 {count} 个密钥的分组',
+      failed: '批量切换分组失败'
+    },
     groupRequired: '请选择分组',
     usage: '用量',
     today: '今日',

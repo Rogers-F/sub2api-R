@@ -688,6 +688,17 @@ export default {
     clickToChangeGroup: 'Click to change group',
     groupChangedSuccess: 'Group changed successfully',
     failedToChangeGroup: 'Failed to change group',
+    batchGroup: {
+      selected: '{count} key(s) selected',
+      selectCurrentPage: 'Select this page',
+      clear: 'Clear selection',
+      targetGroup: 'Target group',
+      selectTargetGroup: 'Select target group',
+      submit: 'Batch switch group',
+      submitting: 'Switching...',
+      success: 'Switched group for {count} key(s)',
+      failed: 'Failed to batch switch group'
+    },
     groupRequired: 'Please select a group',
     usage: 'Usage',
     today: 'Today',

@@ -49,7 +49,97 @@
       </template>
 
       <template #table>
+        <div
+          v-if="selectedIds.length > 0"
+          data-test="keys-batch-group-bar"
+          class="mb-4 flex flex-col gap-3 rounded-lg bg-accent-50 p-3 dark:bg-accent-800/30 lg:flex-row lg:items-center lg:justify-between"
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-medium text-primary-900 dark:text-primary-100">
+              {{ t('keys.batchGroup.selected', { count: selectedIds.length }) }}
+            </span>
+            <button
+              type="button"
+              class="text-xs font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200"
+              @click="selectVisibleKeys"
+            >
+              {{ t('keys.batchGroup.selectCurrentPage') }}
+            </button>
+            <span class="text-gray-300 dark:text-dark-500">•</span>
+            <button
+              type="button"
+              class="text-xs font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200"
+              @click="clearSelectedKeys"
+            >
+              {{ t('keys.batchGroup.clear') }}
+            </button>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Select
+              v-model="batchGroupId"
+              data-test="batch-group-select"
+              class="min-w-64"
+              :options="groupOptions"
+              :placeholder="t('keys.batchGroup.selectTargetGroup')"
+              :searchable="true"
+              :search-placeholder="t('keys.searchGroup')"
+            >
+              <template #selected="{ option }">
+                <GroupBadge
+                  v-if="option"
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                />
+                <span v-else class="text-gray-400">{{ t('keys.batchGroup.selectTargetGroup') }}</span>
+              </template>
+              <template #option="{ option, selected }">
+                <GroupOptionItem
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                  :description="(option as unknown as GroupOption).description"
+                  :selected="selected"
+                />
+              </template>
+            </Select>
+            <button
+              type="button"
+              data-test="batch-group-submit"
+              class="btn btn-primary"
+              :disabled="batchGroupSubmitting || batchGroupId === null"
+              @click="batchUpdateSelectedGroup"
+            >
+              {{ batchGroupSubmitting ? t('keys.batchGroup.submitting') : t('keys.batchGroup.submit') }}
+            </button>
+          </div>
+        </div>
+
         <DataTable :columns="columns" :data="apiKeys" :loading="loading">
+          <template #header-select>
+            <input
+              type="checkbox"
+              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              :checked="allVisibleSelected"
+              @click.stop
+              @change="toggleSelectAllVisible($event)"
+            />
+          </template>
+
+          <template #cell-select="{ row }">
+            <input
+              type="checkbox"
+              :data-test="`key-row-select-${row.id}`"
+              class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              :checked="selectedIds.includes(row.id)"
+              @change="toggleSelectedKey(row.id)"
+            />
+          </template>
+
           <template #cell-key="{ value, row }">
             <div class="flex items-center gap-2">
               <code class="code text-xs">
@@ -991,33 +1081,34 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
-	import { useI18n } from 'vue-i18n'
-	import { useAppStore } from '@/stores/app'
-	import { useOnboardingStore } from '@/stores/onboarding'
-	import { useClipboard } from '@/composables/useClipboard'
+import { ref, computed, onMounted, onUnmounted, watch, type ComponentPublicInstance } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
+import { useOnboardingStore } from '@/stores/onboarding'
+import { useClipboard } from '@/composables/useClipboard'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
-
-const { t } = useI18n()
+import { useTableSelection } from '@/composables/useTableSelection'
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
-	import DataTable from '@/components/common/DataTable.vue'
-	import Pagination from '@/components/common/Pagination.vue'
-	import BaseDialog from '@/components/common/BaseDialog.vue'
-	import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-	import EmptyState from '@/components/common/EmptyState.vue'
-	import Select from '@/components/common/Select.vue'
-	import SearchInput from '@/components/common/SearchInput.vue'
-	import Icon from '@/components/icons/Icon.vue'
-	import UseKeyModal from '@/components/keys/UseKeyModal.vue'
-	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
-	import GroupBadge from '@/components/common/GroupBadge.vue'
-	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
-	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
+import DataTable from '@/components/common/DataTable.vue'
+import Pagination from '@/components/common/Pagination.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import Select from '@/components/common/Select.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
+import Icon from '@/components/icons/Icon.vue'
+import UseKeyModal from '@/components/keys/UseKeyModal.vue'
+import EndpointPopover from '@/components/keys/EndpointPopover.vue'
+import GroupBadge from '@/components/common/GroupBadge.vue'
+import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
+import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 // Helper to format date for datetime-local input
 const formatDateTimeLocal = (isoDate: string): string => {
@@ -1041,6 +1132,7 @@ const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
 const columns = computed<Column[]>(() => [
+  { key: 'select', label: '', sortable: false },
   { key: 'name', label: t('common.name'), sortable: true },
   { key: 'key', label: t('keys.apiKey'), sortable: false },
   { key: 'group', label: t('keys.group'), sortable: false },
@@ -1090,6 +1182,20 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const dropdownPosition = ref<{ top?: number; bottom?: number; left: number } | null>(null)
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
 let abortController: AbortController | null = null
+const batchGroupId = ref<number | null>(null)
+const batchGroupSubmitting = ref(false)
+
+const {
+  selectedIds,
+  allVisibleSelected,
+  toggle: toggleSelectedKey,
+  clear: clearSelectedKeys,
+  toggleVisible,
+  selectVisible: selectVisibleKeys
+} = useTableSelection<ApiKey>({
+  rows: apiKeys,
+  getId: (key) => key.id
+})
 
 // Get the currently selected key for group change
 const selectedKeyForGroup = computed(() => {
@@ -1176,6 +1282,11 @@ const onGroupFilterChange = (value: string | number | boolean | null) => {
 const onStatusFilterChange = (value: string | number | boolean | null) => {
   filterStatus.value = value as string
   onFilterChange()
+}
+
+const toggleSelectAllVisible = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  toggleVisible(target.checked)
 }
 
 // Convert groups to Select options format with rate multiplier and subscription type
@@ -1293,6 +1404,15 @@ const loadPublicSettings = async () => {
   }
 }
 
+watch(apiKeys, (rows) => {
+  if (selectedIds.value.length === 0) return
+  const visible = new Set(rows.map((key) => key.id))
+  const hasStaleSelection = selectedIds.value.some((id) => !visible.has(id))
+  if (hasStaleSelection) {
+    clearSelectedKeys()
+  }
+})
+
 const openUseKeyModal = (key: ApiKey) => {
   selectedKey.value = key
   showUseKeyModal.value = true
@@ -1395,6 +1515,24 @@ const changeGroup = async (key: ApiKey, newGroupId: number | null) => {
     loadApiKeys()
   } catch (error) {
     appStore.showError(t('keys.failedToChangeGroup'))
+  }
+}
+
+const batchUpdateSelectedGroup = async () => {
+  if (selectedIds.value.length === 0 || batchGroupId.value === null) return
+
+  batchGroupSubmitting.value = true
+  try {
+    const result = await keysAPI.batchUpdateGroup(selectedIds.value, batchGroupId.value)
+    appStore.showSuccess(t('keys.batchGroup.success', { count: result.updated }))
+    clearSelectedKeys()
+    batchGroupId.value = null
+    await loadApiKeys()
+  } catch (error: any) {
+    const errorMsg = error?.message || error?.response?.data?.detail || t('keys.batchGroup.failed')
+    appStore.showError(errorMsg)
+  } finally {
+    batchGroupSubmitting.value = false
   }
 }
 
