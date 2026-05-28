@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
@@ -10,6 +8,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
 // PaymentOrder holds the schema definition for the PaymentOrder entity.
@@ -157,11 +156,11 @@ func (PaymentOrder) Fields() []ent.Field {
 		// 时间戳
 		field.Time("created_at").
 			Immutable().
-			Default(time.Now).
+			Default(timezone.BeijingNow).
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Time("updated_at").
-			Default(time.Now).
-			UpdateDefault(time.Now).
+			Default(timezone.BeijingNow).
+			UpdateDefault(timezone.BeijingNow).
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 	}
 }

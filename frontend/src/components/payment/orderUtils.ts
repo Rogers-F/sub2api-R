@@ -3,6 +3,10 @@
  * Used by AdminOrderDetail, AdminOrderTable, AdminRefundDialog, AdminOrdersView, etc.
  */
 
+import { formatDateTimeInTimezone } from '@/utils/format'
+
+export const PAYMENT_ORDER_DISPLAY_TIMEZONE = 'Asia/Shanghai'
+
 const STATUS_BADGE_MAP: Record<string, string> = {
   PENDING: 'badge-warning',
   PAID: 'badge-info',
@@ -30,5 +34,5 @@ export function canRefund(status: string): boolean {
 
 export function formatOrderDateTime(dateStr: string): string {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString()
+  return formatDateTimeInTimezone(dateStr, PAYMENT_ORDER_DISPLAY_TIMEZONE) || '-'
 }

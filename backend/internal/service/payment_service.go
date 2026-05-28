@@ -50,7 +50,11 @@ const (
 // generateOutTradeNo creates a unique external order ID for payment providers.
 // Format: sub2_20250409aB3kX9mQ (prefix + date + 8-char random)
 func generateOutTradeNo() string {
-	date := time.Now().Format("20060102")
+	return generateOutTradeNoAt(paymentBeijingNow())
+}
+
+func generateOutTradeNoAt(t time.Time) string {
+	date := paymentInBeijing(t).Format("20060102")
 	rnd := generateRandomString(8)
 	return orderIDPrefix + date + rnd
 }

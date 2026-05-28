@@ -24,7 +24,7 @@ func (PaygOrder) Annotations() []schema.Annotation {
 
 func (PaygOrder) Mixin() []ent.Mixin {
 	return []ent.Mixin{
-		mixins.TimeMixin{},
+		mixins.BeijingTimeMixin{},
 	}
 }
 

@@ -55,7 +55,7 @@ func (s *PaymentService) checkCancelRateLimit(ctx context.Context, userID int64,
 }
 
 func cancelRateLimitWindowStart(cfg *PaymentConfig) time.Time {
-	now := time.Now()
+	now := paymentBeijingNow()
 	w := cfg.CancelRateLimitWindow
 	if w <= 0 {
 		w = 1
@@ -120,7 +120,7 @@ func (s *PaymentService) cancelCore(ctx context.Context, o *dbent.PaymentOrder, 
 			return checkPaidResultAlreadyPaid, nil
 		}
 	}
-	c, err := s.entClient.PaymentOrder.Update().Where(paymentorder.IDEQ(o.ID), paymentorder.StatusEQ(OrderStatusPending)).SetStatus(fs).Save(ctx)
+	c, err := s.entClient.PaymentOrder.Update().Where(paymentorder.IDEQ(o.ID), paymentorder.StatusEQ(OrderStatusPending)).SetStatus(fs).SetUpdatedAt(paymentBeijingNow()).Save(ctx)
 	if err != nil {
 		return "", fmt.Errorf("update order status: %w", err)
 	}
@@ -187,7 +187,7 @@ func (s *PaymentService) VerifyOrderByOutTradeNo(ctx context.Context, outTradeNo
 			}
 		}
 	}
-	return o, nil
+	return normalizePaymentOrderTimes(o), nil
 }
 
 // VerifyOrderPublic verifies payment status without user authentication.
@@ -208,11 +208,11 @@ func (s *PaymentService) VerifyOrderPublic(ctx context.Context, outTradeNo strin
 			}
 		}
 	}
-	return o, nil
+	return normalizePaymentOrderTimes(o), nil
 }
 
 func (s *PaymentService) ExpireTimedOutOrders(ctx context.Context) (int, error) {
-	now := time.Now()
+	now := paymentBeijingNow()
 	orders, err := s.entClient.PaymentOrder.Query().Where(paymentorder.StatusEQ(OrderStatusPending), paymentorder.ExpiresAtLTE(now)).All(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("query expired: %w", err)

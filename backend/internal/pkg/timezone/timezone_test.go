@@ -135,3 +135,33 @@ func TestDSTAwareness(t *testing.T) {
 	_ = Now()
 	_ = StartOfDay(Now())
 }
+
+func TestBeijingNowIgnoresConfiguredTimezone(t *testing.T) {
+	originalLocal := time.Local
+	defer func() { time.Local = originalLocal }()
+
+	if err := Init("UTC"); err != nil {
+		t.Fatalf("Init failed with UTC: %v", err)
+	}
+
+	got := BeijingNow()
+	if got.Location().String() != BeijingTimezone {
+		t.Fatalf("BeijingNow location = %s, want %s", got.Location().String(), BeijingTimezone)
+	}
+	if _, offset := got.Zone(); offset != 8*3600 {
+		t.Fatalf("BeijingNow offset = %d, want %d", offset, 8*3600)
+	}
+}
+
+func TestInBeijingConvertsInstantToBeijingWallClock(t *testing.T) {
+	utcInstant := time.Date(2026, 1, 1, 16, 30, 0, 0, time.UTC)
+
+	got := InBeijing(utcInstant)
+
+	if got.Location().String() != BeijingTimezone {
+		t.Fatalf("InBeijing location = %s, want %s", got.Location().String(), BeijingTimezone)
+	}
+	if got.Year() != 2026 || got.Month() != time.January || got.Day() != 2 || got.Hour() != 0 || got.Minute() != 30 {
+		t.Fatalf("InBeijing wall clock = %s, want 2026-01-02 00:30 Beijing", got.Format(time.RFC3339))
+	}
+}

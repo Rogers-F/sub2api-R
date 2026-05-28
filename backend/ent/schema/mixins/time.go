@@ -3,6 +3,8 @@ package mixins
 import (
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/field"
@@ -15,16 +17,29 @@ type TimeMixin struct {
 }
 
 func (TimeMixin) Fields() []ent.Field {
+	return timeFields(time.Now)
+}
+
+// BeijingTimeMixin provides timestamps that are always stored with Beijing location.
+type BeijingTimeMixin struct {
+	mixin.Schema
+}
+
+func (BeijingTimeMixin) Fields() []ent.Field {
+	return timeFields(timezone.BeijingNow)
+}
+
+func timeFields(now func() time.Time) []ent.Field {
 	return []ent.Field{
 		field.Time("created_at").
 			Immutable().
-			Default(time.Now).
+			Default(now).
 			SchemaType(map[string]string{
 				dialect.Postgres: "timestamptz",
 			}),
 		field.Time("updated_at").
-			Default(time.Now).
-			UpdateDefault(time.Now).
+			Default(now).
+			UpdateDefault(now).
 			SchemaType(map[string]string{
 				dialect.Postgres: "timestamptz",
 			}),

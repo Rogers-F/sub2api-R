@@ -60,8 +60,11 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	}
 	resp, err := s.invokeProvider(ctx, order, req, cfg, limitAmount, payAmountStr, payAmount, plan)
 	if err != nil {
+		now := paymentBeijingNow()
 		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).
 			SetStatus(OrderStatusFailed).
+			SetFailedAt(now).
+			SetUpdatedAt(now).
 			Save(ctx)
 		return nil, err
 	}
@@ -119,7 +122,8 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if tm <= 0 {
 		tm = defaultOrderTimeoutMin
 	}
-	exp := time.Now().Add(time.Duration(tm) * time.Minute)
+	now := paymentBeijingNow()
+	exp := now.Add(time.Duration(tm) * time.Minute)
 	b := tx.PaymentOrder.Create().
 		SetUserID(req.UserID).
 		SetUserEmail(user.Email).
@@ -135,6 +139,8 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		SetOrderType(req.OrderType).
 		SetStatus(OrderStatusPending).
 		SetExpiresAt(exp).
+		SetCreatedAt(now).
+		SetUpdatedAt(now).
 		SetClientIP(req.ClientIP).
 		SetSrcHost(req.SrcHost)
 	if req.SrcURL != "" {
@@ -147,15 +153,15 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if err != nil {
 		return nil, fmt.Errorf("create order: %w", err)
 	}
-	code := fmt.Sprintf("PAY-%d-%d", order.ID, time.Now().UnixNano()%100000)
-	order, err = tx.PaymentOrder.UpdateOneID(order.ID).SetRechargeCode(code).Save(ctx)
+	code := fmt.Sprintf("PAY-%d-%d", order.ID, now.UnixNano()%100000)
+	order, err = tx.PaymentOrder.UpdateOneID(order.ID).SetRechargeCode(code).SetUpdatedAt(paymentBeijingNow()).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("set recharge code: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit order transaction: %w", err)
 	}
-	return order, nil
+	return normalizePaymentOrderTimes(order), nil
 }
 
 func (s *PaymentService) checkPendingLimit(ctx context.Context, tx *dbent.Tx, userID int64, max int) error {
@@ -177,7 +183,7 @@ func (s *PaymentService) checkDailyLimit(ctx context.Context, tx *dbent.Tx, user
 	if limit <= 0 {
 		return nil
 	}
-	ts := psStartOfDayUTC(time.Now())
+	ts := psStartOfDayBeijing(paymentBeijingNow())
 	orders, err := tx.PaymentOrder.Query().Where(paymentorder.UserIDEQ(userID), paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted), paymentorder.PaidAtGTE(ts)).All(ctx)
 	if err != nil {
 		return fmt.Errorf("query daily usage: %w", err)
@@ -217,7 +223,7 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		slog.Error("[PaymentService] CreatePayment failed", "provider", sel.ProviderKey, "instance", sel.InstanceID, "error", err)
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", fmt.Sprintf("payment gateway error: %s", err.Error()))
 	}
-	_, err = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetNillablePaymentTradeNo(psNilIfEmpty(pr.TradeNo)).SetNillablePayURL(psNilIfEmpty(pr.PayURL)).SetNillableQrCode(psNilIfEmpty(pr.QRCode)).SetNillableProviderInstanceID(psNilIfEmpty(sel.InstanceID)).Save(ctx)
+	_, err = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetNillablePaymentTradeNo(psNilIfEmpty(pr.TradeNo)).SetNillablePayURL(psNilIfEmpty(pr.PayURL)).SetNillableQrCode(psNilIfEmpty(pr.QRCode)).SetNillableProviderInstanceID(psNilIfEmpty(sel.InstanceID)).SetUpdatedAt(paymentBeijingNow()).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("update order with payment details: %w", err)
 	}
@@ -228,6 +234,7 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		"paymentType":    req.PaymentType,
 		"orderType":      req.OrderType,
 	})
+	order = normalizePaymentOrderTimes(order)
 	return &CreateOrderResponse{OrderID: order.ID, Amount: order.Amount, PayAmount: payAmount, FeeRate: order.FeeRate, Status: OrderStatusPending, PaymentType: req.PaymentType, PayURL: pr.PayURL, QRCode: pr.QRCode, ClientSecret: pr.ClientSecret, ExpiresAt: order.ExpiresAt, PaymentMode: sel.PaymentMode}, nil
 }
 
@@ -257,7 +264,7 @@ func (s *PaymentService) GetOrder(ctx context.Context, orderID, userID int64) (*
 	if o.UserID != userID {
 		return nil, infraerrors.Forbidden("FORBIDDEN", "no permission for this order")
 	}
-	return o, nil
+	return normalizePaymentOrderTimes(o), nil
 }
 
 func (s *PaymentService) GetOrderByID(ctx context.Context, orderID int64) (*dbent.PaymentOrder, error) {
@@ -265,7 +272,7 @@ func (s *PaymentService) GetOrderByID(ctx context.Context, orderID int64) (*dben
 	if err != nil {
 		return nil, infraerrors.NotFound("NOT_FOUND", "order not found")
 	}
-	return o, nil
+	return normalizePaymentOrderTimes(o), nil
 }
 
 func (s *PaymentService) GetUserOrders(ctx context.Context, userID int64, p OrderListParams) ([]*dbent.PaymentOrder, int, error) {
@@ -288,7 +295,7 @@ func (s *PaymentService) GetUserOrders(ctx context.Context, userID int64, p Orde
 	if err != nil {
 		return nil, 0, fmt.Errorf("query user orders: %w", err)
 	}
-	return orders, total, nil
+	return normalizePaymentOrdersTimes(orders), total, nil
 }
 
 // AdminListOrders returns a paginated list of orders. If userID > 0, filters by user.
@@ -322,5 +329,5 @@ func (s *PaymentService) AdminListOrders(ctx context.Context, userID int64, p Or
 	if err != nil {
 		return nil, 0, fmt.Errorf("query admin orders: %w", err)
 	}
-	return orders, total, nil
+	return normalizePaymentOrdersTimes(orders), total, nil
 }

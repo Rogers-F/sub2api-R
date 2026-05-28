@@ -301,9 +301,9 @@ func (s *PaygService) syncOrderByIdentifiers(ctx context.Context, sn, clientSN s
 	lockedOrder.Payway = firstNonEmpty(providerStatus.Payway, lockedOrder.Payway)
 	lockedOrder.PaywayName = firstNonEmpty(providerStatus.PaywayName, lockedOrder.PaywayName)
 	if providerStatus.PaidAt != nil {
-		lockedOrder.PaidAt = providerStatus.PaidAt
+		lockedOrder.PaidAt = paymentTimePtrInBeijing(providerStatus.PaidAt)
 	} else {
-		now := time.Now()
+		now := paymentBeijingNow()
 		lockedOrder.PaidAt = &now
 	}
 

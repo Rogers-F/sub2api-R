@@ -9,19 +9,31 @@ import (
 	"time"
 )
 
+const BeijingTimezone = "Asia/Shanghai"
+
 var (
 	// location is the global timezone location
 	location *time.Location
 	// tzName stores the timezone name for logging/debugging
 	tzName string
+	// beijingLocation is fixed for domains that must ignore configurable server timezone.
+	beijingLocation = loadBeijingLocation()
 )
+
+func loadBeijingLocation() *time.Location {
+	loc, err := time.LoadLocation(BeijingTimezone)
+	if err != nil {
+		return time.FixedZone("CST", 8*3600)
+	}
+	return loc
+}
 
 // Init initializes the global timezone setting.
 // This should be called once at application startup.
 // Example timezone values: "Asia/Shanghai", "America/New_York", "UTC"
 func Init(tz string) error {
 	if tz == "" {
-		tz = "Asia/Shanghai" // Default timezone
+		tz = BeijingTimezone // Default timezone
 	}
 
 	loc, err := time.LoadLocation(tz)
@@ -63,6 +75,30 @@ func Now() time.Time {
 		return time.Now()
 	}
 	return time.Now().In(location)
+}
+
+// BeijingLocation returns the forced Beijing timezone location.
+func BeijingLocation() *time.Location {
+	return beijingLocation
+}
+
+// BeijingNow returns the current time in Beijing regardless of configured timezone.
+func BeijingNow() time.Time {
+	return time.Now().In(beijingLocation)
+}
+
+// InBeijing converts a timestamp to Beijing timezone while preserving the instant.
+func InBeijing(t time.Time) time.Time {
+	if t.IsZero() {
+		return t
+	}
+	return t.In(beijingLocation)
+}
+
+// StartOfBeijingDay returns 00:00:00 for the timestamp's Beijing date.
+func StartOfBeijingDay(t time.Time) time.Time {
+	t = InBeijing(t)
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, beijingLocation)
 }
 
 // Location returns the configured timezone location.

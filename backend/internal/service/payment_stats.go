@@ -20,9 +20,9 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 	if days <= 0 {
 		days = 30
 	}
-	now := time.Now()
+	now := paymentBeijingNow()
 	since := now.AddDate(0, 0, -days)
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	todayStart := psStartOfDayBeijing(now)
 
 	paidStatuses := []string{OrderStatusCompleted, OrderStatusPaid, OrderStatusRecharging}
 
@@ -78,7 +78,7 @@ func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) [
 		if o.PaidAt == nil {
 			continue
 		}
-		date := o.PaidAt.Format("2006-01-02")
+		date := paymentInBeijing(*o.PaidAt).Format("2006-01-02")
 		ds, ok := dailyMap[date]
 		if !ok {
 			ds = &DailyStats{Date: date}
@@ -89,7 +89,7 @@ func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) [
 	}
 	series := make([]DailyStats, 0, days)
 	for i := 0; i < days; i++ {
-		date := since.AddDate(0, 0, i+1).Format("2006-01-02")
+		date := paymentInBeijing(since.AddDate(0, 0, i+1)).Format("2006-01-02")
 		if ds, ok := dailyMap[date]; ok {
 			ds.Amount = math.Round(ds.Amount*100) / 100
 			series = append(series, *ds)
@@ -152,12 +152,16 @@ func buildTopUsers(orders []*dbent.PaymentOrder) []TopUserStat {
 
 func (s *PaymentService) writeAuditLog(ctx context.Context, oid int64, action, op string, detail map[string]any) {
 	dj, _ := json.Marshal(detail)
-	_, err := s.entClient.PaymentAuditLog.Create().SetOrderID(strconv.FormatInt(oid, 10)).SetAction(action).SetDetail(string(dj)).SetOperator(op).Save(ctx)
+	_, err := s.entClient.PaymentAuditLog.Create().SetOrderID(strconv.FormatInt(oid, 10)).SetAction(action).SetDetail(string(dj)).SetOperator(op).SetCreatedAt(paymentBeijingNow()).Save(ctx)
 	if err != nil {
 		slog.Error("audit log failed", "orderID", oid, "action", action, "error", err)
 	}
 }
 
 func (s *PaymentService) GetOrderAuditLogs(ctx context.Context, oid int64) ([]*dbent.PaymentAuditLog, error) {
-	return s.entClient.PaymentAuditLog.Query().Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(oid, 10))).Order(paymentauditlog.ByCreatedAt()).All(ctx)
+	logs, err := s.entClient.PaymentAuditLog.Query().Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(oid, 10))).Order(paymentauditlog.ByCreatedAt()).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return normalizePaymentAuditLogsTimes(logs), nil
 }

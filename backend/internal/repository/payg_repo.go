@@ -7,6 +7,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
@@ -30,10 +31,11 @@ func (r *paygOrderRepository) sqlQueryerFromContext(ctx context.Context) sqlQuer
 }
 
 func (r *paygOrderRepository) Create(ctx context.Context, order *service.PaygOrder) error {
+	now := timezone.BeijingNow()
 	query := `
 		INSERT INTO payg_orders (
 			user_id, client_sn, sn, amount_yuan, amount_cent, credit_amount, payway, payway_name, status, created_at, updated_at
-		) VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6, $7, $8, $9, NOW(), NOW())
+		) VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6, $7, $8, $9, $10, $10)
 		RETURNING id, created_at, updated_at
 	`
 	if err := scanSingleRow(ctx, r.sqlQueryerFromContext(ctx), query, []any{
@@ -46,9 +48,11 @@ func (r *paygOrderRepository) Create(ctx context.Context, order *service.PaygOrd
 		order.Payway,
 		order.PaywayName,
 		order.Status,
+		now,
 	}, &order.ID, &order.CreatedAt, &order.UpdatedAt); err != nil {
 		return fmt.Errorf("create payg order: %w", err)
 	}
+	normalizePaygOrderTimes(order)
 	return nil
 }
 
@@ -100,13 +104,14 @@ func (r *paygOrderRepository) getByIdentifiers(ctx context.Context, sn, clientSN
 }
 
 func (r *paygOrderRepository) UpdateProviderState(ctx context.Context, order *service.PaygOrder) error {
+	now := timezone.BeijingNow()
 	query := `
 		UPDATE payg_orders
 		SET sn = NULLIF($2, ''),
 		    payway = $3,
 		    payway_name = $4,
 		    status = $5,
-		    updated_at = NOW()
+		    updated_at = $6
 		WHERE id = $1
 		RETURNING updated_at
 	`
@@ -116,9 +121,11 @@ func (r *paygOrderRepository) UpdateProviderState(ctx context.Context, order *se
 		order.Payway,
 		order.PaywayName,
 		order.Status,
+		now,
 	}, &order.UpdatedAt); err != nil {
 		return fmt.Errorf("update payg provider state: %w", err)
 	}
+	normalizePaygOrderTimes(order)
 	return nil
 }
 
@@ -135,6 +142,8 @@ func (r *paygOrderRepository) HasPendingOrders(ctx context.Context) (bool, error
 }
 
 func (r *paygOrderRepository) MarkPaid(ctx context.Context, order *service.PaygOrder) error {
+	now := timezone.BeijingNow()
+	order.PaidAt = normalizePaygTimePtr(order.PaidAt)
 	query := `
 		UPDATE payg_orders
 		SET sn = NULLIF($2, ''),
@@ -142,7 +151,7 @@ func (r *paygOrderRepository) MarkPaid(ctx context.Context, order *service.PaygO
 		    payway_name = $4,
 		    status = $5,
 		    paid_at = $6,
-		    updated_at = NOW()
+		    updated_at = $7
 		WHERE id = $1
 		RETURNING updated_at
 	`
@@ -153,10 +162,12 @@ func (r *paygOrderRepository) MarkPaid(ctx context.Context, order *service.PaygO
 		order.PaywayName,
 		service.PaygOrderStatusPaid,
 		order.PaidAt,
+		now,
 	}, &order.UpdatedAt); err != nil {
 		return fmt.Errorf("mark payg order paid: %w", err)
 	}
 	order.Status = service.PaygOrderStatusPaid
+	normalizePaygOrderTimes(order)
 	return nil
 }
 
@@ -252,6 +263,7 @@ func (r *paygOrderRepository) GetAdminSummary(ctx context.Context, userLimit, or
 			return nil, err
 		}
 		item.PaidAt = paidAt
+		normalizePaygOrderTimes(&item.PaygOrder)
 		summary.Orders = append(summary.Orders, item)
 	}
 	if err := orderRows.Err(); err != nil {
@@ -295,6 +307,7 @@ func (r *paygOrderRepository) getOne(ctx context.Context, query string, args []a
 		return nil, err
 	}
 	order.PaidAt = paidAt
+	normalizePaygOrderTimes(order)
 	return order, rows.Err()
 }
 
@@ -327,6 +340,7 @@ func (r *paygOrderRepository) listOrders(ctx context.Context, query string, args
 			return nil, err
 		}
 		order.PaidAt = paidAt
+		normalizePaygOrderTimes(order)
 		orders = append(orders, order)
 	}
 	if err := rows.Err(); err != nil {
@@ -346,7 +360,7 @@ func scanPaygOrderColumns(scanner paygRowScanner, dest ...any) (*time.Time, erro
 		return nil, fmt.Errorf("scan payg order: %w", err)
 	}
 	if paidAt.Valid {
-		paidTime := paidAt.Time
+		paidTime := timezone.InBeijing(paidAt.Time)
 		return &paidTime, nil
 	}
 	return nil, nil
@@ -373,8 +387,25 @@ func scanPaygAdminOrderColumns(scanner paygRowScanner, item *service.PaygAdminOr
 		return nil, fmt.Errorf("scan payg admin order: %w", err)
 	}
 	if paidAt.Valid {
-		paidTime := paidAt.Time
+		paidTime := timezone.InBeijing(paidAt.Time)
 		return &paidTime, nil
 	}
 	return nil, nil
+}
+
+func normalizePaygOrderTimes(order *service.PaygOrder) {
+	if order == nil {
+		return
+	}
+	order.CreatedAt = timezone.InBeijing(order.CreatedAt)
+	order.UpdatedAt = timezone.InBeijing(order.UpdatedAt)
+	order.PaidAt = normalizePaygTimePtr(order.PaidAt)
+}
+
+func normalizePaygTimePtr(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	converted := timezone.InBeijing(*t)
+	return &converted
 }

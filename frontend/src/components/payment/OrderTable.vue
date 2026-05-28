@@ -45,6 +45,7 @@ import type { PaymentOrder } from '@/types/payment'
 import type { Column } from '@/components/common/types'
 import DataTable from '@/components/common/DataTable.vue'
 import OrderStatusBadge from '@/components/payment/OrderStatusBadge.vue'
+import { formatOrderDateTime } from '@/components/payment/orderUtils'
 
 const { t } = useI18n()
 
@@ -54,7 +55,7 @@ const props = defineProps<{
   showUser?: boolean
 }>()
 
-function formatDate(dateStr: string) { return new Date(dateStr).toLocaleString() }
+function formatDate(dateStr: string) { return formatOrderDateTime(dateStr) }
 
 const columns = computed((): Column[] => {
   const cols: Column[] = [
