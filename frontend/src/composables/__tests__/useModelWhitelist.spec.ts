@@ -17,6 +17,12 @@ describe('useModelWhitelist', () => {
     expect(models).toContain('gpt-5.4-2026-03-05')
   })
 
+  it('anthropic 模型列表包含 Claude Opus 4.8', () => {
+    const models = getModelsByPlatform('anthropic')
+
+    expect(models).toContain('claude-opus-4-8')
+  })
+
   it('antigravity 模型列表包含图片模型兼容项', () => {
     const models = getModelsByPlatform('antigravity')
 
