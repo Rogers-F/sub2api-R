@@ -540,7 +540,12 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 	modelLower := strings.ToLower(strings.TrimSpace(modelName))
 	lookupCandidates := s.buildModelLookupCandidates(modelLower)
 
-	// 1. 精确匹配
+	// 1. 业务别名强制映射。放在精确匹配前，避免远端价格表同步出同名条目后改变计费。
+	if pricing := s.matchForcedPricingAlias(lookupCandidates); pricing != nil {
+		return pricing
+	}
+
+	// 2. 精确匹配
 	for _, candidate := range lookupCandidates {
 		if candidate == "" {
 			continue
@@ -550,7 +555,7 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 		}
 	}
 
-	// 2. 处理常见的模型名称变体
+	// 3. 处理常见的模型名称变体
 	// claude-opus-4-5-20251101 -> claude-opus-4.5-20251101
 	for _, candidate := range lookupCandidates {
 		normalized := strings.ReplaceAll(candidate, "-4-5-", "-4.5-")
@@ -559,7 +564,7 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 		}
 	}
 
-	// 3. 尝试模糊匹配（去掉版本号后缀）
+	// 4. 尝试模糊匹配（去掉版本号后缀）
 	// claude-opus-4-5-20251101 -> claude-opus-4.5
 	baseName := s.extractBaseName(lookupCandidates[0])
 	for key, pricing := range s.pricingData {
@@ -569,16 +574,31 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 		}
 	}
 
-	// 4. 基于模型系列匹配（Claude）
+	// 5. 基于模型系列匹配（Claude）
 	if pricing := s.matchByModelFamily(lookupCandidates[0]); pricing != nil {
 		return pricing
 	}
 
-	// 5. OpenAI 模型回退策略
+	// 6. OpenAI 模型回退策略
 	if strings.HasPrefix(lookupCandidates[0], "gpt-") {
 		return s.matchOpenAIModel(lookupCandidates[0])
 	}
 
+	return nil
+}
+
+func (s *PricingService) matchForcedPricingAlias(candidates []string) *LiteLLMModelPricing {
+	for _, candidate := range candidates {
+		switch candidate {
+		case "claude-jupiter-v1-p":
+			for _, alias := range []string{"claude-opus-4-7", "claude-opus-4.7"} {
+				if pricing, ok := s.pricingData[alias]; ok {
+					logger.LegacyPrintf("service.pricing", "[Pricing] Forced alias matched %s -> %s", candidate, alias)
+					return pricing
+				}
+			}
+		}
+	}
 	return nil
 }
 

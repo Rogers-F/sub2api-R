@@ -179,6 +179,20 @@ func TestGetModelPricing_ClaudeOpus47PrefersExactFamilyOverGenericOpus(t *testin
 	}
 }
 
+func TestGetModelPricing_ClaudeJupiterV1PUsesOpus47Pricing(t *testing.T) {
+	opus47Pricing := &LiteLLMModelPricing{InputCostPerToken: 5e-6, OutputCostPerToken: 25e-6}
+	jupiterPricing := &LiteLLMModelPricing{InputCostPerToken: 99e-6, OutputCostPerToken: 99e-6}
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{
+			"claude-opus-4-7":     opus47Pricing,
+			"claude-jupiter-v1-p": jupiterPricing,
+		},
+	}
+
+	got := svc.GetModelPricing("claude-jupiter-v1-p")
+	require.Same(t, opus47Pricing, got)
+}
+
 func TestParsePricingData_PreservesPriorityAndServiceTierFields(t *testing.T) {
 	raw := map[string]any{
 		"gpt-5.4": map[string]any{
