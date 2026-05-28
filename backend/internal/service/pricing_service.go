@@ -590,7 +590,7 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 func (s *PricingService) matchForcedPricingAlias(candidates []string) *LiteLLMModelPricing {
 	for _, candidate := range candidates {
 		switch candidate {
-		case "claude-jupiter-v1-p":
+		case "claude-jupiter-v1-p", "claude-opus-4-8", "claude-opus-4.8":
 			for _, alias := range []string{"claude-opus-4-7", "claude-opus-4.7"} {
 				if pricing, ok := s.pricingData[alias]; ok {
 					logger.LegacyPrintf("service.pricing", "[Pricing] Forced alias matched %s -> %s", candidate, alias)
@@ -707,12 +707,14 @@ func (s *PricingService) extractBaseName(model string) string {
 // matchByModelFamily 基于模型系列匹配
 func (s *PricingService) matchByModelFamily(model string) *LiteLLMModelPricing {
 	type familyRule struct {
-		name     string
-		patterns []string
+		name             string
+		patterns         []string
+		fallbackPatterns []string
 	}
 
 	// Claude模型系列匹配规则，顺序必须固定：先具体，后泛化。
 	familyRules := []familyRule{
+		{name: "opus-4.8", patterns: []string{"claude-opus-4.8", "claude-opus-4-8"}, fallbackPatterns: []string{"claude-opus-4.7", "claude-opus-4-7"}},
 		{name: "opus-4.7", patterns: []string{"claude-opus-4.7", "claude-opus-4-7"}},
 		{name: "opus-4.6", patterns: []string{"claude-opus-4.6", "claude-opus-4-6"}},
 		{name: "opus-4.5", patterns: []string{"claude-opus-4.5", "claude-opus-4-5"}},
@@ -744,7 +746,14 @@ func (s *PricingService) matchByModelFamily(model string) *LiteLLMModelPricing {
 	if matchedRule == nil {
 		// 简单的系列匹配
 		if strings.Contains(model, "opus") {
-			if strings.Contains(model, "4.7") || strings.Contains(model, "4-7") {
+			if strings.Contains(model, "4.8") || strings.Contains(model, "4-8") {
+				for i := range familyRules {
+					if familyRules[i].name == "opus-4.8" {
+						matchedRule = &familyRules[i]
+						break
+					}
+				}
+			} else if strings.Contains(model, "4.7") || strings.Contains(model, "4-7") {
 				for i := range familyRules {
 					if familyRules[i].name == "opus-4.7" {
 						matchedRule = &familyRules[i]
@@ -814,7 +823,7 @@ func (s *PricingService) matchByModelFamily(model string) *LiteLLMModelPricing {
 
 	var candidates []string
 	seen := make(map[string]struct{})
-	for _, pattern := range matchedRule.patterns {
+	for _, pattern := range append(matchedRule.patterns, matchedRule.fallbackPatterns...) {
 		for _, candidate := range append([]string{pattern}, claudeModelVersionVariants(pattern)...) {
 			if _, ok := seen[candidate]; ok {
 				continue

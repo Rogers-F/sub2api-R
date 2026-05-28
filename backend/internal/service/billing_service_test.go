@@ -131,6 +131,16 @@ func TestGetModelPricing_ClaudeOpus47FallbackUsesModernOpusPricing(t *testing.T)
 	require.InDelta(t, 25e-6, pricing.OutputPricePerToken, 1e-12)
 }
 
+func TestGetModelPricing_ClaudeOpus48FallbackUsesOpus47Pricing(t *testing.T) {
+	svc := newTestBillingService()
+
+	pricing, err := svc.GetModelPricing("claude-opus-4-8")
+	require.NoError(t, err)
+	require.NotNil(t, pricing)
+	require.InDelta(t, 5e-6, pricing.InputPricePerToken, 1e-12)
+	require.InDelta(t, 25e-6, pricing.OutputPricePerToken, 1e-12)
+}
+
 func TestGetModelPricing_CaseInsensitive(t *testing.T) {
 	svc := newTestBillingService()
 
@@ -286,6 +296,7 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 		{name: "empty model", model: "   ", expectNilPricing: true},
 		{name: "claude opus 4.6", model: "claude-opus-4.6-20260201", expectedInput: 5e-6},
 		{name: "claude opus 4.7 xhigh", model: "claude-opus-4-7-xhigh", expectedInput: 5e-6},
+		{name: "claude opus 4.8 xhigh", model: "claude-opus-4-8-xhigh", expectedInput: 5e-6},
 		{name: "claude opus 4.5 alt separator", model: "claude-opus-4-5-20260101", expectedInput: 5e-6},
 		{name: "claude generic model fallback sonnet", model: "claude-foo-bar", expectedInput: 3e-6},
 		{name: "gemini explicit fallback", model: "gemini-3-1-pro", expectedInput: 2e-6},

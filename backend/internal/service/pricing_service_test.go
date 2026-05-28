@@ -179,6 +179,38 @@ func TestGetModelPricing_ClaudeOpus47PrefersExactFamilyOverGenericOpus(t *testin
 	}
 }
 
+func TestGetModelPricing_ClaudeOpus48UsesOpus47Pricing(t *testing.T) {
+	opus47Pricing := &LiteLLMModelPricing{InputCostPerToken: 5e-6, OutputCostPerToken: 25e-6}
+	genericOpusPricing := &LiteLLMModelPricing{InputCostPerToken: 15e-6, OutputCostPerToken: 75e-6}
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{
+			"claude-opus-4-7": opus47Pricing,
+			"claude-opus-4":   genericOpusPricing,
+		},
+	}
+
+	for _, model := range []string{"claude-opus-4-8", "claude-opus-4-8-xhigh"} {
+		got := svc.GetModelPricing(model)
+		require.Same(t, opus47Pricing, got)
+	}
+}
+
+func TestGetModelPricing_ClaudeOpus47FamilyDoesNotMatchOpus48Fallback(t *testing.T) {
+	opus47Pricing := &LiteLLMModelPricing{InputCostPerToken: 5e-6, OutputCostPerToken: 25e-6}
+	opus48Pricing := &LiteLLMModelPricing{InputCostPerToken: 9e-6, OutputCostPerToken: 45e-6}
+	genericOpusPricing := &LiteLLMModelPricing{InputCostPerToken: 15e-6, OutputCostPerToken: 75e-6}
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{
+			"claude-opus-4-7": opus47Pricing,
+			"claude-opus-4-8": opus48Pricing,
+			"claude-opus-4":   genericOpusPricing,
+		},
+	}
+
+	got := svc.GetModelPricing("claude-opus-4-7-xhigh")
+	require.Same(t, opus47Pricing, got)
+}
+
 func TestGetModelPricing_ClaudeJupiterV1PUsesOpus47Pricing(t *testing.T) {
 	opus47Pricing := &LiteLLMModelPricing{InputCostPerToken: 5e-6, OutputCostPerToken: 25e-6}
 	jupiterPricing := &LiteLLMModelPricing{InputCostPerToken: 99e-6, OutputCostPerToken: 99e-6}
