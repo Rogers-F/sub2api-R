@@ -17,6 +17,15 @@ func TestValidateMigrationExecutionMode(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("事务迁移注释中的CONCURRENTLY不会被拒绝", func(t *testing.T) {
+		nonTx, err := validateMigrationExecutionMode("001_create_table.sql", `
+-- This migration intentionally avoids CONCURRENTLY.
+CREATE TABLE IF NOT EXISTS t (id BIGSERIAL PRIMARY KEY);
+`)
+		require.False(t, nonTx)
+		require.NoError(t, err)
+	})
+
 	t.Run("notx迁移要求CREATE使用IF NOT EXISTS", func(t *testing.T) {
 		nonTx, err := validateMigrationExecutionMode("001_add_idx_notx.sql", "CREATE INDEX CONCURRENTLY idx_a ON t(a);")
 		require.False(t, nonTx)
