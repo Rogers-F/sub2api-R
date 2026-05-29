@@ -10,9 +10,12 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/conversation"
+	"github.com/Wei-Shaw/sub2api/ent/conversationmessage"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
+	"github.com/Wei-Shaw/sub2api/ent/paygorder"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
@@ -304,6 +307,77 @@ func init() {
 	announcementreadDescCreatedAt := announcementreadFields[3].Descriptor()
 	// announcementread.DefaultCreatedAt holds the default value on creation for the created_at field.
 	announcementread.DefaultCreatedAt = announcementreadDescCreatedAt.Default.(func() time.Time)
+	conversationMixin := schema.Conversation{}.Mixin()
+	conversationMixinFields0 := conversationMixin[0].Fields()
+	_ = conversationMixinFields0
+	conversationFields := schema.Conversation{}.Fields()
+	_ = conversationFields
+	// conversationDescCreatedAt is the schema descriptor for created_at field.
+	conversationDescCreatedAt := conversationMixinFields0[0].Descriptor()
+	// conversation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	conversation.DefaultCreatedAt = conversationDescCreatedAt.Default.(func() time.Time)
+	// conversationDescUpdatedAt is the schema descriptor for updated_at field.
+	conversationDescUpdatedAt := conversationMixinFields0[1].Descriptor()
+	// conversation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	conversation.DefaultUpdatedAt = conversationDescUpdatedAt.Default.(func() time.Time)
+	// conversation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	conversation.UpdateDefaultUpdatedAt = conversationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// conversationDescClientConversationID is the schema descriptor for client_conversation_id field.
+	conversationDescClientConversationID := conversationFields[1].Descriptor()
+	// conversation.ClientConversationIDValidator is a validator for the "client_conversation_id" field. It is called by the builders before save.
+	conversation.ClientConversationIDValidator = conversationDescClientConversationID.Validators[0].(func(string) error)
+	// conversationDescTitle is the schema descriptor for title field.
+	conversationDescTitle := conversationFields[2].Descriptor()
+	// conversation.DefaultTitle holds the default value on creation for the title field.
+	conversation.DefaultTitle = conversationDescTitle.Default.(string)
+	// conversation.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	conversation.TitleValidator = conversationDescTitle.Validators[0].(func(string) error)
+	// conversationDescModel is the schema descriptor for model field.
+	conversationDescModel := conversationFields[3].Descriptor()
+	// conversation.DefaultModel holds the default value on creation for the model field.
+	conversation.DefaultModel = conversationDescModel.Default.(string)
+	// conversation.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	conversation.ModelValidator = conversationDescModel.Validators[0].(func(string) error)
+	// conversationDescStatus is the schema descriptor for status field.
+	conversationDescStatus := conversationFields[4].Descriptor()
+	// conversation.DefaultStatus holds the default value on creation for the status field.
+	conversation.DefaultStatus = conversationDescStatus.Default.(string)
+	// conversation.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	conversation.StatusValidator = conversationDescStatus.Validators[0].(func(string) error)
+	conversationmessageFields := schema.ConversationMessage{}.Fields()
+	_ = conversationmessageFields
+	// conversationmessageDescRole is the schema descriptor for role field.
+	conversationmessageDescRole := conversationmessageFields[2].Descriptor()
+	// conversationmessage.RoleValidator is a validator for the "role" field. It is called by the builders before save.
+	conversationmessage.RoleValidator = conversationmessageDescRole.Validators[0].(func(string) error)
+	// conversationmessageDescContent is the schema descriptor for content field.
+	conversationmessageDescContent := conversationmessageFields[3].Descriptor()
+	// conversationmessage.DefaultContent holds the default value on creation for the content field.
+	conversationmessage.DefaultContent = conversationmessageDescContent.Default.(string)
+	// conversationmessageDescModel is the schema descriptor for model field.
+	conversationmessageDescModel := conversationmessageFields[4].Descriptor()
+	// conversationmessage.DefaultModel holds the default value on creation for the model field.
+	conversationmessage.DefaultModel = conversationmessageDescModel.Default.(string)
+	// conversationmessage.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	conversationmessage.ModelValidator = conversationmessageDescModel.Validators[0].(func(string) error)
+	// conversationmessageDescStatus is the schema descriptor for status field.
+	conversationmessageDescStatus := conversationmessageFields[5].Descriptor()
+	// conversationmessage.DefaultStatus holds the default value on creation for the status field.
+	conversationmessage.DefaultStatus = conversationmessageDescStatus.Default.(string)
+	// conversationmessage.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	conversationmessage.StatusValidator = conversationmessageDescStatus.Validators[0].(func(string) error)
+	// conversationmessageDescClientMessageID is the schema descriptor for client_message_id field.
+	conversationmessageDescClientMessageID := conversationmessageFields[8].Descriptor()
+	// conversationmessage.ClientMessageIDValidator is a validator for the "client_message_id" field. It is called by the builders before save.
+	conversationmessage.ClientMessageIDValidator = conversationmessageDescClientMessageID.Validators[0].(func(string) error)
+	// conversationmessageDescGatewayRequestID is the schema descriptor for gateway_request_id field.
+	conversationmessageDescGatewayRequestID := conversationmessageFields[9].Descriptor()
+	// conversationmessage.GatewayRequestIDValidator is a validator for the "gateway_request_id" field. It is called by the builders before save.
+	conversationmessage.GatewayRequestIDValidator = conversationmessageDescGatewayRequestID.Validators[0].(func(string) error)
+	// conversationmessageDescCreatedAt is the schema descriptor for created_at field.
+	conversationmessageDescCreatedAt := conversationmessageFields[10].Descriptor()
+	// conversationmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	conversationmessage.DefaultCreatedAt = conversationmessageDescCreatedAt.Default.(func() time.Time)
 	errorpassthroughruleMixin := schema.ErrorPassthroughRule{}.Mixin()
 	errorpassthroughruleMixinFields0 := errorpassthroughruleMixin[0].Fields()
 	_ = errorpassthroughruleMixinFields0
@@ -499,6 +573,47 @@ func init() {
 	idempotencyrecordDescErrorReason := idempotencyrecordFields[6].Descriptor()
 	// idempotencyrecord.ErrorReasonValidator is a validator for the "error_reason" field. It is called by the builders before save.
 	idempotencyrecord.ErrorReasonValidator = idempotencyrecordDescErrorReason.Validators[0].(func(string) error)
+	paygorderMixin := schema.PaygOrder{}.Mixin()
+	paygorderMixinFields0 := paygorderMixin[0].Fields()
+	_ = paygorderMixinFields0
+	paygorderFields := schema.PaygOrder{}.Fields()
+	_ = paygorderFields
+	// paygorderDescCreatedAt is the schema descriptor for created_at field.
+	paygorderDescCreatedAt := paygorderMixinFields0[0].Descriptor()
+	// paygorder.DefaultCreatedAt holds the default value on creation for the created_at field.
+	paygorder.DefaultCreatedAt = paygorderDescCreatedAt.Default.(func() time.Time)
+	// paygorderDescUpdatedAt is the schema descriptor for updated_at field.
+	paygorderDescUpdatedAt := paygorderMixinFields0[1].Descriptor()
+	// paygorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	paygorder.DefaultUpdatedAt = paygorderDescUpdatedAt.Default.(func() time.Time)
+	// paygorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	paygorder.UpdateDefaultUpdatedAt = paygorderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// paygorderDescClientSn is the schema descriptor for client_sn field.
+	paygorderDescClientSn := paygorderFields[1].Descriptor()
+	// paygorder.ClientSnValidator is a validator for the "client_sn" field. It is called by the builders before save.
+	paygorder.ClientSnValidator = paygorderDescClientSn.Validators[0].(func(string) error)
+	// paygorderDescSn is the schema descriptor for sn field.
+	paygorderDescSn := paygorderFields[2].Descriptor()
+	// paygorder.SnValidator is a validator for the "sn" field. It is called by the builders before save.
+	paygorder.SnValidator = paygorderDescSn.Validators[0].(func(string) error)
+	// paygorderDescPayway is the schema descriptor for payway field.
+	paygorderDescPayway := paygorderFields[6].Descriptor()
+	// paygorder.DefaultPayway holds the default value on creation for the payway field.
+	paygorder.DefaultPayway = paygorderDescPayway.Default.(string)
+	// paygorder.PaywayValidator is a validator for the "payway" field. It is called by the builders before save.
+	paygorder.PaywayValidator = paygorderDescPayway.Validators[0].(func(string) error)
+	// paygorderDescPaywayName is the schema descriptor for payway_name field.
+	paygorderDescPaywayName := paygorderFields[7].Descriptor()
+	// paygorder.DefaultPaywayName holds the default value on creation for the payway_name field.
+	paygorder.DefaultPaywayName = paygorderDescPaywayName.Default.(string)
+	// paygorder.PaywayNameValidator is a validator for the "payway_name" field. It is called by the builders before save.
+	paygorder.PaywayNameValidator = paygorderDescPaywayName.Validators[0].(func(string) error)
+	// paygorderDescStatus is the schema descriptor for status field.
+	paygorderDescStatus := paygorderFields[8].Descriptor()
+	// paygorder.DefaultStatus holds the default value on creation for the status field.
+	paygorder.DefaultStatus = paygorderDescStatus.Default.(string)
+	// paygorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	paygorder.StatusValidator = paygorderDescStatus.Validators[0].(func(string) error)
 	promocodeFields := schema.PromoCode{}.Fields()
 	_ = promocodeFields
 	// promocodeDescCode is the schema descriptor for code field.

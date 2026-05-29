@@ -13,7 +13,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/conversation"
+	"github.com/Wei-Shaw/sub2api/ent/conversationmessage"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/paygorder"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
@@ -524,6 +527,51 @@ func (_u *UserUpdate) AddReferralRewardsReceived(v ...*ReferralReward) *UserUpda
 	return _u.AddReferralRewardsReceivedIDs(ids...)
 }
 
+// AddPaygOrderIDs adds the "payg_orders" edge to the PaygOrder entity by IDs.
+func (_u *UserUpdate) AddPaygOrderIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddPaygOrderIDs(ids...)
+	return _u
+}
+
+// AddPaygOrders adds the "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdate) AddPaygOrders(v ...*PaygOrder) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPaygOrderIDs(ids...)
+}
+
+// AddConversationIDs adds the "conversations" edge to the Conversation entity by IDs.
+func (_u *UserUpdate) AddConversationIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddConversationIDs(ids...)
+	return _u
+}
+
+// AddConversations adds the "conversations" edges to the Conversation entity.
+func (_u *UserUpdate) AddConversations(v ...*Conversation) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConversationIDs(ids...)
+}
+
+// AddConversationMessageIDs adds the "conversation_messages" edge to the ConversationMessage entity by IDs.
+func (_u *UserUpdate) AddConversationMessageIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddConversationMessageIDs(ids...)
+	return _u
+}
+
+// AddConversationMessages adds the "conversation_messages" edges to the ConversationMessage entity.
+func (_u *UserUpdate) AddConversationMessages(v ...*ConversationMessage) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConversationMessageIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -758,6 +806,69 @@ func (_u *UserUpdate) RemoveReferralRewardsReceived(v ...*ReferralReward) *UserU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReferralRewardsReceivedIDs(ids...)
+}
+
+// ClearPaygOrders clears all "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdate) ClearPaygOrders() *UserUpdate {
+	_u.mutation.ClearPaygOrders()
+	return _u
+}
+
+// RemovePaygOrderIDs removes the "payg_orders" edge to PaygOrder entities by IDs.
+func (_u *UserUpdate) RemovePaygOrderIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemovePaygOrderIDs(ids...)
+	return _u
+}
+
+// RemovePaygOrders removes "payg_orders" edges to PaygOrder entities.
+func (_u *UserUpdate) RemovePaygOrders(v ...*PaygOrder) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePaygOrderIDs(ids...)
+}
+
+// ClearConversations clears all "conversations" edges to the Conversation entity.
+func (_u *UserUpdate) ClearConversations() *UserUpdate {
+	_u.mutation.ClearConversations()
+	return _u
+}
+
+// RemoveConversationIDs removes the "conversations" edge to Conversation entities by IDs.
+func (_u *UserUpdate) RemoveConversationIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveConversationIDs(ids...)
+	return _u
+}
+
+// RemoveConversations removes "conversations" edges to Conversation entities.
+func (_u *UserUpdate) RemoveConversations(v ...*Conversation) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConversationIDs(ids...)
+}
+
+// ClearConversationMessages clears all "conversation_messages" edges to the ConversationMessage entity.
+func (_u *UserUpdate) ClearConversationMessages() *UserUpdate {
+	_u.mutation.ClearConversationMessages()
+	return _u
+}
+
+// RemoveConversationMessageIDs removes the "conversation_messages" edge to ConversationMessage entities by IDs.
+func (_u *UserUpdate) RemoveConversationMessageIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveConversationMessageIDs(ids...)
+	return _u
+}
+
+// RemoveConversationMessages removes "conversation_messages" edges to ConversationMessage entities.
+func (_u *UserUpdate) RemoveConversationMessages(v ...*ConversationMessage) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConversationMessageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1446,6 +1557,141 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPaygOrdersIDs(); len(nodes) > 0 && !_u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PaygOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConversationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationsTable,
+			Columns: []string{user.ConversationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConversationsIDs(); len(nodes) > 0 && !_u.mutation.ConversationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationsTable,
+			Columns: []string{user.ConversationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConversationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationsTable,
+			Columns: []string{user.ConversationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConversationMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationMessagesTable,
+			Columns: []string{user.ConversationMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversationmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConversationMessagesIDs(); len(nodes) > 0 && !_u.mutation.ConversationMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationMessagesTable,
+			Columns: []string{user.ConversationMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversationmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConversationMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationMessagesTable,
+			Columns: []string{user.ConversationMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversationmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -1953,6 +2199,51 @@ func (_u *UserUpdateOne) AddReferralRewardsReceived(v ...*ReferralReward) *UserU
 	return _u.AddReferralRewardsReceivedIDs(ids...)
 }
 
+// AddPaygOrderIDs adds the "payg_orders" edge to the PaygOrder entity by IDs.
+func (_u *UserUpdateOne) AddPaygOrderIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddPaygOrderIDs(ids...)
+	return _u
+}
+
+// AddPaygOrders adds the "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdateOne) AddPaygOrders(v ...*PaygOrder) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPaygOrderIDs(ids...)
+}
+
+// AddConversationIDs adds the "conversations" edge to the Conversation entity by IDs.
+func (_u *UserUpdateOne) AddConversationIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddConversationIDs(ids...)
+	return _u
+}
+
+// AddConversations adds the "conversations" edges to the Conversation entity.
+func (_u *UserUpdateOne) AddConversations(v ...*Conversation) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConversationIDs(ids...)
+}
+
+// AddConversationMessageIDs adds the "conversation_messages" edge to the ConversationMessage entity by IDs.
+func (_u *UserUpdateOne) AddConversationMessageIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddConversationMessageIDs(ids...)
+	return _u
+}
+
+// AddConversationMessages adds the "conversation_messages" edges to the ConversationMessage entity.
+func (_u *UserUpdateOne) AddConversationMessages(v ...*ConversationMessage) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConversationMessageIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -2187,6 +2478,69 @@ func (_u *UserUpdateOne) RemoveReferralRewardsReceived(v ...*ReferralReward) *Us
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReferralRewardsReceivedIDs(ids...)
+}
+
+// ClearPaygOrders clears all "payg_orders" edges to the PaygOrder entity.
+func (_u *UserUpdateOne) ClearPaygOrders() *UserUpdateOne {
+	_u.mutation.ClearPaygOrders()
+	return _u
+}
+
+// RemovePaygOrderIDs removes the "payg_orders" edge to PaygOrder entities by IDs.
+func (_u *UserUpdateOne) RemovePaygOrderIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemovePaygOrderIDs(ids...)
+	return _u
+}
+
+// RemovePaygOrders removes "payg_orders" edges to PaygOrder entities.
+func (_u *UserUpdateOne) RemovePaygOrders(v ...*PaygOrder) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePaygOrderIDs(ids...)
+}
+
+// ClearConversations clears all "conversations" edges to the Conversation entity.
+func (_u *UserUpdateOne) ClearConversations() *UserUpdateOne {
+	_u.mutation.ClearConversations()
+	return _u
+}
+
+// RemoveConversationIDs removes the "conversations" edge to Conversation entities by IDs.
+func (_u *UserUpdateOne) RemoveConversationIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveConversationIDs(ids...)
+	return _u
+}
+
+// RemoveConversations removes "conversations" edges to Conversation entities.
+func (_u *UserUpdateOne) RemoveConversations(v ...*Conversation) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConversationIDs(ids...)
+}
+
+// ClearConversationMessages clears all "conversation_messages" edges to the ConversationMessage entity.
+func (_u *UserUpdateOne) ClearConversationMessages() *UserUpdateOne {
+	_u.mutation.ClearConversationMessages()
+	return _u
+}
+
+// RemoveConversationMessageIDs removes the "conversation_messages" edge to ConversationMessage entities by IDs.
+func (_u *UserUpdateOne) RemoveConversationMessageIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveConversationMessageIDs(ids...)
+	return _u
+}
+
+// RemoveConversationMessages removes "conversation_messages" edges to ConversationMessage entities.
+func (_u *UserUpdateOne) RemoveConversationMessages(v ...*ConversationMessage) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConversationMessageIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -2898,6 +3252,141 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(referralreward.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPaygOrdersIDs(); len(nodes) > 0 && !_u.mutation.PaygOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PaygOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PaygOrdersTable,
+			Columns: []string{user.PaygOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(paygorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConversationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationsTable,
+			Columns: []string{user.ConversationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConversationsIDs(); len(nodes) > 0 && !_u.mutation.ConversationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationsTable,
+			Columns: []string{user.ConversationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConversationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationsTable,
+			Columns: []string{user.ConversationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConversationMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationMessagesTable,
+			Columns: []string{user.ConversationMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversationmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConversationMessagesIDs(); len(nodes) > 0 && !_u.mutation.ConversationMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationMessagesTable,
+			Columns: []string{user.ConversationMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversationmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConversationMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConversationMessagesTable,
+			Columns: []string{user.ConversationMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conversationmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -178,6 +178,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('@/views/user/ChatView.vue'),
+    meta: {
+      // Available to ALL authenticated users (including admins); not admin-only.
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Chat',
+      titleKey: 'chat.title'
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),
@@ -482,8 +494,9 @@ router.beforeEach((to, _from, next) => {
         next()
         return
       }
-      // Admin users go to admin dashboard, regular users go to user dashboard
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      // Everyone (admin and regular users) lands on the chat page after login.
+      // Direct navigation to the dashboard/admin areas still works normally.
+      next('/chat')
       return
     }
     // Backend mode: block public pages for unauthenticated users (except login, key-usage, setup)

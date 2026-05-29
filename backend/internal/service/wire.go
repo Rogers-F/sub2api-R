@@ -426,6 +426,7 @@ var ProviderSet = wire.NewSet(
 	NewBillingService,
 	NewBillingCacheService,
 	NewAnnouncementService,
+	NewConversationService,
 	NewAdminService,
 	NewGatewayService,
 	ProvideSoraMediaStorage,

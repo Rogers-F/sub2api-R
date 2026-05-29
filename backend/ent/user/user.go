@@ -75,6 +75,12 @@ const (
 	EdgeReferralRewardsGiven = "referral_rewards_given"
 	// EdgeReferralRewardsReceived holds the string denoting the referral_rewards_received edge name in mutations.
 	EdgeReferralRewardsReceived = "referral_rewards_received"
+	// EdgePaygOrders holds the string denoting the payg_orders edge name in mutations.
+	EdgePaygOrders = "payg_orders"
+	// EdgeConversations holds the string denoting the conversations edge name in mutations.
+	EdgeConversations = "conversations"
+	// EdgeConversationMessages holds the string denoting the conversation_messages edge name in mutations.
+	EdgeConversationMessages = "conversation_messages"
 	// EdgeUserAllowedGroups holds the string denoting the user_allowed_groups edge name in mutations.
 	EdgeUserAllowedGroups = "user_allowed_groups"
 	// Table holds the table name of the user in the database.
@@ -154,6 +160,27 @@ const (
 	ReferralRewardsReceivedInverseTable = "referral_rewards"
 	// ReferralRewardsReceivedColumn is the table column denoting the referral_rewards_received relation/edge.
 	ReferralRewardsReceivedColumn = "referee_id"
+	// PaygOrdersTable is the table that holds the payg_orders relation/edge.
+	PaygOrdersTable = "payg_orders"
+	// PaygOrdersInverseTable is the table name for the PaygOrder entity.
+	// It exists in this package in order to avoid circular dependency with the "paygorder" package.
+	PaygOrdersInverseTable = "payg_orders"
+	// PaygOrdersColumn is the table column denoting the payg_orders relation/edge.
+	PaygOrdersColumn = "user_id"
+	// ConversationsTable is the table that holds the conversations relation/edge.
+	ConversationsTable = "conversations"
+	// ConversationsInverseTable is the table name for the Conversation entity.
+	// It exists in this package in order to avoid circular dependency with the "conversation" package.
+	ConversationsInverseTable = "conversations"
+	// ConversationsColumn is the table column denoting the conversations relation/edge.
+	ConversationsColumn = "user_id"
+	// ConversationMessagesTable is the table that holds the conversation_messages relation/edge.
+	ConversationMessagesTable = "conversation_messages"
+	// ConversationMessagesInverseTable is the table name for the ConversationMessage entity.
+	// It exists in this package in order to avoid circular dependency with the "conversationmessage" package.
+	ConversationMessagesInverseTable = "conversation_messages"
+	// ConversationMessagesColumn is the table column denoting the conversation_messages relation/edge.
+	ConversationMessagesColumn = "user_id"
 	// UserAllowedGroupsTable is the table that holds the user_allowed_groups relation/edge.
 	UserAllowedGroupsTable = "user_allowed_groups"
 	// UserAllowedGroupsInverseTable is the table name for the UserAllowedGroup entity.
@@ -506,6 +533,48 @@ func ByReferralRewardsReceived(term sql.OrderTerm, terms ...sql.OrderTerm) Order
 	}
 }
 
+// ByPaygOrdersCount orders the results by payg_orders count.
+func ByPaygOrdersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPaygOrdersStep(), opts...)
+	}
+}
+
+// ByPaygOrders orders the results by payg_orders terms.
+func ByPaygOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPaygOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByConversationsCount orders the results by conversations count.
+func ByConversationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConversationsStep(), opts...)
+	}
+}
+
+// ByConversations orders the results by conversations terms.
+func ByConversations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConversationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByConversationMessagesCount orders the results by conversation_messages count.
+func ByConversationMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConversationMessagesStep(), opts...)
+	}
+}
+
+// ByConversationMessages orders the results by conversation_messages terms.
+func ByConversationMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConversationMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserAllowedGroupsCount orders the results by user_allowed_groups count.
 func ByUserAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -594,6 +663,27 @@ func newReferralRewardsReceivedStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReferralRewardsReceivedInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReferralRewardsReceivedTable, ReferralRewardsReceivedColumn),
+	)
+}
+func newPaygOrdersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PaygOrdersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PaygOrdersTable, PaygOrdersColumn),
+	)
+}
+func newConversationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConversationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConversationsTable, ConversationsColumn),
+	)
+}
+func newConversationMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConversationMessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConversationMessagesTable, ConversationMessagesColumn),
 	)
 }
 func newUserAllowedGroupsStep() *sqlgraph.Step {

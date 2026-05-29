@@ -50,6 +50,7 @@ type Handlers struct {
 	Payg          *PaygHandler
 	Setting       *SettingHandler
 	Totp          *TotpHandler
+	Conversation  *ConversationHandler
 }
 
 // BuildInfo contains build-time information

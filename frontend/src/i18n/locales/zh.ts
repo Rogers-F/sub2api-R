@@ -499,7 +499,66 @@ export default {
     buySubscription: '充值/订阅',
     wallet: '钱包',
     docs: '文档',
-    playground: '操练场'
+    playground: '操练场',
+    devCenter: '开发者中心',
+    backToChat: '返回对话'
+  },
+
+  // Chat (persisted multi-conversation chat)
+  chat: {
+    title: '对话',
+    brandTitle: '星算 · 对话',
+    brandInitial: '星',
+    assistantName: '星算助手',
+    roleUser: '我',
+    new: '新建对话',
+    search: '搜索对话',
+    untitled: '未命名对话',
+    todayGroup: '今天',
+    earlierGroup: '更早',
+    emptyList: '还没有对话',
+    noResults: '没有匹配的对话',
+    loadMore: '加载更多',
+    openSidebar: '打开会话列表',
+    noModel: '未选择模型',
+    subscriptionActive: '订阅有效',
+    noSubscription: '无可用订阅',
+    composerPlaceholder: '输入消息开始对话…',
+    disclaimer: '星算助手可能会出错，请核实重要信息 · Enter 发送，Shift+Enter 换行',
+    deleteConfirmTitle: '删除对话',
+    deleteConfirmBody: '确定要删除这个对话吗？此操作无法撤销。',
+    actions: {
+      copy: '复制',
+      stop: '停止',
+      send: '发送',
+      delete: '删除'
+    },
+    empty: {
+      title: '有什么可以帮你的？',
+      subtitle: '选一个开始，或直接在下方输入',
+      examples: {
+        code: { title: '写代码', prompt: '用 Python 写一个快速排序并加注释' },
+        polish: { title: '润色文案', prompt: '把这段话改得更专业、更简洁' },
+        explain: { title: '解释概念', prompt: '用通俗的话讲清楚什么是向量数据库' },
+        plan: { title: '做计划', prompt: '帮我制定一周的健身 + 学习计划' }
+      }
+    },
+    noSub: {
+      title: '你还没有可用的订阅',
+      subtitle: '开始对话前，需要先获取一个有效订阅或兑换额度。完成后即可在这里直接与模型对话。',
+      buy: '购买订阅',
+      redeem: '兑换码',
+      contact: '联系客服'
+    },
+    errors: {
+      generic: '出错了',
+      loadConversationsFailed: '加载对话列表失败',
+      loadMessagesFailed: '加载消息失败',
+      createConversationFailed: '创建对话失败',
+      renameFailed: '重命名失败',
+      deleteFailed: '删除对话失败',
+      persistFailed: '保存消息失败'
+    }
   },
 
   // Auth

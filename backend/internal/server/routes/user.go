@@ -97,8 +97,30 @@ func RegisterUserRoutes(
 			referral.GET("", h.Referral.GetReferralInfo)
 			referral.GET("/rewards", h.Referral.GetReferralRewards)
 		}
+
+		// 持久化多会话聊天
+		conversations := authenticated.Group("/conversations")
+		{
+			conversations.GET("", h.Conversation.List)
+			conversations.POST("", h.Conversation.Create)
+			conversations.GET("/:id", h.Conversation.GetByID)
+			conversations.PATCH("/:id", h.Conversation.Update)
+			conversations.DELETE("/:id", h.Conversation.Delete)
+			conversations.GET("/:id/messages", h.Conversation.ListMessages)
+			// Cap the message-append body at ~1MB to bound request size.
+			conversations.POST(
+				"/:id/messages",
+				middleware.RequestBodyLimit(conversationMessageAppendMaxBodyBytes),
+				h.Conversation.AppendMessages,
+			)
+		}
 	}
 }
+
+// conversationMessageAppendMaxBodyBytes caps the request body for appending
+// messages (~1MB). The per-message content cap (512KB) is enforced separately
+// in the service layer and via a DB CHECK constraint.
+const conversationMessageAppendMaxBodyBytes = 1 << 20
 
 // RegisterReferralSettingsRoutes 注册公开的邀请系统设置路由
 func RegisterReferralSettingsRoutes(v1 *gin.RouterGroup, h *handler.Handlers) {

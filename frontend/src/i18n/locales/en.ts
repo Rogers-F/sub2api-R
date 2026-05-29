@@ -499,7 +499,71 @@ export default {
     buySubscription: 'Recharge / Subscription',
     wallet: 'Wallet',
     docs: 'Docs',
-    playground: 'Playground'
+    playground: 'Playground',
+    devCenter: 'Developer Center',
+    backToChat: 'Back to Chat'
+  },
+
+  // Chat (persisted multi-conversation chat)
+  chat: {
+    title: 'Chat',
+    brandTitle: 'Xingsuan · Chat',
+    brandInitial: 'X',
+    assistantName: 'Xingsuan Assistant',
+    roleUser: 'You',
+    new: 'New chat',
+    search: 'Search chats',
+    untitled: 'Untitled chat',
+    todayGroup: 'Today',
+    earlierGroup: 'Earlier',
+    emptyList: 'No conversations yet',
+    noResults: 'No matching conversations',
+    loadMore: 'Load more',
+    openSidebar: 'Open conversation list',
+    noModel: 'No model selected',
+    subscriptionActive: 'Subscription active',
+    noSubscription: 'No active subscription',
+    composerPlaceholder: 'Type a message to start the conversation…',
+    disclaimer:
+      'Xingsuan Assistant can make mistakes — please verify important information · Enter to send, Shift+Enter for a new line',
+    deleteConfirmTitle: 'Delete conversation',
+    deleteConfirmBody: 'Are you sure you want to delete this conversation? This cannot be undone.',
+    actions: {
+      copy: 'Copy',
+      stop: 'Stop',
+      send: 'Send',
+      delete: 'Delete'
+    },
+    empty: {
+      title: 'How can I help you?',
+      subtitle: 'Pick one to start, or just type below',
+      examples: {
+        code: { title: 'Write code', prompt: 'Write a quicksort in Python with comments' },
+        polish: { title: 'Polish text', prompt: 'Make this paragraph more professional and concise' },
+        explain: {
+          title: 'Explain a concept',
+          prompt: 'Explain what a vector database is in plain language'
+        },
+        plan: { title: 'Make a plan', prompt: 'Help me build a one-week fitness and study plan' }
+      }
+    },
+    noSub: {
+      title: "You don't have an active subscription yet",
+      subtitle:
+        'Before starting a conversation, you need an active subscription or redeemed quota. Once ready, you can chat with the model right here.',
+      buy: 'Purchase subscription',
+      redeem: 'Redeem code',
+      contact: 'Contact support'
+    },
+    errors: {
+      generic: 'Something went wrong',
+      loadConversationsFailed: 'Failed to load conversations',
+      loadMessagesFailed: 'Failed to load messages',
+      createConversationFailed: 'Failed to create conversation',
+      renameFailed: 'Failed to rename conversation',
+      deleteFailed: 'Failed to delete conversation',
+      persistFailed: 'Failed to save message'
+    }
   },
 
   // Auth

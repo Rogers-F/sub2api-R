@@ -85,11 +85,17 @@ type UserEdges struct {
 	ReferralRewardsGiven []*ReferralReward `json:"referral_rewards_given,omitempty"`
 	// ReferralRewardsReceived holds the value of the referral_rewards_received edge.
 	ReferralRewardsReceived []*ReferralReward `json:"referral_rewards_received,omitempty"`
+	// PaygOrders holds the value of the payg_orders edge.
+	PaygOrders []*PaygOrder `json:"payg_orders,omitempty"`
+	// Conversations holds the value of the conversations edge.
+	Conversations []*Conversation `json:"conversations,omitempty"`
+	// ConversationMessages holds the value of the conversation_messages edge.
+	ConversationMessages []*ConversationMessage `json:"conversation_messages,omitempty"`
 	// UserAllowedGroups holds the value of the user_allowed_groups edge.
 	UserAllowedGroups []*UserAllowedGroup `json:"user_allowed_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [12]bool
+	loadedTypes [15]bool
 }
 
 // APIKeysOrErr returns the APIKeys value or an error if the edge
@@ -191,10 +197,37 @@ func (e UserEdges) ReferralRewardsReceivedOrErr() ([]*ReferralReward, error) {
 	return nil, &NotLoadedError{edge: "referral_rewards_received"}
 }
 
+// PaygOrdersOrErr returns the PaygOrders value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PaygOrdersOrErr() ([]*PaygOrder, error) {
+	if e.loadedTypes[11] {
+		return e.PaygOrders, nil
+	}
+	return nil, &NotLoadedError{edge: "payg_orders"}
+}
+
+// ConversationsOrErr returns the Conversations value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ConversationsOrErr() ([]*Conversation, error) {
+	if e.loadedTypes[12] {
+		return e.Conversations, nil
+	}
+	return nil, &NotLoadedError{edge: "conversations"}
+}
+
+// ConversationMessagesOrErr returns the ConversationMessages value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ConversationMessagesOrErr() ([]*ConversationMessage, error) {
+	if e.loadedTypes[13] {
+		return e.ConversationMessages, nil
+	}
+	return nil, &NotLoadedError{edge: "conversation_messages"}
+}
+
 // UserAllowedGroupsOrErr returns the UserAllowedGroups value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) UserAllowedGroupsOrErr() ([]*UserAllowedGroup, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[14] {
 		return e.UserAllowedGroups, nil
 	}
 	return nil, &NotLoadedError{edge: "user_allowed_groups"}
@@ -422,6 +455,21 @@ func (_m *User) QueryReferralRewardsGiven() *ReferralRewardQuery {
 // QueryReferralRewardsReceived queries the "referral_rewards_received" edge of the User entity.
 func (_m *User) QueryReferralRewardsReceived() *ReferralRewardQuery {
 	return NewUserClient(_m.config).QueryReferralRewardsReceived(_m)
+}
+
+// QueryPaygOrders queries the "payg_orders" edge of the User entity.
+func (_m *User) QueryPaygOrders() *PaygOrderQuery {
+	return NewUserClient(_m.config).QueryPaygOrders(_m)
+}
+
+// QueryConversations queries the "conversations" edge of the User entity.
+func (_m *User) QueryConversations() *ConversationQuery {
+	return NewUserClient(_m.config).QueryConversations(_m)
+}
+
+// QueryConversationMessages queries the "conversation_messages" edge of the User entity.
+func (_m *User) QueryConversationMessages() *ConversationMessageQuery {
+	return NewUserClient(_m.config).QueryConversationMessages(_m)
 }
 
 // QueryUserAllowedGroups queries the "user_allowed_groups" edge of the User entity.

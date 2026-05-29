@@ -186,6 +186,7 @@ import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import { getPublicSettings, isTotp2FARequired } from '@/api/auth'
+import { sanitizeRedirectPath } from '@/utils/redirect'
 import type { TotpLoginResponse } from '@/types'
 
 const { t } = useI18n()
@@ -341,8 +342,10 @@ async function handleLogin(): Promise<void> {
     // Show success toast
     appStore.showSuccess(t('auth.loginSuccess'))
 
-    // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+    // Redirect to the chat page (default landing) or the intended route
+    const redirectTo = sanitizeRedirectPath(
+      router.currentRoute.value.query.redirect
+    )
     await router.push(redirectTo)
   } catch (error: unknown) {
     // Reset Turnstile on error
@@ -383,8 +386,10 @@ async function handle2FAVerify(code: string): Promise<void> {
     show2FAModal.value = false
     appStore.showSuccess(t('auth.loginSuccess'))
 
-    // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+    // Redirect to the chat page (default landing) or the intended route
+    const redirectTo = sanitizeRedirectPath(
+      router.currentRoute.value.query.redirect
+    )
     await router.push(redirectTo)
   } catch (error: unknown) {
     const err = error as { message?: string; response?: { data?: { message?: string } } }

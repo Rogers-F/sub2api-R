@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Page Mockup</title>
+<style>
+  :root{
+    --ink-950:#08090C;--ink-900:#0B0D14;--ink-800:#11141C;--ink-700:#181C26;--ink-600:#222631;--ink-500:#2C313D;
+    --paper-0:#FFFFFF;--paper-50:#FAF9F6;--paper-100:#F5F4EE;--paper-200:#EFEDE5;--paper-300:#E5E2D8;
+    --pearl-50:#F4F5F8;--pearl-100:#E5E7EE;--pearl-200:#B8BCC8;--pearl-300:#8B91A0;--pearl-400:#6E7385;--pearl-500:#5A5F6F;
+    --dust-400:#8B8B85;--dust-500:#5C5C5C;--dust-600:#4A4035;--dust-700:#403028;--dust-800:#2A1F18;--dust-900:#1A1308;
+    --gold-100:#F1E4C8;--gold-200:#E5D2A4;--gold-300:#D4B681;--gold-400:#C29F60;--gold-500:#A88347;--gold-600:#8B6938;--gold-700:#6B4F26;
+    --aurora-300:#B6C5F4;--aurora-400:#9DB1F0;--aurora-500:#7B96E8;--aurora-600:#4862B8;
+    --mint-400:#7BD0BC;--mint-500:#5AC0A8;--mint-600:#2C9985;
+    --coral-400:#F39A85;--coral-500:#E8826B;--coral-600:#C66045;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;
+       background:#04050a;color:var(--pearl-100);-webkit-font-smoothing:antialiased;}
+  .caption{padding:14px 28px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+           color:var(--gold-300);background:#04050a;border-top:1px solid var(--ink-700);font-weight:700;}
+  .caption:first-child{border-top:none;}
+  .screen{height:780px;display:flex;overflow:hidden;}
+  svg{display:block;}
+
+  /* ===================== DARK CHAT (populated) ===================== */
+  .dk{background:var(--ink-950);color:var(--pearl-100);}
+  /* sidebar */
+  .side{width:288px;flex-shrink:0;display:flex;flex-direction:column;
+        background:var(--ink-900);border-right:1px solid var(--ink-700);}
+  .side-top{padding:16px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+  .brand-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--gold-400),var(--gold-600));
+              display:flex;align-items:center;justify-content:center;color:#1a1308;font-weight:800;font-size:15px;}
+  .brand-name{font-weight:700;font-size:15px;color:var(--pearl-50);letter-spacing:.02em;}
+  .new-btn{width:100%;display:flex;align-items:center;gap:8px;justify-content:center;padding:10px;border-radius:12px;
+           border:1px solid var(--gold-600);color:var(--gold-200);background:rgba(168,131,71,.08);
+           font-size:13.5px;font-weight:600;cursor:pointer;transition:.2s;}
+  .new-btn:hover{background:rgba(168,131,71,.16);}
+  .search{margin-top:12px;display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:10px;
+          background:var(--ink-800);border:1px solid var(--ink-700);color:var(--pearl-400);font-size:13px;}
+  .conv-group{padding:6px 16px;font-size:11px;letter-spacing:.08em;color:var(--pearl-500);
+              text-transform:uppercase;margin-top:8px;font-weight:600;}
+  .conv-list{flex:1;overflow-y:auto;padding:0 10px;}
+  .conv{position:relative;display:flex;flex-direction:column;gap:2px;padding:9px 11px;border-radius:11px;
+        cursor:pointer;margin-bottom:3px;transition:.18s;border-left:2px solid transparent;}
+  .conv:hover{background:var(--ink-800);}
+  .conv .del{position:absolute;right:9px;top:11px;opacity:0;transition:.18s;color:var(--pearl-400);}
+  .conv:hover .del{opacity:1;}
+  .conv.active{background:var(--ink-700);border-left:2px solid var(--gold-500);}
+  .conv .t{font-size:13.5px;color:var(--pearl-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:18px;}
+  .conv.active .t{color:var(--pearl-50);font-weight:600;}
+  .conv .m{font-size:11.5px;color:var(--pearl-500);}
+  .side-foot{padding:12px 16px;border-top:1px solid var(--ink-700);display:flex;align-items:center;gap:10px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--aurora-600);display:flex;align-items:center;
+          justify-content:center;font-size:12px;font-weight:700;color:#fff;}
+  .uname{font-size:13px;color:var(--pearl-100);font-weight:600;}
+  .uplan{font-size:11px;color:var(--mint-400);}
+
+  /* main */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .topbar{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+          padding:0 20px;border-bottom:1px solid var(--ink-700);background:rgba(11,13,20,.7);}
+  .model-pick{display:flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;
+              background:var(--ink-800);border:1px solid var(--ink-600);font-size:13.5px;color:var(--pearl-100);cursor:pointer;}
+  .model-pick .dot{width:7px;height:7px;border-radius:50%;background:var(--mint-500);}
+  .top-right{display:flex;align-items:center;gap:10px;}
+  .dev-btn{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:10px;font-size:13px;font-weight:600;
+           color:var(--pearl-200);background:var(--ink-800);border:1px solid var(--ink-600);cursor:pointer;transition:.2s;}
+  .dev-btn:hover{border-color:var(--gold-600);color:var(--gold-200);}
+  .icon-btn{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+            color:var(--pearl-300);background:var(--ink-800);border:1px solid var(--ink-600);cursor:pointer;}
+
+  .stream{flex:1;overflow-y:auto;padding:28px 0;}
+  .stream-inner{max-width:760px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:22px;}
+  .msg{display:flex;gap:13px;}
+  .msg .ava{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+  .msg.user .ava{background:var(--aurora-600);color:#fff;}
+  .msg.ai .ava{background:linear-gradient(135deg,var(--gold-400),var(--gold-600));color:#1a1308;}
+  .bubble{flex:1;min-width:0;}
+  .role{font-size:12px;color:var(--pearl-400);margin-bottom:5px;font-weight:600;}
+  .msg.user .body{background:rgba(123,150,232,.10);border:1px solid rgba(123,150,232,.18);
+                  border-radius:14px;padding:11px 15px;font-size:14.5px;color:var(--pearl-50);line-height:1.6;}
+  .msg.ai .body{font-size:14.5px;color:var(--pearl-100);line-height:1.72;}
+  .msg.ai .body p{margin-bottom:10px;}
+  .msg.ai .body ul{margin:0 0 10px 20px;}
+  .msg.ai .body li{margin-bottom:5px;}
+  .msg.ai .body code.inl{background:var(--ink-700);padding:1px 6px;border-radius:5px;font-size:13px;
+                         font-family:"SF Mono",Consolas,monospace;color:var(--gold-200);}
+  .codeblock{background:var(--ink-900);border:1px solid var(--ink-700);border-radius:12px;margin:4px 0 12px;overflow:hidden;}
+  .code-head{display:flex;justify-content:space-between;align-items:center;padding:7px 13px;
+             background:var(--ink-800);border-bottom:1px solid var(--ink-700);font-size:11.5px;color:var(--pearl-400);}
+  .code-body{padding:13px 15px;font-family:"SF Mono",Consolas,monospace;font-size:13px;line-height:1.65;color:var(--pearl-100);white-space:pre;overflow-x:auto;}
+  .kw{color:var(--aurora-400);} .st{color:var(--mint-400);} .fn{color:var(--gold-300);} .cm{color:var(--pearl-500);}
+  .cursor{display:inline-block;width:8px;height:17px;background:var(--gold-400);vertical-align:-3px;margin-left:2px;animation:blink 1s steps(2) infinite;}
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+  .actions{display:flex;gap:14px;margin-top:9px;}
+  .act{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--pearl-400);cursor:pointer;transition:.2s;}
+  .act:hover{color:var(--gold-200);}
+
+  .composer{flex-shrink:0;padding:14px 0 20px;}
+  .composer-inner{max-width:760px;margin:0 auto;padding:0 24px;}
+  .compose-box{display:flex;align-items:flex-end;gap:10px;background:var(--ink-800);border:1px solid var(--ink-600);
+               border-radius:18px;padding:11px 12px 11px 17px;}
+  .compose-box:focus-within{border-color:var(--gold-600);}
+  .ta{flex:1;font-size:14.5px;color:var(--pearl-100);min-height:24px;line-height:1.5;padding-top:3px;}
+  .ta .ph{color:var(--pearl-500);}
+  .send{width:36px;height:36px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+        background:linear-gradient(135deg,var(--gold-400),var(--gold-600));color:#1a1308;cursor:pointer;}
+  .stopbtn{width:36px;height:36px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+        background:var(--coral-600);color:#fff;cursor:pointer;}
+  .hint{text-align:center;font-size:11px;color:var(--pearl-500);margin-top:9px;}
+
+  /* ===================== EMPTY STATE ===================== */
+  .empty-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+  .empty-mark{width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,var(--gold-400),var(--gold-600));
+              display:flex;align-items:center;justify-content:center;color:#1a1308;font-weight:800;font-size:26px;margin-bottom:20px;}
+  .empty-title{font-size:23px;font-weight:700;color:var(--pearl-50);margin-bottom:8px;}
+  .empty-sub{font-size:14px;color:var(--pearl-400);margin-bottom:28px;}
+  .examples{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:600px;width:100%;}
+  .ex{padding:14px 16px;border-radius:14px;background:var(--ink-800);border:1px solid var(--ink-700);cursor:pointer;transition:.2s;}
+  .ex:hover{border-color:var(--gold-600);background:var(--ink-700);}
+  .ex-t{font-size:13.5px;color:var(--pearl-100);font-weight:600;margin-bottom:3px;}
+  .ex-d{font-size:12px;color:var(--pearl-500);}
+
+  /* ===================== NO SUBSCRIPTION GATE ===================== */
+  .gate-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .gate{max-width:440px;width:100%;text-align:center;background:var(--ink-900);border:1px solid var(--ink-700);
+        border-radius:20px;padding:38px 34px;}
+  .gate-ico{width:56px;height:56px;border-radius:50%;background:rgba(168,131,71,.12);border:1px solid var(--gold-600);
+            display:flex;align-items:center;justify-content:center;margin:0 auto 18px;color:var(--gold-300);}
+  .gate-title{font-size:19px;font-weight:700;color:var(--pearl-50);margin-bottom:9px;}
+  .gate-sub{font-size:13.5px;color:var(--pearl-400);line-height:1.6;margin-bottom:24px;}
+  .gate-cta{display:block;width:100%;padding:12px;border-radius:12px;font-size:14px;font-weight:700;
+            background:linear-gradient(135deg,var(--gold-400),var(--gold-600));color:#1a1308;cursor:pointer;margin-bottom:11px;}
+  .gate-alt{display:flex;gap:11px;}
+  .gate-ghost{flex:1;padding:10px;border-radius:11px;font-size:13px;font-weight:600;color:var(--pearl-200);
+              background:var(--ink-800);border:1px solid var(--ink-600);cursor:pointer;}
+
+  /* ===================== LIGHT CHAT ===================== */
+  .lt{background:var(--paper-50);color:var(--dust-800);}
+  .lt .side{background:var(--paper-100);border-right:1px solid var(--paper-300);}
+  .lt .brand-name{color:var(--dust-900);}
+  .lt .new-btn{border-color:var(--gold-400);color:var(--gold-700);background:rgba(168,131,71,.08);}
+  .lt .search{background:var(--paper-0);border:1px solid var(--paper-300);color:var(--dust-500);}
+  .lt .conv-group{color:var(--dust-400);}
+  .lt .conv:hover{background:var(--paper-200);}
+  .lt .conv.active{background:var(--paper-0);border-left:2px solid var(--gold-500);box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .lt .conv .t{color:var(--dust-700);} .lt .conv.active .t{color:var(--dust-900);} .lt .conv .m{color:var(--dust-400);}
+  .lt .conv .del{color:var(--dust-400);}
+  .lt .side-foot{border-top:1px solid var(--paper-300);}
+  .lt .uname{color:var(--dust-800);} .lt .uplan{color:var(--mint-600);}
+  .lt .topbar{background:rgba(250,249,246,.8);border-bottom:1px solid var(--paper-300);}
+  .lt .model-pick{background:var(--paper-0);border:1px solid var(--paper-300);color:var(--dust-700);}
+  .lt .dev-btn{color:var(--dust-600);background:var(--paper-0);border:1px solid var(--paper-300);}
+  .lt .dev-btn:hover{border-color:var(--gold-400);color:var(--gold-700);}
+  .lt .icon-btn{color:var(--dust-500);background:var(--paper-0);border:1px solid var(--paper-300);}
+  .lt .role{color:var(--dust-400);}
+  .lt .msg.user .body{background:rgba(72,98,184,.08);border:1px solid rgba(72,98,184,.16);color:var(--dust-900);}
+  .lt .msg.ai .body{color:var(--dust-800);}
+  .lt .msg.ai .body code.inl{background:var(--paper-200);color:var(--gold-700);}
+  .lt .codeblock{background:var(--paper-100);border:1px solid var(--paper-300);}
+  .lt .code-head{background:var(--paper-200);border-bottom:1px solid var(--paper-300);color:var(--dust-500);}
+  .lt .code-body{color:var(--dust-800);}
+  .lt .kw{color:var(--aurora-600);} .lt .st{color:var(--mint-600);} .lt .fn{color:var(--gold-700);} .lt .cm{color:var(--dust-400);}
+  .lt .act{color:var(--dust-400);} .lt .act:hover{color:var(--gold-700);}
+  .lt .compose-box{background:var(--paper-0);border:1px solid var(--paper-300);}
+  .lt .ta{color:var(--dust-900);} .lt .hint{color:var(--dust-400);}
+</style>
+</head>
+<body>
+
+<!-- ============ SCREEN 1: DARK, POPULATED CHAT ============ -->
+<div class="caption">① 主对话页 · 暗色 · 有会话</div>
+<div class="screen dk">
+  <!-- sidebar -->
+  <div class="side">
+    <div class="side-top">
+      <div class="brand"><div class="brand-mark">星</div><div class="brand-name">星算 · 对话</div></div>
+      <div class="new-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        新建对话
+      </div>
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>
+        搜索对话
+      </div>
+    </div>
+    <div class="conv-group">今天</div>
+    <div class="conv-list">
+      <div class="conv active">
+        <div class="t">Go 并发模型与 channel 用法</div>
+        <div class="m">刚刚 · 6 条消息</div>
+        <span class="del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span>
+      </div>
+      <div class="conv">
+        <div class="t">帮我润色一封商务邮件</div>
+        <div class="m">2 小时前</div>
+        <span class="del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span>
+      </div>
+      <div class="conv">
+        <div class="t">解释一下 Raft 共识算法</div>
+        <div class="m">5 小时前</div>
+        <span class="del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span>
+      </div>
+      <div class="conv-group">更早</div>
+      <div class="conv">
+        <div class="t">Python 数据管道优化建议</div>
+        <div class="m">昨天</div>
+        <span class="del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span>
+      </div>
+      <div class="conv">
+        <div class="t">周末杭州两日游行程</div>
+        <div class="m">3 天前</div>
+        <span class="del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span>
+      </div>
+    </div>
+    <div class="side-foot">
+      <div class="avatar">H</div>
+      <div><div class="uname">half_open</div><div class="uplan">四人车订阅 · 有效</div></div>
+    </div>
+  </div>
+
+  <!-- main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="model-pick"><span class="dot"></span>claude-sonnet-4-6
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round"/></svg>
+      </div>
+      <div class="top-right">
+        <div class="dev-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+          开发者中心
+        </div>
+        <div class="icon-btn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+      </div>
+    </div>
+
+    <div class="stream">
+      <div class="stream-inner">
+        <div class="msg user">
+          <div class="ava">H</div>
+          <div class="bubble"><div class="role">我</div>
+            <div class="body">Go 里怎么用 channel 实现一个并发安全的计数器？给个例子。</div>
+          </div>
+        </div>
+        <div class="msg ai">
+          <div class="ava">星</div>
+          <div class="bubble"><div class="role">星算助手</div>
+            <div class="body">
+              <p>可以用一个 goroutine 独占状态、通过 channel 串行化所有操作，避免显式加锁。核心思路：</p>
+              <ul>
+                <li>用一个 <code class="inl">ops</code> channel 接收读/写请求；</li>
+                <li>单个 goroutine 循环处理，天然串行、无数据竞争；</li>
+                <li>读请求带一个回传 channel 拿结果。</li>
+              </ul>
+              <div class="codeblock">
+                <div class="code-head"><span>go</span><span>复制</span></div>
+                <div class="code-body"><span class="kw">func</span> <span class="fn">counter</span>(ops <span class="kw">chan</span> func(<span class="kw">int</span>) <span class="kw">int</span>) {
+    n := <span class="st">0</span>
+    <span class="kw">for</span> op := <span class="kw">range</span> ops {
+        n = <span class="fn">op</span>(n)   <span class="cm">// 串行执行，安全</span>
+    }
+}</div>
+              </div>
+              <p>这样所有状态变更都在同一个 goroutine 内完成，<code class="inl">n</code> 永远不会被并发访问<span class="cursor"></span></p>
+              <div class="actions">
+                <span class="act"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>复制</span>
+                <span class="act"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6" stroke-linecap="round"/></svg>重新回答</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="compose-box">
+          <div class="ta">继续追问，或换个话题…<span class="cursor" style="height:16px"></span></div>
+          <div class="stopbtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>
+        </div>
+        <div class="hint">星算助手可能会出错，请核实重要信息 · Enter 发送，Shift+Enter 换行</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 2: LIGHT, POPULATED CHAT ============ -->
+<div class="caption">② 主对话页 · 亮色（同一页面 light 主题）</div>
+<div class="screen dk lt">
+  <div class="side">
+    <div class="side-top">
+      <div class="brand"><div class="brand-mark">星</div><div class="brand-name">星算 · 对话</div></div>
+      <div class="new-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        新建对话
+      </div>
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>
+        搜索对话
+      </div>
+    </div>
+    <div class="conv-group">今天</div>
+    <div class="conv-list">
+      <div class="conv active"><div class="t">Go 并发模型与 channel 用法</div><div class="m">刚刚 · 6 条消息</div>
+        <span class="del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span></div>
+      <div class="conv"><div class="t">帮我润色一封商务邮件</div><div class="m">2 小时前</div></div>
+      <div class="conv"><div class="t">解释一下 Raft 共识算法</div><div class="m">5 小时前</div></div>
+      <div class="conv-group">更早</div>
+      <div class="conv"><div class="t">Python 数据管道优化建议</div><div class="m">昨天</div></div>
+      <div class="conv"><div class="t">周末杭州两日游行程</div><div class="m">3 天前</div></div>
+    </div>
+    <div class="side-foot"><div class="avatar">H</div><div><div class="uname">half_open</div><div class="uplan">四人车订阅 · 有效</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="model-pick"><span class="dot"></span>claude-sonnet-4-6
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round"/></svg></div>
+      <div class="top-right">
+        <div class="dev-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>开发者中心</div>
+        <div class="icon-btn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+      </div>
+    </div>
+    <div class="stream"><div class="stream-inner">
+      <div class="msg user"><div class="ava">H</div><div class="bubble"><div class="role">我</div>
+        <div class="body">Go 里怎么用 channel 实现一个并发安全的计数器？给个例子。</div></div></div>
+      <div class="msg ai"><div class="ava">星</div><div class="bubble"><div class="role">星算助手</div>
+        <div class="body">
+          <p>可以用一个 goroutine 独占状态、通过 channel 串行化所有操作，避免显式加锁。核心思路：</p>
+          <ul><li>用一个 <code class="inl">ops</code> channel 接收读/写请求；</li>
+          <li>单个 goroutine 循环处理，天然串行、无数据竞争；</li>
+          <li>读请求带一个回传 channel 拿结果。</li></ul>
+          <div class="codeblock"><div class="code-head"><span>go</span><span>复制</span></div>
+            <div class="code-body"><span class="kw">func</span> <span class="fn">counter</span>(ops <span class="kw">chan</span> func(<span class="kw">int</span>) <span class="kw">int</span>) {
+    n := <span class="st">0</span>
+    <span class="kw">for</span> op := <span class="kw">range</span> ops {
+        n = <span class="fn">op</span>(n)   <span class="cm">// 串行执行，安全</span>
+    }
+}</div></div>
+          <p>所有状态变更都在同一个 goroutine 内完成，<code class="inl">n</code> 永不会被并发访问。</p>
+          <div class="actions">
+            <span class="act"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>复制</span>
+            <span class="act"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6" stroke-linecap="round"/></svg>重新回答</span>
+          </div>
+        </div></div></div>
+    </div></div>
+    <div class="composer"><div class="composer-inner">
+      <div class="compose-box"><div class="ta"><span class="ph">输入消息开始对话…</span></div>
+        <div class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linejoin="round"/></svg></div></div>
+      <div class="hint">星算助手可能会出错，请核实重要信息 · Enter 发送，Shift+Enter 换行</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 3: EMPTY STATE ============ -->
+<div class="caption">③ 空状态（新建对话后，引导 + 示例提示词）</div>
+<div class="screen dk">
+  <div class="side">
+    <div class="side-top">
+      <div class="brand"><div class="brand-mark">星</div><div class="brand-name">星算 · 对话</div></div>
+      <div class="new-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>新建对话</div>
+      <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>搜索对话</div>
+    </div>
+    <div class="conv-group">今天</div>
+    <div class="conv-list">
+      <div class="conv"><div class="t">帮我润色一封商务邮件</div><div class="m">2 小时前</div></div>
+      <div class="conv"><div class="t">解释一下 Raft 共识算法</div><div class="m">5 小时前</div></div>
+    </div>
+    <div class="side-foot"><div class="avatar">H</div><div><div class="uname">half_open</div><div class="uplan">四人车订阅 · 有效</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="model-pick"><span class="dot"></span>claude-sonnet-4-6
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round"/></svg></div>
+      <div class="top-right">
+        <div class="dev-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>开发者中心</div>
+        <div class="icon-btn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+      </div>
+    </div>
+    <div class="empty-wrap">
+      <div class="empty-mark">星</div>
+      <div class="empty-title">有什么可以帮你的？</div>
+      <div class="empty-sub">选一个开始，或直接在下方输入</div>
+      <div class="examples">
+        <div class="ex"><div class="ex-t">写代码</div><div class="ex-d">用 Python 写一个快速排序并加注释</div></div>
+        <div class="ex"><div class="ex-t">润色文案</div><div class="ex-d">把这段话改得更专业、更简洁</div></div>
+        <div class="ex"><div class="ex-t">解释概念</div><div class="ex-d">用通俗的话讲清楚什么是向量数据库</div></div>
+        <div class="ex"><div class="ex-t">做计划</div><div class="ex-d">帮我制定一周的健身 + 学习计划</div></div>
+      </div>
+    </div>
+    <div class="composer"><div class="composer-inner">
+      <div class="compose-box"><div class="ta"><span class="ph">输入消息开始对话…</span></div>
+        <div class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linejoin="round"/></svg></div></div>
+      <div class="hint">星算助手可能会出错，请核实重要信息 · Enter 发送，Shift+Enter 换行</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 4: NO SUBSCRIPTION GATE ============ -->
+<div class="caption">④ 无订阅引导页（检测到无可用订阅时）</div>
+<div class="screen dk">
+  <div class="side">
+    <div class="side-top">
+      <div class="brand"><div class="brand-mark">星</div><div class="brand-name">星算 · 对话</div></div>
+      <div class="new-btn" style="opacity:.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>新建对话</div>
+    </div>
+    <div class="conv-list"></div>
+    <div class="side-foot"><div class="avatar">N</div><div><div class="uname">new_user</div><div class="uplan" style="color:var(--coral-400)">无可用订阅</div></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="model-pick" style="opacity:.5"><span class="dot" style="background:var(--pearl-500)"></span>未选择模型</div>
+      <div class="top-right">
+        <div class="dev-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>开发者中心</div>
+      </div>
+    </div>
+    <div class="gate-wrap">
+      <div class="gate">
+        <div class="gate-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+        <div class="gate-title">你还没有可用的订阅</div>
+        <div class="gate-sub">开始对话前，需要先获取一个有效订阅或兑换额度。完成后即可在这里直接与模型对话。</div>
+        <div class="gate-cta">购买订阅</div>
+        <div class="gate-alt">
+          <div class="gate-ghost">兑换码</div>
+          <div class="gate-ghost">联系客服</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

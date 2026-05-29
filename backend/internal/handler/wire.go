@@ -90,6 +90,7 @@ func ProvideHandlers(
 	paygHandler *PaygHandler,
 	settingHandler *SettingHandler,
 	totpHandler *TotpHandler,
+	conversationHandler *ConversationHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
@@ -110,6 +111,7 @@ func ProvideHandlers(
 		Payg:          paygHandler,
 		Setting:       settingHandler,
 		Totp:          totpHandler,
+		Conversation:  conversationHandler,
 	}
 }
 
@@ -130,6 +132,7 @@ var ProviderSet = wire.NewSet(
 	NewReferralHandler,
 	NewPaygHandler,
 	NewTotpHandler,
+	NewConversationHandler,
 	ProvideSettingHandler,
 
 	// Admin handlers

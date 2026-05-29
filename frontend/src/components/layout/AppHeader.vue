@@ -23,6 +23,16 @@
 
       <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
       <div class="flex items-center gap-3">
+        <!-- Back to Chat -->
+        <router-link
+          v-if="user"
+          to="/chat"
+          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-dust-600 transition-colors hover:bg-paper-100 hover:text-dust-900 dark:text-pearl-200 dark:hover:bg-white/[0.04] dark:hover:text-pearl-50"
+        >
+          <Icon name="chatBubble" size="sm" />
+          <span class="hidden sm:inline">{{ t('nav.backToChat') }}</span>
+        </router-link>
+
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 

@@ -318,6 +318,7 @@ import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import { getPublicSettings, validatePromoCode, validateInvitationCode } from '@/api/auth'
 import { buildAuthErrorMessage } from '@/utils/authError'
+import { sanitizeRedirectPath } from '@/utils/redirect'
 import {
   isRegistrationEmailSuffixAllowed,
   normalizeRegistrationEmailSuffixWhitelist
@@ -726,8 +727,10 @@ async function handleRegister(): Promise<void> {
         })
       )
 
-      // Navigate to email verification page
-      await router.push('/email-verify')
+      // Navigate to email verification page, carrying the intended post-auth
+      // redirect so it survives the register -> verify -> login landing flow.
+      const redirectTo = sanitizeRedirectPath(route.query.redirect)
+      await router.push({ path: '/email-verify', query: { redirect: redirectTo } })
       return
     }
 
@@ -744,8 +747,8 @@ async function handleRegister(): Promise<void> {
     // Show success toast
     appStore.showSuccess(t('auth.accountCreatedSuccess', { siteName: siteName.value }))
 
-    // Redirect to dashboard
-    await router.push('/dashboard')
+    // Redirect to the intended route or the chat page (default landing).
+    await router.push(sanitizeRedirectPath(route.query.redirect))
   } catch (error: unknown) {
     // Reset Turnstile on error
     if (turnstileRef.value) {
