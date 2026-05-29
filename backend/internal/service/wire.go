@@ -275,15 +275,39 @@ func ProvideOpsAlertEvaluatorService(
 }
 
 // ProvideOpsCleanupService creates and starts OpsCleanupService (cron scheduled).
+// channelMonitorSvc 注入后，每日清理任务会顺带触发渠道监控的聚合 + 历史清理维护。
 func ProvideOpsCleanupService(
 	opsRepo OpsRepository,
 	db *sql.DB,
 	redisClient *redis.Client,
 	cfg *config.Config,
+	channelMonitorSvc *ChannelMonitorService,
 ) *OpsCleanupService {
-	svc := NewOpsCleanupService(opsRepo, db, redisClient, cfg)
+	svc := NewOpsCleanupService(opsRepo, db, redisClient, cfg, channelMonitorSvc)
 	svc.Start()
 	return svc
+}
+
+// ProvideChannelMonitorService 创建渠道监控服务。
+// encryptionKeyConfigured 来自 cfg.Totp.EncryptionKeyConfigured：false 时禁止写入 api_key 密文，
+// 避免在未配置固定加密主密钥时写入重启后不可解密的数据。
+func ProvideChannelMonitorService(
+	repo ChannelMonitorRepository,
+	encryptor SecretEncryptor,
+	cfg *config.Config,
+) *ChannelMonitorService {
+	return NewChannelMonitorService(repo, encryptor, cfg.Totp.EncryptionKeyConfigured)
+}
+
+// ProvideChannelMonitorRunner 创建并启动渠道监控调度器。
+// 通过 SetScheduler 注入回 service 后再 Start，确保启动时加载所有 enabled monitor，
+// 后续 CRUD 也能即时同步任务表。Runner.Stop 由 cleanup function 调用。
+// settingService 用于 runner 每次 fire 读取功能开关。
+func ProvideChannelMonitorRunner(svc *ChannelMonitorService, settingService *SettingService) *ChannelMonitorRunner {
+	r := NewChannelMonitorRunner(svc, settingService)
+	svc.SetScheduler(r)
+	r.Start()
+	return r
 }
 
 func ProvideOpsSystemLogSink(opsRepo OpsRepository) *OpsSystemLogSink {
@@ -449,6 +473,10 @@ var ProviderSet = wire.NewSet(
 	ProvideOpsAlertEvaluatorService,
 	ProvideOpsCleanupService,
 	ProvideOpsScheduledReportService,
+	// Channel Monitor
+	ProvideChannelMonitorService,
+	ProvideChannelMonitorRunner,
+	NewChannelMonitorRequestTemplateService,
 	NewEmailService,
 	NewBalanceNotifyService,
 	ProvideEmailQueueService,

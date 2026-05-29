@@ -91,6 +91,9 @@ type SystemSettings struct {
 	OpsQueryModeDefault          string
 	OpsMetricsIntervalSeconds    int
 
+	// Channel Monitor (渠道监控，opt-out 默认开启)
+	ChannelMonitorEnabled bool
+
 	// Claude Code version check
 	MinClaudeCodeVersion string
 	MaxClaudeCodeVersion string
@@ -149,6 +152,9 @@ type PublicSettings struct {
 	AccountQuotaNotifyEnabled   bool
 	BalanceLowNotifyThreshold   float64
 	BalanceLowNotifyRechargeURL string
+
+	// Channel Monitor (渠道监控，opt-out 默认开启) — 前端据此控制菜单可见性
+	ChannelMonitorEnabled bool
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

@@ -1041,6 +1041,21 @@
               <Toggle v-model="form.promo_code_enabled" />
             </div>
 
+            <!-- Channel Monitor -->
+            <div
+              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+            >
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.channelMonitor.title')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.channelMonitor.description') }}
+                </p>
+              </div>
+              <Toggle v-model="form.channel_monitor_enabled" />
+            </div>
+
             <!-- Invitation Code -->
             <div
               class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -2927,6 +2942,7 @@ const form = reactive<SettingsForm>({
   email_verify_enabled: false,
   registration_email_suffix_whitelist: [],
   promo_code_enabled: true,
+  channel_monitor_enabled: true,
   invitation_code_enabled: false,
   password_reset_enabled: false,
   totp_enabled: false,
@@ -3583,6 +3599,7 @@ async function saveSettings() {
         (suffix) => `@${suffix}`
       ),
       promo_code_enabled: form.promo_code_enabled,
+      channel_monitor_enabled: form.channel_monitor_enabled,
       invitation_code_enabled: form.invitation_code_enabled,
       password_reset_enabled: form.password_reset_enabled,
       totp_enabled: form.totp_enabled,

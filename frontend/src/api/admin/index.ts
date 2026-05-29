@@ -26,6 +26,8 @@ import scheduledTestsAPI from './scheduledTests'
 import backupAPI from './backup'
 import paygAPI from './payg'
 import adminPaymentAPI from './payment'
+import channelMonitorAPI from './channelMonitor'
+import channelMonitorTemplateAPI from './channelMonitorTemplate'
 
 /**
  * Unified admin API object for convenient access
@@ -53,7 +55,9 @@ export const adminAPI = {
   scheduledTests: scheduledTestsAPI,
   backup: backupAPI,
   payg: paygAPI,
-  payment: adminPaymentAPI
+  payment: adminPaymentAPI,
+  channelMonitor: channelMonitorAPI,
+  channelMonitorTemplate: channelMonitorTemplateAPI
 }
 
 export {
@@ -79,7 +83,9 @@ export {
   scheduledTestsAPI,
   backupAPI,
   paygAPI,
-  adminPaymentAPI
+  adminPaymentAPI,
+  channelMonitorAPI,
+  channelMonitorTemplateAPI
 }
 
 export default adminAPI

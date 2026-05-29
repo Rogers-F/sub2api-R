@@ -233,6 +233,16 @@ const (
 
 	// Web Search 模拟配置
 	SettingKeyWebSearchEmulationConfig = "web_search_emulation_config"
+
+	// =========================
+	// Channel Monitor (渠道监控)
+	// =========================
+
+	// SettingKeyChannelMonitorEnabled 渠道监控功能开关（opt-out，默认开启）。
+	SettingKeyChannelMonitorEnabled = "channel_monitor_enabled"
+
+	// SettingKeyChannelMonitorDefaultIntervalSeconds 新建监控的默认检测间隔（秒，[15,3600]）。
+	SettingKeyChannelMonitorDefaultIntervalSeconds = "channel_monitor_default_interval_seconds"
 )
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).

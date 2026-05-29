@@ -132,6 +132,9 @@ export interface PublicSettings {
   balance_low_notify_enabled?: boolean
   balance_low_notify_threshold?: number
   account_quota_notify_enabled?: boolean
+  // 渠道监控（opt-out 默认开启）。default_interval 后端未注入时前端回落到常量。
+  channel_monitor_enabled?: boolean
+  channel_monitor_default_interval_seconds?: number
 }
 
 export interface AuthResponse {

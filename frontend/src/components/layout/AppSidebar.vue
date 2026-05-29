@@ -506,6 +506,9 @@ const userNavItems = computed((): NavItem[] => {
     { path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
+    ...(appStore.cachedPublicSettings?.channel_monitor_enabled !== false
+      ? [{ path: '/monitor', label: t('nav.channelStatus'), icon: ChartIcon }]
+      : []),
     ...(!paymentEnabled && legacyPaygEnabled
       ? [{ path: '/wallet', label: t('nav.wallet'), icon: CreditCardIcon }]
       : []),
@@ -623,6 +626,9 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/groups', label: t('nav.groups'), icon: FolderIcon, hideInSimpleMode: true },
     { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
+    ...(appStore.cachedPublicSettings?.channel_monitor_enabled !== false
+      ? [{ path: '/admin/channels/monitor', label: t('nav.channelMonitor'), icon: ChartIcon }]
+      : []),
     { path: '/admin/payg', label: t('nav.payg'), icon: CreditCardIcon },
     { path: '/admin/announcements', label: t('nav.announcements'), icon: BellIcon },
     { path: '/admin/proxies', label: t('nav.proxies'), icon: ServerIcon },
