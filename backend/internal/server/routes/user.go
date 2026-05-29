@@ -113,6 +113,12 @@ func RegisterUserRoutes(
 				middleware.RequestBodyLimit(conversationMessageAppendMaxBodyBytes),
 				h.Conversation.AppendMessages,
 			)
+			// Atomic regenerate: replace the trailing assistant message.
+			conversations.POST(
+				"/:id/messages/replace",
+				middleware.RequestBodyLimit(conversationMessageAppendMaxBodyBytes),
+				h.Conversation.Replace,
+			)
 		}
 	}
 }

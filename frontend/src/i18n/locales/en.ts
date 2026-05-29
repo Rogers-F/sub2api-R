@@ -519,6 +519,7 @@ export default {
     emptyList: 'No conversations yet',
     noResults: 'No matching conversations',
     loadMore: 'Load more',
+    loadingEarlier: 'Loading…',
     openSidebar: 'Open conversation list',
     noModel: 'No model selected',
     subscriptionActive: 'Subscription active',
@@ -530,6 +531,7 @@ export default {
     deleteConfirmBody: 'Are you sure you want to delete this conversation? This cannot be undone.',
     actions: {
       copy: 'Copy',
+      regenerate: 'Regenerate',
       stop: 'Stop',
       send: 'Send',
       delete: 'Delete'
@@ -562,7 +564,8 @@ export default {
       createConversationFailed: 'Failed to create conversation',
       renameFailed: 'Failed to rename conversation',
       deleteFailed: 'Failed to delete conversation',
-      persistFailed: 'Failed to save message'
+      persistFailed: 'Failed to save message',
+      regenerateFailed: 'Failed to regenerate'
     }
   },
 

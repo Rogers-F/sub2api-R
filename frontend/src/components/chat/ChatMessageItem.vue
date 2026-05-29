@@ -51,9 +51,6 @@
         </div>
 
         <!-- Actions -->
-        <!-- Regenerate is intentionally absent: the backend is append-only with no
-             message-truncate endpoint, so re-generating would diverge from
-             persisted history. Re-add once such an endpoint exists. -->
         <div v-if="showActions" class="mt-2.5 flex gap-3.5">
           <button
             type="button"
@@ -62,6 +59,15 @@
           >
             <Icon name="copy" size="xs" />
             {{ t('chat.actions.copy') }}
+          </button>
+          <button
+            v-if="showRegenerate"
+            type="button"
+            class="flex items-center gap-1.5 text-xs text-dust-400 transition-colors cursor-pointer hover:text-gold-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/60 dark:text-pearl-400 dark:hover:text-gold-200"
+            @click="onRegenerate"
+          >
+            <Icon name="refresh" size="xs" />
+            {{ t('chat.actions.regenerate') }}
           </button>
         </div>
       </div>
@@ -79,7 +85,10 @@ import { renderMarkdown } from '@/utils/playground/markdownRenderer'
 import { useAuthStore } from '@/stores/auth'
 import type { LiveMessage } from '@/stores/chat'
 
-const props = defineProps<{ message: LiveMessage }>()
+const props = withDefaults(defineProps<{ message: LiveMessage; isLast?: boolean }>(), {
+  isLast: false
+})
+const emit = defineEmits<{ (e: 'regenerate', message: LiveMessage): void }>()
 
 const { t } = useI18n()
 const { copyToClipboard } = useClipboard()
@@ -106,8 +115,22 @@ const showActions = computed(
   () => props.message.status !== 'streaming' && props.message.content.length > 0
 )
 
+// Regenerate is only offered on the final assistant reply, once it is at rest
+// with content (so the user can re-roll the last turn).
+const showRegenerate = computed(
+  () =>
+    !isUser.value &&
+    props.isLast &&
+    props.message.status !== 'streaming' &&
+    props.message.content.length > 0
+)
+
 function onCopy() {
   void copyToClipboard(props.message.content)
+}
+
+function onRegenerate() {
+  emit('regenerate', props.message)
 }
 </script>
 

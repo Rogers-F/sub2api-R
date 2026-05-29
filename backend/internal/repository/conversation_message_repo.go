@@ -32,6 +32,21 @@ func (r *messageRepository) GetByClientID(ctx context.Context, userID, conversat
 	return messageEntityToService(m), nil
 }
 
+func (r *messageRepository) GetByID(ctx context.Context, userID, conversationID, id int64) (*service.Message, error) {
+	client := clientFromContext(ctx, r.client)
+	m, err := client.ConversationMessage.Query().
+		Where(
+			conversationmessage.IDEQ(id),
+			conversationmessage.UserIDEQ(userID),
+			conversationmessage.ConversationIDEQ(conversationID),
+		).
+		Only(ctx)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrConversationNotFound, nil)
+	}
+	return messageEntityToService(m), nil
+}
+
 func (r *messageRepository) Create(ctx context.Context, m *service.Message) error {
 	client := clientFromContext(ctx, r.client)
 	builder := client.ConversationMessage.Create().
@@ -82,6 +97,56 @@ func (r *messageRepository) List(ctx context.Context, userID, conversationID int
 		return nil, err
 	}
 	return messageEntitiesToService(items), nil
+}
+
+func (r *messageRepository) ListBefore(ctx context.Context, userID, conversationID int64, beforeID int64, limit int) ([]service.Message, error) {
+	client := clientFromContext(ctx, r.client)
+	q := client.ConversationMessage.Query().
+		Where(
+			conversationmessage.UserIDEQ(userID),
+			conversationmessage.ConversationIDEQ(conversationID),
+		)
+	if beforeID > 0 {
+		q = q.Where(conversationmessage.IDLT(beforeID))
+	}
+	// Newest-first; the service trims the extra row and reverses to id ASC.
+	items, err := q.
+		Order(conversationmessage.ByID(entsql.OrderDesc())).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return messageEntitiesToService(items), nil
+}
+
+func (r *messageRepository) MaxMessageID(ctx context.Context, userID, conversationID int64) (int64, bool, error) {
+	client := clientFromContext(ctx, r.client)
+	m, err := client.ConversationMessage.Query().
+		Where(
+			conversationmessage.UserIDEQ(userID),
+			conversationmessage.ConversationIDEQ(conversationID),
+		).
+		Order(conversationmessage.ByID(entsql.OrderDesc())).
+		First(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return 0, false, nil
+		}
+		return 0, false, err
+	}
+	return m.ID, true, nil
+}
+
+func (r *messageRepository) DeleteFrom(ctx context.Context, userID, conversationID, fromID int64) (int, error) {
+	client := clientFromContext(ctx, r.client)
+	return client.ConversationMessage.Delete().
+		Where(
+			conversationmessage.UserIDEQ(userID),
+			conversationmessage.ConversationIDEQ(conversationID),
+			conversationmessage.IDGTE(fromID),
+		).
+		Exec(ctx)
 }
 
 func messageEntityToService(m *dbent.ConversationMessage) *service.Message {

@@ -28,6 +28,8 @@ const (
 	FieldModel = "model"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldLastMessageAt holds the string denoting the last_message_at field in the database.
+	FieldLastMessageAt = "last_message_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeMessages holds the string denoting the messages edge name in mutations.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldTitle,
 	FieldModel,
 	FieldStatus,
+	FieldLastMessageAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -93,6 +96,8 @@ var (
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
+	// DefaultLastMessageAt holds the default value on creation for the "last_message_at" field.
+	DefaultLastMessageAt func() time.Time
 )
 
 // OrderOption defines the ordering options for the Conversation queries.
@@ -136,6 +141,11 @@ func ByModel(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByLastMessageAt orders the results by the last_message_at field.
+func ByLastMessageAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastMessageAt, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

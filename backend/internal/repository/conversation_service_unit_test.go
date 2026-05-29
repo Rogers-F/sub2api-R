@@ -86,6 +86,27 @@ func completeUserMessage(clientMessageID, content string) service.MessageInput {
 	}
 }
 
+func completeAssistantMessage(clientMessageID, content string) service.MessageInput {
+	return service.MessageInput{
+		Role:            service.MessageRoleAssistant,
+		Content:         content,
+		Status:          service.MessageStatusComplete,
+		ClientMessageID: clientMessageID,
+	}
+}
+
+// appendTurn appends a [user, assistant] pair and returns the assistant message.
+func appendTurn(t *testing.T, ctx context.Context, svc *service.ConversationService, userID, convID int64, suffix, userText, asstText string) service.Message {
+	t.Helper()
+	out, err := svc.AppendMessages(ctx, userID, convID, []service.MessageInput{
+		completeUserMessage("u-"+suffix, userText),
+		completeAssistantMessage("a-"+suffix, asstText),
+	})
+	require.NoError(t, err)
+	require.Len(t, out, 2)
+	return out[1]
+}
+
 func TestConversationService_CreateIsIdempotent(t *testing.T) {
 	svc, client := newConversationStack(t)
 	ctx := context.Background()
@@ -199,7 +220,8 @@ func TestConversationService_IdempotentRetryDoesNotTouch(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Pin updated_at to a known value, then issue a pure idempotent retry.
+	// Pin last_message_at (the ordering key) to a known value, then issue a pure
+	// idempotent retry.
 	pinned := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	require.NoError(t, convRepo.Touch(ctx, userID, conv.ID, pinned))
 
@@ -210,8 +232,8 @@ func TestConversationService_IdempotentRetryDoesNotTouch(t *testing.T) {
 
 	after, err := svc.GetConversation(ctx, userID, conv.ID)
 	require.NoError(t, err)
-	require.WithinDuration(t, pinned, after.UpdatedAt, time.Second,
-		"pure idempotent retry must not bump updated_at")
+	require.WithinDuration(t, pinned, after.LastMessageAt, time.Second,
+		"pure idempotent retry must not advance last_message_at")
 }
 
 func TestConversationService_DeleteCascadesMessages(t *testing.T) {
@@ -363,4 +385,282 @@ func TestConversationService_ListPaginationCursor(t *testing.T) {
 		}
 	}
 	require.Len(t, seen, 5)
+}
+
+// ==================== Phase 2: last_message_at / rename ordering ====================
+
+func TestConversationService_RenameDoesNotReorder(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "rename@test.com")
+	convRepo := NewConversationRepository(client)
+
+	convA, err := svc.CreateConversation(ctx, userID, "a", "A", "m")
+	require.NoError(t, err)
+	convB, err := svc.CreateConversation(ctx, userID, "b", "B", "m")
+	require.NoError(t, err)
+
+	// B has the more recent last_message_at, so it sorts ahead of A.
+	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	require.NoError(t, convRepo.Touch(ctx, userID, convA.ID, base.Add(1*time.Hour)))
+	require.NoError(t, convRepo.Touch(ctx, userID, convB.ID, base.Add(2*time.Hour)))
+
+	page, err := svc.ListConversations(ctx, userID, nil, 10)
+	require.NoError(t, err)
+	require.Equal(t, convB.ID, page.Items[0].ID, "B should be first before rename")
+
+	// Renaming A bumps its updated_at but MUST NOT advance last_message_at, so
+	// the order is unchanged (B still first).
+	_, err = svc.UpdateTitle(ctx, userID, convA.ID, "A renamed")
+	require.NoError(t, err)
+
+	page2, err := svc.ListConversations(ctx, userID, nil, 10)
+	require.NoError(t, err)
+	require.Equal(t, convB.ID, page2.Items[0].ID, "rename must not move A to the top")
+}
+
+func TestConversationService_EmptyConversationLastMessageAtEqualsCreatedAt(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "emptyinv@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+
+	got, err := svc.GetConversation(ctx, userID, conv.ID)
+	require.NoError(t, err)
+	require.True(t, got.LastMessageAt.Equal(got.CreatedAt),
+		"a conversation with no messages must have last_message_at == created_at")
+}
+
+func TestConversationService_LastMessageAtTracksNewestMessage(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "lma@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+	asst := appendTurn(t, ctx, svc, userID, conv.ID, "1", "hi", "hello there")
+
+	got, err := svc.GetConversation(ctx, userID, conv.ID)
+	require.NoError(t, err)
+	require.WithinDuration(t, asst.CreatedAt, got.LastMessageAt, time.Second,
+		"last_message_at must equal the newest message's created_at")
+}
+
+// ==================== Phase 2: backward (newest-first) message pagination ====================
+
+func TestConversationService_ListMessagesBefore(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "before@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+
+	// 5 messages, ids ascending in insertion order.
+	inserted, err := svc.AppendMessages(ctx, userID, conv.ID, []service.MessageInput{
+		completeUserMessage("m1", "1"),
+		completeUserMessage("m2", "2"),
+		completeUserMessage("m3", "3"),
+		completeUserMessage("m4", "4"),
+		completeUserMessage("m5", "5"),
+	})
+	require.NoError(t, err)
+	require.Len(t, inserted, 5)
+
+	// Latest page (before_id == 0), limit 2 -> newest two (m4, m5) in id ASC, more older.
+	latest, err := svc.ListMessagesBefore(ctx, userID, conv.ID, 0, 2)
+	require.NoError(t, err)
+	require.Len(t, latest.Items, 2)
+	require.True(t, latest.HasMore)
+	require.Equal(t, inserted[3].ID, latest.Items[0].ID)
+	require.Equal(t, inserted[4].ID, latest.Items[1].ID)
+
+	// Older page before the smallest id of the latest page (m4) -> m2, m3.
+	older, err := svc.ListMessagesBefore(ctx, userID, conv.ID, latest.Items[0].ID, 2)
+	require.NoError(t, err)
+	require.Len(t, older.Items, 2)
+	require.True(t, older.HasMore)
+	require.Equal(t, inserted[1].ID, older.Items[0].ID)
+	require.Equal(t, inserted[2].ID, older.Items[1].ID)
+
+	// Final older page -> just m1, no more.
+	last, err := svc.ListMessagesBefore(ctx, userID, conv.ID, older.Items[0].ID, 2)
+	require.NoError(t, err)
+	require.Len(t, last.Items, 1)
+	require.False(t, last.HasMore)
+	require.Equal(t, inserted[0].ID, last.Items[0].ID)
+
+	// Empty conversation -> empty page, no more.
+	empty, err := svc.CreateConversation(ctx, userID, "empty", "E", "m")
+	require.NoError(t, err)
+	page, err := svc.ListMessagesBefore(ctx, userID, empty.ID, 0, 10)
+	require.NoError(t, err)
+	require.Len(t, page.Items, 0)
+	require.False(t, page.HasMore)
+
+	// Negative before_id -> bad request.
+	_, err = svc.ListMessagesBefore(ctx, userID, conv.ID, -1, 10)
+	require.True(t, infraerrors.IsBadRequest(err))
+
+	// Foreign owner -> 404.
+	bob := mustCreateConvUser(t, ctx, client, "before-bob@test.com")
+	_, err = svc.ListMessagesBefore(ctx, bob, conv.ID, 0, 10)
+	require.True(t, infraerrors.IsNotFound(err))
+}
+
+// ==================== Phase 2: regenerate / atomic replace ====================
+
+func TestConversationService_ReplaceSuccess(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "rep@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+	asst := appendTurn(t, ctx, svc, userID, conv.ID, "1", "question", "first answer")
+
+	newMsg := completeAssistantMessage("a-regen", "regenerated answer")
+	replaced, err := svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst.ID, "", newMsg)
+	require.NoError(t, err)
+	require.Equal(t, "regenerated answer", replaced.Content)
+	require.Greater(t, replaced.ID, asst.ID, "replacement gets a fresh, larger id")
+
+	// Old assistant is gone; the conversation now holds [user, regenerated].
+	all, err := svc.ListMessagesBefore(ctx, userID, conv.ID, 0, 100)
+	require.NoError(t, err)
+	require.Len(t, all.Items, 2)
+	require.Equal(t, service.MessageRoleUser, all.Items[0].Role)
+	require.Equal(t, replaced.ID, all.Items[1].ID)
+
+	// last_message_at tracks the new message.
+	got, err := svc.GetConversation(ctx, userID, conv.ID)
+	require.NoError(t, err)
+	require.WithinDuration(t, replaced.CreatedAt, got.LastMessageAt, time.Second)
+}
+
+func TestConversationService_ReplaceResolvesByClientMessageID(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "repcid@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+	_ = appendTurn(t, ctx, svc, userID, conv.ID, "1", "q", "a")
+
+	// Resolve the cutoff by its client_message_id ("a-1"), without a server id.
+	newMsg := completeAssistantMessage("a-regen", "regen via client id")
+	replaced, err := svc.ReplaceMessageFrom(ctx, userID, conv.ID, 0, "a-1", newMsg)
+	require.NoError(t, err)
+	require.Equal(t, "regen via client id", replaced.Content)
+}
+
+func TestConversationService_ReplaceIDOR(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	alice := mustCreateConvUser(t, ctx, client, "rep-alice@test.com")
+	bob := mustCreateConvUser(t, ctx, client, "rep-bob@test.com")
+
+	conv, err := svc.CreateConversation(ctx, alice, "c", "T", "m")
+	require.NoError(t, err)
+	asst := appendTurn(t, ctx, svc, alice, conv.ID, "1", "q", "a")
+
+	// Bob cannot replace within Alice's conversation.
+	_, err = svc.ReplaceMessageFrom(ctx, bob, conv.ID, asst.ID, "", completeAssistantMessage("x", "evil"))
+	require.True(t, infraerrors.IsNotFound(err))
+
+	// Alice's assistant is untouched.
+	all, err := svc.ListMessagesBefore(ctx, alice, conv.ID, 0, 100)
+	require.NoError(t, err)
+	require.Len(t, all.Items, 2)
+	require.Equal(t, asst.ID, all.Items[1].ID)
+}
+
+func TestConversationService_ReplaceForeignCutoffRejected(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "repforeign@test.com")
+
+	conv1, err := svc.CreateConversation(ctx, userID, "c1", "T", "m")
+	require.NoError(t, err)
+	conv2, err := svc.CreateConversation(ctx, userID, "c2", "T", "m")
+	require.NoError(t, err)
+	_ = appendTurn(t, ctx, svc, userID, conv1.ID, "1", "q1", "a1")
+	other := appendTurn(t, ctx, svc, userID, conv2.ID, "2", "q2", "a2")
+
+	// A cutoff id belonging to conv2 must not resolve within conv1 (no cross-conv
+	// truncation, no accidental whole-conversation wipe).
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv1.ID, other.ID, "", completeAssistantMessage("x", "y"))
+	require.True(t, infraerrors.IsNotFound(err))
+}
+
+func TestConversationService_ReplaceCutoffMustBeLastAssistant(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "replast@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+	asst1 := appendTurn(t, ctx, svc, userID, conv.ID, "1", "q1", "a1")
+	_ = appendTurn(t, ctx, svc, userID, conv.ID, "2", "q2", "a2") // a2 is now last
+
+	// Replacing a1 (no longer the tail) is refused with a conflict.
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst1.ID, "", completeAssistantMessage("x", "y"))
+	require.True(t, infraerrors.IsConflict(err))
+
+	// A user message as cutoff is also refused (not an assistant).
+	out, err := svc.AppendMessages(ctx, userID, conv.ID, []service.MessageInput{completeUserMessage("u3", "q3")})
+	require.NoError(t, err)
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv.ID, out[0].ID, "", completeAssistantMessage("z", "w"))
+	require.True(t, infraerrors.IsConflict(err))
+}
+
+func TestConversationService_ReplaceRejectsBadCutoffArgs(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "repargs@test.com")
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+	asst := appendTurn(t, ctx, svc, userID, conv.ID, "1", "q", "a")
+
+	// Both identifiers -> 400.
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst.ID, "a-1", completeAssistantMessage("x", "y"))
+	require.True(t, infraerrors.IsBadRequest(err))
+
+	// Neither identifier -> 400.
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv.ID, 0, "", completeAssistantMessage("x", "y"))
+	require.True(t, infraerrors.IsBadRequest(err))
+
+	// A non-assistant replacement message -> 400.
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst.ID, "", completeUserMessage("x", "y"))
+	require.True(t, infraerrors.IsBadRequest(err))
+}
+
+func TestConversationService_ReplaceIdempotentRetry(t *testing.T) {
+	svc, client := newConversationStack(t)
+	ctx := context.Background()
+	userID := mustCreateConvUser(t, ctx, client, "repidem@test.com")
+
+	conv, err := svc.CreateConversation(ctx, userID, "c", "T", "m")
+	require.NoError(t, err)
+	asst := appendTurn(t, ctx, svc, userID, conv.ID, "1", "q", "a")
+
+	newMsg := completeAssistantMessage("a-regen", "regen")
+	first, err := svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst.ID, "", newMsg)
+	require.NoError(t, err)
+
+	// Retry with the same cutoff (now deleted) + same new message -> returns the
+	// existing replacement (success), no duplicate, no error.
+	again, err := svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst.ID, "", newMsg)
+	require.NoError(t, err)
+	require.Equal(t, first.ID, again.ID)
+
+	all, err := svc.ListMessagesBefore(ctx, userID, conv.ID, 0, 100)
+	require.NoError(t, err)
+	require.Len(t, all.Items, 2, "retry must not create a duplicate")
+
+	// Same new client_message_id but a DIFFERENT payload -> conflict.
+	_, err = svc.ReplaceMessageFrom(ctx, userID, conv.ID, asst.ID, "", completeAssistantMessage("a-regen", "tampered"))
+	require.True(t, infraerrors.IsConflict(err))
 }

@@ -90,6 +90,11 @@ func Status(v string) predicate.Conversation {
 	return predicate.Conversation(sql.FieldEQ(FieldStatus, v))
 }
 
+// LastMessageAt applies equality check predicate on the "last_message_at" field. It's identical to LastMessageAtEQ.
+func LastMessageAt(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldEQ(FieldLastMessageAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Conversation {
 	return predicate.Conversation(sql.FieldEQ(FieldCreatedAt, v))
@@ -448,6 +453,46 @@ func StatusEqualFold(v string) predicate.Conversation {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.Conversation {
 	return predicate.Conversation(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// LastMessageAtEQ applies the EQ predicate on the "last_message_at" field.
+func LastMessageAtEQ(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldEQ(FieldLastMessageAt, v))
+}
+
+// LastMessageAtNEQ applies the NEQ predicate on the "last_message_at" field.
+func LastMessageAtNEQ(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldNEQ(FieldLastMessageAt, v))
+}
+
+// LastMessageAtIn applies the In predicate on the "last_message_at" field.
+func LastMessageAtIn(vs ...time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldIn(FieldLastMessageAt, vs...))
+}
+
+// LastMessageAtNotIn applies the NotIn predicate on the "last_message_at" field.
+func LastMessageAtNotIn(vs ...time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldNotIn(FieldLastMessageAt, vs...))
+}
+
+// LastMessageAtGT applies the GT predicate on the "last_message_at" field.
+func LastMessageAtGT(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldGT(FieldLastMessageAt, v))
+}
+
+// LastMessageAtGTE applies the GTE predicate on the "last_message_at" field.
+func LastMessageAtGTE(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldGTE(FieldLastMessageAt, v))
+}
+
+// LastMessageAtLT applies the LT predicate on the "last_message_at" field.
+func LastMessageAtLT(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldLT(FieldLastMessageAt, v))
+}
+
+// LastMessageAtLTE applies the LTE predicate on the "last_message_at" field.
+func LastMessageAtLTE(v time.Time) predicate.Conversation {
+	return predicate.Conversation(sql.FieldLTE(FieldLastMessageAt, v))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

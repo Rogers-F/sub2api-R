@@ -9,6 +9,7 @@ const mockListMessages = vi.fn()
 const mockPersistMessages = vi.fn()
 const mockDeleteConversation = vi.fn()
 const mockUpdateConversation = vi.fn()
+const mockReplaceMessage = vi.fn()
 
 vi.mock('@/api/chat', () => ({
   chatAPI: {
@@ -18,7 +19,8 @@ vi.mock('@/api/chat', () => ({
     updateConversation: (...a: any[]) => mockUpdateConversation(...a),
     deleteConversation: (...a: any[]) => mockDeleteConversation(...a),
     listMessages: (...a: any[]) => mockListMessages(...a),
-    persistMessages: (...a: any[]) => mockPersistMessages(...a)
+    persistMessages: (...a: any[]) => mockPersistMessages(...a),
+    replaceMessage: (...a: any[]) => mockReplaceMessage(...a)
   }
 }))
 
@@ -143,24 +145,52 @@ describe('useChatStore', () => {
       expect(chat.messages[0].serverId).toBe(1)
     })
 
-    it('loads the full history by following next_cursor across pages', async () => {
-      mockListMessages
-        .mockResolvedValueOnce({
-          items: [
-            { id: 1, conversation_id: 1, role: 'user', content: 'first', model: 'm', status: 'complete', created_at: '' }
-          ],
-          next_cursor: 'page-2'
-        })
-        .mockResolvedValueOnce({
-          items: [
-            { id: 2, conversation_id: 1, role: 'assistant', content: 'latest', model: 'm', status: 'complete', created_at: '' }
-          ],
-          next_cursor: null
-        })
+    it('fetches only the newest page (before_id=0) and records the older cursor', async () => {
+      mockListMessages.mockResolvedValue({
+        items: [
+          { id: 5, conversation_id: 1, role: 'user', content: 'recent', model: 'm', status: 'complete', created_at: '' }
+        ],
+        next_cursor: '5'
+      })
       const chat = useChatStore()
       await chat.selectConversation(1)
-      expect(mockListMessages).toHaveBeenCalledTimes(2)
-      expect(chat.messages.map((m) => m.content)).toEqual(['first', 'latest'])
+      expect(mockListMessages).toHaveBeenCalledTimes(1)
+      expect(mockListMessages).toHaveBeenCalledWith(1, { beforeId: 0 })
+      expect(chat.messages.map((m) => m.content)).toEqual(['recent'])
+      expect(chat.messagesPrevCursor).toBe('5')
+    })
+  })
+
+  describe('loadOlderMessages', () => {
+    it('prepends an older page (deduped by server id) and updates the cursor', async () => {
+      // Newest page first.
+      mockListMessages.mockResolvedValueOnce({
+        items: [
+          { id: 5, conversation_id: 1, role: 'assistant', content: 'newer', model: 'm', status: 'complete', created_at: '' }
+        ],
+        next_cursor: '5'
+      })
+      const chat = useChatStore()
+      await chat.selectConversation(1)
+
+      // Older page returned by before_id=5; id 5 duplicate must be dropped.
+      mockListMessages.mockResolvedValueOnce({
+        items: [
+          { id: 3, conversation_id: 1, role: 'user', content: 'older', model: 'm', status: 'complete', created_at: '' },
+          { id: 5, conversation_id: 1, role: 'assistant', content: 'newer', model: 'm', status: 'complete', created_at: '' }
+        ],
+        next_cursor: null
+      })
+      await chat.loadOlderMessages()
+      expect(mockListMessages).toHaveBeenLastCalledWith(1, { beforeId: 5 })
+      expect(chat.messages.map((m) => m.content)).toEqual(['older', 'newer'])
+      expect(chat.messagesPrevCursor).toBeNull()
+    })
+
+    it('does nothing when there is no older cursor', async () => {
+      const chat = useChatStore()
+      await chat.loadOlderMessages()
+      expect(mockListMessages).not.toHaveBeenCalled()
     })
   })
 
@@ -237,6 +267,83 @@ describe('useChatStore', () => {
       await chat.sendMessage('no model')
       expect(mockChatCompletionStream).not.toHaveBeenCalled()
       expect(chat.messages).toHaveLength(0)
+    })
+  })
+
+  describe('regenerate', () => {
+    async function seedConversationWithReply() {
+      primePlayground()
+      mockCreateConversation.mockResolvedValue({
+        id: 303, title: 't', model: 'test-model', status: 'active',
+        created_at: '', updated_at: '', last_message_at: ''
+      })
+      mockPersistMessages.mockResolvedValue([
+        { id: 7001, conversation_id: 303, role: 'assistant', content: '', model: 'test-model', status: 'complete', created_at: '' }
+      ])
+      mockChatCompletionStream.mockImplementationOnce(async (_k, _p, h) => {
+        h.onChunk('', { choices: [{ delta: { content: 'first reply' } }] })
+        h.onDone()
+      })
+      const chat = useChatStore()
+      await chat.sendMessage('question')
+      return chat
+    }
+
+    it('streams a fresh reply and atomically replaces the last assistant', async () => {
+      const chat = await seedConversationWithReply()
+      const assistant = chat.messages[chat.messages.length - 1]
+      const oldServerId = assistant.serverId
+
+      mockChatCompletionStream.mockImplementationOnce(async (_k, _p, h) => {
+        h.onChunk('', { choices: [{ delta: { content: 'second reply' } }] })
+        h.onDone()
+      })
+      mockReplaceMessage.mockResolvedValue({
+        id: 7050, conversation_id: 303, role: 'assistant',
+        content: 'second reply', model: 'test-model', status: 'complete', created_at: ''
+      })
+
+      await chat.regenerate(assistant)
+
+      expect(mockReplaceMessage).toHaveBeenCalledTimes(1)
+      const [convId, payload] = mockReplaceMessage.mock.calls[0]
+      expect(convId).toBe(303)
+      // Cutoff identified by server id; client-id path must be omitted.
+      expect(payload.from_id).toBe(oldServerId)
+      expect(payload.from_client_message_id).toBeUndefined()
+      expect(payload.message.role).toBe('assistant')
+
+      const updated = chat.messages[chat.messages.length - 1]
+      expect(updated.content).toBe('second reply')
+      expect(updated.serverId).toBe(7050)
+      expect(chat.status).toBe('idle')
+    })
+
+    it('restores the original reply and skips replace when the stream errors', async () => {
+      const chat = await seedConversationWithReply()
+      const assistant = chat.messages[chat.messages.length - 1]
+      const originalContent = assistant.content
+      const originalServerId = assistant.serverId
+
+      mockChatCompletionStream.mockImplementationOnce(async (_k, _p, h) => {
+        h.onError({ status: 500, message: 'boom' })
+      })
+
+      await chat.regenerate(assistant)
+
+      expect(mockReplaceMessage).not.toHaveBeenCalled()
+      expect(assistant.content).toBe(originalContent)
+      expect(assistant.serverId).toBe(originalServerId)
+      expect(assistant.status).toBe('complete')
+      expect(chat.status).toBe('idle')
+    })
+
+    it('ignores regenerate on a message that is not the last assistant', async () => {
+      const chat = await seedConversationWithReply()
+      const userMsg = chat.messages[0]
+      await chat.regenerate(userMsg)
+      expect(mockChatCompletionStream).toHaveBeenCalledTimes(1) // only the initial send
+      expect(mockReplaceMessage).not.toHaveBeenCalled()
     })
   })
 

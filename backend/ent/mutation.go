@@ -6897,6 +6897,7 @@ type ConversationMutation struct {
 	title                  *string
 	model                  *string
 	status                 *string
+	last_message_at        *time.Time
 	clearedFields          map[string]struct{}
 	user                   *int64
 	cleareduser            bool
@@ -7258,6 +7259,42 @@ func (m *ConversationMutation) ResetStatus() {
 	m.status = nil
 }
 
+// SetLastMessageAt sets the "last_message_at" field.
+func (m *ConversationMutation) SetLastMessageAt(t time.Time) {
+	m.last_message_at = &t
+}
+
+// LastMessageAt returns the value of the "last_message_at" field in the mutation.
+func (m *ConversationMutation) LastMessageAt() (r time.Time, exists bool) {
+	v := m.last_message_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastMessageAt returns the old "last_message_at" field's value of the Conversation entity.
+// If the Conversation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConversationMutation) OldLastMessageAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastMessageAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastMessageAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastMessageAt: %w", err)
+	}
+	return oldValue.LastMessageAt, nil
+}
+
+// ResetLastMessageAt resets all changes to the "last_message_at" field.
+func (m *ConversationMutation) ResetLastMessageAt() {
+	m.last_message_at = nil
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (m *ConversationMutation) ClearUser() {
 	m.cleareduser = true
@@ -7373,7 +7410,7 @@ func (m *ConversationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ConversationMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, conversation.FieldCreatedAt)
 	}
@@ -7394,6 +7431,9 @@ func (m *ConversationMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, conversation.FieldStatus)
+	}
+	if m.last_message_at != nil {
+		fields = append(fields, conversation.FieldLastMessageAt)
 	}
 	return fields
 }
@@ -7417,6 +7457,8 @@ func (m *ConversationMutation) Field(name string) (ent.Value, bool) {
 		return m.Model()
 	case conversation.FieldStatus:
 		return m.Status()
+	case conversation.FieldLastMessageAt:
+		return m.LastMessageAt()
 	}
 	return nil, false
 }
@@ -7440,6 +7482,8 @@ func (m *ConversationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldModel(ctx)
 	case conversation.FieldStatus:
 		return m.OldStatus(ctx)
+	case conversation.FieldLastMessageAt:
+		return m.OldLastMessageAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Conversation field %s", name)
 }
@@ -7497,6 +7541,13 @@ func (m *ConversationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case conversation.FieldLastMessageAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastMessageAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Conversation field %s", name)
@@ -7570,6 +7621,9 @@ func (m *ConversationMutation) ResetField(name string) error {
 		return nil
 	case conversation.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case conversation.FieldLastMessageAt:
+		m.ResetLastMessageAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Conversation field %s", name)

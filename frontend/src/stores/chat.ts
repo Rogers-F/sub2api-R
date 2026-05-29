@@ -70,6 +70,10 @@ export const useChatStore = defineStore('chat', () => {
   const currentConversationId = ref<number | null>(null)
   const messages = ref<LiveMessage[]>([])
   const messagesLoading = ref(false)
+  // Cursor (smallest loaded message id) for fetching an older page; null when the
+  // start of history has been reached.
+  const messagesPrevCursor = ref<string | null>(null)
+  const messagesLoadingMore = ref(false)
 
   const status = ref<ChatStreamStatus>('idle')
   const abortController = ref<AbortController | null>(null)
@@ -134,23 +138,40 @@ export const useChatStore = defineStore('chat', () => {
     if (currentConversationId.value === id && messages.value.length > 0) return
     currentConversationId.value = id
     messages.value = []
+    messagesPrevCursor.value = null
     messagesLoading.value = true
     try {
-      // Messages are paginated id ASC (oldest first). Loop through every page
-      // following next_cursor so the full history — including the most recent
-      // turns — is present, not just the first page.
-      const all: ChatMessage[] = []
-      let cursor: string | undefined
-      do {
-        const res = await chatAPI.listMessages(id, cursor)
-        all.push(...(res.items ?? []))
-        cursor = res.next_cursor ?? undefined
-      } while (cursor)
-      messages.value = all.map(toLiveMessage)
+      // Fetch only the newest page (before_id=0). Earlier history is loaded on
+      // demand when the user scrolls to the top (see loadOlderMessages).
+      const res = await chatAPI.listMessages(id, { beforeId: 0 })
+      messages.value = (res.items ?? []).map(toLiveMessage)
+      messagesPrevCursor.value = res.next_cursor ?? null
     } catch {
       appStore.showError(t('chat.errors.loadMessagesFailed'))
     } finally {
       messagesLoading.value = false
+    }
+  }
+
+  // Fetch one older page and prepend it (deduplicated by server id), preserving
+  // chronological order (older messages first). Only runs when an older page
+  // remains and another fetch is not already in flight.
+  async function loadOlderMessages(): Promise<void> {
+    const cursor = messagesPrevCursor.value
+    const convId = currentConversationId.value
+    if (!cursor || convId == null || messagesLoadingMore.value) return
+    messagesLoadingMore.value = true
+    try {
+      const res = await chatAPI.listMessages(convId, { beforeId: Number(cursor) })
+      const older = (res.items ?? []).map(toLiveMessage)
+      const existing = new Set(messages.value.map((m) => m.serverId))
+      const fresh = older.filter((m) => !existing.has(m.serverId))
+      messages.value = [...fresh, ...messages.value]
+      messagesPrevCursor.value = res.next_cursor ?? null
+    } catch {
+      appStore.showError(t('chat.errors.loadMessagesFailed'))
+    } finally {
+      messagesLoadingMore.value = false
     }
   }
 
@@ -199,6 +220,57 @@ export const useChatStore = defineStore('chat', () => {
       appStore.showError(t('chat.errors.persistFailed'))
       return null
     }
+  }
+
+  // Stream an assistant reply for the given live placeholder using the current
+  // `messages` (excluding any in-flight assistant with no content). Writes deltas
+  // into `target.content` and reports the terminal outcome. Manages the shared
+  // abortController and `status` ref. Reusable by sendMessage and regenerate.
+  async function streamAssistant(
+    model: string,
+    target: LiveMessage
+  ): Promise<{ content: string; errored: boolean; errorText: string }> {
+    status.value = 'streaming'
+
+    // Build the chat-completions message history from persisted/live turns
+    // (system messages excluded).
+    const history = messages.value
+      .filter((m) => m.role === 'user' || (m.role === 'assistant' && m.content))
+      .map((m) => ({ role: m.role, content: m.content }))
+
+    abortController.value = new AbortController()
+    let acc = ''
+    let streamErrored = false
+    let errorText = ''
+
+    await chatCompletionStream(
+      playground.apiKey,
+      { model, messages: history, stream: true },
+      {
+        onChunk: (_raw, parsed: unknown) => {
+          const delta = (parsed as { choices?: Array<{ delta?: { content?: unknown } }> })
+            ?.choices?.[0]?.delta
+          if (delta && typeof delta.content === 'string' && delta.content) {
+            acc += delta.content
+            target.content = acc
+          }
+        },
+        onDone: () => {
+          target.content = acc
+        },
+        onError: (err) => {
+          streamErrored = true
+          errorText = t('playground.errors.httpError', {
+            status: err.status || 0,
+            message: err.message
+          })
+        }
+      },
+      abortController.value.signal
+    )
+    abortController.value = null
+
+    return { content: acc, errored: streamErrored, errorText }
   }
 
   async function sendMessage(userText: string): Promise<void> {
@@ -254,50 +326,13 @@ export const useChatStore = defineStore('chat', () => {
       createdAt: new Date().toISOString()
     }
     messages.value.push(assistant)
-    status.value = 'streaming'
 
-    // Build the chat-completions message history from persisted/live turns
-    // (system messages excluded).
-    const history = messages.value
-      .filter((m) => m.role === 'user' || (m.role === 'assistant' && m.content))
-      .map((m) => ({ role: m.role, content: m.content }))
-
-    abortController.value = new AbortController()
-    let acc = ''
-    let streamErrored = false
-    let errorText = ''
-
-    await chatCompletionStream(
-      playground.apiKey,
-      { model, messages: history, stream: true },
-      {
-        onChunk: (_raw, parsed: unknown) => {
-          const delta = (parsed as { choices?: Array<{ delta?: { content?: unknown } }> })
-            ?.choices?.[0]?.delta
-          if (delta && typeof delta.content === 'string' && delta.content) {
-            acc += delta.content
-            assistant.content = acc
-          }
-        },
-        onDone: () => {
-          assistant.content = acc
-        },
-        onError: (err) => {
-          streamErrored = true
-          errorText = t('playground.errors.httpError', {
-            status: err.status || 0,
-            message: err.message
-          })
-        }
-      },
-      abortController.value.signal
-    )
-    abortController.value = null
+    const { errored, errorText } = await streamAssistant(model, assistant)
 
     // 3) Save the assistant message once, at its terminal state.
-    const terminalStatus: ChatMessageStatus = streamErrored ? 'error' : 'complete'
+    const terminalStatus: ChatMessageStatus = errored ? 'error' : 'complete'
     assistant.status = terminalStatus
-    if (streamErrored) {
+    if (errored) {
       assistant.errorMessage = errorText
       status.value = 'error'
       appStore.showError(errorText)
@@ -328,11 +363,88 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  // NOTE: a "regenerate" action is intentionally omitted. The backend is
-  // append-only with no message-truncate/delete endpoint, so locally slicing
-  // off the last turn and re-sending would diverge from persisted history
-  // (the dropped messages reappear on reload). Defer regenerate until a
-  // server-side message-truncate endpoint exists.
+  // Regenerate the last assistant reply: stream a fresh reply from the context up
+  // to (and including) the preceding user turn, then atomically replace the old
+  // assistant row server-side. "Generate first, replace on success" — if the
+  // stream fails or aborts, the original assistant message is restored and the
+  // server is left untouched.
+  async function regenerate(message: LiveMessage): Promise<void> {
+    if (isStreaming.value) return
+    // Only the final assistant message is regenerable, and only at rest.
+    const last = messages.value[messages.value.length - 1]
+    if (
+      last !== message ||
+      message.role !== 'assistant' ||
+      message.status === 'streaming'
+    ) {
+      return
+    }
+
+    const conversationId = currentConversationId.value
+    if (conversationId == null) return
+    if (!playground.apiKey) {
+      appStore.showError(t('playground.errors.noKeySelected'))
+      return
+    }
+    if (!playground.inputs.model) {
+      appStore.showError(t('playground.errors.noModelSelected'))
+      return
+    }
+    const model = playground.inputs.model
+
+    // Back up the old assistant so we can restore it on any failure.
+    const backup = {
+      content: message.content,
+      serverId: message.serverId,
+      status: message.status
+    }
+    const restore = () => {
+      message.content = backup.content
+      message.serverId = backup.serverId
+      message.status = backup.status
+      status.value = 'idle'
+    }
+
+    // Reset the message in place (stable v-for key preserved) and stream a fresh
+    // reply. streamAssistant rebuilds history from `messages`, and since this
+    // assistant's content is now empty it is excluded from the prompt context.
+    message.content = ''
+    message.status = 'streaming'
+    message.errorMessage = undefined
+
+    const { content, errored, errorText } = await streamAssistant(model, message)
+
+    if (errored) {
+      restore()
+      appStore.showError(errorText)
+      return
+    }
+
+    // Atomically replace the old assistant row. Identify the cutoff by server id
+    // when known, otherwise by the stable client message id.
+    const newClientId = generateMessageId()
+    try {
+      const replaced = await chatAPI.replaceMessage(conversationId, {
+        from_id: backup.serverId,
+        from_client_message_id: backup.serverId === undefined ? message.id : undefined,
+        message: {
+          client_message_id: newClientId,
+          role: 'assistant',
+          content,
+          model,
+          status: 'complete'
+        }
+      })
+      message.content = replaced.content
+      message.serverId = replaced.id
+      message.id = `srv-${replaced.id}`
+      message.status = 'complete'
+      status.value = 'idle'
+    } catch {
+      restore()
+      appStore.showError(t('chat.errors.regenerateFailed'))
+    }
+  }
 
   return {
     // state
@@ -344,6 +456,8 @@ export const useChatStore = defineStore('chat', () => {
     currentConversationId,
     messages,
     messagesLoading,
+    messagesPrevCursor,
+    messagesLoadingMore,
     status,
     // getters
     isStreaming,
@@ -352,10 +466,12 @@ export const useChatStore = defineStore('chat', () => {
     loadMoreConversations,
     createConversation,
     selectConversation,
+    loadOlderMessages,
     startNewConversation,
     renameConversation,
     deleteConversation,
     sendMessage,
+    regenerate,
     stopGeneration
   }
 })

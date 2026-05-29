@@ -163,7 +163,7 @@ const grouped = computed(() => {
   const today: Conversation[] = []
   const earlier: Conversation[] = []
   for (const c of filtered.value) {
-    const dt = new Date(c.updated_at || c.created_at)
+    const dt = new Date(c.last_message_at || c.created_at)
     if (dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d) {
       today.push(c)
     } else {

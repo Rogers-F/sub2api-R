@@ -1,9 +1,12 @@
 package schema
 
 import (
+	"time"
+
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -49,6 +52,13 @@ func (Conversation) Fields() []ent.Field {
 			MaxLen(20).
 			Default("active").
 			Comment("Lifecycle status: active, archived"),
+		// Dedicated list-ordering key, decoupled from updated_at (which is
+		// auto-bumped on every update, including rename). Advanced only when a
+		// message is appended or atomically replaced.
+		// Invariant: == MAX(message.created_at), or created_at when no messages.
+		field.Time("last_message_at").
+			Default(time.Now).
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 	}
 }
 
@@ -70,7 +80,9 @@ func (Conversation) Indexes() []ent.Index {
 	return []ent.Index{
 		// Idempotent creation per user.
 		index.Fields("user_id", "client_conversation_id").Unique(),
-		// Cursor pagination ordering (updated_at DESC, id DESC).
+		// Current cursor pagination ordering (last_message_at DESC, id DESC).
+		index.Fields("user_id", "last_message_at", "id"),
+		// Legacy ordering index, retained for rollback safety (dropped later).
 		index.Fields("user_id", "updated_at", "id"),
 	}
 }

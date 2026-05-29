@@ -347,6 +347,7 @@ var (
 		{Name: "title", Type: field.TypeString, Size: 255, Default: ""},
 		{Name: "model", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+		{Name: "last_message_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "user_id", Type: field.TypeInt64},
 	}
 	// ConversationsTable holds the schema information for the "conversations" table.
@@ -357,7 +358,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "conversations_users_conversations",
-				Columns:    []*schema.Column{ConversationsColumns[7]},
+				Columns:    []*schema.Column{ConversationsColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -366,12 +367,17 @@ var (
 			{
 				Name:    "conversation_user_id_client_conversation_id",
 				Unique:  true,
-				Columns: []*schema.Column{ConversationsColumns[7], ConversationsColumns[3]},
+				Columns: []*schema.Column{ConversationsColumns[8], ConversationsColumns[3]},
+			},
+			{
+				Name:    "conversation_user_id_last_message_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConversationsColumns[8], ConversationsColumns[7], ConversationsColumns[0]},
 			},
 			{
 				Name:    "conversation_user_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{ConversationsColumns[7], ConversationsColumns[2], ConversationsColumns[0]},
+				Columns: []*schema.Column{ConversationsColumns[8], ConversationsColumns[2], ConversationsColumns[0]},
 			},
 		},
 	}

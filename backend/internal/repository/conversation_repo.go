@@ -31,12 +31,19 @@ func NewConversationRepository(client *dbent.Client) service.ConversationReposit
 
 func (r *conversationRepository) Create(ctx context.Context, c *service.Conversation) error {
 	client := clientFromContext(ctx, r.client)
+	// Pin created_at/updated_at/last_message_at to a single instant so the
+	// "no messages -> last_message_at == created_at" invariant holds exactly
+	// (the per-field ent defaults would each call time.Now() separately).
+	now := time.Now()
 	created, err := client.Conversation.Create().
 		SetUserID(c.UserID).
 		SetClientConversationID(c.ClientConversationID).
 		SetTitle(c.Title).
 		SetModel(c.Model).
 		SetStatus(c.Status).
+		SetCreatedAt(now).
+		SetUpdatedAt(now).
+		SetLastMessageAt(now).
 		Save(ctx)
 	if err != nil {
 		// Unique (user_id, client_conversation_id) violation -> Conflict so the
@@ -100,14 +107,14 @@ func (r *conversationRepository) List(ctx context.Context, userID int64, cursor 
 	q := client.Conversation.Query().
 		Where(conversation.UserIDEQ(userID))
 
-	// Composite keyset cursor: rows strictly after (updated_at DESC, id DESC).
-	// (updated_at < c.UpdatedAt) OR (updated_at = c.UpdatedAt AND id < c.ID)
+	// Composite keyset cursor: rows strictly after (last_message_at DESC, id DESC).
+	// (last_message_at < c.LastMessageAt) OR (last_message_at = c.LastMessageAt AND id < c.ID)
 	if cursor != nil {
 		q = q.Where(
 			conversation.Or(
-				conversation.UpdatedAtLT(cursor.UpdatedAt),
+				conversation.LastMessageAtLT(cursor.LastMessageAt),
 				conversation.And(
-					conversation.UpdatedAtEQ(cursor.UpdatedAt),
+					conversation.LastMessageAtEQ(cursor.LastMessageAt),
 					conversation.IDLT(cursor.ID),
 				),
 			),
@@ -116,7 +123,7 @@ func (r *conversationRepository) List(ctx context.Context, userID int64, cursor 
 
 	items, err := q.
 		Order(
-			conversation.ByUpdatedAt(entsql.OrderDesc()),
+			conversation.ByLastMessageAt(entsql.OrderDesc()),
 			conversation.ByID(entsql.OrderDesc()),
 		).
 		Limit(limit).
@@ -147,12 +154,14 @@ func (r *conversationRepository) UpdateTitle(ctx context.Context, userID, id int
 
 func (r *conversationRepository) Touch(ctx context.Context, userID, id int64, at time.Time) error {
 	client := clientFromContext(ctx, r.client)
+	// Advance the dedicated ordering key only. updated_at is auto-bumped by the
+	// TimeMixin and is intentionally not used for list ordering.
 	affected, err := client.Conversation.Update().
 		Where(
 			conversation.IDEQ(id),
 			conversation.UserIDEQ(userID),
 		).
-		SetUpdatedAt(at).
+		SetLastMessageAt(at).
 		Save(ctx)
 	if err != nil {
 		return err
@@ -187,6 +196,7 @@ func applyConversationEntityToService(dst *service.Conversation, src *dbent.Conv
 	dst.ID = src.ID
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
+	dst.LastMessageAt = src.LastMessageAt
 }
 
 func conversationEntityToService(m *dbent.Conversation) *service.Conversation {
@@ -202,6 +212,7 @@ func conversationEntityToService(m *dbent.Conversation) *service.Conversation {
 		Status:               m.Status,
 		CreatedAt:            m.CreatedAt,
 		UpdatedAt:            m.UpdatedAt,
+		LastMessageAt:        m.LastMessageAt,
 	}
 }
 

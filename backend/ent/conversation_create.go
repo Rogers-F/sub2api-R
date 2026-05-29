@@ -106,6 +106,20 @@ func (_c *ConversationCreate) SetNillableStatus(v *string) *ConversationCreate {
 	return _c
 }
 
+// SetLastMessageAt sets the "last_message_at" field.
+func (_c *ConversationCreate) SetLastMessageAt(v time.Time) *ConversationCreate {
+	_c.mutation.SetLastMessageAt(v)
+	return _c
+}
+
+// SetNillableLastMessageAt sets the "last_message_at" field if the given value is not nil.
+func (_c *ConversationCreate) SetNillableLastMessageAt(v *time.Time) *ConversationCreate {
+	if v != nil {
+		_c.SetLastMessageAt(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *ConversationCreate) SetUser(v *User) *ConversationCreate {
 	return _c.SetUserID(v.ID)
@@ -181,6 +195,10 @@ func (_c *ConversationCreate) defaults() {
 		v := conversation.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.LastMessageAt(); !ok {
+		v := conversation.DefaultLastMessageAt()
+		_c.mutation.SetLastMessageAt(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -225,6 +243,9 @@ func (_c *ConversationCreate) check() error {
 		if err := conversation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Conversation.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.LastMessageAt(); !ok {
+		return &ValidationError{Name: "last_message_at", err: errors.New(`ent: missing required field "Conversation.last_message_at"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Conversation.user"`)}
@@ -279,6 +300,10 @@ func (_c *ConversationCreate) createSpec() (*Conversation, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(conversation.FieldStatus, field.TypeString, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.LastMessageAt(); ok {
+		_spec.SetField(conversation.FieldLastMessageAt, field.TypeTime, value)
+		_node.LastMessageAt = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -437,6 +462,18 @@ func (u *ConversationUpsert) UpdateStatus() *ConversationUpsert {
 	return u
 }
 
+// SetLastMessageAt sets the "last_message_at" field.
+func (u *ConversationUpsert) SetLastMessageAt(v time.Time) *ConversationUpsert {
+	u.Set(conversation.FieldLastMessageAt, v)
+	return u
+}
+
+// UpdateLastMessageAt sets the "last_message_at" field to the value that was provided on create.
+func (u *ConversationUpsert) UpdateLastMessageAt() *ConversationUpsert {
+	u.SetExcluded(conversation.FieldLastMessageAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -563,6 +600,20 @@ func (u *ConversationUpsertOne) SetStatus(v string) *ConversationUpsertOne {
 func (u *ConversationUpsertOne) UpdateStatus() *ConversationUpsertOne {
 	return u.Update(func(s *ConversationUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetLastMessageAt sets the "last_message_at" field.
+func (u *ConversationUpsertOne) SetLastMessageAt(v time.Time) *ConversationUpsertOne {
+	return u.Update(func(s *ConversationUpsert) {
+		s.SetLastMessageAt(v)
+	})
+}
+
+// UpdateLastMessageAt sets the "last_message_at" field to the value that was provided on create.
+func (u *ConversationUpsertOne) UpdateLastMessageAt() *ConversationUpsertOne {
+	return u.Update(func(s *ConversationUpsert) {
+		s.UpdateLastMessageAt()
 	})
 }
 
@@ -858,6 +909,20 @@ func (u *ConversationUpsertBulk) SetStatus(v string) *ConversationUpsertBulk {
 func (u *ConversationUpsertBulk) UpdateStatus() *ConversationUpsertBulk {
 	return u.Update(func(s *ConversationUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetLastMessageAt sets the "last_message_at" field.
+func (u *ConversationUpsertBulk) SetLastMessageAt(v time.Time) *ConversationUpsertBulk {
+	return u.Update(func(s *ConversationUpsert) {
+		s.SetLastMessageAt(v)
+	})
+}
+
+// UpdateLastMessageAt sets the "last_message_at" field to the value that was provided on create.
+func (u *ConversationUpsertBulk) UpdateLastMessageAt() *ConversationUpsertBulk {
+	return u.Update(func(s *ConversationUpsert) {
+		s.UpdateLastMessageAt()
 	})
 }
 

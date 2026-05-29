@@ -36,7 +36,15 @@
 
       <template v-else>
         <ChatEmptyState v-if="showEmpty" @pick="onPickExample" />
-        <ChatMessageList v-else :messages="chat.messages" :streaming="chat.isStreaming" />
+        <ChatMessageList
+          v-else
+          :messages="chat.messages"
+          :streaming="chat.isStreaming"
+          :has-older="!!chat.messagesPrevCursor"
+          :loading-older="chat.messagesLoadingMore"
+          @load-older="chat.loadOlderMessages"
+          @regenerate="chat.regenerate"
+        />
         <ChatComposer
           ref="composerRef"
           :streaming="chat.isStreaming"

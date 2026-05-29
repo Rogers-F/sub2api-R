@@ -123,7 +123,7 @@ func (s *ConversationService) ListConversations(
 	out := &ConversationList{}
 	if len(items) > limit {
 		last := items[limit-1]
-		out.NextCursor = &ConversationCursor{UpdatedAt: last.UpdatedAt, ID: last.ID}
+		out.NextCursor = &ConversationCursor{LastMessageAt: last.LastMessageAt, ID: last.ID}
 		items = items[:limit]
 	}
 	out.Items = items
@@ -200,6 +200,47 @@ func (s *ConversationService) ListMessages(
 	return out, nil
 }
 
+// ListMessagesBefore returns a page of messages within a conversation owned by
+// the user using backward (newest-first) pagination: messages with id < beforeID
+// (or the newest page when beforeID <= 0), returned id ASC for display.
+// HasMore reports whether still-older messages exist.
+func (s *ConversationService) ListMessagesBefore(
+	ctx context.Context,
+	userID, conversationID int64,
+	beforeID int64,
+	limit int,
+) (*MessageList, error) {
+	if userID <= 0 || conversationID <= 0 {
+		return nil, ErrConversationNotFound
+	}
+	if beforeID < 0 {
+		return nil, ErrMessageInvalid
+	}
+	// Verify parent ownership before listing children.
+	if _, err := s.conversationRepo.GetByID(ctx, userID, conversationID); err != nil {
+		return nil, err
+	}
+	limit = normalizeConversationLimit(limit, defaultConversationListLimit, maxConversationListLimit)
+	// Fetch one extra row (oldest of the page) to detect whether more exist.
+	rows, err := s.messageRepo.ListBefore(ctx, userID, conversationID, beforeID, limit+1)
+	if err != nil {
+		return nil, fmt.Errorf("list messages before: %w", err)
+	}
+
+	out := &MessageList{}
+	if len(rows) > limit {
+		out.HasMore = true
+		// rows are id DESC; the extra row is the oldest -> drop the tail.
+		rows = rows[:limit]
+	}
+	// Reverse id DESC -> id ASC for display.
+	for i, j := 0, len(rows)-1; i < j; i, j = i+1, j-1 {
+		rows[i], rows[j] = rows[j], rows[i]
+	}
+	out.Items = rows
+	return out, nil
+}
+
 // AppendMessages inserts a batch of messages into a conversation in a single
 // transaction: lock the parent conversation FOR UPDATE (verifying ownership),
 // insert messages, and bump the conversation's updated_at.
@@ -255,6 +296,7 @@ func (s *ConversationService) AppendMessages(
 
 	results := make([]Message, 0, len(inputs))
 	inserted := false
+	var maxCreatedAt time.Time
 	for i := range inputs {
 		m, created, err := s.appendOne(txCtx, userID, conversationID, &inputs[i])
 		if err != nil {
@@ -262,14 +304,19 @@ func (s *ConversationService) AppendMessages(
 		}
 		if created {
 			inserted = true
+			if m.CreatedAt.After(maxCreatedAt) {
+				maxCreatedAt = m.CreatedAt
+			}
 		}
 		results = append(results, *m)
 	}
 
-	// Only bump updated_at when at least one new message was actually inserted.
-	// Pure idempotent retries must not reorder the conversation list.
+	// Only advance last_message_at when at least one new message was actually
+	// inserted, and set it to the newest inserted message's created_at so that
+	// last_message_at == MAX(message.created_at) holds exactly. Pure idempotent
+	// retries must not reorder the conversation list.
 	if inserted {
-		if err := s.conversationRepo.Touch(txCtx, userID, conversationID, time.Now()); err != nil {
+		if err := s.conversationRepo.Touch(txCtx, userID, conversationID, maxCreatedAt); err != nil {
 			return nil, fmt.Errorf("touch conversation: %w", err)
 		}
 	}
@@ -296,18 +343,7 @@ func (s *ConversationService) appendOne(
 	userID, conversationID int64,
 	input *MessageInput,
 ) (*Message, bool, error) {
-	m := &Message{
-		ConversationID:       conversationID,
-		UserID:               userID,
-		Role:                 input.Role,
-		Content:              input.Content,
-		Model:                input.Model,
-		Status:               input.Status,
-		ReportedInputTokens:  input.ReportedInputTokens,
-		ReportedOutputTokens: input.ReportedOutputTokens,
-		ClientMessageID:      input.ClientMessageID,
-		GatewayRequestID:     input.GatewayRequestID,
-	}
+	m := messageFromInput(conversationID, userID, input)
 
 	// Idempotency check first: if a row already exists for this
 	// (conversation_id, client_message_id), compare the fingerprint.
@@ -331,6 +367,183 @@ func (s *ConversationService) appendOne(
 		return nil, false, fmt.Errorf("create message: %w", err)
 	}
 	return m, true, nil
+}
+
+// ReplaceMessageFrom atomically replaces a conversation's trailing assistant
+// message: it deletes the cutoff message (and anything after it) and inserts a
+// new assistant message, in a single transaction, advancing last_message_at.
+//
+// Used by "regenerate", which streams the new reply first and only calls this
+// once the new reply reaches a terminal state — so a failed/aborted stream
+// leaves the server untouched (no irreversible intermediate state).
+//
+// Safety:
+//   - Exactly one of cutoffID / cutoffClientID identifies the cutoff; it must
+//     resolve within (user_id, conversation_id) (IDOR + no foreign/garbage id).
+//   - The cutoff must be an assistant message AND the conversation's current
+//     last message (cutoff.id == MAX(id)); otherwise a concurrent append has
+//     changed the tail and we refuse (409) rather than delete someone else's
+//     newer message.
+//   - Idempotent on newMsg.ClientMessageID: a retry after success returns the
+//     existing replacement; a same-id-different-payload or still-present-cutoff
+//     state is a 409.
+func (s *ConversationService) ReplaceMessageFrom(
+	ctx context.Context,
+	userID, conversationID int64,
+	cutoffID int64,
+	cutoffClientID string,
+	newMsg MessageInput,
+) (*Message, error) {
+	if userID <= 0 || conversationID <= 0 {
+		return nil, ErrConversationNotFound
+	}
+	if cutoffID < 0 {
+		return nil, ErrMessageInvalid
+	}
+	cutoffClientID = strings.TrimSpace(cutoffClientID)
+	// Exactly one cutoff identifier must be supplied.
+	if (cutoffID > 0) == (cutoffClientID != "") {
+		return nil, ErrMessageInvalid
+	}
+	if err := validateMessageInput(&newMsg); err != nil {
+		return nil, err
+	}
+	// Replacement is always a completed assistant message.
+	if newMsg.Role != MessageRoleAssistant || newMsg.Status != MessageStatusComplete {
+		return nil, ErrMessageInvalid
+	}
+
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin replace transaction: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+	txCtx := dbent.NewTxContext(ctx, tx)
+
+	// Lock parent (serializes against AppendMessages / concurrent replaces).
+	if _, err := s.conversationRepo.GetByIDForUpdate(txCtx, userID, conversationID); err != nil {
+		return nil, err
+	}
+
+	candidate := messageFromInput(conversationID, userID, &newMsg)
+
+	// Idempotency: has the replacement already been persisted?
+	existingNew, getErr := s.messageRepo.GetByClientID(txCtx, userID, conversationID, newMsg.ClientMessageID)
+	if getErr == nil {
+		if !messageFingerprintEqual(existingNew, candidate) {
+			return nil, ErrMessageConflict
+		}
+		// Same payload: a retry is a success only once the cutoff is gone (i.e.
+		// the replace already happened). If the cutoff still exists, the state
+		// is inconsistent (e.g. id reused via append) -> conflict.
+		cutoffExists, err := s.cutoffExists(txCtx, userID, conversationID, cutoffID, cutoffClientID)
+		if err != nil {
+			return nil, err
+		}
+		if cutoffExists {
+			return nil, ErrMessageConflict
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, fmt.Errorf("commit replace transaction: %w", err)
+		}
+		committed = true
+		return existingNew, nil
+	}
+	if !errors.Is(getErr, ErrConversationNotFound) {
+		return nil, getErr
+	}
+
+	// Resolve and validate the cutoff.
+	cutoff, err := s.resolveCutoff(txCtx, userID, conversationID, cutoffID, cutoffClientID)
+	if err != nil {
+		return nil, err // ErrConversationNotFound -> 404
+	}
+	if cutoff.Role != MessageRoleAssistant {
+		return nil, ErrMessageConflict
+	}
+	maxID, ok, err := s.messageRepo.MaxMessageID(txCtx, userID, conversationID)
+	if err != nil {
+		return nil, fmt.Errorf("max message id: %w", err)
+	}
+	// The cutoff must be the current last message; otherwise the tail changed.
+	if !ok || cutoff.ID != maxID {
+		return nil, ErrMessageConflict
+	}
+
+	if _, err := s.messageRepo.DeleteFrom(txCtx, userID, conversationID, cutoff.ID); err != nil {
+		return nil, fmt.Errorf("delete suffix: %w", err)
+	}
+
+	inserted := messageFromInput(conversationID, userID, &newMsg)
+	if err := s.messageRepo.Create(txCtx, inserted); err != nil {
+		if infraerrors.IsConflict(err) {
+			return nil, ErrMessageConflict
+		}
+		return nil, fmt.Errorf("insert replacement: %w", err)
+	}
+	// The new message id is the largest -> last_message_at = its created_at,
+	// preserving last_message_at == MAX(message.created_at).
+	if err := s.conversationRepo.Touch(txCtx, userID, conversationID, inserted.CreatedAt); err != nil {
+		return nil, fmt.Errorf("touch conversation: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit replace transaction: %w", err)
+	}
+	committed = true
+	return inserted, nil
+}
+
+// resolveCutoff loads the cutoff message identified by exactly one of (id,
+// clientID), scoped to (user_id, conversation_id). Returns ErrConversationNotFound
+// when it does not exist in this conversation.
+func (s *ConversationService) resolveCutoff(
+	ctx context.Context,
+	userID, conversationID, cutoffID int64,
+	cutoffClientID string,
+) (*Message, error) {
+	if cutoffID > 0 {
+		return s.messageRepo.GetByID(ctx, userID, conversationID, cutoffID)
+	}
+	return s.messageRepo.GetByClientID(ctx, userID, conversationID, cutoffClientID)
+}
+
+// cutoffExists reports whether the cutoff message still exists in (user_id,
+// conversation_id).
+func (s *ConversationService) cutoffExists(
+	ctx context.Context,
+	userID, conversationID, cutoffID int64,
+	cutoffClientID string,
+) (bool, error) {
+	_, err := s.resolveCutoff(ctx, userID, conversationID, cutoffID, cutoffClientID)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, ErrConversationNotFound) {
+		return false, nil
+	}
+	return false, err
+}
+
+// messageFromInput builds a *Message from a validated MessageInput.
+func messageFromInput(conversationID, userID int64, in *MessageInput) *Message {
+	return &Message{
+		ConversationID:       conversationID,
+		UserID:               userID,
+		Role:                 in.Role,
+		Content:              in.Content,
+		Model:                in.Model,
+		Status:               in.Status,
+		ReportedInputTokens:  in.ReportedInputTokens,
+		ReportedOutputTokens: in.ReportedOutputTokens,
+		ClientMessageID:      in.ClientMessageID,
+		GatewayRequestID:     in.GatewayRequestID,
+	}
 }
 
 // validateMessageInput enforces service-layer rules before persistence.

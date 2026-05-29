@@ -171,13 +171,42 @@ func (h *ConversationHandler) ListMessages(c *gin.Context) {
 	}
 
 	limit := parseLimitQuery(c.Query("limit"))
-	afterID, err := parseAfterIDQuery(c.Query("cursor"))
-	if err != nil {
-		response.BadRequest(c, "Invalid cursor")
+
+	// Detect presence by key (not value), so an empty value like "?before_id="
+	// is treated as a malformed backward request rather than silently falling
+	// back to the legacy forward path.
+	beforeRaw, hasBefore := c.GetQuery("before_id")
+	_, hasCursor := c.GetQuery("cursor")
+	// The two pagination modes are mutually exclusive.
+	if hasBefore && hasCursor {
+		response.BadRequest(c, "cursor and before_id are mutually exclusive")
 		return
 	}
 
-	result, err := h.conversationService.ListMessages(c.Request.Context(), subject.UserID, id, afterID, limit)
+	var (
+		result *service.MessageList
+		err    error
+		// backward mode emits next_cursor = smallest id of the page (older page).
+		backward bool
+	)
+	if hasBefore {
+		// Backward (newest-first) pagination. before_id == 0 means "latest page".
+		beforeID, perr := strconv.ParseInt(strings.TrimSpace(beforeRaw), 10, 64)
+		if perr != nil || beforeID < 0 {
+			response.BadRequest(c, "Invalid before_id")
+			return
+		}
+		backward = true
+		result, err = h.conversationService.ListMessagesBefore(c.Request.Context(), subject.UserID, id, beforeID, limit)
+	} else {
+		// Legacy forward pagination (cursor = afterID), retained for compatibility.
+		afterID, perr := parseAfterIDQuery(c.Query("cursor"))
+		if perr != nil {
+			response.BadRequest(c, "Invalid cursor")
+			return
+		}
+		result, err = h.conversationService.ListMessages(c.Request.Context(), subject.UserID, id, afterID, limit)
+	}
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -188,9 +217,15 @@ func (h *ConversationHandler) ListMessages(c *gin.Context) {
 		out = append(out, *dto.MessageFromService(&result.Items[i]))
 	}
 	resp := dto.MessageListResponse{Items: out}
-	// id ASC cursor: emit a cursor only when another page exists.
+	// Items are always id ASC. Emit next_cursor only when another page exists:
+	// backward -> smallest id (oldest, for the next older page);
+	// forward  -> largest id (newest, for the next forward page).
 	if result.HasMore && len(result.Items) > 0 {
-		resp.NextCursor = strconv.FormatInt(result.Items[len(result.Items)-1].ID, 10)
+		if backward {
+			resp.NextCursor = strconv.FormatInt(result.Items[0].ID, 10)
+		} else {
+			resp.NextCursor = strconv.FormatInt(result.Items[len(result.Items)-1].ID, 10)
+		}
 	}
 	response.Success(c, resp)
 }
@@ -230,6 +265,45 @@ func (h *ConversationHandler) AppendMessages(c *gin.Context) {
 		out = append(out, *dto.MessageFromService(&created[i]))
 	}
 	response.Success(c, dto.MessageListResponse{Items: out})
+}
+
+// Replace handles POST /conversations/:id/messages/replace.
+//
+// Atomically replaces the conversation's trailing assistant message (the cutoff,
+// identified by exactly one of from_id / from_client_message_id) with a new
+// assistant reply. Used by "regenerate".
+func (h *ConversationHandler) Replace(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	id, ok := parseConversationID(c)
+	if !ok {
+		return
+	}
+
+	var req dto.ReplaceMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	newMsg := dto.MessageInputToService(&req.Message)
+	replaced, err := h.conversationService.ReplaceMessageFrom(
+		c.Request.Context(),
+		subject.UserID,
+		id,
+		req.FromID,
+		req.FromClientMessageID,
+		newMsg,
+	)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.MessageFromService(replaced))
 }
 
 // parseConversationID parses and validates the :id path parameter, writing a
@@ -273,14 +347,21 @@ func parseAfterIDQuery(v string) (int64, error) {
 	return n, nil
 }
 
-// encodeConversationCursor encodes (updated_at_unix_nanos:id) as a base64 token.
+// conversationCursorVersion prefixes the cursor token. The v2 cursor keys on
+// last_message_at (v1 keyed on updated_at); the prefix forces rejection of any
+// stale v1 token so it is never silently misinterpreted across a deploy.
+const conversationCursorVersion = "v2"
+
+// encodeConversationCursor encodes (v2:last_message_at_unix_nanos:id) as base64.
 func encodeConversationCursor(cur *service.ConversationCursor) string {
-	raw := strconv.FormatInt(cur.UpdatedAt.UTC().UnixNano(), 10) + ":" + strconv.FormatInt(cur.ID, 10)
+	raw := conversationCursorVersion + ":" +
+		strconv.FormatInt(cur.LastMessageAt.UTC().UnixNano(), 10) + ":" +
+		strconv.FormatInt(cur.ID, 10)
 	return base64.RawURLEncoding.EncodeToString([]byte(raw))
 }
 
 // decodeConversationCursor decodes a cursor token. An empty token yields a nil
-// cursor (first page). A malformed token yields an error.
+// cursor (first page). A malformed or non-v2 token yields an error.
 func decodeConversationCursor(token string) (*service.ConversationCursor, error) {
 	token = strings.TrimSpace(token)
 	if token == "" {
@@ -290,20 +371,20 @@ func decodeConversationCursor(token string) (*service.ConversationCursor, error)
 	if err != nil {
 		return nil, err
 	}
-	parts := strings.SplitN(string(decoded), ":", 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(string(decoded), ":", 3)
+	if len(parts) != 3 || parts[0] != conversationCursorVersion {
 		return nil, errInvalidCursor
 	}
-	nanos, err := strconv.ParseInt(parts[0], 10, 64)
+	nanos, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	id, err := strconv.ParseInt(parts[1], 10, 64)
+	id, err := strconv.ParseInt(parts[2], 10, 64)
 	if err != nil {
 		return nil, err
 	}
 	return &service.ConversationCursor{
-		UpdatedAt: time.Unix(0, nanos).UTC(),
-		ID:        id,
+		LastMessageAt: time.Unix(0, nanos).UTC(),
+		ID:            id,
 	}, nil
 }

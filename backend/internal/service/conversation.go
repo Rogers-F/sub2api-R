@@ -49,6 +49,9 @@ type Conversation struct {
 	Status               string    `json:"status"`
 	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`
+	// LastMessageAt is the dedicated list-ordering key (see schema). Advanced
+	// only on message append/replace, never on rename.
+	LastMessageAt time.Time `json:"last_message_at"`
 }
 
 // Message is the service-layer representation of a conversation message.
@@ -83,10 +86,10 @@ type MessageInput struct {
 }
 
 // ConversationCursor is the composite cursor for listing conversations,
-// ordered by (updated_at DESC, id DESC).
+// ordered by (last_message_at DESC, id DESC).
 type ConversationCursor struct {
-	UpdatedAt time.Time
-	ID        int64
+	LastMessageAt time.Time
+	ID            int64
 }
 
 // ConversationRepository persists conversation metadata.
@@ -108,9 +111,11 @@ type ConversationRepository interface {
 	// starting after the optional cursor, up to limit items.
 	List(ctx context.Context, userID int64, cursor *ConversationCursor, limit int) ([]Conversation, error)
 	// UpdateTitle sets the title for (id, user_id). Returns ErrConversationNotFound
-	// when no rows match.
+	// when no rows match. Does NOT advance last_message_at (rename must not
+	// re-order the list).
 	UpdateTitle(ctx context.Context, userID, id int64, title string) error
-	// Touch bumps updated_at for (id, user_id) to now. Used after appending messages.
+	// Touch sets last_message_at for (id, user_id) to the given time. Used after
+	// appending/replacing messages; the value is the newest message's created_at.
 	Touch(ctx context.Context, userID, id int64, at time.Time) error
 	// Delete hard-deletes (id, user_id). Cascade removes messages. Returns
 	// ErrConversationNotFound when no rows match.
@@ -124,9 +129,23 @@ type MessageRepository interface {
 	// GetByClientID returns a message by (conversation_id, client_message_id)
 	// scoped to user_id, or ErrConversationNotFound when missing.
 	GetByClientID(ctx context.Context, userID, conversationID int64, clientMessageID string) (*Message, error)
+	// GetByID returns a message by (id) scoped to (user_id, conversation_id), or
+	// ErrConversationNotFound when missing. Used to resolve/validate a cutoff.
+	GetByID(ctx context.Context, userID, conversationID, id int64) (*Message, error)
 	// Create inserts a single message.
 	Create(ctx context.Context, m *Message) error
 	// List returns messages for (user_id, conversation_id) ordered by id ASC,
-	// starting after the optional id cursor, up to limit items.
+	// starting after the optional id cursor (id > afterID), up to limit items.
+	// Forward pagination retained for backward compatibility.
 	List(ctx context.Context, userID, conversationID int64, afterID int64, limit int) ([]Message, error)
+	// ListBefore returns messages for (user_id, conversation_id) with id < beforeID
+	// (or the newest messages when beforeID <= 0), ordered id DESC (newest first),
+	// up to limit items. Backward pagination; the service reverses to id ASC.
+	ListBefore(ctx context.Context, userID, conversationID int64, beforeID int64, limit int) ([]Message, error)
+	// MaxMessageID returns the largest message id within (user_id, conversation_id),
+	// and false when the conversation has no messages.
+	MaxMessageID(ctx context.Context, userID, conversationID int64) (int64, bool, error)
+	// DeleteFrom hard-deletes messages in (user_id, conversation_id) with id >= fromID,
+	// returning the number of rows removed.
+	DeleteFrom(ctx context.Context, userID, conversationID, fromID int64) (int, error)
 }

@@ -15,6 +15,8 @@ type Conversation struct {
 	Status               string    `json:"status"`
 	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`
+	// LastMessageAt is the list-ordering key (advanced on append/replace only).
+	LastMessageAt time.Time `json:"last_message_at"`
 }
 
 // Message is the API representation of a conversation message.
@@ -67,6 +69,17 @@ type AppendMessagesRequest struct {
 	Messages []MessageInputRequest `json:"messages" binding:"required,min=1"`
 }
 
+// ReplaceMessageRequest is the body for POST /conversations/:id/messages/replace.
+//
+// Exactly one of FromID / FromClientMessageID identifies the cutoff (the
+// current trailing assistant message being regenerated). Message is the new
+// assistant reply to insert in its place.
+type ReplaceMessageRequest struct {
+	FromID              int64               `json:"from_id"`
+	FromClientMessageID string              `json:"from_client_message_id"`
+	Message             MessageInputRequest `json:"message" binding:"required"`
+}
+
 // ConversationListResponse is the paginated list of conversations with a cursor.
 type ConversationListResponse struct {
 	Items      []Conversation `json:"items"`
@@ -92,6 +105,7 @@ func ConversationFromService(c *service.Conversation) *Conversation {
 		Status:               c.Status,
 		CreatedAt:            c.CreatedAt,
 		UpdatedAt:            c.UpdatedAt,
+		LastMessageAt:        c.LastMessageAt,
 	}
 }
 

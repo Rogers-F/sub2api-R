@@ -344,6 +344,10 @@ func init() {
 	conversation.DefaultStatus = conversationDescStatus.Default.(string)
 	// conversation.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	conversation.StatusValidator = conversationDescStatus.Validators[0].(func(string) error)
+	// conversationDescLastMessageAt is the schema descriptor for last_message_at field.
+	conversationDescLastMessageAt := conversationFields[5].Descriptor()
+	// conversation.DefaultLastMessageAt holds the default value on creation for the last_message_at field.
+	conversation.DefaultLastMessageAt = conversationDescLastMessageAt.Default.(func() time.Time)
 	conversationmessageFields := schema.ConversationMessage{}.Fields()
 	_ = conversationmessageFields
 	// conversationmessageDescRole is the schema descriptor for role field.

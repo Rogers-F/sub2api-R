@@ -14,6 +14,7 @@ import type {
   ListMessagesResponse,
   PersistMessageInput,
   PersistMessagesResponse,
+  ReplaceMessagePayload,
   UpdateConversationRequest
 } from '@/types/chat'
 
@@ -68,16 +69,26 @@ export async function deleteConversation(id: number): Promise<void> {
 }
 
 /**
- * List persisted messages for a conversation (cursor-paginated, oldest first).
+ * List persisted messages for a conversation, reverse-paginated.
+ *
+ * `beforeId` is a sentinel-bearing parameter (0 is a valid value meaning "newest
+ * page"), so it must be passed through with an explicit-undefined check rather
+ * than a falsy check. Each page is returned id ASC (oldest first); `next_cursor`
+ * is the smallest id on the page when older messages remain.
+ *   - beforeId === 0  → newest page.
+ *   - beforeId > 0    → the page of messages with id < beforeId (older).
+ *   - beforeId omitted → legacy forward path (kept for compatibility; unused here).
  */
 export async function listMessages(
   conversationId: number,
-  cursor?: string,
-  limit = 100
+  opts: { beforeId?: number; limit?: number } = {}
 ): Promise<ListMessagesResponse> {
+  const { beforeId, limit = 100 } = opts
+  const params: Record<string, number> = { limit }
+  if (beforeId !== undefined) params.before_id = beforeId
   const { data } = await apiClient.get<ListMessagesResponse>(
     `/conversations/${conversationId}/messages`,
-    { params: { cursor, limit } }
+    { params }
   )
   return data
 }
@@ -98,6 +109,22 @@ export async function persistMessages(
   return data.items
 }
 
+/**
+ * Atomically replace the conversation tail starting at the cutoff message with a
+ * new assistant message (used by "regenerate"). Exactly one of
+ * payload.from_id / payload.from_client_message_id identifies the cutoff.
+ */
+export async function replaceMessage(
+  conversationId: number,
+  payload: ReplaceMessagePayload
+): Promise<ChatMessage> {
+  const { data } = await apiClient.post<ChatMessage>(
+    `/conversations/${conversationId}/messages/replace`,
+    payload
+  )
+  return data
+}
+
 export const chatAPI = {
   listConversations,
   createConversation,
@@ -105,7 +132,8 @@ export const chatAPI = {
   updateConversation,
   deleteConversation,
   listMessages,
-  persistMessages
+  persistMessages,
+  replaceMessage
 }
 
 export default chatAPI

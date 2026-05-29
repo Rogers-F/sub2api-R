@@ -519,6 +519,7 @@ export default {
     emptyList: '还没有对话',
     noResults: '没有匹配的对话',
     loadMore: '加载更多',
+    loadingEarlier: '加载中…',
     openSidebar: '打开会话列表',
     noModel: '未选择模型',
     subscriptionActive: '订阅有效',
@@ -529,6 +530,7 @@ export default {
     deleteConfirmBody: '确定要删除这个对话吗？此操作无法撤销。',
     actions: {
       copy: '复制',
+      regenerate: '重新生成',
       stop: '停止',
       send: '发送',
       delete: '删除'
@@ -557,7 +559,8 @@ export default {
       createConversationFailed: '创建对话失败',
       renameFailed: '重命名失败',
       deleteFailed: '删除对话失败',
-      persistFailed: '保存消息失败'
+      persistFailed: '保存消息失败',
+      regenerateFailed: '重新生成失败'
     }
   },
 

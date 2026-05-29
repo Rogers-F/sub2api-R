@@ -106,6 +106,20 @@ func (_u *ConversationUpdate) SetNillableStatus(v *string) *ConversationUpdate {
 	return _u
 }
 
+// SetLastMessageAt sets the "last_message_at" field.
+func (_u *ConversationUpdate) SetLastMessageAt(v time.Time) *ConversationUpdate {
+	_u.mutation.SetLastMessageAt(v)
+	return _u
+}
+
+// SetNillableLastMessageAt sets the "last_message_at" field if the given value is not nil.
+func (_u *ConversationUpdate) SetNillableLastMessageAt(v *time.Time) *ConversationUpdate {
+	if v != nil {
+		_u.SetLastMessageAt(*v)
+	}
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *ConversationUpdate) SetUser(v *User) *ConversationUpdate {
 	return _u.SetUserID(v.ID)
@@ -248,6 +262,9 @@ func (_u *ConversationUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(conversation.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LastMessageAt(); ok {
+		_spec.SetField(conversation.FieldLastMessageAt, field.TypeTime, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -415,6 +432,20 @@ func (_u *ConversationUpdateOne) SetStatus(v string) *ConversationUpdateOne {
 func (_u *ConversationUpdateOne) SetNillableStatus(v *string) *ConversationUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetLastMessageAt sets the "last_message_at" field.
+func (_u *ConversationUpdateOne) SetLastMessageAt(v time.Time) *ConversationUpdateOne {
+	_u.mutation.SetLastMessageAt(v)
+	return _u
+}
+
+// SetNillableLastMessageAt sets the "last_message_at" field if the given value is not nil.
+func (_u *ConversationUpdateOne) SetNillableLastMessageAt(v *time.Time) *ConversationUpdateOne {
+	if v != nil {
+		_u.SetLastMessageAt(*v)
 	}
 	return _u
 }
@@ -591,6 +622,9 @@ func (_u *ConversationUpdateOne) sqlSave(ctx context.Context) (_node *Conversati
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(conversation.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LastMessageAt(); ok {
+		_spec.SetField(conversation.FieldLastMessageAt, field.TypeTime, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -32,6 +32,8 @@ type Conversation struct {
 	Model string `json:"model,omitempty"`
 	// Lifecycle status: active, archived
 	Status string `json:"status,omitempty"`
+	// LastMessageAt holds the value of the "last_message_at" field.
+	LastMessageAt time.Time `json:"last_message_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ConversationQuery when eager-loading is set.
 	Edges        ConversationEdges `json:"edges"`
@@ -78,7 +80,7 @@ func (*Conversation) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case conversation.FieldClientConversationID, conversation.FieldTitle, conversation.FieldModel, conversation.FieldStatus:
 			values[i] = new(sql.NullString)
-		case conversation.FieldCreatedAt, conversation.FieldUpdatedAt:
+		case conversation.FieldCreatedAt, conversation.FieldUpdatedAt, conversation.FieldLastMessageAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -142,6 +144,12 @@ func (_m *Conversation) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = value.String
+			}
+		case conversation.FieldLastMessageAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_message_at", values[i])
+			} else if value.Valid {
+				_m.LastMessageAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -209,6 +217,9 @@ func (_m *Conversation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)
+	builder.WriteString(", ")
+	builder.WriteString("last_message_at=")
+	builder.WriteString(_m.LastMessageAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

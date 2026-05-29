@@ -13,6 +13,9 @@ export interface Conversation {
   status: ConversationStatus
   created_at: string
   updated_at: string
+  // Independent ordering column: max(message.created_at) for the conversation.
+  // Renames no longer bump this, so the list order stays stable.
+  last_message_at: string
 }
 
 export interface ChatMessage {
@@ -69,4 +72,13 @@ export interface PersistMessagesRequest {
 
 export interface PersistMessagesResponse {
   items: ChatMessage[]
+}
+
+// Atomic replace for "regenerate": truncates from the cutoff message (identified by
+// exactly one of from_id / from_client_message_id) and inserts the new assistant
+// message in a single server transaction. The response is a single message row.
+export interface ReplaceMessagePayload {
+  from_id?: number
+  from_client_message_id?: string
+  message: PersistMessageInput
 }
