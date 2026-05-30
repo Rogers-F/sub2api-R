@@ -559,6 +559,9 @@ const personalNavItems = computed((): NavItem[] => {
   const items: NavItem[] = [
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
+    ...(appStore.cachedPublicSettings?.channel_monitor_enabled !== false
+      ? [{ path: '/monitor', label: t('nav.channelStatus'), icon: ChartIcon }]
+      : []),
     ...(!paymentEnabled && legacyPaygEnabled
       ? [{ path: '/wallet', label: t('nav.wallet'), icon: CreditCardIcon }]
       : []),
@@ -641,6 +644,9 @@ const adminNavItems = computed((): NavItem[] => {
   if (authStore.isSimpleMode) {
     const filtered = baseItems.filter(item => !item.hideInSimpleMode)
     filtered.push({ path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon })
+    if (appStore.cachedPublicSettings?.channel_monitor_enabled !== false) {
+      filtered.push({ path: '/monitor', label: t('nav.channelStatus'), icon: ChartIcon })
+    }
     filtered.push({ path: '/support', label: t('common.contactSupport'), icon: ChatBubbleIcon })
     filtered.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
     // Add admin custom menu items after settings
