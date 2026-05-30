@@ -339,6 +339,12 @@ export default {
 
   // Common
   common: {
+    autoRefresh: {
+      title: '自动刷新',
+      countdown: '自动刷新：{seconds}s',
+      enable: '启用自动刷新',
+      seconds: '{n} 秒',
+    },
     loading: '加载中...',
     justNow: '刚刚',
     save: '保存',

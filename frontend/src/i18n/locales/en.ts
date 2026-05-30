@@ -339,6 +339,12 @@ export default {
 
   // Common
   common: {
+    autoRefresh: {
+      title: 'Auto Refresh',
+      countdown: 'Auto refresh: {seconds}s',
+      enable: 'Enable Auto Refresh',
+      seconds: '{n} seconds',
+    },
     loading: 'Loading...',
     justNow: 'just now',
     save: 'Save',
