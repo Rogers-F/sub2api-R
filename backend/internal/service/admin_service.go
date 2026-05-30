@@ -146,6 +146,7 @@ type CreateGroupInput struct {
 	ImagePrice4K                     *float64
 	ClaudeCodeOnly                   bool  // 仅允许 Claude Code 客户端
 	ClaudePromptCachingEnabled       *bool // 是否启用 Claude prompt cache
+	ClaudeUnrequested1hCacheAs5m     *bool // 下游未声明1h时把上游1h缓存按5m计
 	ThinkingSignatureCompatEnabled   bool
 	ClaudeToolUseRepairEnabled       bool
 	ClaudeToolArgumentsRepairEnabled bool
@@ -186,6 +187,7 @@ type UpdateGroupInput struct {
 	ImagePrice4K                     *float64
 	ClaudeCodeOnly                   *bool // 仅允许 Claude Code 客户端
 	ClaudePromptCachingEnabled       *bool // 是否启用 Claude prompt cache
+	ClaudeUnrequested1hCacheAs5m     *bool // 下游未声明1h时把上游1h缓存按5m计
 	ThinkingSignatureCompatEnabled   *bool
 	ClaudeToolUseRepairEnabled       *bool
 	ClaudeToolArgumentsRepairEnabled *bool
@@ -914,6 +916,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if input.ClaudePromptCachingEnabled != nil {
 		claudePromptCachingEnabled = *input.ClaudePromptCachingEnabled
 	}
+	claudeUnrequested1hCacheAs5m := false
+	if input.ClaudeUnrequested1hCacheAs5m != nil {
+		claudeUnrequested1hCacheAs5m = *input.ClaudeUnrequested1hCacheAs5m
+	}
 
 	// 如果指定了复制账号的源分组，先获取账号 ID 列表
 	var accountIDsToCopy []int64
@@ -963,6 +969,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ImagePrice4K:                     imagePrice4K,
 		ClaudeCodeOnly:                   input.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       claudePromptCachingEnabled,
+		ClaudeUnrequested1hCacheAs5m:     claudeUnrequested1hCacheAs5m,
 		ThinkingSignatureCompatEnabled:   input.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       input.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: input.ClaudeToolArgumentsRepairEnabled,
@@ -1172,6 +1179,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ClaudePromptCachingEnabled != nil {
 		group.ClaudePromptCachingEnabled = *input.ClaudePromptCachingEnabled
+	}
+	if input.ClaudeUnrequested1hCacheAs5m != nil {
+		group.ClaudeUnrequested1hCacheAs5m = *input.ClaudeUnrequested1hCacheAs5m
 	}
 	if input.ThinkingSignatureCompatEnabled != nil {
 		group.ThinkingSignatureCompatEnabled = *input.ThinkingSignatureCompatEnabled

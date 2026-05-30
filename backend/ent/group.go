@@ -56,6 +56,8 @@ type Group struct {
 	ClaudeCodeOnly bool `json:"claude_code_only,omitempty"`
 	// 是否启用 Claude prompt cache（缓存创建与缓存读取）
 	ClaudePromptCachingEnabled bool `json:"claude_prompt_caching_enabled,omitempty"`
+	// 仅 anthropic：下游未声明 ttl=1h 时，把上游返回的 1h 缓存创建按 5m 计费/展示（响应 usage、自身计费、用量日志一致），差额由本站承担；下游显式声明 1h 则原样
+	ClaudeUnrequested1hCacheAs5m bool `json:"claude_unrequested_1h_cache_as_5m,omitempty"`
 	// 是否启用历史 thinking 签名兼容重试（适用于 Max/AWS 等混合渠道）
 	ThinkingSignatureCompatEnabled bool `json:"thinking_signature_compat_enabled,omitempty"`
 	// 是否启用 Claude tool_use/tool_result 历史自动修复重试
@@ -194,7 +196,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldThinkingSignatureCompatEnabled, group.FieldClaudeToolUseRepairEnabled, group.FieldClaudeToolArgumentsRepairEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
+		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldClaudePromptCachingEnabled, group.FieldClaudeUnrequested1hCacheAs5m, group.FieldThinkingSignatureCompatEnabled, group.FieldClaudeToolUseRepairEnabled, group.FieldClaudeToolArgumentsRepairEnabled, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldForceApplicationJSONForNonStream:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
 			values[i] = new(sql.NullFloat64)
@@ -346,6 +348,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field claude_prompt_caching_enabled", values[i])
 			} else if value.Valid {
 				_m.ClaudePromptCachingEnabled = value.Bool
+			}
+		case group.FieldClaudeUnrequested1hCacheAs5m:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field claude_unrequested_1h_cache_as_5m", values[i])
+			} else if value.Valid {
+				_m.ClaudeUnrequested1hCacheAs5m = value.Bool
 			}
 		case group.FieldThinkingSignatureCompatEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -591,6 +599,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("claude_prompt_caching_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ClaudePromptCachingEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("claude_unrequested_1h_cache_as_5m=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ClaudeUnrequested1hCacheAs5m))
 	builder.WriteString(", ")
 	builder.WriteString("thinking_signature_compat_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ThinkingSignatureCompatEnabled))

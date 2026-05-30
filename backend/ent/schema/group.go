@@ -94,6 +94,9 @@ func (Group) Fields() []ent.Field {
 		field.Bool("claude_prompt_caching_enabled").
 			Default(true).
 			Comment("是否启用 Claude prompt cache（缓存创建与缓存读取）"),
+		field.Bool("claude_unrequested_1h_cache_as_5m").
+			Default(false).
+			Comment("仅 anthropic：下游未声明 ttl=1h 时，把上游返回的 1h 缓存创建按 5m 计费/展示（响应 usage、自身计费、用量日志一致），差额由本站承担；下游显式声明 1h 则原样"),
 		field.Bool("thinking_signature_compat_enabled").
 			Default(false).
 			Comment("是否启用历史 thinking 签名兼容重试（适用于 Max/AWS 等混合渠道）"),

@@ -178,6 +178,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		ImagePrice4K:                     g.ImagePrice4K,
 		ClaudeCodeOnly:                   g.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       g.ClaudePromptCachingEnabled,
+		ClaudeUnrequested1hCacheAs5m:     g.ClaudeUnrequested1hCacheAs5m,
 		ThinkingSignatureCompatEnabled:   g.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       g.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: g.ClaudeToolArgumentsRepairEnabled,

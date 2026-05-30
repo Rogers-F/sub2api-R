@@ -572,6 +572,7 @@ var (
 		{Name: "image_price_4k", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "claude_code_only", Type: field.TypeBool, Default: false},
 		{Name: "claude_prompt_caching_enabled", Type: field.TypeBool, Default: true},
+		{Name: "claude_unrequested_1h_cache_as_5m", Type: field.TypeBool, Default: false},
 		{Name: "thinking_signature_compat_enabled", Type: field.TypeBool, Default: false},
 		{Name: "claude_tool_use_repair_enabled", Type: field.TypeBool, Default: false},
 		{Name: "claude_tool_arguments_repair_enabled", Type: field.TypeBool, Default: false},
@@ -622,7 +623,7 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[29]},
+				Columns: []*schema.Column{GroupsColumns[30]},
 			},
 		},
 	}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/gin-gonic/gin"
@@ -32,8 +33,22 @@ func (s *GatewayService) ForwardAsChatCompletions(
 	account *Account,
 	body []byte,
 	parsed *ParsedRequest,
-) (*ForwardResult, error) {
+) (result *ForwardResult, err error) {
 	startTime := time.Now()
+
+	// 缓存 TTL 归类决策（单一决策范式）：本路径把 Claude 转 OpenAI 兼容格式返回下游，
+	// usage 不暴露 ephemeral_1h，故无需响应改写；但仍须把决策写入 ForwardResult，
+	// 保证 RecordUsage（消费 result.CacheTTL）正确生效——尤其保留既有账号级 override。
+	cacheGroup, cacheGroupOK := ctx.Value(ctxkey.Group).(*Group)
+	if !cacheGroupOK || !IsGroupContextValid(cacheGroup) {
+		cacheGroup = nil
+	}
+	cacheTTLDec := resolveCacheTTLDecision(account, cacheGroup, parsed != nil && parsed.DownstreamRequested1hCache)
+	defer func() {
+		if result != nil {
+			result.CacheTTL = cacheTTLDec
+		}
+	}()
 
 	// 1. Parse Chat Completions request
 	var ccReq apicompat.ChatCompletionsRequest
@@ -177,7 +192,6 @@ func (s *GatewayService) ForwardAsChatCompletions(
 
 	// 14. Handle normal response
 	// Read Anthropic SSE → convert to Responses events → convert to CC format
-	var result *ForwardResult
 	var handleErr error
 	if clientStream {
 		result, handleErr = s.handleCCStreamingFromAnthropic(resp, c, originalModel, mappedModel, reasoningEffort, startTime, includeUsage)

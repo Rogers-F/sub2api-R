@@ -77,6 +77,11 @@ type ParsedRequest struct {
 	MaxTokens       int             // max_tokens 值（用于探测请求拦截）
 	SessionContext  *SessionContext // 可选：请求上下文区分因子（nil 时行为不变）
 
+	// DownstreamRequested1hCache 表示下游请求**显式声明**了 ttl="1h" 的 cache_control
+	// （扫描 system / messages[].content[] / tools[] 任一块）。仅 Anthropic 协议有意义。
+	// 用于"分组级 1h→5m 归一"决策：下游未声明 1h 时才把上游返回的 1h 缓存按 5m 计/展示。
+	DownstreamRequested1hCache bool
+
 	// OnUpstreamAccepted 上游接受请求后立即调用（用于提前释放串行锁）
 	// 流式请求在收到 2xx 响应头后调用，避免持锁等流完成
 	OnUpstreamAccepted func()
@@ -185,6 +190,9 @@ func ParseGatewayRequest(body []byte, protocol string) (*ParsedRequest, error) {
 			parsed.MaxTokens = int(f)
 		}
 	}
+
+	// 下游是否显式声明 ttl="1h" 的 cache_control（仅 Anthropic 有意义；fast-path 对其它协议近乎零开销）。
+	parsed.DownstreamRequested1hCache = detectDownstreamRequested1hCache(body)
 
 	// --- system/messages 提取 ---
 	// 避免把整个 body Unmarshal 到 map（会产生大量 map/接口分配）。
@@ -1400,4 +1408,57 @@ func RectifyThinkingBudget(body []byte) ([]byte, bool) {
 	}
 
 	return modified, changed
+}
+
+// ttlFieldMarker 是 fast-path 字节标记：Anthropic 请求里 "ttl" 字段只出现在 cache_control 内，
+// body 不含该字面量即可断定下游未声明任何 1h 缓存，跳过精确走查。
+var ttlFieldMarker = []byte(`"ttl"`)
+
+// detectDownstreamRequested1hCache 判断下游请求是否在**任一**合法 Anthropic cache_control 块里
+// 显式声明 1h（cache_control.type=="ephemeral" 且 ttl=="1h"）。
+//   - fast-path：body 无 `"ttl"` 字面量 → 必无 1h 声明（绝大多数请求走此路径，零额外解析）。
+//   - 精确路径：递归走查整个 JSON，任一对象的 cache_control 同时满足 type=ephemeral 且 ttl=1h 即返回 true。
+//
+// 设计取舍：响应 usage 是聚合值，无法把 1h token 精确归因到具体 block；
+// 故采"任一块声明 1h 即视为下游要 1h（整体不归一）"的保守口径，避免错账。
+func detectDownstreamRequested1hCache(body []byte) bool {
+	if !bytes.Contains(body, ttlFieldMarker) {
+		return false
+	}
+	return jsonAnyCacheControlTTL1h(gjson.ParseBytes(body))
+}
+
+// jsonAnyCacheControlTTL1h 递归判断 node 子树中是否存在 cache_control.ttl == "1h"。
+func jsonAnyCacheControlTTL1h(node gjson.Result) bool {
+	switch {
+	case node.IsObject():
+		// 仅把"合法 Anthropic cache_control"(type=ephemeral 且 ttl=1h)视为下游显式声明 1h，
+		// 避免 tool schema / metadata 里同名字段误判。
+		if cc := node.Get("cache_control"); cc.Exists() {
+			if cc.Get("type").String() == "ephemeral" && cc.Get("ttl").String() == "1h" {
+				return true
+			}
+		}
+		found := false
+		node.ForEach(func(_, v gjson.Result) bool {
+			if jsonAnyCacheControlTTL1h(v) {
+				found = true
+				return false
+			}
+			return true
+		})
+		return found
+	case node.IsArray():
+		found := false
+		node.ForEach(func(_, v gjson.Result) bool {
+			if jsonAnyCacheControlTTL1h(v) {
+				found = true
+				return false
+			}
+			return true
+		})
+		return found
+	default:
+		return false
+	}
 }

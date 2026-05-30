@@ -52,6 +52,7 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetClaudePromptCachingEnabled(groupIn.ClaudePromptCachingEnabled).
+		SetClaudeUnrequested1hCacheAs5m(groupIn.ClaudeUnrequested1hCacheAs5m).
 		SetThinkingSignatureCompatEnabled(groupIn.ThinkingSignatureCompatEnabled).
 		SetClaudeToolUseRepairEnabled(groupIn.ClaudeToolUseRepairEnabled).
 		SetClaudeToolArgumentsRepairEnabled(groupIn.ClaudeToolArgumentsRepairEnabled).
@@ -125,6 +126,7 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetClaudePromptCachingEnabled(groupIn.ClaudePromptCachingEnabled).
+		SetClaudeUnrequested1hCacheAs5m(groupIn.ClaudeUnrequested1hCacheAs5m).
 		SetThinkingSignatureCompatEnabled(groupIn.ThinkingSignatureCompatEnabled).
 		SetClaudeToolUseRepairEnabled(groupIn.ClaudeToolUseRepairEnabled).
 		SetClaudeToolArgumentsRepairEnabled(groupIn.ClaudeToolArgumentsRepairEnabled).

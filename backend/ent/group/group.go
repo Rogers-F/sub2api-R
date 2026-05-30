@@ -53,6 +53,8 @@ const (
 	FieldClaudeCodeOnly = "claude_code_only"
 	// FieldClaudePromptCachingEnabled holds the string denoting the claude_prompt_caching_enabled field in the database.
 	FieldClaudePromptCachingEnabled = "claude_prompt_caching_enabled"
+	// FieldClaudeUnrequested1hCacheAs5m holds the string denoting the claude_unrequested_1h_cache_as_5m field in the database.
+	FieldClaudeUnrequested1hCacheAs5m = "claude_unrequested_1h_cache_as_5m"
 	// FieldThinkingSignatureCompatEnabled holds the string denoting the thinking_signature_compat_enabled field in the database.
 	FieldThinkingSignatureCompatEnabled = "thinking_signature_compat_enabled"
 	// FieldClaudeToolUseRepairEnabled holds the string denoting the claude_tool_use_repair_enabled field in the database.
@@ -177,6 +179,7 @@ var Columns = []string{
 	FieldImagePrice4k,
 	FieldClaudeCodeOnly,
 	FieldClaudePromptCachingEnabled,
+	FieldClaudeUnrequested1hCacheAs5m,
 	FieldThinkingSignatureCompatEnabled,
 	FieldClaudeToolUseRepairEnabled,
 	FieldClaudeToolArgumentsRepairEnabled,
@@ -251,6 +254,8 @@ var (
 	DefaultClaudeCodeOnly bool
 	// DefaultClaudePromptCachingEnabled holds the default value on creation for the "claude_prompt_caching_enabled" field.
 	DefaultClaudePromptCachingEnabled bool
+	// DefaultClaudeUnrequested1hCacheAs5m holds the default value on creation for the "claude_unrequested_1h_cache_as_5m" field.
+	DefaultClaudeUnrequested1hCacheAs5m bool
 	// DefaultThinkingSignatureCompatEnabled holds the default value on creation for the "thinking_signature_compat_enabled" field.
 	DefaultThinkingSignatureCompatEnabled bool
 	// DefaultClaudeToolUseRepairEnabled holds the default value on creation for the "claude_tool_use_repair_enabled" field.
@@ -380,6 +385,11 @@ func ByClaudeCodeOnly(opts ...sql.OrderTermOption) OrderOption {
 // ByClaudePromptCachingEnabled orders the results by the claude_prompt_caching_enabled field.
 func ByClaudePromptCachingEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClaudePromptCachingEnabled, opts...).ToFunc()
+}
+
+// ByClaudeUnrequested1hCacheAs5m orders the results by the claude_unrequested_1h_cache_as_5m field.
+func ByClaudeUnrequested1hCacheAs5m(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClaudeUnrequested1hCacheAs5m, opts...).ToFunc()
 }
 
 // ByThinkingSignatureCompatEnabled orders the results by the thinking_signature_compat_enabled field.

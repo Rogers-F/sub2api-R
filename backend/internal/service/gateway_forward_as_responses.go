@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/gin-gonic/gin"
@@ -34,8 +35,22 @@ func (s *GatewayService) ForwardAsResponses(
 	account *Account,
 	body []byte,
 	parsed *ParsedRequest,
-) (*ForwardResult, error) {
+) (result *ForwardResult, err error) {
 	startTime := time.Now()
+
+	// 缓存 TTL 归类决策（单一决策范式）：Claude 转 OpenAI Responses 兼容格式返回下游，
+	// usage 不暴露 ephemeral_1h，无需响应改写；但仍须把决策写入 ForwardResult 供 RecordUsage，
+	// 保留既有账号级 override。
+	cacheGroup, cacheGroupOK := ctx.Value(ctxkey.Group).(*Group)
+	if !cacheGroupOK || !IsGroupContextValid(cacheGroup) {
+		cacheGroup = nil
+	}
+	cacheTTLDec := resolveCacheTTLDecision(account, cacheGroup, parsed != nil && parsed.DownstreamRequested1hCache)
+	defer func() {
+		if result != nil {
+			result.CacheTTL = cacheTTLDec
+		}
+	}()
 
 	// 1. Parse Responses request
 	var responsesReq apicompat.ResponsesRequest
@@ -171,7 +186,6 @@ func (s *GatewayService) ForwardAsResponses(
 	}
 
 	// 13. Handle normal response (convert Anthropic → Responses)
-	var result *ForwardResult
 	var handleErr error
 	if clientStream {
 		result, handleErr = s.handleResponsesStreamingResponse(resp, c, originalModel, mappedModel, reasoningEffort, startTime)

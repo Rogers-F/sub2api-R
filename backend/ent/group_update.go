@@ -383,6 +383,20 @@ func (_u *GroupUpdate) SetNillableClaudePromptCachingEnabled(v *bool) *GroupUpda
 	return _u
 }
 
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (_u *GroupUpdate) SetClaudeUnrequested1hCacheAs5m(v bool) *GroupUpdate {
+	_u.mutation.SetClaudeUnrequested1hCacheAs5m(v)
+	return _u
+}
+
+// SetNillableClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableClaudeUnrequested1hCacheAs5m(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetClaudeUnrequested1hCacheAs5m(*v)
+	}
+	return _u
+}
+
 // SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
 func (_u *GroupUpdate) SetThinkingSignatureCompatEnabled(v bool) *GroupUpdate {
 	_u.mutation.SetThinkingSignatureCompatEnabled(v)
@@ -1028,6 +1042,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ClaudePromptCachingEnabled(); ok {
 		_spec.SetField(group.FieldClaudePromptCachingEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudeUnrequested1hCacheAs5m(); ok {
+		_spec.SetField(group.FieldClaudeUnrequested1hCacheAs5m, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
@@ -1759,6 +1776,20 @@ func (_u *GroupUpdateOne) SetNillableClaudePromptCachingEnabled(v *bool) *GroupU
 	return _u
 }
 
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (_u *GroupUpdateOne) SetClaudeUnrequested1hCacheAs5m(v bool) *GroupUpdateOne {
+	_u.mutation.SetClaudeUnrequested1hCacheAs5m(v)
+	return _u
+}
+
+// SetNillableClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableClaudeUnrequested1hCacheAs5m(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetClaudeUnrequested1hCacheAs5m(*v)
+	}
+	return _u
+}
+
 // SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
 func (_u *GroupUpdateOne) SetThinkingSignatureCompatEnabled(v bool) *GroupUpdateOne {
 	_u.mutation.SetThinkingSignatureCompatEnabled(v)
@@ -2434,6 +2465,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ClaudePromptCachingEnabled(); ok {
 		_spec.SetField(group.FieldClaudePromptCachingEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ClaudeUnrequested1hCacheAs5m(); ok {
+		_spec.SetField(group.FieldClaudeUnrequested1hCacheAs5m, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)

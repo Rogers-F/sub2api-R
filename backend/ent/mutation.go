@@ -13035,6 +13035,7 @@ type GroupMutation struct {
 	addimage_price_4k                       *float64
 	claude_code_only                        *bool
 	claude_prompt_caching_enabled           *bool
+	claude_unrequested_1h_cache_as_5m       *bool
 	thinking_signature_compat_enabled       *bool
 	claude_tool_use_repair_enabled          *bool
 	claude_tool_arguments_repair_enabled    *bool
@@ -14130,6 +14131,42 @@ func (m *GroupMutation) ResetClaudePromptCachingEnabled() {
 	m.claude_prompt_caching_enabled = nil
 }
 
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (m *GroupMutation) SetClaudeUnrequested1hCacheAs5m(b bool) {
+	m.claude_unrequested_1h_cache_as_5m = &b
+}
+
+// ClaudeUnrequested1hCacheAs5m returns the value of the "claude_unrequested_1h_cache_as_5m" field in the mutation.
+func (m *GroupMutation) ClaudeUnrequested1hCacheAs5m() (r bool, exists bool) {
+	v := m.claude_unrequested_1h_cache_as_5m
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaudeUnrequested1hCacheAs5m returns the old "claude_unrequested_1h_cache_as_5m" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldClaudeUnrequested1hCacheAs5m(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaudeUnrequested1hCacheAs5m is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaudeUnrequested1hCacheAs5m requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaudeUnrequested1hCacheAs5m: %w", err)
+	}
+	return oldValue.ClaudeUnrequested1hCacheAs5m, nil
+}
+
+// ResetClaudeUnrequested1hCacheAs5m resets all changes to the "claude_unrequested_1h_cache_as_5m" field.
+func (m *GroupMutation) ResetClaudeUnrequested1hCacheAs5m() {
+	m.claude_unrequested_1h_cache_as_5m = nil
+}
+
 // SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
 func (m *GroupMutation) SetThinkingSignatureCompatEnabled(b bool) {
 	m.thinking_signature_compat_enabled = &b
@@ -15144,7 +15181,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 34)
+	fields := make([]string, 0, 35)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -15201,6 +15238,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.claude_prompt_caching_enabled != nil {
 		fields = append(fields, group.FieldClaudePromptCachingEnabled)
+	}
+	if m.claude_unrequested_1h_cache_as_5m != nil {
+		fields = append(fields, group.FieldClaudeUnrequested1hCacheAs5m)
 	}
 	if m.thinking_signature_compat_enabled != nil {
 		fields = append(fields, group.FieldThinkingSignatureCompatEnabled)
@@ -15293,6 +15333,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ClaudeCodeOnly()
 	case group.FieldClaudePromptCachingEnabled:
 		return m.ClaudePromptCachingEnabled()
+	case group.FieldClaudeUnrequested1hCacheAs5m:
+		return m.ClaudeUnrequested1hCacheAs5m()
 	case group.FieldThinkingSignatureCompatEnabled:
 		return m.ThinkingSignatureCompatEnabled()
 	case group.FieldClaudeToolUseRepairEnabled:
@@ -15370,6 +15412,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldClaudeCodeOnly(ctx)
 	case group.FieldClaudePromptCachingEnabled:
 		return m.OldClaudePromptCachingEnabled(ctx)
+	case group.FieldClaudeUnrequested1hCacheAs5m:
+		return m.OldClaudeUnrequested1hCacheAs5m(ctx)
 	case group.FieldThinkingSignatureCompatEnabled:
 		return m.OldThinkingSignatureCompatEnabled(ctx)
 	case group.FieldClaudeToolUseRepairEnabled:
@@ -15541,6 +15585,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetClaudePromptCachingEnabled(v)
+		return nil
+	case group.FieldClaudeUnrequested1hCacheAs5m:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaudeUnrequested1hCacheAs5m(v)
 		return nil
 	case group.FieldThinkingSignatureCompatEnabled:
 		v, ok := value.(bool)
@@ -15956,6 +16007,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldClaudePromptCachingEnabled:
 		m.ResetClaudePromptCachingEnabled()
+		return nil
+	case group.FieldClaudeUnrequested1hCacheAs5m:
+		m.ResetClaudeUnrequested1hCacheAs5m()
 		return nil
 	case group.FieldThinkingSignatureCompatEnabled:
 		m.ResetThinkingSignatureCompatEnabled()

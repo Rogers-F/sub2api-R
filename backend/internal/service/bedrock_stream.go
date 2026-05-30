@@ -138,6 +138,14 @@ func (s *GatewayService) handleBedrockStreamingResponse(
 			// 同时移除该字段避免透传给客户端
 			sseData = transformBedrockInvocationMetrics(sseData)
 
+			// Cache TTL 归类：先改写 sseData（隐藏 1h 并入 5m），再用改写后的数据解析 usage + 写下游，
+			// 保证响应与计费一致。
+			if dec := cacheTTLDecisionFromContext(c); dec.Enabled {
+				if newData, changed := rewriteSSEDataCacheTTL(string(sseData), dec); changed {
+					sseData = []byte(newData)
+				}
+			}
+
 			// 解析 SSE 事件数据提取 usage
 			s.parseSSEUsagePassthrough(string(sseData), usage)
 

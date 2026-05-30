@@ -286,6 +286,20 @@ func (_c *GroupCreate) SetNillableClaudePromptCachingEnabled(v *bool) *GroupCrea
 	return _c
 }
 
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (_c *GroupCreate) SetClaudeUnrequested1hCacheAs5m(v bool) *GroupCreate {
+	_c.mutation.SetClaudeUnrequested1hCacheAs5m(v)
+	return _c
+}
+
+// SetNillableClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableClaudeUnrequested1hCacheAs5m(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetClaudeUnrequested1hCacheAs5m(*v)
+	}
+	return _c
+}
+
 // SetThinkingSignatureCompatEnabled sets the "thinking_signature_compat_enabled" field.
 func (_c *GroupCreate) SetThinkingSignatureCompatEnabled(v bool) *GroupCreate {
 	_c.mutation.SetThinkingSignatureCompatEnabled(v)
@@ -653,6 +667,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultClaudePromptCachingEnabled
 		_c.mutation.SetClaudePromptCachingEnabled(v)
 	}
+	if _, ok := _c.mutation.ClaudeUnrequested1hCacheAs5m(); !ok {
+		v := group.DefaultClaudeUnrequested1hCacheAs5m
+		_c.mutation.SetClaudeUnrequested1hCacheAs5m(v)
+	}
 	if _, ok := _c.mutation.ThinkingSignatureCompatEnabled(); !ok {
 		v := group.DefaultThinkingSignatureCompatEnabled
 		_c.mutation.SetThinkingSignatureCompatEnabled(v)
@@ -758,6 +776,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.ClaudePromptCachingEnabled(); !ok {
 		return &ValidationError{Name: "claude_prompt_caching_enabled", err: errors.New(`ent: missing required field "Group.claude_prompt_caching_enabled"`)}
+	}
+	if _, ok := _c.mutation.ClaudeUnrequested1hCacheAs5m(); !ok {
+		return &ValidationError{Name: "claude_unrequested_1h_cache_as_5m", err: errors.New(`ent: missing required field "Group.claude_unrequested_1h_cache_as_5m"`)}
 	}
 	if _, ok := _c.mutation.ThinkingSignatureCompatEnabled(); !ok {
 		return &ValidationError{Name: "thinking_signature_compat_enabled", err: errors.New(`ent: missing required field "Group.thinking_signature_compat_enabled"`)}
@@ -902,6 +923,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ClaudePromptCachingEnabled(); ok {
 		_spec.SetField(group.FieldClaudePromptCachingEnabled, field.TypeBool, value)
 		_node.ClaudePromptCachingEnabled = value
+	}
+	if value, ok := _c.mutation.ClaudeUnrequested1hCacheAs5m(); ok {
+		_spec.SetField(group.FieldClaudeUnrequested1hCacheAs5m, field.TypeBool, value)
+		_node.ClaudeUnrequested1hCacheAs5m = value
 	}
 	if value, ok := _c.mutation.ThinkingSignatureCompatEnabled(); ok {
 		_spec.SetField(group.FieldThinkingSignatureCompatEnabled, field.TypeBool, value)
@@ -1428,6 +1453,18 @@ func (u *GroupUpsert) SetClaudePromptCachingEnabled(v bool) *GroupUpsert {
 // UpdateClaudePromptCachingEnabled sets the "claude_prompt_caching_enabled" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateClaudePromptCachingEnabled() *GroupUpsert {
 	u.SetExcluded(group.FieldClaudePromptCachingEnabled)
+	return u
+}
+
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (u *GroupUpsert) SetClaudeUnrequested1hCacheAs5m(v bool) *GroupUpsert {
+	u.Set(group.FieldClaudeUnrequested1hCacheAs5m, v)
+	return u
+}
+
+// UpdateClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateClaudeUnrequested1hCacheAs5m() *GroupUpsert {
+	u.SetExcluded(group.FieldClaudeUnrequested1hCacheAs5m)
 	return u
 }
 
@@ -2053,6 +2090,20 @@ func (u *GroupUpsertOne) SetClaudePromptCachingEnabled(v bool) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateClaudePromptCachingEnabled() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudePromptCachingEnabled()
+	})
+}
+
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (u *GroupUpsertOne) SetClaudeUnrequested1hCacheAs5m(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetClaudeUnrequested1hCacheAs5m(v)
+	})
+}
+
+// UpdateClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateClaudeUnrequested1hCacheAs5m() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateClaudeUnrequested1hCacheAs5m()
 	})
 }
 
@@ -2880,6 +2931,20 @@ func (u *GroupUpsertBulk) SetClaudePromptCachingEnabled(v bool) *GroupUpsertBulk
 func (u *GroupUpsertBulk) UpdateClaudePromptCachingEnabled() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateClaudePromptCachingEnabled()
+	})
+}
+
+// SetClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field.
+func (u *GroupUpsertBulk) SetClaudeUnrequested1hCacheAs5m(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetClaudeUnrequested1hCacheAs5m(v)
+	})
+}
+
+// UpdateClaudeUnrequested1hCacheAs5m sets the "claude_unrequested_1h_cache_as_5m" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateClaudeUnrequested1hCacheAs5m() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateClaudeUnrequested1hCacheAs5m()
 	})
 }
 

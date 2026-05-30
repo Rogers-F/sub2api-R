@@ -498,6 +498,9 @@ type ForwardResult struct {
 	// 图片生成计费字段（图片生成模型使用）
 	ImageCount int    // 生成的图片数量
 	ImageSize  string // 图片尺寸 "1K", "2K", "4K"
+
+	// CacheTTL 本次请求的缓存 TTL 归类决策（计费侧 RecordUsage 消费；响应侧也用同一决策）。
+	CacheTTL cacheTTLDecision
 }
 
 // UpstreamFailoverError indicates an upstream error that should trigger account failover.
@@ -3852,11 +3855,28 @@ func anthropicPromptCachingEnabledFromContext(ctx context.Context) bool {
 }
 
 // Forward 转发请求到Claude API
-func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, parsed *ParsedRequest) (*ForwardResult, error) {
+func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, parsed *ParsedRequest) (result *ForwardResult, err error) {
 	startTime := time.Now()
 	if parsed == nil {
 		return nil, fmt.Errorf("parse request: empty request")
 	}
+
+	// 缓存 TTL 归类决策（单一决策范式）：每次 Forward（即每次 failover 选定 account）重算。
+	// 写入 gin.Context 供响应处理器（同请求协程）消费；defer 给所有返回路径统一写入
+	// ForwardResult.CacheTTL，供 RecordUsage（background ctx，读不到请求 ctx）消费。
+	cacheGroup, cacheGroupOK := ctx.Value(ctxkey.Group).(*Group)
+	if !cacheGroupOK || !IsGroupContextValid(cacheGroup) {
+		cacheGroup = nil
+	}
+	cacheTTLDec := resolveCacheTTLDecision(account, cacheGroup, parsed.DownstreamRequested1hCache)
+	if c != nil {
+		c.Set(cacheTTLDecisionContextKey, cacheTTLDec)
+	}
+	defer func() {
+		if result != nil {
+			result.CacheTTL = cacheTTLDec
+		}
+	}()
 
 	if account != nil && s.shouldEmulateWebSearch(ctx, account, parsed.GroupID, parsed.Body) {
 		return s.handleWebSearchEmulation(ctx, c, account, parsed)
@@ -4981,6 +5001,14 @@ func (s *GatewayService) handleStreamingResponseAnthropicAPIKeyPassthrough(
 
 			line := ev.line
 			if data, ok := extractAnthropicSSEDataLine(line); ok {
+				// Cache TTL 归类：先改写 data（隐藏 1h 并入 5m），再用改写后的 data 解析 usage +
+				// 把整行里的 data 替换为改写后的版本写给下游，保证响应与计费一致（断连也用改写后 data 累计）。
+				if dec := cacheTTLDecisionFromContext(c); dec.Enabled {
+					if newData, changed := rewriteSSEDataCacheTTL(data, dec); changed {
+						line = strings.Replace(line, data, newData, 1)
+						data = newData
+					}
+				}
 				trimmed := strings.TrimSpace(data)
 				if anthropicStreamEventIsTerminal("", trimmed) {
 					sawTerminalEvent = true
@@ -5176,6 +5204,13 @@ func (s *GatewayService) handleNonStreamingResponseAnthropicAPIKeyPassthrough(
 
 	writeAnthropicPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	contentType := resolveNonStreamJSONContentType(c, resp.Header.Get("Content-Type"), "application/json")
+	// Cache TTL 归类：按统一决策改写返回下游的 usage（隐藏 1h、并入 5m），并同步 usage 供计费一致。
+	if dec := cacheTTLDecisionFromContext(c); dec.Enabled {
+		if nb, changed := rewriteNonStreamCacheTTLBody(body, usage, dec); changed {
+			body = nb
+			c.Writer.Header().Del("Content-Length") // body 长度变了，让 net/http 按新 body 重算
+		}
+	}
 	c.Data(resp.StatusCode, contentType, body)
 	return usage, nil
 }
@@ -5556,6 +5591,13 @@ func (s *GatewayService) handleBedrockNonStreamingResponse(
 	c.Header("Content-Type", "application/json")
 	if v := resp.Header.Get("x-amzn-requestid"); v != "" {
 		SetUpstreamRequestID(c, v)
+	}
+	// Cache TTL 归类：按统一决策改写返回下游的 usage（隐藏 1h、并入 5m），同步 usage 供计费一致。
+	if dec := cacheTTLDecisionFromContext(c); dec.Enabled {
+		if nb, changed := rewriteNonStreamCacheTTLBody(body, usage, dec); changed {
+			body = nb
+			c.Writer.Header().Del("Content-Length")
+		}
 	}
 	c.Data(resp.StatusCode, "application/json", body)
 	return usage, nil
@@ -6759,9 +6801,11 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 			}
 		}
 
-		// Cache TTL Override: 重写 SSE 事件中的 cache_creation 分类
-		if account.IsCacheTTLOverrideEnabled() {
-			overrideTarget := account.GetCacheTTLOverrideTarget()
+		// Cache TTL 归类：重写 SSE 事件中的 cache_creation 分类（消费统一决策，覆盖账号级 + 分组级）。
+		// 在此改写 event map 后，下方 extractSSEUsagePatch 从改写后的 event 提取 usage，
+		// 保证响应与计费口径一致。
+		if cacheTTLDec := cacheTTLDecisionFromContext(c); cacheTTLDec.Enabled {
+			overrideTarget := cacheTTLDec.Target
 			if eventType == "message_start" {
 				if msg, ok := event["message"].(map[string]any); ok {
 					if u, ok := msg["usage"].(map[string]any); ok {
@@ -7086,6 +7130,120 @@ func parseSSEUsageInt(value any) (int, bool) {
 	return 0, false
 }
 
+// cacheTTLDecision 是"每个请求一个缓存 TTL 归类决策"（单一决策范式）。
+// 计费侧(applyCacheTTLOverride)、各响应路径(rewriteCacheCreationJSON)、用量日志标记
+// 全部消费同一个 decision，杜绝"我按 5m 计但下游看到 1h"漂移。
+type cacheTTLDecision struct {
+	Enabled bool   // 是否生效
+	Target  string // "5m" | "1h"
+	Source  string // "account" | "group"（仅用于日志/调试）
+}
+
+// resolveCacheTTLDecision 在选定 account 后、Forward 前计算（每次 failover 重算）。
+// 优先级：账号级显式 override（限 Anthropic OAuth/SetupToken，predicate 不扩范围）优先；
+// 否则分组级"未声明 1h → 5m"（仅 anthropic 分组、开关开、下游未声明 ttl=1h）。
+func resolveCacheTTLDecision(account *Account, group *Group, downstreamRequested1h bool) cacheTTLDecision {
+	if account != nil && account.IsCacheTTLOverrideEnabled() {
+		return cacheTTLDecision{Enabled: true, Target: account.GetCacheTTLOverrideTarget(), Source: "account"}
+	}
+	if group != nil && group.Platform == PlatformAnthropic && group.ClaudeUnrequested1hCacheAs5m && !downstreamRequested1h {
+		return cacheTTLDecision{Enabled: true, Target: "5m", Source: "group"}
+	}
+	return cacheTTLDecision{}
+}
+
+// cacheTTLDecisionContextKey 在 gin.Context 上携带本次请求的缓存 TTL 决策，供响应处理器
+// （与 Forward 同请求协程）消费。RecordUsage 在 background ctx 下运行，改用 ForwardResult.CacheTTL。
+const cacheTTLDecisionContextKey = "cache_ttl_decision"
+
+// cacheTTLDecisionFromContext 从 gin.Context 读取本次请求的缓存 TTL 决策；未设置时返回零值(Enabled=false)。
+func cacheTTLDecisionFromContext(c *gin.Context) cacheTTLDecision {
+	if c == nil {
+		return cacheTTLDecision{}
+	}
+	if v, ok := c.Get(cacheTTLDecisionContextKey); ok {
+		if d, ok := v.(cacheTTLDecision); ok {
+			return d
+		}
+	}
+	return cacheTTLDecision{}
+}
+
+// rewriteNonStreamCacheTTLBody 按决策把 non-streaming 响应 body 的 usage.cache_creation 归类
+// （ephemeral_1h→0 并入 ephemeral_5m，或反向，取决于 target），并同步 *usage（供计费一致）。
+// 返回可能改写后的 body 与是否发生改写（changed 时调用方需删 Content-Length 让 net/http 重算）。
+// dec 未生效或无需改写时原样返回、changed=false。供 passthrough / Bedrock 非流式路径复用。
+func rewriteNonStreamCacheTTLBody(body []byte, usage *ClaudeUsage, dec cacheTTLDecision) ([]byte, bool) {
+	if !dec.Enabled || usage == nil {
+		return body, false
+	}
+	if !applyCacheTTLOverride(usage, dec.Target) {
+		return body, false
+	}
+	// 仅当响应 body 本就含 nested cache_creation 时才改写它，避免凭空创建新结构改变响应 shape
+	// （计费已由上面的 applyCacheTTLOverride 同步 usage；无 nested 明细的响应本就不向下游暴露 1h）。
+	if !gjson.GetBytes(body, "usage.cache_creation").Exists() {
+		return body, false
+	}
+	changed := false
+	if nb, err := sjson.SetBytes(body, "usage.cache_creation.ephemeral_5m_input_tokens", usage.CacheCreation5mTokens); err == nil {
+		body, changed = nb, true
+	}
+	if nb, err := sjson.SetBytes(body, "usage.cache_creation.ephemeral_1h_input_tokens", usage.CacheCreation1hTokens); err == nil {
+		body, changed = nb, true
+	}
+	return body, changed
+}
+
+// rewriteSSEDataCacheTTL 按决策把一条 SSE "data:" 的 JSON 载荷里 cache_creation 的 5m/1h 分类
+// 全部归入 target（"5m"→隐藏 1h 并入 5m；"1h"→反向）。仅处理 message_start(message.usage)
+// 与 message_delta(usage) 两类事件。返回改写后的 data 与是否改写。供流式透传/Bedrock 路径复用。
+// 注意：本函数**只改写 JSON 字符串，不接触 ClaudeUsage struct**（与接收 *ClaudeUsage 的
+// rewriteNonStreamCacheTTLBody 不同）；调用方应"先改写 data，再用改写后的 data 解析 usage +
+// 重构整行写下游"，从而保证响应与计费口径一致。
+func rewriteSSEDataCacheTTL(data string, dec cacheTTLDecision) (string, bool) {
+	if !dec.Enabled {
+		return data, false
+	}
+	var usagePath string
+	switch gjson.Get(data, "type").String() {
+	case "message_start":
+		usagePath = "message.usage"
+	case "message_delta":
+		usagePath = "usage"
+	default:
+		return data, false
+	}
+	ccPath := usagePath + ".cache_creation"
+	cc := gjson.Get(data, ccPath)
+	if !cc.Exists() {
+		return data, false
+	}
+	v5m := cc.Get("ephemeral_5m_input_tokens").Int()
+	v1h := cc.Get("ephemeral_1h_input_tokens").Int()
+	if v5m == 0 && v1h == 0 {
+		return data, false
+	}
+	total := v5m + v1h
+	var n5m, n1h int64
+	if dec.Target == "1h" {
+		n1h = total
+	} else {
+		n5m = total
+	}
+	if n5m == v5m && n1h == v1h {
+		return data, false
+	}
+	out := data
+	if nd, err := sjson.Set(out, ccPath+".ephemeral_5m_input_tokens", n5m); err == nil {
+		out = nd
+	}
+	if nd, err := sjson.Set(out, ccPath+".ephemeral_1h_input_tokens", n1h); err == nil {
+		out = nd
+	}
+	return out, out != data
+}
+
 // applyCacheTTLOverride 将所有 cache creation tokens 归入指定的 TTL 类型。
 // target 为 "5m" 或 "1h"。返回 true 表示发生了变更。
 func applyCacheTTLOverride(usage *ClaudeUsage, target string) bool {
@@ -7192,9 +7350,9 @@ func (s *GatewayService) handleNonStreamingResponse(ctx context.Context, resp *h
 		}
 	}
 
-	// Cache TTL Override: 重写 non-streaming 响应中的 cache_creation 分类
-	if account.IsCacheTTLOverrideEnabled() {
-		overrideTarget := account.GetCacheTTLOverrideTarget()
+	// Cache TTL 归类：重写 non-streaming 响应中的 cache_creation 分类（消费统一决策）。
+	if cacheTTLDec := cacheTTLDecisionFromContext(c); cacheTTLDec.Enabled {
+		overrideTarget := cacheTTLDec.Target
 		if applyCacheTTLOverride(&response.Usage, overrideTarget) {
 			// 同步更新 body JSON 中的嵌套 cache_creation 对象
 			if newBody, err := sjson.SetBytes(body, "usage.cache_creation.ephemeral_5m_input_tokens", response.Usage.CacheCreation5mTokens); err == nil {
@@ -7604,10 +7762,13 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		result.Usage.InputTokens = 0
 	}
 
-	// Cache TTL Override: 确保计费时 token 分类与账号设置一致
+	// Cache TTL 归类：消费 Forward 阶段算好的单一决策（result.CacheTTL），而非在此重判 account——
+	// RecordUsage 在 background ctx 下运行（见 usage_record_worker_pool），读不到请求 ctx 的分组。
+	// 这里是计费侧的幂等兜底：响应处理器可能已把 result.Usage 归一，applyCacheTTLOverride 再调即 no-op。
+	// 日志标记按"决策生效且有 cache creation token"记，不依赖 applyCacheTTLOverride 的返回值。
 	cacheTTLOverridden := false
-	if account.IsCacheTTLOverrideEnabled() {
-		applyCacheTTLOverride(&result.Usage, account.GetCacheTTLOverrideTarget())
+	if result.CacheTTL.Enabled {
+		applyCacheTTLOverride(&result.Usage, result.CacheTTL.Target)
 		cacheTTLOverridden = (result.Usage.CacheCreation5mTokens + result.Usage.CacheCreation1hTokens) > 0
 	}
 
@@ -7787,10 +7948,13 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 		result.Usage.InputTokens = 0
 	}
 
-	// Cache TTL Override: 确保计费时 token 分类与账号设置一致
+	// Cache TTL 归类：消费 Forward 阶段算好的单一决策（result.CacheTTL），而非在此重判 account——
+	// RecordUsage 在 background ctx 下运行（见 usage_record_worker_pool），读不到请求 ctx 的分组。
+	// 这里是计费侧的幂等兜底：响应处理器可能已把 result.Usage 归一，applyCacheTTLOverride 再调即 no-op。
+	// 日志标记按"决策生效且有 cache creation token"记，不依赖 applyCacheTTLOverride 的返回值。
 	cacheTTLOverridden := false
-	if account.IsCacheTTLOverrideEnabled() {
-		applyCacheTTLOverride(&result.Usage, account.GetCacheTTLOverrideTarget())
+	if result.CacheTTL.Enabled {
+		applyCacheTTLOverride(&result.Usage, result.CacheTTL.Target)
 		cacheTTLOverridden = (result.Usage.CacheCreation5mTokens + result.Usage.CacheCreation1hTokens) > 0
 	}
 

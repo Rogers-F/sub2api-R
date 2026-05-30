@@ -2052,6 +2052,13 @@ export default {
         disabled: 'Disabled',
         hint: 'Disables both cache creation and cache reads.'
       },
+      unrequested1hAs5m: {
+        title: '1h Cache as 5m',
+        tooltip: 'When the downstream has not declared a 1h cache, treat upstream 1h cache creation as 5m for billing/display purposes (Anthropic only; the difference is absorbed by this platform).',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        hint: 'When downstream does not declare 1h, treats upstream 1h cache creation as 5m for billing/display (Anthropic only; cost difference absorbed by this platform).'
+      },
       thinkingSignatureCompat: {
         title: 'Cross-channel History Compat',
         tooltip:

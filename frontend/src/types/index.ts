@@ -503,6 +503,7 @@ export interface Group {
   // Claude Code 客户端限制
   claude_code_only: boolean
   claude_prompt_caching_enabled: boolean
+  claude_unrequested_1h_cache_as_5m: boolean
   thinking_signature_compat_enabled: boolean
   claude_tool_use_repair_enabled: boolean
   claude_tool_arguments_repair_enabled: boolean
@@ -624,6 +625,7 @@ export interface CreateGroupRequest {
   image_price_4k?: number | null
   claude_code_only?: boolean
   claude_prompt_caching_enabled?: boolean
+  claude_unrequested_1h_cache_as_5m?: boolean
   thinking_signature_compat_enabled?: boolean
   claude_tool_use_repair_enabled?: boolean
   claude_tool_arguments_repair_enabled?: boolean
@@ -657,6 +659,7 @@ export interface UpdateGroupRequest {
   image_price_4k?: number | null
   claude_code_only?: boolean
   claude_prompt_caching_enabled?: boolean
+  claude_unrequested_1h_cache_as_5m?: boolean
   thinking_signature_compat_enabled?: boolean
   claude_tool_use_repair_enabled?: boolean
   claude_tool_arguments_repair_enabled?: boolean

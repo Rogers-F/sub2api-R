@@ -51,6 +51,7 @@ type APIKeyAuthGroupSnapshot struct {
 	ImagePrice4K                     *float64 `json:"image_price_4k,omitempty"`
 	ClaudeCodeOnly                   bool     `json:"claude_code_only"`
 	ClaudePromptCachingEnabled       bool     `json:"claude_prompt_caching_enabled"`
+	ClaudeUnrequested1hCacheAs5m     bool     `json:"claude_unrequested_1h_cache_as_5m"`
 	ThinkingSignatureCompatEnabled   bool     `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       bool     `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled bool     `json:"claude_tool_arguments_repair_enabled"`

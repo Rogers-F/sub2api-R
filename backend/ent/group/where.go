@@ -150,6 +150,11 @@ func ClaudePromptCachingEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudePromptCachingEnabled, v))
 }
 
+// ClaudeUnrequested1hCacheAs5m applies equality check predicate on the "claude_unrequested_1h_cache_as_5m" field. It's identical to ClaudeUnrequested1hCacheAs5mEQ.
+func ClaudeUnrequested1hCacheAs5m(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldClaudeUnrequested1hCacheAs5m, v))
+}
+
 // ThinkingSignatureCompatEnabled applies equality check predicate on the "thinking_signature_compat_enabled" field. It's identical to ThinkingSignatureCompatEnabledEQ.
 func ThinkingSignatureCompatEnabled(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldThinkingSignatureCompatEnabled, v))
@@ -1088,6 +1093,16 @@ func ClaudePromptCachingEnabledEQ(v bool) predicate.Group {
 // ClaudePromptCachingEnabledNEQ applies the NEQ predicate on the "claude_prompt_caching_enabled" field.
 func ClaudePromptCachingEnabledNEQ(v bool) predicate.Group {
 	return predicate.Group(sql.FieldNEQ(FieldClaudePromptCachingEnabled, v))
+}
+
+// ClaudeUnrequested1hCacheAs5mEQ applies the EQ predicate on the "claude_unrequested_1h_cache_as_5m" field.
+func ClaudeUnrequested1hCacheAs5mEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldClaudeUnrequested1hCacheAs5m, v))
+}
+
+// ClaudeUnrequested1hCacheAs5mNEQ applies the NEQ predicate on the "claude_unrequested_1h_cache_as_5m" field.
+func ClaudeUnrequested1hCacheAs5mNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldClaudeUnrequested1hCacheAs5m, v))
 }
 
 // ThinkingSignatureCompatEnabledEQ applies the EQ predicate on the "thinking_signature_compat_enabled" field.

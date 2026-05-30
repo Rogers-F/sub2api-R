@@ -97,6 +97,7 @@ type CreateGroupRequest struct {
 	ImagePrice4K                     *float64 `json:"image_price_4k"`
 	ClaudeCodeOnly                   bool     `json:"claude_code_only"`
 	ClaudePromptCachingEnabled       *bool    `json:"claude_prompt_caching_enabled"`
+	ClaudeUnrequested1hCacheAs5m     *bool    `json:"claude_unrequested_1h_cache_as_5m"`
 	ThinkingSignatureCompatEnabled   bool     `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       bool     `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled bool     `json:"claude_tool_arguments_repair_enabled"`
@@ -137,6 +138,7 @@ type UpdateGroupRequest struct {
 	ImagePrice4K                     *float64 `json:"image_price_4k"`
 	ClaudeCodeOnly                   *bool    `json:"claude_code_only"`
 	ClaudePromptCachingEnabled       *bool    `json:"claude_prompt_caching_enabled"`
+	ClaudeUnrequested1hCacheAs5m     *bool    `json:"claude_unrequested_1h_cache_as_5m"`
 	ThinkingSignatureCompatEnabled   *bool    `json:"thinking_signature_compat_enabled"`
 	ClaudeToolUseRepairEnabled       *bool    `json:"claude_tool_use_repair_enabled"`
 	ClaudeToolArgumentsRepairEnabled *bool    `json:"claude_tool_arguments_repair_enabled"`
@@ -260,6 +262,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		ImagePrice4K:                     req.ImagePrice4K,
 		ClaudeCodeOnly:                   req.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       req.ClaudePromptCachingEnabled,
+		ClaudeUnrequested1hCacheAs5m:     req.ClaudeUnrequested1hCacheAs5m,
 		ThinkingSignatureCompatEnabled:   req.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       req.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: req.ClaudeToolArgumentsRepairEnabled,
@@ -315,6 +318,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		ImagePrice4K:                     req.ImagePrice4K,
 		ClaudeCodeOnly:                   req.ClaudeCodeOnly,
 		ClaudePromptCachingEnabled:       req.ClaudePromptCachingEnabled,
+		ClaudeUnrequested1hCacheAs5m:     req.ClaudeUnrequested1hCacheAs5m,
 		ThinkingSignatureCompatEnabled:   req.ThinkingSignatureCompatEnabled,
 		ClaudeToolUseRepairEnabled:       req.ClaudeToolUseRepairEnabled,
 		ClaudeToolArgumentsRepairEnabled: req.ClaudeToolArgumentsRepairEnabled,

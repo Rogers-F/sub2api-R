@@ -32,6 +32,8 @@ type Group struct {
 	// Claude Code 客户端限制
 	ClaudeCodeOnly             bool
 	ClaudePromptCachingEnabled bool
+	// 仅 anthropic：下游未声明 ttl=1h 时把上游 1h 缓存创建按 5m 计费/展示
+	ClaudeUnrequested1hCacheAs5m bool
 	// 当 Max / Anthropic / Bedrock 等不同渠道切换导致历史 thinking 签名失效时，
 	// 是否强制触发兼容重试（剥离历史 thinking / tool 签名块）。
 	ThinkingSignatureCompatEnabled bool

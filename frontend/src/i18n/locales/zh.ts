@@ -2139,6 +2139,13 @@ export default {
         disabled: '已关闭缓存',
         hint: '关闭后会同时禁用缓存创建和缓存读取。'
       },
+      unrequested1hAs5m: {
+        title: '1h 缓存按 5m 计费',
+        tooltip: '下游未声明 1h 缓存时，把上游返回的 1h 缓存创建按 5m 计费/展示（仅 anthropic，差额由本站承担）。',
+        enabled: '已启用',
+        disabled: '未启用',
+        hint: '下游未声明 1h 时，把上游 1h 缓存创建按 5m 计费/展示（仅 anthropic，差额由本站承担）。'
+      },
       thinkingSignatureCompat: {
         title: '跨渠道历史上下文兼容',
         tooltip:
