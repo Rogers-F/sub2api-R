@@ -11,6 +11,19 @@ export default {
     getStarted: '开始接入',
     goToDashboard: '进入控制台',
     tagline: 'Enterprise AI Gateway',
+    heroMinimal: {
+      tagline: '一个密钥，畅用世界顶级 AI 模型'
+    },
+    cards: {
+      chat: {
+        title: '开始对话',
+        desc: '与 Claude · GPT · Gemini 等顶级模型\n免费畅聊，体验全新旗舰能力'
+      },
+      console: {
+        title: '开发者控制台',
+        desc: '调用最新模型 API\n密钥管理 · 用量与计费一目了然'
+      }
+    },
     announcement: {
       statusOk: '所有节点运行平稳 · 服务正常'
     },

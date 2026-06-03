@@ -11,6 +11,19 @@ export default {
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
     tagline: 'Enterprise AI Gateway',
+    heroMinimal: {
+      tagline: 'One API key for the world’s best AI models'
+    },
+    cards: {
+      chat: {
+        title: 'Start chatting',
+        desc: 'Chat freely with Claude, GPT, Gemini\nand other frontier models'
+      },
+      console: {
+        title: 'Developer console',
+        desc: 'Call the latest model APIs\nKeys, usage and billing at a glance'
+      }
+    },
     announcement: {
       statusOk: 'All nodes operating smoothly · Service normal'
     },
