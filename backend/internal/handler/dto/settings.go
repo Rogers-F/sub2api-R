@@ -135,6 +135,8 @@ type PublicSettings struct {
 	SoraClientEnabled                bool             `json:"sora_client_enabled"`
 	BackendModeEnabled               bool             `json:"backend_mode_enabled"`
 	Version                          string           `json:"version"`
+	ChatProviderMode                 string           `json:"chat_provider_mode"`
+	NewAPIConsoleURL                 string           `json:"newapi_console_url"`
 }
 
 // SoraS3Settings Sora S3 存储配置 DTO（响应用，不含敏感字段）

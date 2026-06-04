@@ -51,6 +51,7 @@ type Handlers struct {
 	Setting       *SettingHandler
 	Totp          *TotpHandler
 	Conversation  *ConversationHandler
+	NewAPIRelay   *NewAPIRelayHandler
 }
 
 // BuildInfo contains build-time information

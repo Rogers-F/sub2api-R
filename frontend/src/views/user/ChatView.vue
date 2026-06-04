@@ -81,6 +81,7 @@ import { useChatStore } from '@/stores/chat'
 import { usePlaygroundStore } from '@/stores/playground'
 import { useAppStore } from '@/stores/app'
 import { usePlaygroundResources } from '@/composables/playground/usePlaygroundResources'
+import { listModelsBFF } from '@/api/newapi'
 
 const { t } = useI18n()
 const chat = useChatStore()
@@ -92,9 +93,15 @@ const drawerOpen = ref(false)
 const composerRef = ref<InstanceType<typeof ChatComposer> | null>(null)
 const pendingDeleteId = ref<number | null>(null)
 
+// In 'newapi_bff' mode the chat streams via the JWT-authenticated backend and does
+// not depend on sub2api groups/keys; the JWT (logged-in user) is the access signal.
+const isNewApiBffMode = computed(() => appStore.newApiBffEnabled)
+
 // getAvailable() already filters groups by active subscription / permission, so a
 // non-empty group list is the authoritative "this user can chat" signal.
-const hasUsableResource = computed(() => playground.groups.length > 0)
+const hasUsableResource = computed(
+  () => isNewApiBffMode.value || playground.groups.length > 0
+)
 
 // Show the gate only after resources have finished loading and none are usable.
 const showGate = computed(() => !playground.resourcesLoading && !hasUsableResource.value)
@@ -130,8 +137,31 @@ async function onSend(text: string) {
   await chat.sendMessage(text)
 }
 
+async function loadBffModels() {
+  try {
+    playground.models = await listModelsBFF()
+  } catch {
+    playground.models = []
+    appStore.showError(t('playground.errors.loadModelsFailed'))
+    return
+  }
+  // Auto-select a model if none persisted (or the persisted one is unavailable), so
+  // the composer is usable immediately — there is no key/group picker in this mode.
+  const current = playground.inputs.model
+  const stillValid = current && playground.models.some((m) => m.value === current)
+  if (!stillValid && playground.models.length > 0) {
+    playground.setInput('model', playground.models[0].value)
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([appStore.fetchPublicSettings(), resources.loadAll(), chat.loadConversations()])
+  // Settings must resolve before branching so the chat mode is known.
+  await appStore.fetchPublicSettings()
+  if (isNewApiBffMode.value) {
+    await Promise.all([loadBffModels(), chat.loadConversations()])
+    return
+  }
+  await Promise.all([resources.loadAll(), chat.loadConversations()])
   // Resolve models for the selected key (selectedKey derives from persisted apiKeyId).
   if (playground.selectedKey && playground.models.length === 0) {
     await resources.loadModelsForKey(playground.selectedKey.key)

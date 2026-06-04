@@ -53,29 +53,10 @@ export interface StreamHandlers {
   onError: (err: ChatCompletionError) => void
 }
 
-export async function chatCompletionStream(
-  apiKey: string,
-  payload: ChatCompletionPayload,
-  handlers: StreamHandlers,
-  signal?: AbortSignal
-): Promise<void> {
-  let res: Response
-  try {
-    res = await fetch(`${RELAY_BASE}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream'
-      },
-      body: JSON.stringify({ ...payload, stream: true }),
-      signal
-    })
-  } catch (e: any) {
-    handlers.onError({ status: 0, message: e?.message ?? 'network error' })
-    return
-  }
-
+// Drive the OpenAI-style SSE response: parse `data:` frames, dispatch chunks, and
+// report the terminal outcome. Shared by both the sub2api gateway path (sk- key)
+// and the new-api BFF path (JWT) so the parsing loop stays identical.
+export async function consumeSseStream(res: Response, handlers: StreamHandlers): Promise<void> {
   if (!res.ok) {
     handlers.onError(await extractError(res))
     return
@@ -123,7 +104,33 @@ export async function chatCompletionStream(
   }
 }
 
-async function extractError(res: Response): Promise<ChatCompletionError> {
+export async function chatCompletionStream(
+  apiKey: string,
+  payload: ChatCompletionPayload,
+  handlers: StreamHandlers,
+  signal?: AbortSignal
+): Promise<void> {
+  let res: Response
+  try {
+    res = await fetch(`${RELAY_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream'
+      },
+      body: JSON.stringify({ ...payload, stream: true }),
+      signal
+    })
+  } catch (e: any) {
+    handlers.onError({ status: 0, message: e?.message ?? 'network error' })
+    return
+  }
+
+  await consumeSseStream(res, handlers)
+}
+
+export async function extractError(res: Response): Promise<ChatCompletionError> {
   let body: any = null
   try {
     body = await res.json()

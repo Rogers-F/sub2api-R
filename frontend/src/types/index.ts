@@ -115,6 +115,11 @@ export interface PublicSettings {
   linuxdo_oauth_enabled: boolean
   backend_mode_enabled: boolean
   version: string
+  // When 'newapi_bff', the chat page streams via a same-origin JWT-authenticated
+  // backend endpoint instead of the sub2api gateway + sk- key. Defaults to 'sub2api'.
+  chat_provider_mode?: 'sub2api' | 'newapi_bff'
+  // External console URL used by the homepage developer-console card in newapi_bff mode.
+  newapi_console_url?: string
 }
 
 export interface AuthResponse {

@@ -119,6 +119,12 @@ type PublicSettings struct {
 	LinuxDoOAuthEnabled bool
 	BackendModeEnabled  bool
 	Version             string
+
+	// ChatProviderMode controls whether the chat page streams via this gateway
+	// ("sub2api") or the same-origin new-api BFF ("newapi_bff"). NewAPIConsoleURL
+	// is the external new-api console link surfaced on the home page.
+	ChatProviderMode string
+	NewAPIConsoleURL string
 }
 
 // SoraS3Settings Sora S3 存储配置

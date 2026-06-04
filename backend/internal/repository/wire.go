@@ -7,10 +7,22 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/newapi"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 )
+
+// ProvideNewAPIClient builds the new-api admin client from configuration and
+// exposes it via the service-layer port.
+func ProvideNewAPIClient(cfg *config.Config) service.NewAPIClient {
+	return newapi.NewClient(newapi.Config{
+		BaseURL:      cfg.NewAPI.BaseURL,
+		AccessToken:  cfg.NewAPI.AccessToken,
+		AdminUserID:  cfg.NewAPI.AdminUserID,
+		DefaultGroup: cfg.NewAPI.DefaultGroup,
+	}, nil)
+}
 
 // ProvideConcurrencyCache 创建并发控制缓存，从配置读取 TTL 参数
 // 性能优化：TTL 可配置，支持长时间运行的 LLM 请求场景
@@ -66,6 +78,8 @@ var ProviderSet = wire.NewSet(
 	NewAnnouncementReadRepository,
 	NewConversationRepository,
 	NewMessageRepository,
+	NewNewAPITokenRepository,
+	ProvideNewAPIClient,
 	NewUsageLogRepository,
 	NewUsageBillingRepository,
 	NewIdempotencyRepository,

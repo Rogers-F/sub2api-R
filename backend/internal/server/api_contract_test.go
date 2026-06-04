@@ -639,7 +639,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 		RunMode: config.RunModeStandard,
 	}
 
-	userService := service.NewUserService(userRepo, nil, nil)
+	userService := service.NewUserService(userRepo, nil, nil, nil)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, userSubRepo, nil, apiKeyCache, cfg)
 
 	usageRepo := newStubUsageLogRepo()
@@ -654,7 +654,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingRepo := newStubSettingRepo()
 	settingService := service.NewSettingService(settingRepo, cfg)
 
-	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, nil, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, nil, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, redeemService, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)

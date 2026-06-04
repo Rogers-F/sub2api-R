@@ -461,6 +461,7 @@ type adminServiceImpl struct {
 	defaultSubAssigner   DefaultSubscriptionAssigner
 	userSubRepo          UserSubscriptionRepository
 	privacyClientFactory PrivacyClientFactory
+	newapiProvision      *NewAPIProvisionService
 }
 
 type userGroupRateBatchReader interface {
@@ -486,6 +487,7 @@ func NewAdminService(
 	defaultSubAssigner DefaultSubscriptionAssigner,
 	userSubRepo UserSubscriptionRepository,
 	privacyClientFactory PrivacyClientFactory,
+	newapiProvision *NewAPIProvisionService,
 ) AdminService {
 	return &adminServiceImpl{
 		userRepo:             userRepo,
@@ -505,6 +507,19 @@ func NewAdminService(
 		defaultSubAssigner:   defaultSubAssigner,
 		userSubRepo:          userSubRepo,
 		privacyClientFactory: privacyClientFactory,
+		newapiProvision:      newapiProvision,
+	}
+}
+
+// revokeNewAPITokenForUser revokes the user's external relay token (if the
+// integration is wired). Revocation must never block the primary disable/delete
+// action: failures are recorded by the provisioning service and swallowed here.
+func (s *adminServiceImpl) revokeNewAPITokenForUser(ctx context.Context, userID int64) {
+	if s.newapiProvision == nil {
+		return
+	}
+	if err := s.newapiProvision.RevokeForUser(ctx, userID); err != nil {
+		logger.LegacyPrintf("service.admin", "newapi revoke for user failed (non-blocking): user_id=%d err=%v", userID, err)
 	}
 }
 
@@ -700,6 +715,12 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 		}
 	}
 
+	// On active -> disabled transition, revoke the user's external relay token.
+	// Non-blocking: failures are recorded but do not fail the disable.
+	if oldStatus == StatusActive && user.Status == StatusDisabled {
+		s.revokeNewAPITokenForUser(ctx, user.ID)
+	}
+
 	concurrencyDiff := user.Concurrency - oldConcurrency
 	if concurrencyDiff != 0 {
 		code, err := GenerateRedeemCode()
@@ -751,6 +772,10 @@ func (s *adminServiceImpl) DeleteUser(ctx context.Context, id int64) error {
 	if user.Role == "admin" {
 		return errors.New("cannot delete admin user")
 	}
+	// Revoke the external relay token BEFORE deleting the user. The mapping row
+	// is FK-cascaded on user delete, so we must read+delete upstream first.
+	// Non-blocking: revocation failures are recorded but do not block delete.
+	s.revokeNewAPITokenForUser(ctx, id)
 	if err := s.userRepo.Delete(ctx, id); err != nil {
 		logger.LegacyPrintf("service.admin", "delete user failed: user_id=%d err=%v", id, err)
 		return err

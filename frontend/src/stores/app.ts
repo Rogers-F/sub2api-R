@@ -48,6 +48,11 @@ export const useAppStore = defineStore('app', () => {
 
   const hasActiveToasts = computed(() => toasts.value.length > 0)
   const backendModeEnabled = computed(() => cachedPublicSettings.value?.backend_mode_enabled ?? false)
+  // When true, the chat page streams via the same-origin JWT-authenticated backend
+  // (new-api BFF) instead of the sub2api gateway + sk- key. Defaults to false.
+  const newApiBffEnabled = computed(
+    () => cachedPublicSettings.value?.chat_provider_mode === 'newapi_bff'
+  )
 
   const loadingCount = ref<number>(0)
 
@@ -410,6 +415,7 @@ export const useAppStore = defineStore('app', () => {
     // Computed
     hasActiveToasts,
     backendModeEnabled,
+    newApiBffEnabled,
 
     // Actions
     toggleSidebar,

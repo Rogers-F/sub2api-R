@@ -104,8 +104,12 @@
             </p>
           </router-link>
 
-          <router-link
-            :to="isAuthenticated ? dashboardPath : '/login'"
+          <component
+            :is="consoleIsExternal ? 'a' : 'router-link'"
+            :to="consoleIsExternal ? undefined : (isAuthenticated ? dashboardPath : '/login')"
+            :href="consoleIsExternal ? newapiConsoleUrl : undefined"
+            :target="consoleIsExternal ? '_blank' : undefined"
+            :rel="consoleIsExternal ? 'noopener' : undefined"
             class="group cursor-pointer rounded-2xl border hairline bg-paper-0 p-6 text-left transition-colors hover:border-coral-400 hover:bg-paper-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-500/50 dark:bg-ink-800 dark:hover:border-coral-400/40"
           >
             <div class="flex items-center justify-between">
@@ -119,7 +123,7 @@
             <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-dust-600 dark:text-pearl-200">
               {{ t('home.cards.console.desc') }}
             </p>
-          </router-link>
+          </component>
         </div>
       </div>
     </main>
@@ -205,6 +209,11 @@ const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appS
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
+
+// In newapi_bff mode the developer-console card points to the external new-api
+// console (when configured); otherwise it keeps the internal dashboard link.
+const newapiConsoleUrl = computed(() => appStore.cachedPublicSettings?.newapi_console_url?.trim() || '')
+const consoleIsExternal = computed(() => appStore.newApiBffEnabled && !!newapiConsoleUrl.value)
 const isHomeContentUrl = computed(() => {
   const content = homeContent.value.trim()
   return content.startsWith('http://') || content.startsWith('https://')

@@ -39,7 +39,19 @@
             v-if="pickerOpen"
             class="dropdown absolute left-0 top-full z-40 mt-2 w-72 p-3"
           >
-            <KeyGroupModelPicker />
+            <!-- newapi_bff mode has no sub2api key/group: a plain model selector suffices. -->
+            <div v-if="isNewApiBffMode">
+              <label class="input-label">{{ t('playground.pickers.model') }}</label>
+              <Select
+                :model-value="playground.inputs.model"
+                :options="playground.models"
+                :placeholder="t('playground.pickers.selectModel')"
+                :disabled="playground.models.length === 0"
+                :searchable="true"
+                @update:model-value="(v) => playground.setInput('model', String(v ?? ''))"
+              />
+            </div>
+            <KeyGroupModelPicker v-else />
           </div>
         </transition>
       </div>
@@ -82,14 +94,19 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import Icon from '@/components/icons/Icon.vue'
+import Select from '@/components/common/Select.vue'
 import KeyGroupModelPicker from '@/components/playground/KeyGroupModelPicker.vue'
 import { usePlaygroundStore } from '@/stores/playground'
+import { useAppStore } from '@/stores/app'
 
 const emit = defineEmits<{ (e: 'toggle-sidebar'): void }>()
 
 const router = useRouter()
 const { t } = useI18n()
 const playground = usePlaygroundStore()
+const appStore = useAppStore()
+
+const isNewApiBffMode = computed(() => appStore.newApiBffEnabled)
 
 const pickerOpen = ref(false)
 const pickerRef = ref<HTMLElement | null>(null)

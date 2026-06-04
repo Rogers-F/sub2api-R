@@ -120,6 +120,14 @@ func RegisterUserRoutes(
 				h.Conversation.Replace,
 			)
 		}
+
+		// new-api 同源 BFF 中转（仅在 chat.provider_mode=newapi_bff 时生效，
+		// 否则处理器返回 404）。中转始终使用 JWT 用户自己的令牌。
+		newapiRelay := authenticated.Group("/newapi")
+		{
+			newapiRelay.POST("/chat/completions", h.NewAPIRelay.ChatCompletions)
+			newapiRelay.GET("/models", h.NewAPIRelay.Models)
+		}
 	}
 }
 

@@ -179,6 +179,17 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		settings[SettingKeyRegistrationEmailSuffixWhitelist],
 	)
 
+	// Chat routing mode + new-api console link come from server config (not the
+	// settings table). Default to the sub2api gateway when unset.
+	chatProviderMode := config.ChatProviderModeSub2API
+	newAPIConsoleURL := ""
+	if s.cfg != nil {
+		if s.cfg.Chat.ProviderMode == config.ChatProviderModeNewAPIBFF {
+			chatProviderMode = config.ChatProviderModeNewAPIBFF
+		}
+		newAPIConsoleURL = s.cfg.NewAPI.ConsoleURL
+	}
+
 	return &PublicSettings{
 		RegistrationEnabled:              settings[SettingKeyRegistrationEnabled] == "true",
 		EmailVerifyEnabled:               emailVerifyEnabled,
@@ -207,6 +218,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		CustomEndpoints:                  settings[SettingKeyCustomEndpoints],
 		LinuxDoOAuthEnabled:              linuxDoEnabled,
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
+		ChatProviderMode:                 chatProviderMode,
+		NewAPIConsoleURL:                 newAPIConsoleURL,
 	}, nil
 }
 
@@ -264,6 +277,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		LinuxDoOAuthEnabled              bool            `json:"linuxdo_oauth_enabled"`
 		BackendModeEnabled               bool            `json:"backend_mode_enabled"`
 		Version                          string          `json:"version,omitempty"`
+		ChatProviderMode                 string          `json:"chat_provider_mode"`
+		NewAPIConsoleURL                 string          `json:"newapi_console_url,omitempty"`
 	}{
 		RegistrationEnabled:              settings.RegistrationEnabled,
 		EmailVerifyEnabled:               settings.EmailVerifyEnabled,
@@ -293,6 +308,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		Version:                          s.version,
+		ChatProviderMode:                 settings.ChatProviderMode,
+		NewAPIConsoleURL:                 settings.NewAPIConsoleURL,
 	}, nil
 }
 

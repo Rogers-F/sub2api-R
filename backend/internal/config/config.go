@@ -83,7 +83,37 @@ type Config struct {
 	Gemini                  GeminiConfig                  `mapstructure:"gemini"`
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
+	NewAPI                  NewAPIConfig                  `mapstructure:"newapi"`
+	Chat                    ChatConfig                    `mapstructure:"chat"`
 }
+
+// NewAPIConfig 配置外部 new-api 实例的对接参数（用于同源 BFF 中转聊天流量）。
+type NewAPIConfig struct {
+	// BaseURL 外部 new-api 实例的基础地址，例如 "https://newapi.example.com"。空表示未配置。
+	BaseURL string `mapstructure:"base_url"`
+	// AccessToken new-api 管理 API 的访问令牌（机密，禁止记录）。
+	AccessToken string `mapstructure:"access_token"`
+	// AdminUserID 调用管理 API 时携带的管理员用户 ID。
+	AdminUserID int `mapstructure:"admin_user_id"`
+	// DefaultGroup 创建令牌时使用的分组。
+	DefaultGroup string `mapstructure:"default_group"`
+	// ConsoleURL new-api 控制台地址（供前端引导跳转，可选）。
+	ConsoleURL string `mapstructure:"console_url"`
+}
+
+// ChatConfig 控制聊天流量的路由模式。
+type ChatConfig struct {
+	// ProviderMode 取值 "sub2api"（默认，走本网关）或 "newapi_bff"（走 new-api 同源中转）。
+	ProviderMode string `mapstructure:"provider_mode"`
+}
+
+// Chat provider mode 常量
+const (
+	// ChatProviderModeSub2API 默认模式：聊天流量经由本网关。
+	ChatProviderModeSub2API = "sub2api"
+	// ChatProviderModeNewAPIBFF 中转模式：聊天流量经由 new-api 同源 BFF。
+	ChatProviderModeNewAPIBFF = "newapi_bff"
+)
 
 type LogConfig struct {
 	Level           string            `mapstructure:"level"`
@@ -1058,6 +1088,27 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 		cfg.Gateway.UserMessageQueue.Mode = ""
 	}
 
+	// new-api / chat 路由配置归一化
+	cfg.NewAPI.BaseURL = strings.TrimRight(strings.TrimSpace(cfg.NewAPI.BaseURL), "/")
+	cfg.NewAPI.AccessToken = strings.TrimSpace(cfg.NewAPI.AccessToken)
+	cfg.NewAPI.DefaultGroup = strings.TrimSpace(cfg.NewAPI.DefaultGroup)
+	cfg.NewAPI.ConsoleURL = strings.TrimRight(strings.TrimSpace(cfg.NewAPI.ConsoleURL), "/")
+	if cfg.NewAPI.DefaultGroup == "" {
+		cfg.NewAPI.DefaultGroup = "default"
+	}
+	cfg.Chat.ProviderMode = strings.ToLower(strings.TrimSpace(cfg.Chat.ProviderMode))
+	switch cfg.Chat.ProviderMode {
+	case ChatProviderModeSub2API, ChatProviderModeNewAPIBFF:
+		// 合法值
+	case "":
+		cfg.Chat.ProviderMode = ChatProviderModeSub2API
+	default:
+		slog.Warn("invalid chat.provider_mode, falling back to sub2api",
+			"mode", cfg.Chat.ProviderMode,
+			"valid_modes", []string{ChatProviderModeSub2API, ChatProviderModeNewAPIBFF})
+		cfg.Chat.ProviderMode = ChatProviderModeSub2API
+	}
+
 	// Auto-generate TOTP encryption key if not set (32 bytes = 64 hex chars for AES-256)
 	cfg.Totp.EncryptionKey = strings.TrimSpace(cfg.Totp.EncryptionKey)
 	if cfg.Totp.EncryptionKey == "" {
@@ -1500,6 +1551,17 @@ func setDefaults() {
 	// Subscription Maintenance (bounded queue + worker pool)
 	viper.SetDefault("subscription_maintenance.worker_count", 2)
 	viper.SetDefault("subscription_maintenance.queue_size", 1024)
+
+	// new-api 同源 BFF 对接配置
+	// 通过环境变量配置：NEWAPI_BASE_URL / NEWAPI_ACCESS_TOKEN / NEWAPI_ADMIN_USER_ID 等
+	viper.SetDefault("newapi.base_url", "")
+	viper.SetDefault("newapi.access_token", "")
+	viper.SetDefault("newapi.admin_user_id", 1)
+	viper.SetDefault("newapi.default_group", "default")
+	viper.SetDefault("newapi.console_url", "")
+
+	// 聊天路由模式
+	viper.SetDefault("chat.provider_mode", ChatProviderModeSub2API)
 
 }
 

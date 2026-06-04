@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 
 import { chatAPI } from '@/api/chat'
 import { chatCompletionStream } from '@/api/playground'
+import { chatCompletionStreamBFF } from '@/api/newapi'
 import { usePlaygroundStore } from '@/stores/playground'
 import { useAppStore } from '@/stores/app'
 import { i18n } from '@/i18n'
@@ -79,6 +80,10 @@ export const useChatStore = defineStore('chat', () => {
   const abortController = ref<AbortController | null>(null)
 
   const isStreaming = computed(() => status.value === 'streaming')
+
+  // In 'newapi_bff' mode the chat streams via a same-origin JWT-authenticated
+  // backend endpoint and needs no sub2api sk- key; otherwise it uses the gateway.
+  const isNewApiBffMode = computed(() => appStore.newApiBffEnabled)
 
   // ==================== Conversation list ====================
 
@@ -243,31 +248,44 @@ export const useChatStore = defineStore('chat', () => {
     let streamErrored = false
     let errorText = ''
 
-    await chatCompletionStream(
-      playground.apiKey,
-      { model, messages: history, stream: true },
-      {
-        onChunk: (_raw, parsed: unknown) => {
-          const delta = (parsed as { choices?: Array<{ delta?: { content?: unknown } }> })
-            ?.choices?.[0]?.delta
-          if (delta && typeof delta.content === 'string' && delta.content) {
-            acc += delta.content
-            target.content = acc
-          }
-        },
-        onDone: () => {
+    const handlers = {
+      onChunk: (_raw: string, parsed: unknown) => {
+        const delta = (parsed as { choices?: Array<{ delta?: { content?: unknown } }> })
+          ?.choices?.[0]?.delta
+        if (delta && typeof delta.content === 'string' && delta.content) {
+          acc += delta.content
           target.content = acc
-        },
-        onError: (err) => {
-          streamErrored = true
-          errorText = t('playground.errors.httpError', {
-            status: err.status || 0,
-            message: err.message
-          })
         }
       },
-      abortController.value.signal
-    )
+      onDone: () => {
+        target.content = acc
+      },
+      onError: (err: { status: number; message: string }) => {
+        streamErrored = true
+        errorText = t('playground.errors.httpError', {
+          status: err.status || 0,
+          message: err.message
+        })
+      }
+    }
+
+    // Mode split: newapi_bff streams over the JWT-authenticated BFF endpoint (no
+    // sk- key); sub2api streams over the gateway with the selected key. The two
+    // credential paths are kept strictly separate.
+    if (isNewApiBffMode.value) {
+      await chatCompletionStreamBFF(
+        { model, messages: history, stream: true },
+        handlers,
+        abortController.value.signal
+      )
+    } else {
+      await chatCompletionStream(
+        playground.apiKey,
+        { model, messages: history, stream: true },
+        handlers,
+        abortController.value.signal
+      )
+    }
     abortController.value = null
 
     return { content: acc, errored: streamErrored, errorText }
@@ -277,7 +295,8 @@ export const useChatStore = defineStore('chat', () => {
     const text = userText.trim()
     if (!text || isStreaming.value) return
 
-    if (!playground.apiKey) {
+    // newapi_bff mode authenticates with the JWT, so no sub2api sk- key is required.
+    if (!isNewApiBffMode.value && !playground.apiKey) {
       appStore.showError(t('playground.errors.noKeySelected'))
       return
     }
@@ -382,7 +401,8 @@ export const useChatStore = defineStore('chat', () => {
 
     const conversationId = currentConversationId.value
     if (conversationId == null) return
-    if (!playground.apiKey) {
+    // newapi_bff mode authenticates with the JWT, so no sub2api sk- key is required.
+    if (!isNewApiBffMode.value && !playground.apiKey) {
       appStore.showError(t('playground.errors.noKeySelected'))
       return
     }

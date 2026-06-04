@@ -74,14 +74,27 @@ type UserService struct {
 	userRepo             UserRepository
 	authCacheInvalidator APIKeyAuthCacheInvalidator
 	billingCache         BillingCache
+	newapiProvision      *NewAPIProvisionService
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(userRepo UserRepository, authCacheInvalidator APIKeyAuthCacheInvalidator, billingCache BillingCache) *UserService {
+func NewUserService(userRepo UserRepository, authCacheInvalidator APIKeyAuthCacheInvalidator, billingCache BillingCache, newapiProvision *NewAPIProvisionService) *UserService {
 	return &UserService{
 		userRepo:             userRepo,
 		authCacheInvalidator: authCacheInvalidator,
 		billingCache:         billingCache,
+		newapiProvision:      newapiProvision,
+	}
+}
+
+// revokeNewAPIToken revokes the user's external relay token, if wired.
+// Non-blocking: failures are recorded by the provisioning service.
+func (s *UserService) revokeNewAPIToken(ctx context.Context, userID int64) {
+	if s.newapiProvision == nil {
+		return
+	}
+	if err := s.newapiProvision.RevokeForUser(ctx, userID); err != nil {
+		log.Printf("newapi revoke for user failed (non-blocking): user_id=%d err=%v", userID, err)
 	}
 }
 
@@ -226,6 +239,7 @@ func (s *UserService) UpdateStatus(ctx context.Context, userID int64, status str
 		return fmt.Errorf("get user: %w", err)
 	}
 
+	oldStatus := user.Status
 	user.Status = status
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
@@ -233,6 +247,11 @@ func (s *UserService) UpdateStatus(ctx context.Context, userID int64, status str
 	}
 	if s.authCacheInvalidator != nil {
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+	}
+
+	// On active -> disabled transition, revoke the external relay token.
+	if oldStatus == StatusActive && status == StatusDisabled {
+		s.revokeNewAPIToken(ctx, userID)
 	}
 
 	return nil
@@ -243,6 +262,9 @@ func (s *UserService) Delete(ctx context.Context, userID int64) error {
 	if s.authCacheInvalidator != nil {
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 	}
+	// Revoke the external relay token BEFORE deleting the user (FK cascade would
+	// drop the mapping). Non-blocking: failures are recorded, not fatal.
+	s.revokeNewAPIToken(ctx, userID)
 	if err := s.userRepo.Delete(ctx, userID); err != nil {
 		return fmt.Errorf("delete user: %w", err)
 	}
