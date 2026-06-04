@@ -55,7 +55,11 @@ func NewNewAPIRelayHandler(
 	// No overall client timeout: chat streaming is long-lived. Cancellation is
 	// driven by the request context (client disconnect) and the idle watchdog.
 	// A response-header timeout bounds the pre-streaming (connect/headers) phase.
-	tr := http.DefaultTransport.(*http.Transport).Clone()
+	base, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		base = &http.Transport{}
+	}
+	tr := base.Clone()
 	tr.ResponseHeaderTimeout = relayResponseHeaderTimeout
 	return &NewAPIRelayHandler{
 		cfg:                 cfg,
