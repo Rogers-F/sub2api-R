@@ -61,3 +61,10 @@ deploy/config.yaml
 deploy/docker-compose.override.yml
 docker-compose.override.yml
 docs/*
+# singular doc/ holds untracked ops runbooks with real topology/keys — never track
+doc/
+# untracked local artifacts that must never be accidentally staged
+.ace-tool/
+design-preview/
+ironhill_*.png
+frontend/vite.config.d.ts
