@@ -180,6 +180,22 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/subscription/epay/notify", controller.SubscriptionEpayNotify)
 		apiRouter.GET("/subscription/epay/return", controller.SubscriptionEpayReturn)
 		apiRouter.POST("/subscription/epay/return", controller.SubscriptionEpayReturn)
+
+		// Persisted multi-conversation chat (ported from sub2api). Same session +
+		// New-Api-User auth as /api/user/self; userId is taken from the session.
+		conversationRoute := apiRouter.Group("/conversations")
+		conversationRoute.Use(middleware.UserAuth())
+		{
+			conversationRoute.GET("", controller.GetAllConversations)
+			conversationRoute.POST("", controller.CreateConversation)
+			conversationRoute.GET("/:id", controller.GetConversation)
+			conversationRoute.PATCH("/:id", controller.UpdateConversation)
+			conversationRoute.DELETE("/:id", controller.DeleteConversation)
+			conversationRoute.GET("/:id/messages", controller.GetConversationMessages)
+			conversationRoute.POST("/:id/messages", controller.AppendConversationMessages)
+			conversationRoute.POST("/:id/messages/replace", controller.ReplaceConversationMessage)
+		}
+
 		optionRoute := apiRouter.Group("/option")
 		optionRoute.Use(middleware.RootAuth())
 		{

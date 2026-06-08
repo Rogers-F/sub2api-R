@@ -281,6 +281,8 @@ func migrateDB() error {
 		&CustomOAuthProvider{},
 		&UserOAuthBinding{},
 		&PerfMetric{},
+		&Conversation{},
+		&ConversationMessage{},
 	)
 	if err != nil {
 		return err
@@ -291,6 +293,14 @@ func migrateDB() error {
 		}
 	} else {
 		if err := DB.AutoMigrate(&SubscriptionPlan{}); err != nil {
+			return err
+		}
+	}
+	// Conversation persistence: GORM AutoMigrate cannot emit the CHECK
+	// constraints / ON DELETE CASCADE FK, so add them via guarded raw SQL
+	// (Postgres only; SQLite relies on service-layer validation).
+	if common.UsingPostgreSQL {
+		if err := migrateConversationConstraints(DB); err != nil {
 			return err
 		}
 	}
@@ -330,6 +340,8 @@ func migrateDBFast() error {
 		{&CustomOAuthProvider{}, "CustomOAuthProvider"},
 		{&UserOAuthBinding{}, "UserOAuthBinding"},
 		{&PerfMetric{}, "PerfMetric"},
+		{&Conversation{}, "Conversation"},
+		{&ConversationMessage{}, "ConversationMessage"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))
