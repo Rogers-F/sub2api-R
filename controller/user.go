@@ -99,6 +99,7 @@ func setupLogin(user *model.User, c *gin.Context) {
 	session.Set("role", user.Role)
 	session.Set("status", user.Status)
 	session.Set("group", user.Group)
+	session.Set("session_version", user.SessionVersion)
 	err := session.Save()
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
@@ -989,15 +990,24 @@ func ManageUser(c *gin.Context) {
 		return
 	}
 
-	if err := user.Update(false); err != nil {
-		common.ApiError(c, err)
+	// authz changes (ban/enable/role) must invalidate the target's cookie sessions
+	// ATOMICALLY with the status/role write (UpdateWithSessionBump), so a stale
+	// cookie can't outlive the change; a bump failure fails the whole operation.
+	isAuthzChange := req.Action == "disable" || req.Action == "enable" || req.Action == "promote" || req.Action == "demote"
+	var updateErr error
+	if isAuthzChange {
+		updateErr = user.UpdateWithSessionBump()
+	} else {
+		updateErr = user.Update(false)
+	}
+	if updateErr != nil {
+		common.ApiError(c, updateErr)
 		return
 	}
-	// 禁用 / 角色调整后，强制失效用户缓存与其全部令牌缓存，
-	// 避免在 Redis TTL 过期前仍使用旧状态（尤其是禁用后仍可发起请求的问题）。
-	// InvalidateUserCache 会让下一次 GetUserCache 从数据库重新加载，
-	// InvalidateUserTokensCache 则确保令牌侧的缓存也同步刷新。
-	if req.Action == "disable" || req.Action == "promote" || req.Action == "demote" {
+	if isAuthzChange {
+		// 强制失效用户缓存与其全部令牌缓存，避免在 Redis TTL 过期前仍使用旧状态
+		// （尤其是禁用后仍可发起请求的问题）。InvalidateUserCache 会让下一次
+		// GetUserCache 从数据库重新加载，InvalidateUserTokensCache 则确保令牌侧缓存同步。
 		if err := model.InvalidateUserCache(user.Id); err != nil {
 			common.SysLog(fmt.Sprintf("failed to invalidate user cache for user %d: %s", user.Id, err.Error()))
 		}
@@ -1020,6 +1030,22 @@ func ManageUser(c *gin.Context) {
 type emailBindRequest struct {
 	Email string `json:"email"`
 	Code  string `json:"code"`
+}
+
+// bumpSessionVersion invalidates a user's existing cookie sessions after a
+// credential / auth-factor / identity removal, reset or replacement. On failure
+// it logs, writes an error response, aborts, and returns false: the caller MUST
+// stop, because reporting success while the bump failed would leave a stale
+// cookie valid and break the invalidation invariant. Callers whose primary write
+// already runs in a transaction use (*model.User).UpdateWithSessionBump instead
+// (fully atomic — the version bump rolls back with the write).
+func bumpSessionVersion(c *gin.Context, userId int) bool {
+	if err := model.BumpUserSessionVersion(userId); err != nil {
+		common.SysLog(fmt.Sprintf("failed to bump session_version for user %d: %s", userId, err.Error()))
+		common.ApiError(c, err)
+		return false
+	}
+	return true
 }
 
 func EmailBind(c *gin.Context) {
@@ -1046,7 +1072,9 @@ func EmailBind(c *gin.Context) {
 	}
 	user.Email = email
 	// no need to check if this email already taken, because we have used verification code to check it
-	err = user.Update(false)
+	// Changing the bound email changes the account's identity / password-reset
+	// surface -> invalidate existing cookie sessions atomically with the write.
+	err = user.UpdateWithSessionBump()
 	if err != nil {
 		common.ApiError(c, err)
 		return

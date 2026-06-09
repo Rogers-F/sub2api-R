@@ -177,12 +177,18 @@ func main() {
 	middleware.SetUpLogger(server)
 	// Initialize session store
 	store := cookie.NewStore([]byte(common.SessionSecret))
+	cookieSecure := common.GetEnvOrDefaultBool("COOKIE_SECURE", true)
+	if !cookieSecure {
+		common.SysLog("WARNING: COOKIE_SECURE=false -- the session cookie is sent over plain HTTP (DEV ONLY). Set COOKIE_SECURE=true behind HTTPS in production.")
+	}
 	store.Options(sessions.Options{
 		Path:     "/",
 		MaxAge:   2592000, // 30 days
 		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   cookieSecure,
+		// Lax (not Strict) so OAuth/Telegram top-level redirect callbacks carry
+		// the session cookie; still withholds it from cross-site sub-requests (CSRF).
+		SameSite: http.SameSiteLaxMode,
 	})
 	server.Use(sessions.Sessions("session", store))
 

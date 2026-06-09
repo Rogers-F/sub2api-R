@@ -17,6 +17,16 @@ func SetApiRouter(router *gin.Engine) {
 	apiRouter.Use(gzip.Gzip(gzip.DefaultCompression))
 	apiRouter.Use(middleware.BodyStorageCleanup()) // 清理请求体存储
 	apiRouter.Use(middleware.GlobalAPIRateLimit())
+	// Cookie-session CORS for the /api surface (no-op unless CORS_ALLOW_ORIGINS set).
+	// It sets credentialed CORS headers on actual (non-preflight) cross-origin responses
+	// for allowlisted origins. NOTE: preflight (OPTIONS) requests to /api still fall to
+	// the engine-global relay CORS, so credentialed cross-origin requests that trigger a
+	// preflight (e.g. carrying the New-Api-User header) are not yet supported via
+	// CORS_ALLOW_ORIGINS. Production serves the SPA same-origin, so this is unused there;
+	// the full fix (de-globalizing the relay CORS rather than a broad /api OPTIONS
+	// catch-all, which would steal the relay preflight of /api/usage and /api/log/token)
+	// is deferred.
+	apiRouter.Use(middleware.SessionCORS())
 	{
 		apiRouter.GET("/setup", controller.GetSetup)
 		apiRouter.POST("/setup", controller.PostSetup)

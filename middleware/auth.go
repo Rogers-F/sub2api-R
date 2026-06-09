@@ -39,6 +39,7 @@ func authHelper(c *gin.Context, minRole int) {
 	role := session.Get("role")
 	id := session.Get("id")
 	status := session.Get("status")
+	sessionVersion := session.Get("session_version")
 	useAccessToken := false
 	if username == nil {
 		// Check access token
@@ -120,6 +121,30 @@ func authHelper(c *gin.Context, minRole int) {
 		c.Abort()
 		return
 	}
+	// Cookie sessions carry a session_version stamped at login. If the user's
+	// current version was bumped (password change / ban / role|group change /
+	// auth-factor change), older cookies no longer match -> force re-login.
+	// Access-token auth is exempt (system tokens, not browser sessions).
+	if !useAccessToken {
+		current, verr := model.GetUserSessionVersion(apiUserId)
+		if verr != nil {
+			common.SysLog("authHelper GetUserSessionVersion error for user " + apiUserIdStr + ": " + verr.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": common.TranslateMessage(c, i18n.MsgDatabaseError),
+			})
+			c.Abort()
+			return
+		}
+		if sv, ok := sessionVersion.(int); !ok || sv != current {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": common.TranslateMessage(c, i18n.MsgAuthNotLoggedIn),
+			})
+			c.Abort()
+			return
+		}
+	}
 	if status.(int) == common.UserStatusDisabled {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -189,18 +214,66 @@ func WssAuth(c *gin.Context) {
 
 }
 
+// trySessionAuth validates a cookie session WITHOUT writing a response. It
+// enforces the same invariant as UserAuth/authHelper for the cookie path: the
+// New-Api-User header must match the session id, the session_version must match
+// the current DB value (bumped on credential/authz/auth-factor changes), and the
+// user must be enabled. Returns true and populates the context on success; false
+// (no session / stale cookie / missing header) lets the caller fall back to
+// token auth. This keeps the session_version + New-Api-User guarantees on
+// dual-auth endpoints instead of trusting a bare cookie.
+func trySessionAuth(c *gin.Context) bool {
+	session := sessions.Default(c)
+	idVal := session.Get("id")
+	if idVal == nil {
+		return false
+	}
+	id, ok := idVal.(int)
+	if !ok {
+		return false
+	}
+	// New-Api-User header must be present and match the session id.
+	apiUserIdStr := c.Request.Header.Get("New-Api-User")
+	if apiUserIdStr == "" {
+		return false
+	}
+	apiUserId, err := strconv.Atoi(apiUserIdStr)
+	if err != nil || apiUserId != id {
+		return false
+	}
+	// session_version must match the current DB value.
+	current, verr := model.GetUserSessionVersion(id)
+	if verr != nil {
+		common.SysLog("trySessionAuth GetUserSessionVersion error for user " + apiUserIdStr + ": " + verr.Error())
+		return false
+	}
+	if sv, ok := session.Get("session_version").(int); !ok || sv != current {
+		return false
+	}
+	// user must be enabled.
+	if status, ok := session.Get("status").(int); !ok || status != common.UserStatusEnabled {
+		return false
+	}
+	c.Header("Auth-Version", "864b7076dbcd0a3c01b5520316720ebf")
+	c.Set("username", session.Get("username"))
+	c.Set("role", session.Get("role"))
+	c.Set("id", id)
+	c.Set("group", session.Get("group"))
+	c.Set("user_group", session.Get("group"))
+	c.Set("use_access_token", false)
+	return true
+}
+
 // TokenOrUserAuth allows either session-based user auth or API token auth.
 // Used for endpoints that need to be accessible from both the dashboard and API clients.
 func TokenOrUserAuth() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		// Try session auth first (dashboard users)
-		session := sessions.Default(c)
-		if id := session.Get("id"); id != nil {
-			if status, ok := session.Get("status").(int); ok && status == common.UserStatusEnabled {
-				c.Set("id", id)
-				c.Next()
-				return
-			}
+		// Try session auth first (dashboard users). The full cookie invariant
+		// (New-Api-User + session_version + enabled) is enforced; a stale/bumped
+		// cookie does NOT pass and instead falls through to token auth.
+		if trySessionAuth(c) {
+			c.Next()
+			return
 		}
 		// Fall back to token auth (API clients)
 		TokenAuth()(c)

@@ -539,6 +539,11 @@ func UnbindCustomOAuth(c *gin.Context) {
 		return
 	}
 
+	// Unbinding an OAuth login method -> invalidate existing cookie sessions.
+	if !bumpSessionVersion(c, userId) {
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "解绑成功",
@@ -574,6 +579,12 @@ func UnbindCustomOAuthByAdmin(c *gin.Context) {
 
 	if err := model.DeleteUserOAuthBinding(userId, providerId); err != nil {
 		common.ApiError(c, err)
+		return
+	}
+
+	// Admin unbinding an OAuth login method -> invalidate the target's existing
+	// cookie sessions.
+	if !bumpSessionVersion(c, userId) {
 		return
 	}
 

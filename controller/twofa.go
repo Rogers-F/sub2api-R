@@ -194,6 +194,12 @@ func Enable2FA(c *gin.Context) {
 	// 记录操作日志
 	model.RecordLog(userId, model.LogTypeSystem, "成功启用两步验证")
 
+	// Enabling 2FA strengthens auth; invalidate existing cookie sessions so an
+	// older cookie can't bypass the newly added second factor.
+	if !bumpSessionVersion(c, userId) {
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "两步验证启用成功",
@@ -265,6 +271,10 @@ func Disable2FA(c *gin.Context) {
 
 	// 记录操作日志
 	model.RecordLog(userId, model.LogTypeSystem, "禁用两步验证")
+
+	if !bumpSessionVersion(c, userId) {
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -379,6 +389,12 @@ func RegenerateBackupCodes(c *gin.Context) {
 			"message": "保存备用码失败",
 		})
 		common.SysLog("保存备用码失败: " + err.Error())
+		return
+	}
+
+	// Regenerating backup codes replaces a recovery credential -> invalidate
+	// existing cookie sessions.
+	if !bumpSessionVersion(c, userId) {
 		return
 	}
 
@@ -538,6 +554,12 @@ func AdminDisable2FA(c *gin.Context) {
 			return
 		}
 		common.ApiError(c, err)
+		return
+	}
+
+	// Disabling 2FA removes an auth factor -> invalidate the target's existing
+	// cookie sessions (mirrors the self-service Disable2FA path).
+	if !bumpSessionVersion(c, userId) {
 		return
 	}
 

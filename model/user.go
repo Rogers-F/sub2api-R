@@ -53,6 +53,34 @@ type User struct {
 	StripeCustomer   string         `json:"stripe_customer" gorm:"type:varchar(64);column:stripe_customer;index"`
 	CreatedAt        int64          `json:"created_at" gorm:"autoCreateTime;column:created_at"`
 	LastLoginAt      int64          `json:"last_login_at" gorm:"default:0;column:last_login_at"`
+	SessionVersion   int            `json:"session_version" gorm:"type:int;not null;default:1;column:session_version"`
+}
+
+// GetUserSessionVersion returns the user's current session_version (the monotonic
+// counter that invalidates all existing cookie sessions when bumped). A
+// deleted/missing user yields 0, which never matches a live session (>= 1).
+func GetUserSessionVersion(id int) (int, error) {
+	var v int
+	err := DB.Model(&User{}).Where("id = ?", id).Select("session_version").Scan(&v).Error
+	return v, err
+}
+
+// BumpUserSessionVersion increments session_version, invalidating every existing
+// cookie session for the user (any cookie carrying an older value fails auth).
+// Uses an explicit expression (NOT a struct Updates, which skips zero values).
+func BumpUserSessionVersion(id int) error {
+	if id == 0 {
+		return errors.New("id 为空！")
+	}
+	result := DB.Model(&User{}).Where("id = ?", id).
+		Update("session_version", gorm.Expr("session_version + ?", 1))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("session_version bump affected no rows (user not found)")
+	}
+	return nil
 }
 
 func (user *User) ToBaseUser() *UserBase {
@@ -492,6 +520,18 @@ func (user *User) FinalizeOAuthUserCreation(inviterId int) {
 }
 
 func (user *User) Update(updatePassword bool) error {
+	// A password change is a credential change, so it implies a session bump.
+	return user.update(updatePassword, updatePassword)
+}
+
+// UpdateWithSessionBump updates the user and increments session_version in the
+// SAME transaction. Use for admin authz changes (disable/enable/role) so a
+// stale cookie cannot outlive the change even when no password is involved.
+func (user *User) UpdateWithSessionBump() error {
+	return user.update(false, true)
+}
+
+func (user *User) update(updatePassword, bumpSession bool) error {
 	var err error
 	if updatePassword {
 		user.Password, err = common.Password2Hash(user.Password)
@@ -501,7 +541,25 @@ func (user *User) Update(updatePassword bool) error {
 	}
 	newUser := *user
 	DB.First(&user, user.Id)
-	if err = DB.Model(user).Updates(newUser).Error; err != nil {
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		if e := tx.Model(user).Updates(newUser).Error; e != nil {
+			return e
+		}
+		if bumpSession {
+			// Invalidate every existing cookie session, atomic with the write
+			// (no "changed but still valid" gap).
+			res := tx.Model(&User{}).Where("id = ?", user.Id).
+				Update("session_version", gorm.Expr("session_version + ?", 1))
+			if res.Error != nil {
+				return res.Error
+			}
+			if res.RowsAffected == 0 {
+				return errors.New("session_version bump affected no rows (user not found)")
+			}
+		}
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
@@ -530,6 +588,11 @@ func (user *User) Edit(updatePassword bool) error {
 	}
 
 	DB.First(&user, user.Id)
+	// Bump session_version (invalidate existing cookie sessions) when an
+	// authz/identity/credential field changes: password, group, or username.
+	if updatePassword || newUser.Group != user.Group || newUser.Username != user.Username {
+		updates["session_version"] = gorm.Expr("session_version + ?", 1)
+	}
 	if err = DB.Model(user).Updates(updates).Error; err != nil {
 		return err
 	}
@@ -558,7 +621,12 @@ func (user *User) ClearBinding(bindingType string) error {
 		return errors.New("invalid binding type")
 	}
 
-	if err := DB.Model(&User{}).Where("id = ?", user.Id).Update(column, "").Error; err != nil {
+	// Unbinding an identity (email/OAuth/etc.) is an identity change -> invalidate
+	// existing cookie sessions, atomic with the unbind write.
+	if err := DB.Model(&User{}).Where("id = ?", user.Id).Updates(map[string]interface{}{
+		column:            "",
+		"session_version": gorm.Expr("session_version + ?", 1),
+	}).Error; err != nil {
 		return err
 	}
 
@@ -713,7 +781,11 @@ func ResetUserPasswordByEmail(email string, password string) error {
 	if err != nil {
 		return err
 	}
-	err = DB.Model(&User{}).Where("email = ?", email).Update("password", hashedPassword).Error
+	// Reset is a credential change -> invalidate existing cookie sessions atomically.
+	err = DB.Model(&User{}).Where("email = ?", email).Updates(map[string]interface{}{
+		"password":        hashedPassword,
+		"session_version": gorm.Expr("session_version + ?", 1),
+	}).Error
 	return err
 }
 

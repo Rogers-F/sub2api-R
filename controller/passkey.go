@@ -143,6 +143,12 @@ func PasskeyRegisterFinish(c *gin.Context) {
 		return
 	}
 
+	// A passkey register replaces the user's existing passkey (UpsertPasskeyCredential
+	// deletes-then-creates), changing the auth factor -> invalidate existing cookie sessions.
+	if !bumpSessionVersion(c, user.Id) {
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Passkey 注册成功",
@@ -165,6 +171,11 @@ func PasskeyDelete(c *gin.Context) {
 
 	if err := model.DeletePasskeyByUserID(user.Id); err != nil {
 		common.ApiError(c, err)
+		return
+	}
+
+	// Deleting a passkey removes an auth factor -> invalidate existing cookie sessions.
+	if !bumpSessionVersion(c, user.Id) {
 		return
 	}
 
@@ -370,6 +381,12 @@ func AdminResetPasskey(c *gin.Context) {
 
 	if err := model.DeletePasskeyByUserID(user.Id); err != nil {
 		common.ApiError(c, err)
+		return
+	}
+
+	// Admin resetting a passkey removes an auth factor -> invalidate the target's
+	// existing cookie sessions.
+	if !bumpSessionVersion(c, user.Id) {
 		return
 	}
 
